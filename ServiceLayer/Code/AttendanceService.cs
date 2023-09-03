@@ -623,6 +623,7 @@ namespace ServiceLayer.Code
                 Message = presentAttendance.UserComments,
                 RequestType = "Work From Home",
                 ToAddress = new List<string> { employee.Email },
+                kafkaServiceName = KafkaServiceName.Attendance
             };
 
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);

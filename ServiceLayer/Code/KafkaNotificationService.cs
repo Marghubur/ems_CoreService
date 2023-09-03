@@ -27,6 +27,7 @@ namespace ServiceLayer.Code
         public async Task SendEmailNotification(dynamic attendanceRequestModal)
         {
             var result = JsonConvert.SerializeObject(attendanceRequestModal);
+
             _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");
             using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {

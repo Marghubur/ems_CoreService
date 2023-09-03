@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
-using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -125,6 +124,10 @@ namespace ServiceLayer.Code
                 if (attendance.PendingRequestCount > 0)
                     attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
+                var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = attendance.ReportingManagerId, IsActive = 1 });
+                if (employee == null)
+                    throw HiringBellException.ThrowBadRequest("Fail to get manager detail");
+
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
@@ -157,7 +160,8 @@ namespace ServiceLayer.Code
                     ManagerName = attendanceDetail.ManagerName,
                     Message = attendanceDetail.UserComments,
                     RequestType = "Work From Home",
-                    ToAddress = new List<string> { "istiyaq.mi9@gmail.com" },
+                    ToAddress = new List<string> { employee.Email },
+                    kafkaServiceName = KafkaServiceName.Attendance
                 };
 
                 await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);

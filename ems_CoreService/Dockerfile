@@ -10,18 +10,18 @@ WORKDIR /src
 
 ENV ASPNETCORE_ENVIRONMENT Production
 
-COPY ["OnlineDataBuilder/OnlineDataBuilder.csproj", "OnlineDataBuilder/"]
+COPY ["ems_CoreService/ems_CoreService.csproj", "ems_CoreService/"]
 COPY ["ServiceLayer/ServiceLayer.csproj", "ServiceLayer/"]
 COPY ["EMailService/EMailService.csproj", "EMailService/"]
-RUN dotnet restore "OnlineDataBuilder/OnlineDataBuilder.csproj"
+RUN dotnet restore "ems_CoreService/ems_CoreService.csproj"
 COPY . .
-WORKDIR "/src/OnlineDataBuilder"
-RUN dotnet build "OnlineDataBuilder.csproj" -c Release -o /app/build
+WORKDIR "/src/ems_CoreService"
+RUN dotnet build "ems_CoreService.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "OnlineDataBuilder.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "ems_CoreService.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "OnlineDataBuilder.dll"]
+ENTRYPOINT ["dotnet", "ems_CoreService.dll"]
