@@ -1,0 +1,159 @@
+<div class="WordSection1">
+
+<p class="MsoNormal" style="margin-top:4.55pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><font face="Arial"><b style="">[[Generate-Date]]</b></font></p><p class="MsoNormal" style="margin-top:4.55pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><span style="font-family: Arial; font-variant-caps: small-caps; letter-spacing: -0.1pt;"><br></span></p><p class="MsoNormal" style="margin-top:4.55pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><span style="font-family: Arial; font-variant-caps: small-caps; letter-spacing: -0.1pt;">[[Employee-Name]]</span></p>
+
+<p class="MsoBodyText" style="margin-top:3.05pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><font face="Arial"><span lang="EN-US" style="font-variant:small-caps;letter-spacing:-.1pt">[[Company-Address]]</span><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style="letter-spacing:
+-.1pt">,</span><span lang="EN-US"><o:p></o:p></span></b></font></p>
+
+<p class="MsoNormal" style="margin-left:38.0pt;line-height:11.45pt;mso-line-height-rule:
+exactly"><font face="Arial"><span lang="EN-US" style="letter-spacing: -0.1pt;">BOT0001024</span><span lang="EN-US" style=""><o:p></o:p></span></font></p>
+
+<p class="MsoNormal" style="line-height:18.35pt;mso-line-height-rule:exactly"><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></b></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+105%"><span lang="EN-US" style="line-height: 105%;"><font face="Arial">On<span style="letter-spacing:-.95pt"> </span>behalf<span style="letter-spacing:-.85pt"> </span>of<span style="letter-spacing:-.85pt">&nbsp;</span><b style="mso-bidi-font-weight:normal"><u>[[Company-Name]]</u><span style="letter-spacing:-.85pt">&nbsp;</span></b>we<span style="letter-spacing:-1.0pt">
+</span>are<span style="letter-spacing:-.75pt"> </span>extremely<span style="letter-spacing:-.85pt"> </span>pleased<span style="letter-spacing:-.85pt">
+</span>to<span style="letter-spacing:-1.0pt"> </span>make<span style="letter-spacing:-.75pt"> </span>you<span style="letter-spacing:-.9pt"> </span>an
+offer of appointment as&nbsp;</font><b style="font-family: Arial;">[[Designation]]</b><font face="Arial"><b style="mso-bidi-font-weight:normal">&nbsp;</b>in our function <b style="mso-bidi-font-weight:normal">Implementation
+</b>at <b style="mso-bidi-font-weight:normal"><span style="mso-font-width:95%">[[Company-Address]].</span>
+</b><span style="mso-font-width:95%">Initially, you will be on a Probation for
+a period of <b style="mso-bidi-font-weight:normal">[[Probation-Period]]</b>, upon </span>successful
+completion of which, you will be confirmed in the services of the <span style="letter-spacing:-.1pt">company.</span><o:p></o:p></font></span></p>
+
+<p class="MsoBodyText" style="margin-top:.35pt"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+105%"><span lang="EN-US"><font face="Arial">We extend this offer, and the opportunity that it
+represents with great <span style="mso-font-width:95%">confidence</span><span style="letter-spacing:2.0pt"> </span><span style="mso-font-width:95%">in</span><span style="letter-spacing:2.0pt"> </span><span style="mso-font-width:95%">your</span><span style="letter-spacing:2.0pt"> </span><span style="mso-font-width:95%">abilities.<span style="letter-spacing:-.55pt"> </span>You<span style="letter-spacing:-.7pt"> </span>have<span style="letter-spacing:-.8pt"> </span>made<span style="letter-spacing:-.4pt"> </span>a<span style="letter-spacing:-.7pt"> </span>positive<span style="letter-spacing:-.6pt">
+</span>impression<span style="letter-spacing:-.6pt"> </span>on<span style="letter-spacing:-.45pt"> </span>everyone </span>that<span style="letter-spacing:-.4pt"> </span>you<span style="letter-spacing:-.35pt"> </span>had<span style="letter-spacing:-.35pt"> </span>discussions<span style="letter-spacing:
+-.25pt"> </span>with<span style="letter-spacing:-.35pt"> </span>and we are
+excited by the prospect of you becoming<span style="letter-spacing:-1.0pt"> </span>a<span style="letter-spacing:-.95pt"> </span>part<span style="letter-spacing:-1.0pt"> </span>of<span style="letter-spacing:-.9pt"> </span>this<span style="letter-spacing:-.85pt"> </span>extremely<span style="letter-spacing:-.95pt"> </span>promising<span style="letter-spacing:
+-.9pt"> </span>organization.<span style="letter-spacing:-.95pt"> </span>While<span style="letter-spacing:-1.0pt"> </span>we<span style="letter-spacing:-.95pt"> </span>have<span style="letter-spacing:-1.0pt"> </span>had a broad level of discussions
+regarding your role, your immediate manager will<span style="letter-spacing:
+-.55pt"> </span>communicate<span style="letter-spacing:-.6pt"> </span>the<span style="letter-spacing:-.5pt"> </span>details<span style="letter-spacing:-.35pt">
+</span>of<span style="letter-spacing:-.5pt"> </span>your<span style="letter-spacing:
+-.4pt"> </span>responsibilities<span style="letter-spacing:-.45pt"> </span>within<span style="letter-spacing:-.5pt"> </span>the<span style="letter-spacing:-.4pt"> </span>first<span style="letter-spacing:-.2pt"> </span>six weeks of your joining us.<o:p></o:p></font></span></p>
+
+<p class="MsoBodyText" style="margin-top:.15pt"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:.05pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><span lang="EN-US"><font face="Arial">This<span style="letter-spacing:-.2pt"> </span>offer<span style="letter-spacing:-.2pt"> </span>of<span style="letter-spacing:-.25pt"> </span>appointment<span style="letter-spacing:
+-.3pt"> </span>is<span style="letter-spacing:-.25pt"> </span>subject<span style="letter-spacing:-.35pt"> </span>to<span style="letter-spacing:-.35pt"> </span>the<span style="letter-spacing:-.2pt"> </span><span style="letter-spacing:-.1pt">following,</span></font></span></p><p class="MsoBodyText" style="margin-top:.05pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><span style="font-family: Arial; text-indent: -18pt;"><br></span></p><ul><li><span style="font-family: Arial; text-indent: -18pt;">Your</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">indicating</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.05pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">your</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">acceptance</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">of</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.95pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">our</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">offer</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2pt;">
+</span><span style="font-family: Arial; text-indent: -18pt;">&amp;</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">responding</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">to</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">us,</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.05pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">within</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -2.1pt;">
+</span><span style="font-family: Arial; text-indent: -18pt;">a week</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.45pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">from</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.5pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">the date</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.2pt;">
+</span><span style="font-family: Arial; text-indent: -18pt;">of</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">offer.</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.15pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">Please</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.2pt;">
+</span><span style="font-family: Arial; text-indent: -18pt;">do</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.25pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">indicate,</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">if</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.2pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">you</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.25pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">require</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -1.25pt;">
+</span><span style="font-family: Arial; text-indent: -18pt;">any change</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -0.25pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">in</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -0.25pt;"> </span><span style="font-family: Arial; text-indent: -18pt;">the</span><span style="font-family: Arial; text-indent: -18pt; letter-spacing: -0.2pt;"> </span><b style="font-family: Arial; text-indent: -18pt;">date<span style="letter-spacing:-.25pt"> </span>of<span style="letter-spacing:-.1pt"> </span>joining.</b></li><li>On<span lang="EN-US" style="font-family: Arial; letter-spacing: -1.2pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">successful</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1.1pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">submission</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.9pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">of</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1.05pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">the</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1.05pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">documents</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1.1pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">specified</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.9pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">in</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1.1pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">Annexure</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -1pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.5pt;">E.</span></li><li>Upon<span lang="EN-US" style="font-family: Arial; letter-spacing: -1.05pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">receipt</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.65pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">of</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.8pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">a</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.8pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">positive</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.85pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">background</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.9pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">check</span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.7pt;"> </span><span lang="EN-US" style="font-family: Arial; letter-spacing: -0.1pt;">report</span></li></ul><p></p>
+
+<p class="MsoBodyText" style="margin-top:.55pt"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+105%"><span lang="EN-US" style="line-height: 105%;"><font face="Arial">Your Complete Annual Compensation package will consist of <b style="mso-bidi-font-weight:normal">Rs. [[CTC]] (Rupees Two Lakhs and Sixteen
+thousand Only) </b>− payable as per the <span style="mso-font-width:95%">breakup
+provided in <b style="mso-bidi-font-weight:normal">Annexure–A<span style="letter-spacing:-.3pt"> </span></b>−<span style="letter-spacing:-.5pt"> </span>will<span style="letter-spacing:-.35pt"> </span>be<span style="letter-spacing:-.3pt"> </span>subject<span style="letter-spacing:-.3pt"> </span>to<span style="letter-spacing:-.3pt"> </span>statutory<span style="letter-spacing:-.35pt"> </span>deductions.</span><span style="letter-spacing:
+2.0pt"> </span><span style="mso-font-width:95%">You will<span style="letter-spacing:
+-.5pt"> </span>also<span style="letter-spacing:-.65pt"> </span>be<span style="letter-spacing:-.45pt"> </span>eligible<span style="letter-spacing:-.5pt">
+</span>to<span style="letter-spacing:-.45pt"> </span>benefits<span style="letter-spacing:-.65pt"> </span>such as<span style="letter-spacing:-.55pt">
+</span>Gratuity<span style="letter-spacing:-.45pt"> </span>&amp;<span style="letter-spacing:-.65pt"> </span>Group<span style="letter-spacing:-.5pt"> </span>Health<span style="letter-spacing:-.35pt"> </span>Insurance<span style="letter-spacing:
+-.45pt"> </span>as<span style="letter-spacing:-.65pt"> </span>per the<span style="letter-spacing:-.15pt"> </span>terms specified by&nbsp;</span><b style=""><u>[[Company-Name]]</u>&nbsp;</b><span style="mso-font-width:95%">from<span style="letter-spacing:-.15pt">
+</span>time<span style="letter-spacing:-.1pt"> </span>to<span style="letter-spacing:
+-.2pt"> </span>time.</span><o:p></o:p></font></span></p>
+
+</div>
+
+<font face="Arial"><span lang="EN-US" style="line-height: 105%;"><br clear="all" style="page-break-before:always;mso-break-type:section-break">
+</span>
+
+</font><p class="MsoBodyText" style="margin-top:.3pt"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:4.6pt;margin-right:34.45pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+105%"><font face="Arial"><span lang="EN-US" style="mso-font-width:95%">Your<span style="letter-spacing:
+-.5pt"> </span>employment<span style="letter-spacing:-.6pt"> </span>with<span style="letter-spacing:-.25pt"> </span>us<span style="letter-spacing:-.6pt"> </span>will<span style="letter-spacing:-.6pt"> </span>be<span style="letter-spacing:-.45pt"> </span>governed<span style="letter-spacing:-.1pt"> </span>by<span style="letter-spacing:-.6pt"> </span>the terms<span style="letter-spacing:-.6pt"> </span>and<span style="letter-spacing:-.7pt"> </span>conditions<span style="letter-spacing:-.35pt"> </span>of<span style="letter-spacing:-.8pt"> </span>service
+as<span style="letter-spacing:-.8pt"> </span>detailed<span style="letter-spacing:
+-.8pt"> </span>in</span><span lang="EN-US" style="letter-spacing:1.35pt"> </span><span lang="EN-US" style="mso-font-width:95%">Annexure B.</span><span lang="EN-US" style="letter-spacing:2.0pt"> </span><span lang="EN-US" style="mso-font-width:
+95%">You<span style="letter-spacing:-.1pt"> </span>will also be governed by any
+rules, regulations, </span><span lang="EN-US">policies<span style="letter-spacing:
+-.6pt"> </span>and<span style="letter-spacing:-.75pt"> </span>practices<span style="letter-spacing:-.75pt"> </span>that may<span style="letter-spacing:-.15pt">
+</span>change<span style="letter-spacing:-.4pt"> </span>from<span style="letter-spacing:-.15pt"> </span>time<span style="letter-spacing:-.4pt"> </span>to<span style="letter-spacing:-.45pt"> </span>time.<o:p></o:p></span></font></p>
+
+<p class="MsoBodyText" style="margin-top:.25pt"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:0cm;margin-right:34.3pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+105%"><font face="Arial"><span lang="EN-US" style="mso-font-width:95%">Your compensation details are<span style="letter-spacing:-.2pt"> </span>confidential, and<span style="letter-spacing:
+-.2pt"> </span>you<span style="letter-spacing:-.2pt"> </span>may discuss it<span style="letter-spacing:-.1pt"> </span>only<span style="letter-spacing:-.1pt"> </span>with the
+</span><span lang="EN-US">undersigned in case of any concern or clarification. It
+is our hope that your acceptance of our Offer of Appointment will<span style="letter-spacing:-.05pt"> </span>be<span style="letter-spacing:-.05pt"> </span>the<span style="letter-spacing:-.15pt"> </span>beginning of a<span style="letter-spacing:
+-.05pt"> </span>mutually beneficial<span style="letter-spacing:-.45pt"> </span>relationship.<o:p></o:p></span></font></p>
+
+<p class="MsoBodyText" style="margin-top:.5pt"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:0cm;margin-right:34.4pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;text-align:justify;line-height:
+106%"><span lang="EN-US" style="line-height: 106%;"><font face="Arial">We mutually agree to your date of joining&nbsp;<b style=""><u>[[Company-Name]]</u></b><b style="mso-bidi-font-weight:normal">&nbsp;</b>as <b>[[Joining-Date]]</b><b style="mso-bidi-font-weight:normal"><span style="mso-font-width:95%">.<span style="letter-spacing:-.2pt"> </span></span></b><span style="mso-font-width:95%">At<span style="letter-spacing:-.15pt"> </span>the<span style="letter-spacing:-.3pt"> </span>time<span style="letter-spacing:-.2pt"> </span>of<span style="letter-spacing:-.3pt"> </span>joining<span style="letter-spacing:-.2pt">
+</span>please<span style="letter-spacing:-.25pt"> </span>provide<span style="letter-spacing:-.2pt"> </span>us<span style="letter-spacing:-.1pt"> </span>the<span style="letter-spacing:-.2pt"> </span>original<span style="letter-spacing:-.2pt">
+</span>documents<span style="letter-spacing:-.15pt"> </span>mentioned </span>in<span style="letter-spacing:-.35pt"> </span><b style="mso-bidi-font-weight:normal">Annexure<span style="letter-spacing:-.6pt"> </span>E</b>.<o:p></o:p></font></span></p>
+
+<p class="MsoBodyText" style="margin-top:.35pt"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-left:38.0pt;line-height:121%"><span lang="EN-US"><font face="Arial">We<span style="letter-spacing:-1.05pt"> </span>welcome<span style="letter-spacing:-1.0pt"> </span>you<span style="letter-spacing:-.95pt"> </span>to<span style="letter-spacing:-1.0pt">&nbsp;</span><b style="text-align: justify;"><u>[[Company-Name]]</u></b><b style="mso-bidi-font-weight:normal"><span style="letter-spacing:-1.0pt">&nbsp;</span></b>and<span style="letter-spacing:-.95pt">
+</span>extend<span style="letter-spacing:-1.0pt"> </span>our<span style="letter-spacing:-.95pt"> </span>best<span style="letter-spacing:-.95pt"> </span>wishes<span style="letter-spacing:-1.0pt"> </span>for<span style="letter-spacing:-.95pt"> </span>a
+rewarding<span style="letter-spacing:-.4pt"> </span>career.<span style="letter-spacing:-.45pt"> </span>We<span style="letter-spacing:-.4pt"> </span>look<span style="letter-spacing:-.3pt"> </span>forward<span style="letter-spacing:-.3pt">
+</span>to<span style="letter-spacing:-.7pt"> </span>you<span style="letter-spacing:
+-.2pt"> </span>joining<span style="letter-spacing:-.4pt"> </span>our<span style="letter-spacing:-.4pt"> </span>team.<o:p></o:p></font></span></p>
+
+<p class="MsoBodyText" style="margin-top:10.1pt;margin-right:37.2pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:121%"><font face="Arial"><span lang="EN-US" style="mso-font-width:95%">Please<span style="letter-spacing:-.6pt">
+</span>contact<span style="letter-spacing:-.4pt"> </span>Mr.<span style="letter-spacing:-.7pt"> </span><b style="mso-bidi-font-weight:normal">Md
+Zaid Khan<span style="letter-spacing:-.25pt"> </span></b>at<span style="letter-spacing:-.55pt"> </span></span><span lang="EN-US"><a href="mailto:hr@bottomhalf.in"><span style="color:#0462C1;mso-font-width:95%">hr@bottomhalf.in</span></a><span style="color:#0462C1;letter-spacing:-.4pt;mso-font-width:95%"> </span><span style="mso-font-width:95%">if<span style="letter-spacing:-.7pt"> </span>you<span style="letter-spacing:-.55pt"> </span>wish<span style="letter-spacing:-.6pt"> </span>to<span style="letter-spacing:-.65pt"> </span>discuss </span>any detail of the offer.<o:p></o:p></span></font></p>
+
+<p class="MsoBodyText"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:.25pt"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoNormal" style="margin-left:38.0pt"><font face="Arial"><span lang="EN-US" style="">On<span style="letter-spacing:
+-.15pt"> </span>Behalf<span style="letter-spacing:-.15pt"> </span>of<span style="letter-spacing:-.25pt">&nbsp;</span></span><b style="text-align: justify;"><u>[[Company-Name]]</u></b></font></p>
+
+<p class="MsoBodyText"><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></b></p>
+
+<p class="MsoBodyText" style="margin-top:.3pt"><b style="mso-bidi-font-weight:
+normal"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></b></p>
+
+<p class="MsoNormal" style="margin-top:4.6pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt"><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style=""><font face="Arial">Md<span style="letter-spacing:-.15pt"> </span>Zaid<span style="letter-spacing:-.2pt">
+Khan</span><o:p></o:p></font></span></b></p>
+
+<p class="MsoNormal" style="margin-top:.85pt;margin-right:0cm;margin-bottom:0cm;
+margin-left:38.0pt;margin-bottom:.0001pt"><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style=""><font face="Arial">Director<span style="letter-spacing:-.25pt"> </span>–<span style="letter-spacing:-.4pt"> </span>Operations<span style="letter-spacing:-.45pt"> </span>Human<span style="letter-spacing:-.3pt"> </span><span style="letter-spacing:-.1pt">Capital</span><o:p></o:p></font></span></b></p>
+
+<p class="MsoBodyText"><b style="mso-bidi-font-weight:normal"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></b></p>
+
+<p class="MsoBodyText" style="margin-top:0cm;margin-right:83.6pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:106%;tab-stops:404.4pt"><span lang="EN-US"><font face="Arial">I<span style="letter-spacing:-1.0pt"> </span>hereby<span style="letter-spacing:-.95pt"> </span>accept<span style="letter-spacing:-.75pt">
+</span>the<span style="letter-spacing:-.9pt"> </span>offer<span style="letter-spacing:-.85pt"> </span>of<span style="letter-spacing:-.9pt"> </span>appointment,<span style="letter-spacing:-.85pt"> </span>on<span style="letter-spacing:-1.0pt"> </span>the<span style="letter-spacing:-.95pt"> </span>terms<span style="letter-spacing:-.85pt">
+</span>and<span style="letter-spacing:-1.0pt"> </span>conditions mentioned. I
+will join&nbsp;<b style="text-align: justify;"><u>[[Company-Name]]</u></b><b style="mso-bidi-font-weight:normal">&nbsp;</b>on<span style="letter-spacing:-.8pt"> </span>or<span style="letter-spacing:
+-.5pt"> </span>before<u><span style="mso-tab-count:1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></u><span style="letter-spacing:-.5pt">.</span><o:p></o:p></font></span></p>
+
+<p class="MsoBodyText"><span lang="EN-US" style=""><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:.2pt"><span lang="EN-US"><o:p><font face="Arial">&nbsp;</font></o:p></span></p>
+
+<p class="MsoBodyText" style="margin-top:4.6pt;margin-right:387.75pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><font face="Arial"><span lang="EN-US" style="mso-font-width:95%">Name<span style="letter-spacing:-.3pt"> </span>of<span style="letter-spacing:-.35pt"> </span><span style="letter-spacing:-.1pt">candidate:</span></span><span lang="EN-US"><o:p></o:p></span></font></p>
+
+<p class="MsoBodyText" style="margin-top:.95pt;margin-right:387.75pt;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt"><span lang="EN-US"><font face="Arial">Signature<span style="letter-spacing:-.2pt"> </span><span style="letter-spacing:-.5pt">:</span><o:p></o:p></font></span></p>
+
+<p class="MsoBodyText" style="margin-top:.95pt;margin-right:0cm;margin-bottom:
+0cm;margin-left:38.0pt;margin-bottom:.0001pt;line-height:16.05pt;mso-line-height-rule:
+exactly"><span lang="EN-US" style="letter-spacing:-.1pt"><font face="Arial">Date:</font></span><span lang="EN-US"><o:p></o:p></span></p>

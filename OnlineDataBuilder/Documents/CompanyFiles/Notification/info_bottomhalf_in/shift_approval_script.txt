@@ -1,0 +1,317 @@
+drop table if exists work_shifts;
+
+create table work_shifts(
+	WorkShiftId int primary key,
+    CompanyId int,
+    Department int,
+    WorkFlowCode varchar(10),
+    ShiftTitle varchar(100),
+    Description varchar(500),
+    IsMon bit,
+    IsTue bit,
+    IsThu bit,
+    IsWed bit,
+    IsFri bit,
+    IsSat bit,
+    IsSun bit,
+    TotalWorkingDays int,
+    StartDate datetime not null,
+    EndDate datetime not null,
+    OfficeTime varchar(5), -- 10:30, 14:20
+    Duration int, -- 8
+    LunchDuration int,
+    Status int,
+    LastUpdatedOn datetime null,
+    CreatedBy bigint,
+    CreatedOn datetime not null
+);
+
+DELIMITER $$
+
+drop procedure if exists sp_work_shifts_sel $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_work_shifts_sel`(
+
+/*
+
+	Call sp_work_shifts_sel();
+
+*/
+
+)
+Begin
+	Declare Exit handler for sqlexception
+	Begin
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+									@errorno = MYSQL_ERRNO,
+									@errortext = MESSAGE_TEXT;
+					 
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Call sp_LogException (@Message, '', 'sp_work_shifts_sel', 1, 0, @Result);
+	end;
+	
+    select * from work_shifts;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_work_shifts_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_work_shifts_insupd`(
+
+/*
+
+	Set @OutParam = '';
+	Call sp_work_shifts_insupd(0, 1, 9, null, 'Regular shift', 'Application for regular employee', 
+    1, 1, 1, 1, 1, 0, 0, 5, '2023-01-01', '2023-12-31', '09:00', 480, 60, 2, utc_date(), 1, @OutParam);
+    Select @OutParam;
+
+*/
+
+	_WorkShiftId int,
+    _CompanyId int,
+    _Department int,
+    _WorkFlowCode varchar(10),
+    _ShiftTitle varchar(100),
+    _Description varchar(500),
+    _IsMon bit,
+    _IsTue bit,
+    _IsThu bit,
+    _IsWed bit,
+    _IsFri bit,
+    _IsSat bit,
+    _IsSun bit,
+    _TotalWorkingDays int,
+    _StartDate datetime,
+    _EndDate datetime,
+    _OfficeTime varchar(5), -- 10:30, 14:20
+    _Duration int, -- in minutes
+    _LunchDuration int, -- in minutes
+    _Status int,
+    _LastUpdatedOn datetime,
+    _AdminId bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+	Declare Exit handler for sqlexception
+	Begin
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+									@errorno = MYSQL_ERRNO,
+									@errortext = MESSAGE_TEXT;
+					 
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Call sp_LogException (@Message, '', 'sp_work_shifts_insupd', 1, 0, @Result);
+	end;
+	
+	Set _ProcessingResult = '';
+	Begin
+		If not exists (Select * from work_shifts where WorkShiftId = _WorkShiftId) then
+		Begin
+			set @WorkShiftId = 0;
+            select WorkShiftId into @WorkShiftId from work_shifts
+            order by WorkShiftId desc limit 1;
+            set @WorkShiftId = @WorkShiftId + 1;
+
+			Insert into work_shifts values(
+				@WorkShiftId,
+				_CompanyId,
+				_Department,
+				_WorkFlowCode,
+				_ShiftTitle,
+				_Description,
+				_IsMon,
+				_IsTue,
+				_IsThu,
+				_IsWed,
+				_IsFri,
+				_IsSat,
+				_IsSun,
+				_TotalWorkingDays,
+				_StartDate,
+				_EndDate,
+				_OfficeTime,
+				_Duration,
+				_LunchDuration,
+				_Status,
+				_LastUpdatedOn,
+                _AdminId,
+                utc_date()
+			);
+			
+			Set _ProcessingResult = 'inserted';
+		End;
+		Else
+		Begin
+			Update work_shifts Set
+				WorkShiftId              =          _WorkShiftId,
+				CompanyId                =          _CompanyId,
+				Department               =          _Department,
+				WorkFlowCode             =          _WorkFlowCode,
+				ShiftTitle               =          _ShiftTitle,
+				Description              =          _Description,
+				IsMon                	=          _IsMon,
+				IsTue                	=          _IsTue,
+				IsThu                	=          _IsThu,
+				IsWed                	=          _IsWed,
+				IsFri                	=          _IsFri,
+				IsSat                	=          _IsSat,
+				IsSun                	=          _IsSun,
+				TotalWorkingDays        =          _TotalWorkingDays,
+				StartDate               =          _StartDate,
+				EndDate              	=          _EndDate,
+				OfficeTime              =          _OfficeTime,
+				Duration                =          _Duration,
+				LunchDuration           =          _LunchDuration,
+				`Status`               	=          _Status,
+				LastUpdatedOn           =          _LastUpdatedOn,
+				CreatedBy              	=          _AdminId
+			where 	WorkShiftId 		= 		   _WorkShiftId;
+			
+			Set _ProcessingResult = 'updated';
+		End;
+		End if;	
+	End;
+End$$
+DELIMITER ;
+
+
+
+
+-- -------------------------
+
+
+drop table if exists approval_work_flow;
+create table approval_work_flow(
+	ApprovalWorkFlowId int primary key,
+    WorkFlowCode varchar(10) not null,
+    AssignieId bigint,
+    LastUpdatedOn datetime null,
+    Status int,
+    CreatedBy bigint,
+    CreatedOn datetime not null
+);
+
+
+DELIMITER $$
+
+drop procedure if exists sp_approval_work_flow_filter $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_approval_work_flow_filter`(
+
+/*
+
+	Call sp_approval_work_flow_filter(0, 'REG', 0, 2);
+
+*/
+	_ApprovalWorkFlowId int,
+    _WorkFlowCode varchar(10),
+    _AssignieId bigint,
+    _Status int
+)
+Begin
+	Declare Exit handler for sqlexception
+	Begin
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+									@errorno = MYSQL_ERRNO,
+									@errortext = MESSAGE_TEXT;
+					 
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Call sp_LogException (@Message, '', 'sp_approval_work_flow_filter', 1, 0, @Result);
+	end;
+	
+    select * from approval_work_flow w
+    where w.Status = _Status
+    and
+    case
+		when _WorkFlowCode is not null && _WorkFlowCode <> ''
+        then w.WorkFlowCode = _WorkFlowCode
+        else 1=1
+	end
+    and 
+    case
+		when _AssignieId > 0
+        then w.AssignieId = _AssignieId
+        else 1=1
+	end
+    and
+    case
+		when _ApprovalWorkFlowId > 0
+        then w.ApprovalWorkFlowId = _ApprovalWorkFlowId
+        else 1=1
+	end;
+End$$
+DELIMITER ;
+
+
+DELIMITER $$
+
+drop procedure if exists sp_approval_work_flow_insupd $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_approval_work_flow_insupd`(
+
+/*
+
+	Set @OutParam = '';
+	Call sp_approval_work_flow_insupd(0, 'REG', 1, 2, 1, @OutParam);
+    Select @OutParam;
+
+*/
+
+	_ApprovalWorkFlowId int,
+    _WorkFlowCode varchar(10),
+    _AssignieId bigint,
+    _Status int,
+    _AdminId bigint,
+    out _ProcessingResult varchar(100)
+)
+Begin
+	Declare Exit handler for sqlexception
+	Begin
+		Get Diagnostics condition 1 @sqlstate = RETURNED_SQLSTATE,
+									@errorno = MYSQL_ERRNO,
+									@errortext = MESSAGE_TEXT;
+					 
+		Set @Message = concat ('ERROR ', @errorno ,  ' (', @sqlstate, '); ', @errortext);
+		Call sp_LogException (@Message, '', 'sp_approval_work_flow_insupd', 1, 0, @Result);
+	end;
+	
+	Set _ProcessingResult = '';
+	Begin
+		If not exists (Select * from approval_work_flow where ApprovalWorkFlowId = _ApprovalWorkFlowId) then
+		Begin
+			set @ApprovalWorkFlowId = 0;
+            select ApprovalWorkFlowId into @ApprovalWorkFlowId from approval_work_flow
+            order by ApprovalWorkFlowId desc limit 1;
+            set @ApprovalWorkFlowId = @ApprovalWorkFlowId + 1;
+
+			Insert into approval_work_flow values(
+				@ApprovalWorkFlowId,
+				_WorkFlowCode,
+				_AssignieId,
+				utc_date(),
+				_Status,
+                _AdminId,
+                utc_date()
+			);
+			
+			Set _ProcessingResult = 'inserted';
+		End;
+		Else
+		Begin
+			Update approval_work_flow Set
+				WorkFlowCode		=		_WorkFlowCode,
+				AssignieId			=		_AssignieId,
+				LastUpdatedOn		=		utc_date(),
+				Status				=		_Status,
+				CreatedBy           =          _AdminId
+			where 	ApprovalWorkFlowId 		= 		   _ApprovalWorkFlowId;
+			
+			Set _ProcessingResult = 'updated';
+		End;
+		End if;	
+	End;
+End$$
+DELIMITER ;
+

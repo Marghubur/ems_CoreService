@@ -1,0 +1,754 @@
+<div class="fw-bold fs-4">Method Documentation</div><div><br></div><div>&nbsp; &nbsp; &nbsp;<b style="color: var(--bs-body-color); font-family: var(--bs-body-font-family); font-size: var(--bs-body-font-size); text-align: var(--bs-body-text-align);"><u><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:#A31515">GetEmployeeDeclarationDetailById</span></u></b></div>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:0cm;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:black">GetEmployeeDeclarationDetail()
+=&gt; Fetch data from database.<o:p></o:p></span></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l3 level1 lfo1"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">1.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">EmployeeDeclaration
+=&gt; Manditory<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l3 level1 lfo1"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">2.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Files<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l3 level1 lfo1"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">3.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">EmployeeSalaryDetail
+=&gt; Manditory<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l3 level1 lfo1"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">4.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">SalaryComponents
+=&gt; Manditory<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:54.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">-&gt;
+GetEmployeeDeclaration() =&gt; It takes two parameter <o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:72.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">(EmployeeDeclaration,
+List&lt;SalaryComponents&gt;)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l8 level1 lfo2"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If employee
+declaration is null or empty then List&lt;SalaryComponents&gt; is inserted in
+employee declaration and changed the reCalculateFlag as true.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l8 level1 lfo2"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If employee
+declaration is not null or not empty then it will be converted into
+List&lt;SalaryComponents&gt; and then check whether its counts is zero or it
+will null. <o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l8 level2 lfo2"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If it will be
+null or count is equal to zero then List&lt;SalaryComponents&gt; is inserted in
+employee declaration and changed the reCalculateFlag as true.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l8 level2 lfo2"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">We can
+compare declaration components and Salary component. If any component is not
+find in then it will be added and changed the reCalculateFlag as true.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l8 level1 lfo2"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If we got any
+error in any step then List&lt;SalaryComponents&gt; is inserted in employee
+declaration and changed the reCalculateFlag as true.<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:36.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">-&gt; BuildSectionWiseComponents() =&gt;It take only one parameter
+EmployeeDeclaration and we can build object of multiple section.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:20.15pt;
+line-height:150%;mso-list:l2 level1 lfo3"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">1.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">OneAndHalfLakhsExemptions<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:20.15pt;
+line-height:150%;mso-list:l2 level1 lfo3"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">2.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">OtherDeclaration<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:20.15pt;
+line-height:150%;mso-list:l2 level1 lfo3"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">3.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">TaxSavingAlloance<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:20.15pt;
+line-height:150%;mso-list:l2 level1 lfo3"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">4.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">HouseProperty<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:72.0pt;mso-add-space:auto;text-indent:20.15pt;
+line-height:150%;mso-list:l2 level1 lfo3"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">5.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">IncomeFromOtherSources<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:36.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">-&gt;
+CalculateSalaryDetail() =&gt; It can take 4 parameter in which two are optional
+(EmployeeId, EmployeeDeclaration, CTC = 0, reCalculateFlag = </span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:blue">false</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:
+150%;font-family:&quot;Times New Roman&quot;,serif;color:black">)<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:36.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; GetEmployeeSalaryDetail()
+=&gt; It takes one parameter EmployeeDeclaration and fetch data from databse.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l10 level1 lfo4"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">1.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">SalaryGroup
+(Manditory)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l10 level1 lfo4"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">2.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">EmployeeSalaryDetail
+(Manditory)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l10 level1 lfo4"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">3.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">CompanySetting
+(Manditory)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:36.0pt;mso-add-space:auto;text-indent:56.15pt;
+line-height:150%;mso-list:l11 level1 lfo5"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">After that we
+can checked whether salaryGroup.SalaryComponents is null or empty. If it will
+be null then throw error else we can insert SalaryComponents of salary&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;group in
+GroupComponents of salary group.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:36.0pt;mso-add-space:auto;text-indent:56.15pt;
+line-height:150%;mso-list:l11 level1 lfo5"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If
+SalaryDetail of EmployeeDeclaration is not null then CTC of EmployeeCalculation
+is inserted into CTC of EmployeeDeclaration of SalaryDetail.<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:72.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">-&gt;
+CalculateSalaryNDeclaration() =&gt; it takes two parameter
+(EmployeeCalculation, reCalculateFlag)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l4 level1 lfo6"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">We can find
+compete salary breakup&nbsp; from
+EmployeeCalculation.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l4 level1 lfo6"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If complete
+salary breakup counts is zero then we call<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">CreateSalaryBreakupWithValue() =&gt; which take EmployeeCalculation<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l17 level1 lfo7"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">If salaryGroup of EmployeeCalculation is null or SalaryComponents
+of salaryGroup of EmployeeCalculation is null of empty&nbsp; or SalaryComponents of salaryGroup of
+EmployeeCalculation is equal to “[]” then throw the error.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l17 level1 lfo7"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can find SalaryComponents of salaryGroup of
+EmployeeCalculation.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l17 level1 lfo7"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Get perquisite amount by calling <o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">GetPerquisiteAmount() =&gt; It
+take only one parameter SalaryComponents of salaryGroup<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can find perquisite components (whose ComponentTypeId is 6) and
+call calculateExpressionUsingInfixDS() for calculation and return total
+perquisite amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l17 level1 lfo7"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Get employer contribution by sum of value of
+GetEmployeeContributionAmount() and perquisite amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">GetEmployeeContributionAmount()
+=&gt; It take two parameter (SalaryComponents of salaryGroup, CTC of
+EmployeeCalculation)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can find employer contribution components (likes GRA, EPER-PF,
+ECI) and call calculateExpressionUsingInfixDS() for calculation and return
+total employer contribution amount<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l18 level1 lfo9"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Calculate gross which is the difference b/w CTC and employer
+contribution<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l18 level1 lfo9"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Get basic amount by calling GetBaiscAmountValue()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">GetBaiscAmountValue() =&gt; It
+takes 3 parameter (List&lt;SalaryComponents&gt;, GrossAmount, CTC).<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can find basic component and convert their formula into value
+and then calculate calculateExpressionUsingInfixDS() for calculation.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l14 level1 lfo10"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can convert the formula which contain Gross, Basic, CTC into
+value.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l14 level1 lfo10"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can make salary breakup for 12 months and return that values.<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:108.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Check whether salary breakup is null or not if it is&nbsp; null then throw the error.<o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:108.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Salary breakup is inserted into CompleteSalaryDetail of salary
+breakup.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If&nbsp; salaryGroup is null or SalaryComponents of
+salary group is null of empty or SalaryComponents of salary group is equal to
+“[]” then throw the error.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:148.85pt;mso-add-space:auto;text-align:justify;
+text-indent:-1.0cm;line-height:150%;mso-list:l15 level1 lfo12"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Courier New&quot;;
+mso-fareast-font-family:&quot;Courier New&quot;;color:black">o<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can inserted SalaryComponents of Salary group into
+GroupComponents of Salary group.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">calculate and
+get gross income value and salary breakup detail</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l0 level1 lfo13"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">1.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">GetGrossIncome()
+=&gt; It take two parameter (EmployeeDeclaration, CompleteSalaryBreakup)<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Check whether salary breakup of current is contain or not. If not
+contain then throw the error. Else current month salary breakup return as
+calculatedSalaryBreakupDetails and also changed the total amount which is 12
+times of current month gross.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l0 level1 lfo13"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black">2.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">StandardDeductionComponent()
+=&gt; It take EmployeeCalculation only and return standard deduction.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">&nbsp;check and get professional tax</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">ProfessionalTaxComponent() <o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">Find PTax component and their
+amount and that amount will be subtracted from total amount and changed the
+subtracted amount instead of total amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">check and get
+employer providentfund</span><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">EmployerProvidentFund()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">Find EPF component and their
+amount and that amount will be subtracted from total amount and changed the
+subtracted amount instead of total amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">check and get
+1.5 lakhs components total amount</span><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">OneAndHalfLakhsComponent()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">Find OneAndHalfLakhsExemptions
+component and return their total amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">check and get
+other components total amount</span><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">OtherDeclarationComponent()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">Find OtherExemptions component
+and return their total amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:106.35pt;mso-add-space:auto;text-align:justify;
+text-indent:-14.2pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">check and get
+tax saving components total amount</span><span lang="EN-ZW" style="font-size:
+10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">TaxSavingComponent ()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">Find TaxSaving component and
+return their total amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Calculate
+total deduction which is equal to sum of OneAndHalfLakhsComponent amount,
+OtherDeclarationComponent amount, TaxSavingComponent amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">Calculate hra
+and get hra details</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:
+150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:green">Call </span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">HRAComponent() =&gt; Which compare HRA1, HRA2, HRA3 and return hra
+details and hra amount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Calculate total
+amount which is equal to the difference between total amount and the sum of
+standard deduction, total deduction and hraAmount.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:green">Tax regime
+calculation</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
+l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">First we can
+find DOB(Which is manditory) of current user and subtract it from current year
+for getting age of the employee<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
+l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Fetch data
+from data base for fetch the tax slab.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
+l7 level1 lfo14"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Call
+TaxRegimeCalculation()<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">It will calculate income and
+build income tax slab details<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l1 level1 lfo11"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Symbol;
+mso-fareast-font-family:Symbol;mso-bidi-font-family:Symbol;color:black">·<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Tax Calculation
+for every month.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:108.0pt;mso-add-space:auto;text-align:justify;
+line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;
+font-family:&quot;Times New Roman&quot;,serif;color:black">TaxDetailsCalculation() =&gt;
+It takes two parameter (EmployeeCalculation, reCalculateFlag);<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
+l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>I.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Check if
+CompanySetting of EmployeeCalculation is null then throw the error.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-144.0pt;mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:
+l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;mso-fareast-font-family:
+&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>II.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">If TaxDetail
+of EmployeeSalaryDetail is not null.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Find the sum of all tax deducted amount from TaxDetail<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:216.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l12 level1 lfo16"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">v<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Check if TaxDetail is not null and tax deducted amount greater
+than zero.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Check if reCalculateFlag is true.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Calculate the all tax paid amount from tax details.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Calculate remaining tax amount which is diff b/n TaxNeedtoPay and
+TaxPaid.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Find the financial year and month and the last day of the
+declaration.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">After that we find the remaining month for paid the tax.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Find the single month tax which is the division b/w Remaining tax
+amount and remaining month.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">We can add these taxdetail into taxdetail of employeesalary
+detail.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l16 level1 lfo18"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">And Call UpdateEmployeeSalaryDetailChanges() method which update
+the employee salary detail table<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Check if reCalculateFlag is false.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level2 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Calculate the all tax paid amount from tax details.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:216.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l12 level1 lfo16"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">v<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">If taxdetail count is equal to zero then it call </span><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">GetPerMontTaxInitialData() which return tax deatail.</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">GetPerMontTaxInitialData() =&gt;It take parameter (CompanySetting,
+EmployeeDeclaration)</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:
+150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:288.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l5 level1 lfo19"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">Ø<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">It will divide the amount of tax need to pay by 12 and make 12
+months tax details object and return that tax details.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">Calculate the all tax paid amount from tax details<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">ü<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">And Call UpdateEmployeeSalaryDetailChanges() method which update
+the employee salary detail table</span></p><p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:252.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l6 level1 lfo17"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><br></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:144.0pt;mso-add-space:auto;text-indent:-144.0pt;
+mso-text-indent-alt:-18.0pt;line-height:150%;mso-list:l9 level1 lfo15"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+mso-fareast-font-family:&quot;Times New Roman&quot;;color:black"><span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>III.<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;
+line-height:150%;font-family:&quot;Times New Roman&quot;,serif;color:black">Check Taxneedtopay
+of </span><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:
+&quot;Cascadia Mono&quot;;color:black">employeeDeclaration is greater than zero or not.</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">If TaxNeedtoPay &gt; 0<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:216.0pt;mso-add-space:auto;text-align:justify;
+text-indent:-18.0pt;line-height:150%;mso-list:l12 level1 lfo16"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">v<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">GetPerMontTaxInitialData() which return tax detail.</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:180.0pt;text-align:justify;text-indent:36.0pt;line-height:150%"><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">GetPerMontTaxInitialData() =&gt;It take parameter (CompanySetting,
+EmployeeDeclaration)</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:
+150%;font-family:&quot;Times New Roman&quot;,serif;color:black"><o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpFirst" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:216.0pt;mso-add-space:auto;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">It will divide the amount of tax need to pay by 12 and make 12
+months tax details object and return that tax details.<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpMiddle" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;text-indent:-18.0pt;
+line-height:150%;mso-list:l13 level1 lfo8"><!--[if !supportLists]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:Wingdings;
+mso-fareast-font-family:Wingdings;mso-bidi-font-family:Wingdings;color:black">§<span style="font-variant-numeric: normal; font-variant-east-asian: normal; font-stretch: normal; font-size: 7pt; line-height: normal; font-family: &quot;Times New Roman&quot;;">&nbsp; </span></span><!--[endif]--><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">If TaxNeedtoPay &lt; 0<o:p></o:p></span></p>
+
+<p class="MsoListParagraphCxSpLast" style="margin-top:6.0pt;margin-right:0cm;
+margin-bottom:6.0pt;margin-left:180.0pt;mso-add-space:auto;line-height:150%"><span lang="EN-ZW" style="font-size:9.5pt;line-height:150%;font-family:&quot;Cascadia Mono&quot;;
+color:black">GetPerMontTaxDetail() =&gt; It take two parameter (CompanySetting,
+EmployeeId) which return 12 months new object of taxdetail.</span><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><o:p></o:p></span></p>
+
+<p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:144.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black">And Call UpdateEmployeeSalaryDetailChanges() method which update
+the employee salary detail tabl</span></p><p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:144.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"><br></span></p><h2 style="color: rgb(0, 0, 0); margin: 1em 0px 0.25em; padding: 0px; overflow: hidden; border-bottom: 1px solid rgb(162, 169, 177); font-size: 1.5em; font-family: &quot;Linux Libertine&quot;, Georgia, Times, serif; line-height: 1.3; background-color: rgb(255, 255, 255);"><span class="mw-headline" id="History">History</span><span class="mw-editsection" style="font-family: sans-serif; user-select: none; font-size: small; margin-left: 1em; vertical-align: baseline; line-height: 0; unicode-bidi: isolate; margin-right: 0px;"><span class="mw-editsection-bracket" style="margin-right: 0.25em; color: rgb(84, 89, 93);">[</span><a href="https://en.wikipedia.org/w/index.php?title=C%2B%2B&amp;action=edit&amp;section=1" title="Edit section: History" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none; white-space: nowrap;">edit</a><span class="mw-editsection-bracket" style="margin-left: 0.25em; color: rgb(84, 89, 93);">]</span></span></h2><div class="thumb tright" style="clear: right; float: right; width: auto; background-color: rgb(255, 255, 255); margin: 0.5em 0px 1.3em 1.4em; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px;"><div class="thumbinner" style="min-width: 100px; padding: 3px; text-align: center; overflow: hidden; border: 1px solid rgb(200, 204, 209); background-color: rgb(248, 249, 250); font-size: 13.16px; width: 222px;"><a href="https://en.wikipedia.org/wiki/File:BjarneStroustrup.jpg" class="image" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;"><img alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/BjarneStroustrup.jpg/220px-BjarneStroustrup.jpg" decoding="async" width="220" height="165" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/d/da/BjarneStroustrup.jpg/330px-BjarneStroustrup.jpg 1.5x, //upload.wikimedia.org/wikipedia/commons/d/da/BjarneStroustrup.jpg 2x" data-file-width="432" data-file-height="324" style="border: 1px solid rgb(200, 204, 209); background-color: rgb(255, 255, 255);"></a><div class="thumbcaption" style="text-align: left; line-height: 1.4em; padding: 3px; border: 0px; font-size: 12.3704px;"><div class="magnify" style="float: right; margin-left: 3px; margin-right: 0px;"><a href="https://en.wikipedia.org/wiki/File:BjarneStroustrup.jpg" class="internal" title="Enlarge" style="text-decoration-line: none; color: rgb(6, 69, 173); background: url(&quot;/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e&quot;); display: block; text-indent: 15px; white-space: nowrap; overflow: hidden; width: 15px; height: 11px; user-select: none;"></a></div>Bjarne Stroustrup, the creator of C++, in his AT&amp;T New Jersey office,&nbsp;<abbr title="circa" style="border-bottom: 0px;">c.</abbr>&nbsp;2000</div></div></div><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">In 1979,&nbsp;<a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup" title="Bjarne Stroustrup" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Bjarne Stroustrup</a>, a Danish&nbsp;<a href="https://en.wikipedia.org/wiki/Computer_scientist" title="Computer scientist" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">computer scientist</a>, began work on "<span class="vanchor"><span id="C_with_[[Class_(computer_programming)|Classes]]"></span><span class="vanchor-text">C with&nbsp;<a href="https://en.wikipedia.org/wiki/Class_(computer_programming)" title="Class (computer programming)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Classes</a></span></span>", the predecessor to C++.<sup id="cite_ref-invention3_17-0" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-invention3-17" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[17]</a></sup>&nbsp;The motivation for creating a new language originated from Stroustrup's experience in programming for his PhD thesis. Stroustrup found that&nbsp;<a href="https://en.wikipedia.org/wiki/Simula" title="Simula" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Simula</a>&nbsp;had features that were very helpful for large software development, but the language was too slow for practical use, while&nbsp;<a href="https://en.wikipedia.org/wiki/BCPL" title="BCPL" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">BCPL</a>&nbsp;was fast but too low-level to be suitable for large software development. When Stroustrup started working in&nbsp;<a href="https://en.wikipedia.org/wiki/AT%26T_Bell_Labs" class="mw-redirect" title="AT&amp;T Bell Labs" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">AT&amp;T Bell Labs</a>, he had the problem of analyzing the&nbsp;<a href="https://en.wikipedia.org/wiki/Unix" title="Unix" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">UNIX</a>&nbsp;<a href="https://en.wikipedia.org/wiki/Kernel_(operating_system)" title="Kernel (operating system)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">kernel</a>&nbsp;with respect to&nbsp;<a href="https://en.wikipedia.org/wiki/Distributed_computing" title="Distributed computing" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">distributed computing</a>. Remembering his PhD experience, Stroustrup set out to enhance the&nbsp;<a href="https://en.wikipedia.org/wiki/C_(programming_language)" title="C (programming language)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">C</a>&nbsp;language with&nbsp;<a href="https://en.wikipedia.org/wiki/Simula" title="Simula" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Simula</a>-like features.<sup id="cite_ref-evolving_18-0" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-evolving-18" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[18]</a></sup>&nbsp;C was chosen because it was general-purpose, fast, portable and widely used. As well as C and Simula's influences, other languages also influenced this new language, including&nbsp;<a href="https://en.wikipedia.org/wiki/ALGOL_68" title="ALGOL 68" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">ALGOL 68</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Ada_(programming_language)" title="Ada (programming language)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Ada</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/CLU_(programming_language)" title="CLU (programming language)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">CLU</a>&nbsp;and&nbsp;<a href="https://en.wikipedia.org/wiki/ML_(programming_language)" title="ML (programming language)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">ML</a>.</p><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">Initially, Stroustrup's "C with Classes" added features to the C compiler, Cpre, including&nbsp;<a href="https://en.wikipedia.org/wiki/Class_(computer_programming)" title="Class (computer programming)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">classes</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Derived_class" class="mw-redirect" title="Derived class" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">derived classes</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Strong_typing" class="mw-redirect" title="Strong typing" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">strong typing</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Inlining" class="mw-redirect" title="Inlining" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">inlining</a>&nbsp;and&nbsp;<a href="https://en.wikipedia.org/wiki/Default_argument" title="Default argument" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">default arguments</a>.<sup id="cite_ref-hopl2_19-0" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-hopl2-19" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[19]</a></sup></p><div class="thumb tleft" style="float: left; clear: left; width: auto; background-color: rgb(255, 255, 255); margin: 0.5em 1.4em 1.3em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px;"><div class="thumbinner" style="min-width: 100px; padding: 3px; text-align: center; overflow: hidden; border: 1px solid rgb(200, 204, 209); background-color: rgb(248, 249, 250); font-size: 13.16px; width: 222px;"><a href="https://en.wikipedia.org/wiki/File:20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg" class="image" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;"><img alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg/220px-20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg" decoding="async" width="220" height="171" class="thumbimage" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/a/a0/20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg/330px-20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/a/a0/20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg/440px-20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg 2x" data-file-width="1600" data-file-height="1247" style="border: 1px solid rgb(200, 204, 209); background-color: rgb(255, 255, 255);"></a><div class="thumbcaption" style="text-align: left; line-height: 1.4em; padding: 3px; border: 0px; font-size: 12.3704px;"><div class="magnify" style="float: right; margin-left: 3px; margin-right: 0px;"><a href="https://en.wikipedia.org/wiki/File:20160121_CppFRUG_Joel_Falcou_CppQuiz_3.jpg" class="internal" title="Enlarge" style="text-decoration-line: none; color: rgb(6, 69, 173); background: url(&quot;/w/resources/src/mediawiki.skinning/images/magnify-clip-ltr.svg?8330e&quot;); display: block; text-indent: 15px; white-space: nowrap; overflow: hidden; width: 15px; height: 11px; user-select: none;"></a></div>A quiz on C++11 features being given in Paris in 2015</div></div></div><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">In 1982, Stroustrup started to develop a successor to C with Classes, which he named "C++" (<code class="mw-highlight mw-highlight-lang-c++ mw-content-ltr" dir="ltr" style="font-family: monospace, monospace; background: rgb(248, 248, 248); color: rgb(0, 0, 0); border: 1px solid rgb(234, 236, 240); border-radius: 2px; padding: 1px 4px; unicode-bidi: embed;"><span class="o" style="color: rgb(102, 102, 102);">++</span><span class="w" style="color: rgb(187, 187, 187);"></span></code>&nbsp;being the&nbsp;<a href="https://en.wikipedia.org/wiki/Increment_operator" class="mw-redirect" title="Increment operator" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">increment operator</a>&nbsp;in C) after going through several other names. New features were added, including&nbsp;<a href="https://en.wikipedia.org/wiki/Virtual_function" title="Virtual function" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">virtual functions</a>, function name and&nbsp;<a href="https://en.wikipedia.org/wiki/Operator_overloading" title="Operator overloading" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">operator overloading</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Reference_(C%2B%2B)" title="Reference (C++)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">references</a>, constants, type-safe free-store memory allocation (new/delete), improved type checking, and BCPL style single-line comments with two forward slashes (<code class="mw-highlight mw-highlight-lang-c++ mw-content-ltr" dir="ltr" style="font-family: monospace, monospace; background: rgb(248, 248, 248); color: rgb(0, 0, 0); border: 1px solid rgb(234, 236, 240); border-radius: 2px; padding: 1px 4px; unicode-bidi: embed;"><span class="c1" style="color: rgb(61, 123, 123); font-style: italic;">//</span></code>). Furthermore, Stroustrup developed a new, standalone compiler for C++,&nbsp;<a href="https://en.wikipedia.org/wiki/Cfront" title="Cfront" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Cfront</a>.</p><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">In 1984, Stroustrup implemented the first stream input/output library. The idea of providing an output operator rather than a named output function was suggested by&nbsp;<a href="https://en.wikipedia.org/wiki/Douglas_McIlroy" title="Douglas McIlroy" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Doug McIlroy</a><sup id="cite_ref-history-cpp-paper_1-5" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-history-cpp-paper-1" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[1]</a></sup>&nbsp;(who had previously suggested&nbsp;<a href="https://en.wikipedia.org/wiki/Pipeline_(Unix)" title="Pipeline (Unix)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Unix pipes</a>).</p><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">In 1985, the first edition of&nbsp;<i><a href="https://en.wikipedia.org/wiki/The_C%2B%2B_Programming_Language" title="" style="color: rgb(6, 69, 173); background: none; outline-color: rgb(51, 102, 204);">The C++ Programming Language</a></i>&nbsp;was released, which became the definitive reference for the language, as there was not yet an official standard.<sup id="cite_ref-1st-edition3_20-0" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-1st-edition3-20" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[20]</a></sup>&nbsp;The first commercial implementation of C++ was released in October of the same year.<sup id="cite_ref-invention3_17-1" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-invention3-17" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[17]</a></sup></p><p class="MsoNormal" style="margin-top:6.0pt;margin-right:0cm;margin-bottom:6.0pt;
+margin-left:144.0pt;text-align:justify;line-height:150%"><span lang="EN-ZW" style="font-size:10.0pt;line-height:150%;font-family:&quot;Times New Roman&quot;,serif;
+color:black"></span></p><p style="margin: 0.5em 0px; color: rgb(32, 33, 34); font-family: sans-serif; font-size: 14px; background-color: rgb(255, 255, 255);">In 1989, C++ 2.0 was released, followed by the updated second edition of&nbsp;<i>The C++ Programming Language</i>&nbsp;in 1991.<sup id="cite_ref-2nd-edition3_21-0" class="reference" style="line-height: 1; unicode-bidi: isolate; white-space: nowrap; font-size: 11.2px;"><a href="https://en.wikipedia.org/wiki/C%2B%2B#cite_note-2nd-edition3-21" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">[21]</a></sup>&nbsp;New features in 2.0 included multiple inheritance, abstract classes, static member functions,&nbsp;<a href="https://en.wikipedia.org/wiki/Const_correctness" class="mw-redirect" title="Const correctness" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">const member functions</a>, and protected members. In 1990,&nbsp;<i>The Annotated C++ Reference Manual</i>&nbsp;was published. This work became the basis for the future standard. Later feature additions included&nbsp;<a href="https://en.wikipedia.org/wiki/Template_(programming)" class="mw-redirect" title="Template (programming)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">templates</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Exception_handling" title="Exception handling" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">exceptions</a>,&nbsp;<a href="https://en.wikipedia.org/wiki/Namespaces" class="mw-redirect" title="Namespaces" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">namespaces</a>, new&nbsp;<a href="https://en.wikipedia.org/wiki/Cast_(computer_science)" class="mw-redirect" title="Cast (computer science)" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">casts</a>, and a&nbsp;<a href="https://en.wikipedia.org/wiki/Boolean_datatype" class="mw-redirect" title="Boolean datatype" style="text-decoration-line: none; color: rgb(6, 69, 173); background: none;">Boolean type</a>.</p>

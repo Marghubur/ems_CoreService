@@ -1,0 +1,12 @@
+{
+  "BillingFolders": {
+    "Location": "Documents",
+    "User": "User",
+    "HtmlTemplaePath": [ "htmltemplates", "billing" ],
+    "LogoPath": "logos",
+    "BillsPath": "Bills",
+    "StaffingBillTemplate": "staffingBill.html",
+    "StaffingBillPdfTemplate": "staffingBillPdfFormat.html",
+    "PaysliplTemplate": "payslipTemplate.html"
+  }
+}
