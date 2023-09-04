@@ -147,10 +147,11 @@ namespace OnlineDataBuilder.Controllers
             .ToArray();
         }
 
-        [HttpGet("/RunAccrualManually")]
+        [HttpGet("RunAccrualManually")]
         [AllowAnonymous]
         public async Task<string> RunAccrualManually()
         {
+            _logger.LogInformation("Starting leave accrual job.");
             await RunLeaveAccrualAsync();
             return await Task.FromResult("Run successfully");
         }
