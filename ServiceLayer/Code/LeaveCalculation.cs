@@ -38,7 +38,7 @@ namespace ServiceLayer.Code
         private readonly Approval _approval;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly Logger<LeaveCalculation> _logger;
+        private readonly ILogger<LeaveCalculation> _logger;
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -47,7 +47,7 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail, Logger<LeaveCalculation> logger)
+            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail, ILogger<LeaveCalculation> logger)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;

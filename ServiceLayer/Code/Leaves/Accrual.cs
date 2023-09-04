@@ -16,12 +16,12 @@ namespace ServiceLayer.Code.Leaves
         private LeavePlanConfiguration _leavePlanConfiguration = default;
         private LeaveCalculationModal _leaveCalculationModal;
         private DateTime now;
-        private readonly Logger<Accrual> _logger;
+        private readonly ILogger<Accrual> _logger;
         public DateTime workingDate { set; get; }
 
         public Accrual(ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            Logger<Accrual> logger)
+            ILogger<Accrual> logger)
         {
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
