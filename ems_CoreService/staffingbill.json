@@ -2,7 +2,7 @@
   "BillingFolders": {
     "Location": "Documents",
     "User": "User",
-    "HtmlTemplaePath": [ "htmltemplates", "billing" ],
+    "HtmlTemplatePath": "htmltemplates/billing",
     "LogoPath": "logos",
     "BillsPath": "Bills",
     "StaffingBillTemplate": "staffingBill.html",

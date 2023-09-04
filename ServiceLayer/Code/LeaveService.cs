@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Model;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
@@ -251,7 +252,7 @@ namespace ServiceLayer.Code
             return leavePlanTypes;
         }
 
-        public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes)
+        public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanTypeBrief> leavePlanTypes)
         {
             if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan id.");
@@ -259,11 +260,12 @@ namespace ServiceLayer.Code
             LeavePlan leavePlan = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });
             if (leavePlan == null)
                 throw new HiringBellException("Invalid leave plan selected.");
-            foreach (LeavePlanType leavePlanType in leavePlanTypes)
+
+            foreach (LeavePlanTypeBrief leavePlanType in leavePlanTypes)
             {
-                leavePlanType.PlanConfigurationDetail = "";
                 leavePlanType.LeavePlanId = leavePlanId;
             }
+
             leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
 
             var result = await _db.ExecuteAsync("sp_leave_plan_insupd", leavePlan, true);

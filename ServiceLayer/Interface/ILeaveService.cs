@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using EMailService.Model;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace ServiceLayer.Interface
         List<LeavePlan> GetLeavePlansService(FilterModel filterModel);
         List<LeavePlanType> AddLeavePlanTypeService(LeavePlanType leavePlanType);
         List<LeavePlan> AddLeavePlansService(LeavePlan leavePlanType);
-        Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanType> leavePlanTypes);
+        Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanTypeBrief> leavePlanTypes);
         List<LeavePlanType> UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType);
         string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail);
         LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using EMailService.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -69,7 +70,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("LeavePlanUpdateTypes/{leavePlanId}")]
-        public async Task<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<LeavePlanType> leavePlanTypes)
+        public async Task<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<LeavePlanTypeBrief> leavePlanTypes)
         {
             var result = await _leaveService.LeavePlanUpdateTypes(leavePlanId, leavePlanTypes);
             return BuildResponse(result);
