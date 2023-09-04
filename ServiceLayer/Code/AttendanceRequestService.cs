@@ -150,7 +150,7 @@ namespace ServiceLayer.Code
                 {
                     ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = attendanceDetail.TotalDays,
+                    DayCount = 1,
                     DeveloperName = attendanceDetail.EmployeeName,
                     FromDate = attendanceDetail.AttendanceDay,
                     ManagerName = attendanceDetail.ManagerName,
