@@ -70,9 +70,9 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("LeavePlanUpdateTypes/{leavePlanId}")]
-        public async Task<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<LeavePlanTypeBrief> leavePlanTypes)
+        public async Task<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<int> LeavePlanTypeId)
         {
-            var result = await _leaveService.LeavePlanUpdateTypes(leavePlanId, leavePlanTypes);
+            var result = await _leaveService.LeavePlanUpdateTypes(leavePlanId, LeavePlanTypeId);
             return BuildResponse(result);
         }
 

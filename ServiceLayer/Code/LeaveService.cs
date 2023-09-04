@@ -251,15 +251,29 @@ namespace ServiceLayer.Code
             List<LeavePlanType> leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get");
             return leavePlanTypes;
         }
-
-        public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanTypeBrief> leavePlanTypes)
-        {
+                
+        public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<int> LeavePlanTypeId)
+        {   
             if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan id.");
 
-            LeavePlan leavePlan = _db.Get<LeavePlan>("sp_leave_plans_getbyId", new { LeavePlanId = leavePlanId });
-            if (leavePlan == null)
+            if (LeavePlanTypeId.Count == 0)
+                throw new HiringBellException("Select at least one plan");
+
+            LeavePlanTypeId.ForEach(x =>
+            {
+                if (x == 0)
+                    throw new HiringBellException("Invalid leave plan type selected");
+            });
+
+            (List<LeavePlanTypeBrief> leavePlanTypes, List<LeavePlan> leavePlans) = _db.GetList<LeavePlanTypeBrief, LeavePlan>("sp_leave_plan_andtype_get_by_ids_json", new { 
+                LeavePlanId = leavePlanId,
+                LeavePlanTypeId = JsonConvert.SerializeObject(LeavePlanTypeId)
+            });
+            LeavePlan leavePlan = leavePlans[0];
+            if (leavePlan == null)  
                 throw new HiringBellException("Invalid leave plan selected.");
+                
 
             foreach (LeavePlanTypeBrief leavePlanType in leavePlanTypes)
             {

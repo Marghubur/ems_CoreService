@@ -13,7 +13,7 @@ namespace ServiceLayer.Interface
         List<LeavePlan> GetLeavePlansService(FilterModel filterModel);
         List<LeavePlanType> AddLeavePlanTypeService(LeavePlanType leavePlanType);
         List<LeavePlan> AddLeavePlansService(LeavePlan leavePlanType);
-        Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<LeavePlanTypeBrief> leavePlanTypes);
+        Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<int> LeavePlanTypeId);
         List<LeavePlanType> UpdateLeavePlanTypeService(int leavePlanTypeId, LeavePlanType leavePlanType);
         string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail);
         LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId);
