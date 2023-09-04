@@ -557,7 +557,7 @@ namespace ServiceLayer.Code
             if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
 
-            var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = attendance.ReportingManagerId, IsActive = 1 });
+            var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId, IsActive = 1 });
             if (employee == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get manager detail");
 
@@ -621,7 +621,7 @@ namespace ServiceLayer.Code
                 FromDate = presentAttendance.AttendanceDay,
                 ManagerName = presentAttendance.ManagerName,
                 Message = presentAttendance.UserComments,
-                RequestType = "Work From Home",
+                RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { employee.Email },
                 kafkaServiceName = KafkaServiceName.Attendance
             };

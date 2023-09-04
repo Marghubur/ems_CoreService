@@ -159,7 +159,7 @@ namespace ServiceLayer.Code
                     FromDate = attendanceDetail.AttendanceDay,
                     ManagerName = attendanceDetail.ManagerName,
                     Message = attendanceDetail.UserComments,
-                    RequestType = "Work From Home",
+                    RequestType = attendanceDetail.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                     ToAddress = new List<string> { employee.Email },
                     kafkaServiceName = KafkaServiceName.Attendance
                 };
