@@ -149,9 +149,10 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpGet("/RunAccrualManually")]
         [AllowAnonymous]
-        public async Task RunAccrualManually()
+        public async Task<string> RunAccrualManually()
         {
             await RunLeaveAccrualAsync();
+            return await Task.FromResult("Run successfully");
         }
 
         private async Task LeaveLevelMigration()
