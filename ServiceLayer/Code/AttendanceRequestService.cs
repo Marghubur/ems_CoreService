@@ -124,10 +124,6 @@ namespace ServiceLayer.Code
                 if (attendance.PendingRequestCount > 0)
                     attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
-                var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = attendance.ReportingManagerId, IsActive = 1 });
-                if (employee == null)
-                    throw HiringBellException.ThrowBadRequest("Fail to get manager detail");
-
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
@@ -154,13 +150,13 @@ namespace ServiceLayer.Code
                 {
                     ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = attendanceDetail.TotalDays,
+                    DayCount = 1,
                     DeveloperName = attendanceDetail.EmployeeName,
                     FromDate = attendanceDetail.AttendanceDay,
                     ManagerName = attendanceDetail.ManagerName,
                     Message = attendanceDetail.UserComments,
                     RequestType = attendanceDetail.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                    ToAddress = new List<string> { employee.Email },
+                    ToAddress = new List<string> { attendance.Email },
                     kafkaServiceName = KafkaServiceName.Attendance
                 };
 

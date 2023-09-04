@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ModalLayer.Modal.HtmlTemplateModel;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Code.ApprovalChain;
@@ -22,18 +23,21 @@ namespace ServiceLayer.Code
         private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly ApprovalEmailService _approvalEmailService;
         private readonly WorkFlowChain _workFlowChain;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public LeaveRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
             WorkFlowChain workFlowChain,
-            IAttendanceRequestService attendanceRequestService)
+            IAttendanceRequestService attendanceRequestService,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _workFlowChain = workFlowChain;
             _currentSession = currentSession;
             _attendanceRequestService = attendanceRequestService;
             _approvalEmailService = approvalEmailService;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         public async Task<RequestModel> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -153,9 +157,26 @@ namespace ServiceLayer.Code
             leaveRequestDetail.LeaveToDay = requestDetail.LeaveToDay;
             leaveRequestDetail.Reason = requestDetail.Reason;
             leaveRequestDetail.LeaveType = requestDetail.LeaveType;
+
             if (nextId == 0)
             {
-                Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+                var leaveTemplateModel = new LeaveTemplateModel
+                {
+                    kafkaServiceName = KafkaServiceName.Leave,
+                    RequestType = nameof(RequestType.Leave),
+                    ActionType = status == ItemStatus.Approved ? nameof(ItemStatus.Approved) : nameof(ItemStatus.Rejected),
+                    FromDate = leaveRequestDetail.LeaveFromDay,
+                    ToDate = leaveRequestDetail.LeaveToDay,
+                    Message = leaveRequestDetail.Reason,
+                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = (int)leaveRequestDetail.LeaveToDay.Subtract(leaveRequestDetail.LeaveFromDay).TotalDays + 1,
+                    ToAddress = new List<string> { leaveRequestDetail.Email }
+                };
+
+                await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+                //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
             }
 
             await Task.CompletedTask;

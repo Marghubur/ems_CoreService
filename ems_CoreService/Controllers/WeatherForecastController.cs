@@ -35,6 +35,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly IPayrollService _payrollService;
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
+        private readonly FileLocationDetail _fileLocationDetail;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
@@ -45,7 +46,8 @@ namespace OnlineDataBuilder.Controllers
             CurrentSession currentSession,
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService
-            )
+,
+            FileLocationDetail fileLocationDetail)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -56,6 +58,7 @@ namespace OnlineDataBuilder.Controllers
             _leaveCalculation = leaveCalculation;
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
+            _fileLocationDetail = fileLocationDetail;
         }
 
         [HttpGet]
@@ -144,6 +147,15 @@ namespace OnlineDataBuilder.Controllers
             .ToArray();
         }
 
+        [HttpGet("RunAccrualManually")]
+        [AllowAnonymous]
+        public async Task<string> RunAccrualManually()
+        {
+            _logger.LogInformation("Starting leave accrual job.");
+            await RunLeaveAccrualAsync();
+            return await Task.FromResult("Run successfully");
+        }
+
         private async Task LeaveLevelMigration()
         {
             List<CompanySetting> companySettings = new List<CompanySetting>();
@@ -163,6 +175,8 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunLeaveAccrualAsync()
         {
+            _logger.LogInformation($"CS: {_fileLocationDetail.ConnectionString}"); ;
+            _db.SetupConnectionString(_fileLocationDetail.ConnectionString);
             await _leaveCalculation.StartAccrualCycle(true);
         }
 

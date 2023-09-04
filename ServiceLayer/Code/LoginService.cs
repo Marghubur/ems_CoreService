@@ -198,6 +198,7 @@ namespace ServiceLayer.Code
                             Address = loginDetail.Address,
                             Mobile = loginDetail.Mobile,
                             Email = loginDetail.Email,
+                            EmailId = loginDetail.EmailId,
                             UserId = loginDetail.UserId,
                             CompanyName = currentCompany.CompanyName,
                             UserTypeId = loginDetail.UserTypeId,
