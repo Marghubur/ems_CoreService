@@ -2,6 +2,7 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -37,7 +38,7 @@ namespace ServiceLayer.Code
         private readonly Approval _approval;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-
+        private readonly Logger<LeaveCalculation> _logger;
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -46,7 +47,7 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail)
+            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail, Logger<LeaveCalculation> logger)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -60,6 +61,7 @@ namespace ServiceLayer.Code
             _companyCalendar = companyCalendar;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
+            _logger = logger;
         }
 
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
@@ -132,6 +134,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<CompanySetting>> StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
         {
+            _logger.LogInformation("Start Accrual Cycle");
             var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
             foreach (var setting in CompanySettings)
             {
@@ -142,7 +145,7 @@ namespace ServiceLayer.Code
                     await RunAccrualCycle(runTillMonthOfPresnetYear);
                 }
             }
-
+            _logger.LogInformation("End Accrual Cycle");
             return CompanySettings;
         }
 
@@ -158,6 +161,7 @@ namespace ServiceLayer.Code
             {
                 try
                 {
+                    _logger.LogInformation("Calling: sp_leave_accrual_cycle_data_by_employee");
                     var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
                     {
                         OffsetIndex = offsetindex,
@@ -165,7 +169,10 @@ namespace ServiceLayer.Code
                     }, false);
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
+                    {
+                        _logger.LogInformation("employeeAccrualData is null or count is 0");
                         break;
+                    }
 
                     foreach (EmployeeAccrualData emp in employeeAccrualData)
                     {
@@ -200,10 +207,16 @@ namespace ServiceLayer.Code
                                         replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
                                     else
                                         updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type, leaveCalculationModal);
+                                } else
+                                {
+                                    _logger.LogInformation("Leave plan type is null");
                                 }
 
                                 i++;
                             }
+                        } else
+                        {
+                            _logger.LogInformation("leavePlan is null");
                         }
                     }
 
@@ -323,6 +336,7 @@ namespace ServiceLayer.Code
 
         private async Task UpdateEmployeesRecord(List<EmployeeAccrualData> employeeAccrualData)
         {
+            _logger.LogInformation("Method: UpdateEmployeesRecord strated");
             var tableJsonData = (from r in employeeAccrualData
                                  select new
                                  {
@@ -330,24 +344,33 @@ namespace ServiceLayer.Code
                                      Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
+            _logger.LogInformation("Calling: sp_employee_leave_request_update_accrual_detail");
 
             var rowsAffected = await _db.BulkExecuteAsync("sp_employee_leave_request_update_accrual_detail", tableJsonData, false);
             if (rowsAffected != employeeAccrualData.Count)
+            {
+                _logger.LogError("Fail to update leave deatil. Please contact to admin");
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
+            }
+            _logger.LogInformation("Method: UpdateEmployeesRecord end");
+
         }
 
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
         {
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.timeZonePresentDate = DateTime.UtcNow;
-
+            _logger.LogInformation("Calling : sp_leave_accrual_cycle_master_data");
             var ds = _db.GetDataSet("sp_leave_accrual_cycle_master_data", new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
             if (ds != null && ds.Tables.Count == 3)
             {
                 //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
+                {
+                    _logger.LogError("Fail to get employee related details. Please contact to admin.");
                     throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
+                }
 
                 // leaveCalculationModal.employee = Converter.ToType<Employee>(ds.Tables[0]);
 
@@ -362,7 +385,10 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.companySetting = Converter.ToType<CompanySetting>(ds.Tables[2]);
             }
             else
+            {
+                _logger.LogError("Employee does not exist. Please contact to admin.");
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
+            }
 
             return await Task.FromResult(leaveCalculationModal);
         }
@@ -476,6 +502,8 @@ namespace ServiceLayer.Code
 
         private async Task<decimal> RunAccrualCycleAsync(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
+            _logger.LogInformation("Method: RunAccrualCycleAsync started");
+
             decimal availableLeaves = 0;
 
             // get current leave plan configuration and check if its valid one.
@@ -493,6 +521,7 @@ namespace ServiceLayer.Code
                 availableLeaves = await _accrual.CalculateLeaveAccrualTillMonth(leaveCalculationModal, leavePlanType);
             else
                 availableLeaves = await _accrual.CalculateLeaveAccrual(leaveCalculationModal, leavePlanType);
+            _logger.LogInformation("Method: RunAccrualCycleAsync end");
 
             return await Task.FromResult(availableLeaves);
         }
@@ -632,7 +661,10 @@ namespace ServiceLayer.Code
             // fetching data from database using leaveplantypeId
             _leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             if (_leavePlanConfiguration == null)
+            {
+                _logger.LogInformation("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
                 throw new HiringBellException("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
+            }
         }
 
         private void LoadCalculationData(long EmployeeId, LeaveCalculationModal leaveCalculationModal)
@@ -682,6 +714,7 @@ namespace ServiceLayer.Code
 
         private void CheckForProbationPeriod(LeaveCalculationModal leaveCalculationModal)
         {
+            _logger.LogInformation("Method: CheckForProbationPeriod started");
             leaveCalculationModal.employeeType = ApplicationConstants.Regular;
             if ((leaveCalculationModal.employee.CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays))
                 .Subtract(now).TotalDays > 0)
@@ -690,6 +723,7 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.probationEndDate = leaveCalculationModal.employee
                     .CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays);
             }
+            _logger.LogInformation("Method: CheckForProbationPeriod end");
         }
 
         private void CheckForNoticePeriod(LeaveCalculationModal leaveCalculationModal)
