@@ -124,7 +124,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            await RunLeaveAccrualAsync();
+            // await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
 
