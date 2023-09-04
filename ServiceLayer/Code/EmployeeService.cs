@@ -853,7 +853,7 @@ namespace ServiceLayer.Code
                 await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
-                var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
+                var employeeId = _db.Execute<Employee>("sp_employees_ins_upd", new
                 {
                     employee.EmployeeUid,
                     employee.OrganizationId,
@@ -1079,7 +1079,7 @@ namespace ServiceLayer.Code
                 await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
-                var employeeId = _db.Execute<Employee>("sp_Employees_InsUpdate", new
+                var employeeId = _db.Execute<Employee>("sp_employees_ins_upd", new
                 {
                     employee.EmployeeUid,
                     employee.OrganizationId,
