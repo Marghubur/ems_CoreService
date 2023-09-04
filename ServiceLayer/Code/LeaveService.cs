@@ -3,6 +3,7 @@ using EMailService.Model;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.HtmlTemplateModel;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
@@ -23,13 +24,15 @@ namespace ServiceLayer.Code
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly LeaveEmailService _leaveEmailService;
         private readonly ILeaveRequestService _leaveRequestService;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             LeaveEmailService leaveEmailService,
             ILeaveCalculation leaveCalculation,
-            ILeaveRequestService leaveRequestService)
+            ILeaveRequestService leaveRequestService,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _currentSession = currentSession;
@@ -37,6 +40,7 @@ namespace ServiceLayer.Code
             _leaveCalculation = leaveCalculation;
             _leaveEmailService = leaveEmailService;
             _leaveRequestService = leaveRequestService;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -251,9 +255,9 @@ namespace ServiceLayer.Code
             List<LeavePlanType> leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get");
             return leavePlanTypes;
         }
-                
+
         public async Task<LeavePlan> LeavePlanUpdateTypes(int leavePlanId, List<int> LeavePlanTypeId)
-        {   
+        {
             if (leavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan id.");
 
@@ -266,14 +270,15 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Invalid leave plan type selected");
             });
 
-            (List<LeavePlanTypeBrief> leavePlanTypes, List<LeavePlan> leavePlans) = _db.GetList<LeavePlanTypeBrief, LeavePlan>("sp_leave_plan_andtype_get_by_ids_json", new { 
+            (List<LeavePlanTypeBrief> leavePlanTypes, List<LeavePlan> leavePlans) = _db.GetList<LeavePlanTypeBrief, LeavePlan>("sp_leave_plan_andtype_get_by_ids_json", new
+            {
                 LeavePlanId = leavePlanId,
                 LeavePlanTypeId = JsonConvert.SerializeObject(LeavePlanTypeId)
             });
             LeavePlan leavePlan = leavePlans[0];
-            if (leavePlan == null)  
+            if (leavePlan == null)
                 throw new HiringBellException("Invalid leave plan selected.");
-                
+
 
             foreach (LeavePlanTypeBrief leavePlanType in leavePlanTypes)
             {
@@ -407,26 +412,44 @@ namespace ServiceLayer.Code
             this.ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal, fileCollection, fileDetail);
 
+            LeaveTemplateModel leaveTemplateModel = null;
             if (!leaveCalculationModal.IsEmailNotificationPasued)
             {
-                Task task = Task.Run(async () => await _leaveEmailService.LeaveRequestSendEmail(leaveCalculationModal, leaveRequestModal.Reason));
+                leaveTemplateModel = new LeaveTemplateModel
+                {
+                    kafkaServiceName = KafkaServiceName.Leave,
+                    RequestType = nameof(RequestType.Leave),
+                    ActionType = nameof(ItemStatus.Submitted),
+                    FromDate = leaveRequestModal.LeaveFromDay,
+                    ToDate = leaveRequestModal.LeaveToDay,
+                    Message = leaveRequestModal.Reason,
+                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
+                    ToAddress = new List<string> { _currentSession.CurrentUserDetail.EmailId }
+                };
             }
 
             if (leaveCalculationModal.IsLeaveAutoApproval)
             {
-                LeaveRequestDetail leaveRequestDetail = new LeaveRequestDetail
+                leaveTemplateModel = new LeaveTemplateModel
                 {
-                    LeaveFromDay = leaveRequestModal.LeaveFromDay,
-                    LeaveToDay = leaveRequestModal.LeaveToDay,
-                    EmployeeId = leaveRequestModal.EmployeeId,
-                    Reason = leaveRequestModal.Reason,
-                    LeaveType = leaveRequestModal.LeaveTypeId,
-                    LeaveRequestNotificationId = 0
+                    kafkaServiceName = KafkaServiceName.Leave,
+                    RequestType = nameof(RequestType.Leave),
+                    ActionType = "Auto Approved",
+                    FromDate = leaveRequestModal.LeaveFromDay,
+                    ToDate = leaveRequestModal.LeaveToDay,
+                    Message = leaveRequestModal.Reason,
+                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
+                    ToAddress = new List<string> { _currentSession.CurrentUserDetail.Email }
                 };
-
-                await _leaveRequestService.ApprovalLeaveService(leaveRequestDetail);
             }
 
+            await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
