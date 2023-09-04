@@ -108,10 +108,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(bankDetail);
         }
 
-        [HttpPut("UpdateSetting/{companyId}")]
-        public async Task<ApiResponse> UpdateSetting([FromRoute] int companyId, [FromBody] CompanySetting companySetting)
+        [HttpPut("UpdateSetting/{companyId}/{isRunLeaveAccrual}")]
+        public async Task<ApiResponse> UpdateSetting([FromRoute] int companyId, [FromRoute] bool isRunLeaveAccrual, [FromBody] CompanySetting companySetting)
         {
-            var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting);
+            var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting, isRunLeaveAccrual);
             return BuildResponse(settingDetail);
         }
 
