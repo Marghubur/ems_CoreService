@@ -21,13 +21,15 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly ICacheManager _cacheManager;
-        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession, ICacheManager cacheManager)
+        private readonly ILeaveCalculation _leaveCalculation;
+        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession, ICacheManager cacheManager, ILeaveCalculation leaveCalculation)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
             _cacheManager = cacheManager;
+            _leaveCalculation = leaveCalculation;
         }
         public List<OrganizationDetail> GetAllCompany()
         {
@@ -415,7 +417,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting)
+        public async Task<CompanySetting> UpdateSettingService(int companyId, CompanySetting companySetting, bool isRunLeaveAccrual)
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
@@ -465,6 +467,9 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to update company setting detail. CompnayId: ",
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
+
+            if (isRunLeaveAccrual)
+                await _leaveCalculation.StartAccrualCycle(isRunLeaveAccrual);
 
             return companySettingDetail;
         }
