@@ -144,6 +144,13 @@ namespace OnlineDataBuilder.Controllers
             .ToArray();
         }
 
+        [HttpGet("/RunAccrualManually")]
+        [AllowAnonymous]
+        public async Task RunAccrualManually()
+        {
+            await RunLeaveAccrualAsync();
+        }
+
         private async Task LeaveLevelMigration()
         {
             List<CompanySetting> companySettings = new List<CompanySetting>();
