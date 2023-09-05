@@ -206,6 +206,22 @@ namespace ServiceLayer.Code
             }
         }
 
+        public async Task<List<LeaveRequestNotification>> GetLeaveRequestNotificationService(LeaveRequestNotification leaveRequestNotification)
+        {
+            if (leaveRequestNotification.ReportingManagerId == 0)
+                throw new HiringBellException("Reporting manager not found. Please contact to admin");
+
+            var result = _db.GetList<LeaveRequestNotification>("sp_leave_requests_by_filter", new
+            {
+                leaveRequestNotification.ReportingManagerId,
+                leaveRequestNotification.EmployeeId,
+                leaveRequestNotification.FromDate,
+                leaveRequestNotification.ToDate,
+                leaveRequestNotification.RequestStatusId
+            });
+            return result;
+        }
+
         private async Task ExecuteFlowChainCycle(LeaveRequestDetail level)
         {
             double daysPending = 0;
