@@ -180,9 +180,10 @@ namespace ServiceLayer.Code
                     loginResponse.UserTypeId = authUser.UserTypeId;
                     var companies = Converter.ToList<Organization>(ds.Tables[5]);
 
-                    if(ds.Tables[6].Rows.Count > 0 && ds.Tables[6].Rows[0][1] != DBNull.Value)
+                    if (ds.Tables[6].Rows.Count > 0 && ds.Tables[6].Rows[0][1] != DBNull.Value)
                     {
-                        var configuration = JsonConvert.DeserializeObject<UserLayoutConfiguration>(ds.Tables[6].Rows[0][1].ToString());
+                        loginResponse.UserLayoutConfiguration =
+                            JsonConvert.DeserializeObject<UserLayoutConfiguration>(ds.Tables[6].Rows[0][1].ToString());
                     }
 
                     loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);

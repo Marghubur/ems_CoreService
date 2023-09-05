@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ems_CoreService.Model;
+using System;
 using System.Collections.Generic;
 using System.Data;
 
@@ -56,6 +57,7 @@ namespace ModalLayer.Modal
         public DataTable Department { set; get; }
         public DataTable Roles { set; get; }
         public List<AutoCompleteEmployees> EmployeeList { set; get; }
+        public UserLayoutConfiguration UserLayoutConfiguration { set; get; }
     }
 
     public class AutoCompleteEmployees
