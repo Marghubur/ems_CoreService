@@ -64,5 +64,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _requestService.ReAssigneToOtherManagerService(approvalRequest, filterId);
             return BuildResponse(result);
         }
+
+        [HttpPost("GetLeaveRequestNotification")]
+        public async Task<ApiResponse> GetLeaveRequestNotification(LeaveRequestNotification leaveRequestNotification)
+        {
+            var result = await _requestService.GetLeaveRequestNotificationService(leaveRequestNotification);
+            return BuildResponse(result);
+        }
     }
 }

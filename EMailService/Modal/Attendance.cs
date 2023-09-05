@@ -29,6 +29,7 @@ namespace ModalLayer.Modal
         public long SubmittedBy { set; get; }
         public long? UpdatedBy { set; get; }
         public WorkType WorkTypeId { set; get; }
+        public int PageIndex { get; set; }
     }
 
     public class PayrollEmployeeData : Attendance

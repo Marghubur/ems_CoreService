@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2021.DocumentTasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
@@ -67,6 +66,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> ReAssigneToOtherManager(AttendenceDetail attendanceDetail)
         {
             var result = _requestService.ReAssigneAttendanceService(attendanceDetail);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("GetAttendenceRequestData")]
+        public async Task<ApiResponse> GetAttendenceRequestData(Attendance attendance)
+        {
+            var result = await _requestService.GetAttendenceRequestDataServive(attendance);
             return BuildResponse(result);
         }
     }
