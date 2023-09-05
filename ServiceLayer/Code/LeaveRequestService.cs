@@ -220,7 +220,7 @@ namespace ServiceLayer.Code
                 leaveRequestNotification.ToDate,
                 leaveRequestNotification.RequestStatusId
             });
-            return result;
+            return await Task.FromResult(result);
         }
 
         private async Task ExecuteFlowChainCycle(LeaveRequestDetail level)

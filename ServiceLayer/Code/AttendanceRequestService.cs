@@ -194,6 +194,7 @@ namespace ServiceLayer.Code
             if (result.Count == 0)
                 return null;
 
+            int index = 1;
             List<AttendanceDetailJson> attendanceRequest = new List<AttendanceDetailJson>();
             List<AutoCompleteEmployees> autoCompleteEmployees = new List<AutoCompleteEmployees>();
             result.ForEach(x =>
@@ -205,6 +206,17 @@ namespace ServiceLayer.Code
                 if (x.ForMonth == attendance.ForMonth)
                     attendanceDetail = attendanceDetail.Take(DateTime.Now.Day).ToList<AttendanceDetailJson>();
 
+                attendanceDetail.ForEach(y =>
+                {
+                    y.EmployeeName = x.EmployeeName;
+                    y.Email = x.Email;
+                    y.Mobile = x.Mobile;
+                    y.ManagerMobile = x.ManagerMobile;
+                    y.ManagerEmail = x.ManagerEmail;
+                    y.ManagerName = x.ManagerName;
+                    y.EmployeeId = x.EmployeeId;
+                    y.Index = index++;
+                });
                 attendanceRequest.AddRange(attendanceDetail);
                 if (autoCompleteEmployees.Find(i => i.value == x.EmployeeId) == null)
                 {
@@ -217,14 +229,32 @@ namespace ServiceLayer.Code
                     });
                 }
             });
-
-            int recordsPerPage = 10;
-            int pageNumber = 1;
-            List<AttendanceDetailJson> filteredAttendance = new List<AttendanceDetailJson>();
-            if (pageNumber > 0)
-                filteredAttendance = attendanceRequest.Skip((pageNumber - 1) * recordsPerPage).Take(recordsPerPage).ToList();
-
+            List<AttendanceDetailJson> filteredAttendance = FilterAndPagingAttendanceRecord(attendance, attendanceRequest);
             return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+        }
+
+        private List<AttendanceDetailJson> FilterAndPagingAttendanceRecord(Attendance attendance, List<AttendanceDetailJson> attendanceRequest)
+        {
+            int recordsPerPage = 10;
+            int totalRecord = 0;
+            if (attendance.PresentDayStatus != 0)
+                attendanceRequest = attendanceRequest.FindAll(x => x.PresentDayStatus == attendance.PresentDayStatus);
+
+            if (attendance.EmployeeId != 0)
+                attendanceRequest = attendanceRequest.FindAll(x => x.EmployeeId == attendance.EmployeeId);
+
+            if (attendance.TotalDays > 0)
+            {
+                DateTime lastDate = DateTime.Now.AddDays(attendance.TotalDays * -1);
+                attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceDay.Subtract(lastDate).TotalDays >= 0);
+            }
+
+            totalRecord = attendanceRequest.Count;
+            if (attendance.PageIndex > 0)
+                attendanceRequest = attendanceRequest.Skip((attendance.PageIndex - 1) * recordsPerPage).Take(recordsPerPage).ToList();
+
+            attendanceRequest.ForEach(i => i.Total = totalRecord);
+            return attendanceRequest;
         }
 
         private void ChnageSessionType(AttendanceDetailJson currentAttr)
