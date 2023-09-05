@@ -1,5 +1,4 @@
-﻿using EMailService.Model;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;

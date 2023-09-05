@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
@@ -294,7 +295,7 @@ namespace ServiceLayer.Code
                     EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
                 }, true);
 
-                if (!Bot.IsSuccess(Result))
+                if (!BotConstant.IsSuccess(Result))
                     throw HiringBellException.ThrowBadRequest("Fail to update housing property document detail. Please contact to admin.");
             }
             catch
@@ -616,7 +617,7 @@ namespace ServiceLayer.Code
                 salaryBreakup.FinancialStartYear
             }, true);
 
-            if (!Bot.IsSuccess(result.statusMessage))
+            if (!BotConstant.IsSuccess(result.statusMessage))
                 throw new HiringBellException("Fail to save calculation detail. Please contact to admin.");
 
             _logger.LogInformation("Leaving method: UpdateEmployeeSalaryDetailChanges");
@@ -1074,7 +1075,7 @@ namespace ServiceLayer.Code
                     foreach (var file in allFileIds)
                     {
                         Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file }, true);
-                        if (!Bot.IsSuccess(Result))
+                        if (!BotConstant.IsSuccess(Result))
                             throw new HiringBellException("Fail to delete file record, Please contact to admin.");
                     }
                 }

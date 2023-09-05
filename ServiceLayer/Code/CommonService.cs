@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.Modal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System.Collections.Generic;

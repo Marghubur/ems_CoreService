@@ -1,5 +1,7 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using ems_CoreService.Model;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -461,6 +463,17 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to retrieve component detail.");
 
             return salaryComponent;
+        }
+
+        public async Task<UserLayoutConfiguration> LayoutConfigurationSettingService(UserLayoutConfiguration userLayoutConfiguration)
+        {
+            await _db.ExecuteAsync("sp_user_layout_configuration_ins_upt", new
+            {
+                EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                UserLayoutConfiguration = JsonConvert.SerializeObject(userLayoutConfiguration)
+            });
+
+            return userLayoutConfiguration;
         }
 
         public List<SalaryComponents> FetchActiveComponentService()

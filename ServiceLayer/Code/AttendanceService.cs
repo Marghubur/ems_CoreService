@@ -1,11 +1,13 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Confluent.Kafka;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;

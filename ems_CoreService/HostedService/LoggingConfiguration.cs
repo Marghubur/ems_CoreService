@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using ModalLayer.Modal;
 using System;

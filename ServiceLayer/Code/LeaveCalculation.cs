@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -47,8 +48,11 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval, ICompanyCalendar companyCalendar, IFileService fileService, FileLocationDetail fileLocationDetail, ILogger<LeaveCalculation> logger)
-        {
+            Approval approval, 
+            ICompanyCalendar companyCalendar, 
+            IFileService fileService, 
+            FileLocationDetail fileLocationDetail, 
+            ILogger<LeaveCalculation> logger) {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
@@ -207,14 +211,16 @@ namespace ServiceLayer.Code
                                         replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
                                     else
                                         updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type, leaveCalculationModal);
-                                } else
+                                }
+                                else
                                 {
                                     _logger.LogInformation("Leave plan type is null");
                                 }
 
                                 i++;
                             }
-                        } else
+                        }
+                        else
                         {
                             _logger.LogInformation("leavePlan is null");
                         }
@@ -902,7 +908,7 @@ namespace ServiceLayer.Code
                         AdminId = _currentSession.CurrentUserDetail.UserId
                     }, true);
 
-                    if (!Bot.IsSuccess(Result))
+                    if (!BotConstant.IsSuccess(Result))
                         throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
 
                     fileIds.Add(Convert.ToInt32(Result.statusMessage));

@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -20,7 +21,12 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-        public ClientsService(IDb db, CommonFilterService commonFilterService, CurrentSession currentSession, IFileService fileService, FileLocationDetail fileLocationDetail)
+
+        public ClientsService(IDb db,
+            CommonFilterService commonFilterService,
+            CurrentSession currentSession,
+            IFileService fileService,
+            FileLocationDetail fileLocationDetail)
         {
             _db = db;
             _commonFilterService = commonFilterService;
@@ -124,13 +130,13 @@ namespace ServiceLayer.Code
                                     {
                                         FileId = n.FileUid,
                                         FileOwnerId = organization.ClientId,
-                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName+"."+n.FileExtension,
+                                        FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Client,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
-                    
+
 
                     var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
                 }

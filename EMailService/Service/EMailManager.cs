@@ -1,4 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.Modal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using MailKit.Net.Pop3;
 using ModalLayer;
 using ModalLayer.Modal;
