@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
-using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;

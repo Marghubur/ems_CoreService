@@ -1,8 +1,9 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;

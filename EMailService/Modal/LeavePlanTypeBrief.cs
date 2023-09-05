@@ -1,4 +1,4 @@
-﻿namespace EMailService.Model
+﻿namespace ems_CoreService.Model
 {
     public class LeavePlanTypeBrief
     {

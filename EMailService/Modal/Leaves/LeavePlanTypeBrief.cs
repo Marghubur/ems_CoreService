@@ -1,4 +1,4 @@
-﻿namespace ems_CoreService.Model
+﻿namespace Bot.CoreBottomHalf.Modal.Leaves
 {
     public class LeavePlanTypeBrief
     {

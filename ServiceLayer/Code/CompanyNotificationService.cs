@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -19,7 +20,11 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
 
-        public CompanyNotificationService(IDb db, CurrentSession currentSession, ICommonService commonService, FileLocationDetail fileLocationDetail, IFileService fileService)
+        public CompanyNotificationService(IDb db, 
+            CurrentSession currentSession, 
+            ICommonService commonService, 
+            FileLocationDetail fileLocationDetail, 
+            IFileService fileService)
         {
             _db = db;
             _currentSession = currentSession;

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BottomHalf.Utilities" Version="1.0.6" />
+    <PackageReference Include="BottomHalf.Utilities" Version="1.0.8" />
     <PackageReference Include="EAGetMail" Version="5.2.5" />
     <PackageReference Include="MailKit" Version="3.4.3" />
   </ItemGroup>

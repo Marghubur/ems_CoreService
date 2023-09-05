@@ -1,4 +1,6 @@
-﻿using ModalLayer;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.Modal;
+using ModalLayer;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;

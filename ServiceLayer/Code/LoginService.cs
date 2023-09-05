@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Service;
+using ems_CoreService.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
@@ -167,7 +168,7 @@ namespace ServiceLayer.Code
                 PageSize = 1000
             });
 
-            if (ds != null && ds.Tables.Count == 6)
+            if (ds != null && ds.Tables.Count == 7)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -178,6 +179,12 @@ namespace ServiceLayer.Code
                     loginResponse.Roles = ds.Tables[4];
                     loginResponse.UserTypeId = authUser.UserTypeId;
                     var companies = Converter.ToList<Organization>(ds.Tables[5]);
+
+                    if(ds.Tables[6].Rows.Count > 0 && ds.Tables[6].Rows[0][1] != DBNull.Value)
+                    {
+                        var configuration = JsonConvert.DeserializeObject<UserLayoutConfiguration>(ds.Tables[6].Rows[0][1].ToString());
+                    }
+
                     loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);
                     var currentCompany = loginResponse.Companies.Find(x => x.CompanyId == loginDetail.CompanyId);
                     loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()

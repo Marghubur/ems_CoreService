@@ -1,13 +1,12 @@
 ﻿using Confluent.Kafka;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
-using ModalLayer.Kafka;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;

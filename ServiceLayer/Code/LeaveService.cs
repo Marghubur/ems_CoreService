@@ -1,9 +1,10 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using EMailService.Model;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.HtmlTemplateModel;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;

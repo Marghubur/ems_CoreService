@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ems_CoreService.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
@@ -10,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
-    [Authorize(Roles = Role.Admin)]
     [Route("api/[controller]")]
     [ApiController]
     public class SettingsController : BaseController
@@ -23,6 +23,7 @@ namespace OnlineDataBuilder.Controllers
             _httpContext = httpContext.HttpContext;
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetSalaryComponents/{CompanyId}")]
         public IResponse<ApiResponse> GetSalaryComponents(int CompanyId)
         {
@@ -30,6 +31,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetOrganizationInfo")]
         public IResponse<ApiResponse> GetOrganizationInfo()
         {
@@ -37,6 +39,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetOrganizationAccountsInfo/{OrganizationId}")]
         public IResponse<ApiResponse> GetOrganizationBankDetailInfo(int organizationId)
         {
@@ -44,6 +47,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPut("PfEsiSetting/{CompanyId}")]
         public IResponse<ApiResponse> PfEsiSetting([FromRoute] int CompanyId, [FromBody] PfEsiSetting pfesiSetting)
         {
@@ -51,6 +55,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdatePayrollSetting")]
         public IResponse<ApiResponse> InsertUpdatePayrollSetting(Payroll payroll)
         {
@@ -58,6 +63,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("GetPayrollSetting/{companyId}")]
         public IResponse<ApiResponse> GetPayrollSetting(int companyId)
         {
@@ -65,6 +71,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateSalaryStructure")]
         public IResponse<ApiResponse> InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
         {
@@ -72,6 +79,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPost("ActivateCurrentComponent")]
         public async Task<ApiResponse> ActivateCurrentComponent(List<SalaryComponents> components)
         {
@@ -79,6 +87,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPut("UpdateGroupSalaryComponentDetail/{componentId}/{groupId}")]
         public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromRoute] int groupId, [FromBody] SalaryComponents component)
         {
@@ -86,6 +95,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]
         public IResponse<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
         {
@@ -93,6 +103,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("FetchComponentDetailById/{componentId}")]
         public IResponse<ApiResponse> FetchComponentDetailById(int componentTypeId)
         {
@@ -100,10 +111,19 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Admin)]
         [HttpGet("FetchActiveComponents")]
         public IResponse<ApiResponse> FetchActiveComponents()
         {
             var result = _settingService.FetchActiveComponentService();
+            return BuildResponse(result);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("LayoutConfigurationSetting")]
+        public IResponse<ApiResponse> LayoutConfigurationSetting([FromBody] UserLayoutConfiguration userLayoutConfiguration)
+        {
+            var result = _settingService.LayoutConfigurationSettingService(userLayoutConfiguration);
             return BuildResponse(result);
         }
     }

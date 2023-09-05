@@ -1,6 +1,9 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
@@ -9,7 +12,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.HtmlTemplateModel;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;

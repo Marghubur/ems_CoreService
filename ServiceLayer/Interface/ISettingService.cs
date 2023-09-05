@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal.Accounts;
+﻿using ems_CoreService.Model;
+using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -19,5 +20,6 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
         List<SalaryComponents> FetchActiveComponentService();
+        Task<UserLayoutConfiguration> LayoutConfigurationSettingService(UserLayoutConfiguration userLayoutConfiguration);
     }
 }

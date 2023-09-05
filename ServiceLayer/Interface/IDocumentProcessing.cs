@@ -1,7 +1,4 @@
-﻿using ModalLayer.Modal.HtmlTagModel;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using CommonModal.Modal.HtmlTagModel;
 
 namespace ServiceLayer.Interface
 {
