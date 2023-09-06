@@ -63,7 +63,7 @@ namespace ServiceLayer.Code
         public RefreshTokenModal Authenticate(UserDetail userDetail)
         {
             string role = string.Empty;
-            switch (userDetail.UserTypeId)
+            switch (userDetail.RoleId)
             {
                 case 1:
                     role = Role.Admin;
@@ -72,7 +72,7 @@ namespace ServiceLayer.Code
                     role = Role.Employee;
                     break;
                 case 3:
-                    role = Role.Candidate;
+                    role = Role.Manager;
                     break;
                 case 4:
                     role = Role.Client;
