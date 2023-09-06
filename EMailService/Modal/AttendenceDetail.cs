@@ -48,6 +48,7 @@ namespace ModalLayer.Modal
         public string Emails { get; set; }
         public long ApprovedBy { set; get; }
         public string ApprovedName { set; get; }
+        public long AttendanceId { get; set; }
     }
 
     public class AttendanceWithClientDetail
