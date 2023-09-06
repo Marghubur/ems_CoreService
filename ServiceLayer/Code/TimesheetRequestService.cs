@@ -88,5 +88,24 @@ namespace ServiceLayer.Code
         {
             return null;
         }
+
+        public Task<List<TimesheetDetail>> GetTimesheetRequestDataService(TimesheetDetail timesheetDetail)
+        {
+            if (timesheetDetail.ReportingManagerId == 0)
+                throw new HiringBellException("Invalid reporting manager");
+
+            if (timesheetDetail.ForMonth == 0)
+                throw new HiringBellException("Month is invalid");
+
+            var result = _db.GetList<TimesheetDetail>("", new
+            {
+                timesheetDetail.ReportingManagerId,
+                timesheetDetail.ForYear,
+                timesheetDetail.TimesheetStatus,
+                timesheetDetail.EmployeeId
+            });
+
+            throw new System.NotImplementedException();
+        }
     }
 }

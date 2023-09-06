@@ -64,5 +64,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _requestService.ReAssigneTimesheetService(dailyTimesheetDetails, filterId);
             return BuildResponse(result);
         }
+
+        [HttpPut("GetTimesheetRequestData")]
+        public IResponse<ApiResponse> GetTimesheetRequestData([FromBody] TimesheetDetail timesheetDetail)
+        {
+            var result = _requestService.GetTimesheetRequestDataService(timesheetDetail);
+            return BuildResponse(result);
+        }
     }
 }
