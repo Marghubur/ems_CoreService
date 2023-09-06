@@ -130,7 +130,6 @@ namespace ServiceLayer.Code
         {
             try
             {
-                RequestModel requestModel = null;
                 if (attendanceDetail.AttendanceId <= 0)
                     throw new HiringBellException("Invalid attendance day selected");
 
@@ -144,6 +143,7 @@ namespace ServiceLayer.Code
 
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
+
                 if (attendance.PendingRequestCount > 0)
                     attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
@@ -153,6 +153,9 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");
 
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
+
+                if (currentAttendance.PresentDayStatus != 0)
+                    throw new HiringBellException("Not allowed to change the status. Employee should raise the request first.");
 
                 currentAttendance.PresentDayStatus = (int)status;
                 //ChnageSessionType(currentAttendance);
