@@ -41,6 +41,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Manager)]
         [HttpPut("ApproveLeaveRequest/{filterId}")]
         public async Task<ApiResponse> ApproveLeaveRequest([FromRoute]int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
         {
@@ -48,6 +49,7 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [Authorize(Roles = Role.Manager)]
         [HttpPut("RejectLeaveRequest/{filterId}")]
         public async Task<ApiResponse> RejectLeaveRequest([FromRoute] int filterId, [FromBody]LeaveRequestDetail leaveRequestDetail)
         {
