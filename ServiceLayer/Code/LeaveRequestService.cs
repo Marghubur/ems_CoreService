@@ -41,16 +41,32 @@ namespace ServiceLayer.Code
             _kafkaNotificationService = kafkaNotificationService;
         }
 
-        public async Task<RequestModel> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
+        public async Task<List<LeaveRequestNotification>> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Approved);
-            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId
+            };
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
         }
 
-        public async Task<RequestModel> RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
+        public async Task<List<LeaveRequestNotification>> RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateLeaveDetail(leaveRequestDetail, ItemStatus.Rejected);
-            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId
+            };
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
         }
 
         private void updateLeaveCountOnRejected(LeaveRequestDetail LeaveRequestDetail, int leaveTypeId, decimal leaveCount)

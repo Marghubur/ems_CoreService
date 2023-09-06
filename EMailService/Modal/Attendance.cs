@@ -23,7 +23,7 @@ namespace ModalLayer.Modal
         public long ReportingManagerId { set; get; }
         public string ManagerName { set; get; }
         public DateTime? SubmittedOn { set; get; }
-        public DateTime UpdatedOn { set; get; }
+        public DateTime? UpdatedOn { set; get; }
         public DateTime DOJ { set; get; }
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
