@@ -130,7 +130,6 @@ namespace ServiceLayer.Code
         {
             try
             {
-                RequestModel requestModel = null;
                 if (attendanceDetail.AttendanceId <= 0)
                     throw new HiringBellException("Invalid attendance day selected");
 
@@ -144,6 +143,7 @@ namespace ServiceLayer.Code
 
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
+
                 if (attendance.PendingRequestCount > 0)
                     attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
@@ -185,9 +185,10 @@ namespace ServiceLayer.Code
 
                 await Task.CompletedTask;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new HiringBellException("Encounter error while sending email notification.", System.Net.HttpStatusCode.NotFound);
+                _logger.LogError($"Server error: {e.Message}");
+                throw HiringBellException.ThrowBadRequest($"Server error: Please contact to admin.");
             }
         }
 

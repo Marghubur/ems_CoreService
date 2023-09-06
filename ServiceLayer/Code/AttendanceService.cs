@@ -604,15 +604,6 @@ namespace ServiceLayer.Code
 
             Result = ApplicationConstants.Updated;
             var result = JsonConvert.SerializeObject(presentAttendance);
-            using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
-            {
-                await producer.ProduceAsync("testdata", new Message<Null, string>
-                {
-                    Value = result
-                });
-
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
 
             AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
             {
