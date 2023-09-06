@@ -154,9 +154,6 @@ namespace ServiceLayer.Code
 
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
-                if (currentAttendance.PresentDayStatus != 0)
-                    throw new HiringBellException("Not allowed to change the status. Employee should raise the request first.");
-
                 currentAttendance.PresentDayStatus = (int)status;
                 //ChnageSessionType(currentAttendance);
                 var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
@@ -188,9 +185,10 @@ namespace ServiceLayer.Code
 
                 await Task.CompletedTask;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new HiringBellException("Encounter error while sending email notification.", System.Net.HttpStatusCode.NotFound);
+                _logger.LogError($"Server error: {e.Message}");
+                throw HiringBellException.ThrowBadRequest($"Server error: Please contact to admin.");
             }
         }
 
