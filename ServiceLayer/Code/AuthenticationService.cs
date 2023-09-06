@@ -74,13 +74,8 @@ namespace ServiceLayer.Code
                 case 3:
                     role = Role.Manager;
                     break;
-                case 4:
-                    role = Role.Client;
-                    break;
-                default:
-                    role = Role.Other;
-                    break;
             }
+
             string generatedToken = GenerateAccessToken(userDetail, role);
             var refreshToken = GenerateRefreshToken(null);
             refreshToken.Token = generatedToken;
