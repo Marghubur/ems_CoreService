@@ -1,5 +1,4 @@
-﻿using ModalLayer;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,5 +12,6 @@ namespace ServiceLayer.Interface
         Task<RequestModel> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only);
         RequestModel GetRequestPageData(long employeeId, int filterId);
         List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail);
+        Task<dynamic> GetAttendenceRequestDataServive(Attendance attendance);
     }
 }

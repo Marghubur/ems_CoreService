@@ -5,10 +5,12 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -169,6 +171,90 @@ namespace ServiceLayer.Code
             {
                 throw new HiringBellException("Encounter error while sending email notification.", System.Net.HttpStatusCode.NotFound);
             }
+        }
+
+        public async Task<dynamic> GetAttendenceRequestDataServive(Attendance attendance)
+        {
+            if (attendance.ReportingManagerId == 0)
+                throw new HiringBellException("Invalid reporting manager");
+
+            if (attendance.ForMonth == 0)
+                throw new HiringBellException("Month is invalid");
+
+            if (attendance.ForYear == 0)
+                throw new HiringBellException("Year is invalid");
+
+            var result = _db.GetList<Attendance>("sp_attendance_requests_by_filter", new
+            {
+                attendance.ReportingManagerId,
+                attendance.ForMonth,
+                attendance.ForYear
+            });
+
+            if (result.Count == 0)
+                return null;
+
+            int index = 1;
+            List<AttendanceDetailJson> attendanceRequest = new List<AttendanceDetailJson>();
+            List<AutoCompleteEmployees> autoCompleteEmployees = new List<AutoCompleteEmployees>();
+            result.ForEach(x =>
+            {
+                if (x.AttendanceDetail == null || x.AttendanceDetail == "[]")
+                    throw new HiringBellException("Attendance detail not founf");
+
+                var attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(x.AttendanceDetail);
+                if (x.ForMonth == attendance.ForMonth)
+                    attendanceDetail = attendanceDetail.Take(DateTime.Now.Day).ToList<AttendanceDetailJson>();
+
+                attendanceDetail.ForEach(y =>
+                {
+                    y.EmployeeName = x.EmployeeName;
+                    y.Email = x.Email;
+                    y.Mobile = x.Mobile;
+                    y.ManagerMobile = x.ManagerMobile;
+                    y.ManagerEmail = x.ManagerEmail;
+                    y.ManagerName = x.ManagerName;
+                    y.EmployeeId = x.EmployeeId;
+                    y.Index = index++;
+                });
+                attendanceRequest.AddRange(attendanceDetail);
+                if (autoCompleteEmployees.Find(i => i.value == x.EmployeeId) == null)
+                {
+                    autoCompleteEmployees.Add(new AutoCompleteEmployees
+                    {
+                        email = x.Email,
+                        text = x.EmployeeName,
+                        value = x.EmployeeId,
+                        selected = false
+                    });
+                }
+            });
+            List<AttendanceDetailJson> filteredAttendance = FilterAndPagingAttendanceRecord(attendance, attendanceRequest);
+            return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+        }
+
+        private List<AttendanceDetailJson> FilterAndPagingAttendanceRecord(Attendance attendance, List<AttendanceDetailJson> attendanceRequest)
+        {
+            int recordsPerPage = 10;
+            int totalRecord = 0;
+            if (attendance.PresentDayStatus != 0)
+                attendanceRequest = attendanceRequest.FindAll(x => x.PresentDayStatus == attendance.PresentDayStatus);
+
+            if (attendance.EmployeeId != 0)
+                attendanceRequest = attendanceRequest.FindAll(x => x.EmployeeId == attendance.EmployeeId);
+
+            if (attendance.TotalDays > 0)
+            {
+                DateTime lastDate = DateTime.Now.AddDays(attendance.TotalDays * -1);
+                attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceDay.Subtract(lastDate).TotalDays >= 0);
+            }
+
+            totalRecord = attendanceRequest.Count;
+            if (attendance.PageIndex > 0)
+                attendanceRequest = attendanceRequest.Skip((attendance.PageIndex - 1) * recordsPerPage).Take(recordsPerPage).ToList();
+
+            attendanceRequest.ForEach(i => i.Total = totalRecord);
+            return attendanceRequest;
         }
 
         private void ChnageSessionType(AttendanceDetailJson currentAttr)
