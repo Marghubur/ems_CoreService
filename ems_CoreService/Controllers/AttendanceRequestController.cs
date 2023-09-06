@@ -47,14 +47,14 @@ namespace OnlineDataBuilder.Controllers
             var result = await _requestService.RejectAttendanceService(attendanceDetail);
             return BuildResponse(result);
         }
-
+        [Authorize(Roles = Role.Manager)]
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
             var result = await _requestService.ApproveAttendanceService(attendanceDetail, filterId);
             return BuildResponse(result);
         }
-
+        [Authorize(Roles = Role.Manager)]
         [HttpPut("RejectAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {

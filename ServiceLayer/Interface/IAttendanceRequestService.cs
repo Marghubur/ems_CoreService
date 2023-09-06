@@ -8,8 +8,8 @@ namespace ServiceLayer.Interface
     {
         RequestModel FetchPendingRequestService(long employeeId, ItemStatus itemStatus = ItemStatus.Pending);
         RequestModel GetManagerAndUnAssignedRequestService(long employeeId);
-        Task<RequestModel> ApproveAttendanceService(Attendance attendanceDetais, int filterId = ApplicationConstants.Only);
-        Task<RequestModel> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only);
+        Task<dynamic> ApproveAttendanceService(Attendance attendanceDetais, int filterId = ApplicationConstants.Only);
+        Task<dynamic> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only);
         RequestModel GetRequestPageData(long employeeId, int filterId);
         List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail);
         Task<dynamic> GetAttendenceRequestDataServive(Attendance attendance);

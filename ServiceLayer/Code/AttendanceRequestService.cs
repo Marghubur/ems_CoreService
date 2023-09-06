@@ -94,19 +94,39 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get", itemStatus);
         }
 
-        public async Task<RequestModel> ApproveAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<dynamic> ApproveAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
-            return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            Attendance attendance = new Attendance
+            {
+                ForMonth = DateTime.Now.Month,
+                ForYear = DateTime.Now.Year,
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                PageIndex = attendanceDetail.PageIndex,
+                PresentDayStatus = attendanceDetail.PresentDayStatus,
+                EmployeeId = attendanceDetail.EmployeeId,
+                TotalDays = attendanceDetail.TotalDays
+            };
+            return await this.GetAttendenceRequestDataServive(attendance);
         }
 
-        public async Task<RequestModel> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<dynamic> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
-            return this.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            Attendance attendance = new Attendance
+            {
+                ForMonth = DateTime.Now.Month,
+                ForYear = DateTime.Now.Year,
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                PageIndex = attendanceDetail.PageIndex,
+                PresentDayStatus = attendanceDetail.PresentDayStatus,
+                EmployeeId = attendanceDetail.EmployeeId,
+                TotalDays = attendanceDetail.TotalDays
+            };
+            return await this.GetAttendenceRequestDataServive(attendance);
         }
 
-        public async Task<RequestModel> UpdateAttendanceDetail(Attendance attendanceDetail, ItemStatus status)
+        public async Task UpdateAttendanceDetail(Attendance attendanceDetail, ItemStatus status)
         {
             try
             {
@@ -146,8 +166,6 @@ namespace ServiceLayer.Code
 
                 if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
-                else
-                    requestModel = FetchPendingRequestService(_currentSession.CurrentUserDetail.UserId, ItemStatus.Pending);
 
                 AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
                 {
@@ -165,7 +183,7 @@ namespace ServiceLayer.Code
 
                 await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
 
-                return await Task.FromResult(requestModel);
+                await Task.CompletedTask;
             }
             catch (Exception)
             {
@@ -215,6 +233,7 @@ namespace ServiceLayer.Code
                     y.ManagerEmail = x.ManagerEmail;
                     y.ManagerName = x.ManagerName;
                     y.EmployeeId = x.EmployeeId;
+                    y.AttendanceId = x.AttendanceId;
                     y.Index = index++;
                 });
                 attendanceRequest.AddRange(attendanceDetail);
