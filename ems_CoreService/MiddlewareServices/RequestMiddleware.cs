@@ -100,7 +100,7 @@ namespace SchoolInMindServer.MiddlewareServices
             currentSession.CompanyCode = securityToken.Claims.FirstOrDefault(x => x.Type == ApplicationConstants.CompanyCode).Value;
             currentSession.CurrentUserDetail = JsonConvert.DeserializeObject<UserDetail>(userDetail);
 
-            currentSession.CurrentUserDetail.RoleId = currentSession.CurrentUserDetail.UserTypeId;
+            currentSession.CurrentUserDetail.RoleId = currentSession.CurrentUserDetail.RoleId;
 
             if (currentSession.CurrentUserDetail == null)
                 throw new HiringBellException("Invalid token found. Please contact to admin.");
