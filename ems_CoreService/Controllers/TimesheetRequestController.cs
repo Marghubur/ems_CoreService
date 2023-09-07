@@ -23,14 +23,14 @@ namespace OnlineDataBuilder.Controllers
         [HttpPut("ApproveTimesheet/{TimesheetId}")]
         public async Task<ApiResponse> ApproveTimesheet(int timesheetId)
         {
-            var result = await _requestService.ApprovalTimesheetService(timesheetId);
+            var result = await _requestService.ApprovalTimesheetService(timesheetId, null);
             return BuildResponse(result);
         }
 
         [HttpPut("RejectAction/{TimesheetId}")]
         public async Task<ApiResponse> RejectAction(int timesheetId)
         {
-            var result = await _requestService.RejectTimesheetService(timesheetId);
+            var result = await _requestService.RejectTimesheetService(timesheetId, null);
             return BuildResponse(result);
         }
 
@@ -41,34 +41,32 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPut("ApproveTimesheetRequest/{TimesheetId}/{filterId}")]
-        public async Task<ApiResponse> ApproveTimesheetRequest([FromRoute] int timesheetId, [FromRoute]int filterId)
+        public async Task<ApiResponse> ApproveTimesheetRequest([FromRoute] int timesheetId, [FromRoute] int filterId, [FromBody] TimesheetDetail timesheetDetail)
         {
-            var result = await _requestService.ApprovalTimesheetService(timesheetId, filterId);
+            var result = await _requestService.ApprovalTimesheetService(timesheetId, timesheetDetail, filterId);
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPut("RejectTimesheetRequest/{TimesheetId}/{filterId}")]
-        public async Task<ApiResponse> RejectTimesheetRequest([FromRoute] int timesheetId, [FromRoute] int filterId)
+        public async Task<ApiResponse> RejectTimesheetRequest([FromRoute] int timesheetId, [FromRoute] int filterId, [FromBody] TimesheetDetail timesheetDetail)
         {
-            var result = await _requestService.RejectTimesheetService(timesheetId, filterId);
+            var result = await _requestService.RejectTimesheetService(timesheetId, timesheetDetail, filterId);
             return BuildResponse(result);
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("ReAssigneTimesheetRequest/{filterId}")]
-        public IResponse<ApiResponse> ReAssigneTimesheetRequest([FromRoute] int filterId, [FromBody]List<DailyTimesheetDetail> dailyTimesheetDetails)
+        public IResponse<ApiResponse> ReAssigneTimesheetRequest([FromRoute] int filterId, [FromBody] List<DailyTimesheetDetail> dailyTimesheetDetails)
         {
             var result = _requestService.ReAssigneTimesheetService(dailyTimesheetDetails, filterId);
             return BuildResponse(result);
         }
 
-        [HttpPut("GetTimesheetRequestData")]
-        public IResponse<ApiResponse> GetTimesheetRequestData([FromBody] TimesheetDetail timesheetDetail)
+        [HttpPost("GetTimesheetRequestData")]
+        public async Task<ApiResponse> GetTimesheetRequestData([FromBody] TimesheetDetail timesheetDetail)
         {
-            var result = _requestService.GetTimesheetRequestDataService(timesheetDetail);
+            var result = await _requestService.GetTimesheetRequestDataService(timesheetDetail);
             return BuildResponse(result);
         }
     }

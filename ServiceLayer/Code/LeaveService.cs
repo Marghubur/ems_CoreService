@@ -7,7 +7,6 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -23,24 +22,18 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly LeaveEmailService _leaveEmailService;
-        private readonly ILeaveRequestService _leaveRequestService;
         private readonly KafkaNotificationService _kafkaNotificationService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
-            LeaveEmailService leaveEmailService,
             ILeaveCalculation leaveCalculation,
-            ILeaveRequestService leaveRequestService,
             KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
             _leaveCalculation = leaveCalculation;
-            _leaveEmailService = leaveEmailService;
-            _leaveRequestService = leaveRequestService;
             _kafkaNotificationService = kafkaNotificationService;
         }
 
