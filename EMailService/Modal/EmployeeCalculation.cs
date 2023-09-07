@@ -44,7 +44,7 @@ namespace ModalLayer.Modal
     {
         public List<SalaryComponents> salaryComponents { set; get; }
         public List<SalaryGroup> salaryGroups { set; get; }
-        public List<Payroll> payrolls { set; get; }
+        public Payroll payroll { set; get; }
         public List<SurChargeSlab> surchargeSlabs { set; get; }
         public List<PTaxSlab> ptaxSlab { set; get; }
         public TimeZoneInfo timeZone { set; get; }

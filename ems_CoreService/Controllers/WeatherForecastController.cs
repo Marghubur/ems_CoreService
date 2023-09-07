@@ -19,7 +19,7 @@ namespace OnlineDataBuilder.Controllers
 {
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
@@ -160,8 +160,10 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public async Task<string> RunPayroll()
         {
-            _logger.LogInformation("Starting payroll job.");
-            await RunPayrollAsync();
+            _logger.LogInformation("Starting payrolljob.");
+
+            await _payrollService.RunPayrollCycle(0);
+
             return await Task.FromResult("Payroll ran successfully");
         }
 
