@@ -46,8 +46,7 @@ namespace OnlineDataBuilder.Controllers
             IPayrollService payrollService,
             CurrentSession currentSession,
             IAttendanceService attendanceService,
-            ILeaveRequestService leaveRequestService
-,
+            ILeaveRequestService leaveRequestService,
             FileLocationDetail fileLocationDetail)
         {
             _logger = logger;
@@ -154,7 +153,16 @@ namespace OnlineDataBuilder.Controllers
         {
             _logger.LogInformation("Starting leave accrual job.");
             await RunLeaveAccrualAsync();
-            return await Task.FromResult("Run successfully");
+            return await Task.FromResult("Accrual ran successfully");
+        }
+
+        [HttpGet("RunPayroll")]
+        [AllowAnonymous]
+        public async Task<string> RunPayroll()
+        {
+            _logger.LogInformation("Starting payroll job.");
+            await RunPayrollAsync();
+            return await Task.FromResult("Payroll ran successfully");
         }
 
         private async Task LeaveLevelMigration()
