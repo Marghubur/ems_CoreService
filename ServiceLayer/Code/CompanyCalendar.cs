@@ -201,6 +201,49 @@ namespace ServiceLayer
             return await Task.FromResult(holidays);
         }
 
+        public async Task<int> CountWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate, ShiftDetail shiftDetail)
+        {
+            int count = 0;
+            while (fromDate.Date <= toDate.Date)
+            {
+                var zoneDate = _timezoneConverter.ToTimeZoneDateTime(fromDate, _currentSession.TimeZone);
+                switch (zoneDate.DayOfWeek)
+                {
+                    case DayOfWeek.Sunday:
+                        if (!shiftDetail.IsSun)
+                            count++;
+                        break;
+                    case DayOfWeek.Monday:
+                        if (!shiftDetail.IsMon)
+                            count++;
+                        break;
+                    case DayOfWeek.Tuesday:
+                        if (!shiftDetail.IsTue)
+                            count++;
+                        break;
+                    case DayOfWeek.Wednesday:
+                        if (!shiftDetail.IsWed)
+                            count++;
+                        break;
+                    case DayOfWeek.Thursday:
+                        if (!shiftDetail.IsThu)
+                            count++;
+                        break;
+                    case DayOfWeek.Friday:
+                        if (!shiftDetail.IsFri)
+                            count++;
+                        break;
+                    case DayOfWeek.Saturday:
+                        if (!shiftDetail.IsSat)
+                            count++;
+                        break;
+                }
+                fromDate = fromDate.AddDays(1);
+            }
+            return await Task.FromResult(count);
+        }
+
+
         public List<Calendar> GetAllHolidayService(FilterModel filterModel)
         {
             var result = _db.GetList<Calendar>("SP_company_calender_getby_filter", new

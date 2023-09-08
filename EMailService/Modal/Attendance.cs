@@ -8,6 +8,7 @@ namespace ModalLayer.Modal
     {
         public int UserTypeId { set; get; }
         public string AttendanceDetail { set; get; }
+        public string SecondMonthAttendanceDetail { set; get; }
         public int TotalDays { set; get; }
         public int TotalWeekDays { set; get; }
         public int DaysPending { set; get; }
@@ -20,7 +21,6 @@ namespace ModalLayer.Modal
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
         public WorkType WorkTypeId { set; get; }
-        public int PageIndex { get; set; }
     }
 
     public class PayrollEmployeeData : Attendance
@@ -36,6 +36,7 @@ namespace ModalLayer.Modal
         public int FinancialYear { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public DateTime Doj { get; set; }
+        public int WorkShiftId { get; set; }
     }
 
     public class PayrollEmployeePageData
