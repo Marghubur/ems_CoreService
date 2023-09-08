@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using NUnit.Framework.Interfaces;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -27,7 +29,7 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly IEMailManager _eMailManager;
         private readonly IBillService _billService;
         private readonly ILogger<PayrollService> _logger;
-
+        private readonly ICompanyCalendar _companyCalendar;
         private readonly FileLocationDetail _fileLocationDetail;
 
         public PayrollService(ITimezoneConverter timezoneConverter,
@@ -37,8 +39,8 @@ namespace ServiceLayer.Code.PayrollCycle
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
             IBillService billService,
-            ILogger<PayrollService> logger
-            )
+            ILogger<PayrollService> logger,
+            ICompanyCalendar companyCalendar)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -48,6 +50,7 @@ namespace ServiceLayer.Code.PayrollCycle
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
             _logger = logger;
+            _companyCalendar = companyCalendar;
         }
 
         private PayrollEmployeePageData GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -69,6 +72,9 @@ namespace ServiceLayer.Code.PayrollCycle
                 leaveRequestNotificatios = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[2])
             };
 
+            if (payrollEmployeePageData.payrollEmployeeData == null)
+                throw HiringBellException.ThrowBadRequest("Employee payroll data not found");
+
             List<EmployeeDeclaration> employeeDeclarations = Converter.ToList<EmployeeDeclaration>(resultSet.Tables[1]);
 
             Parallel.ForEach(payrollEmployeePageData.payrollEmployeeData, x =>
@@ -83,18 +89,39 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollEmployeePageData;
         }
 
-        private int GetTotalAttendance(PayrollEmployeeData empPayroll, List<PayrollEmployeeData> payrollEmployeeData, DateTime payrollDate)
+        private decimal GetTotalAttendance(PayrollEmployeeData empPayroll, List<PayrollEmployeeData> payrollEmployeeData, DateTime payrollDate, Payroll payroll)
         {
-            var attrDetail = payrollEmployeeData
-                                .Where(x => x.EmployeeId == empPayroll.EmployeeId && (x.ForMonth == payrollDate.Month))
-                                .FirstOrDefault();
+            var attrDetail = payrollEmployeeData.Find(x => x.EmployeeId == empPayroll.EmployeeId );
 
             if (attrDetail == null)
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
 
-
             List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attrDetail.AttendanceDetail);
-            int totalDays = attendanceDetailJsons.Count(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            attendanceDetailJsons.AddRange(JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attrDetail.SecondMonthAttendanceDetail));
+            attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.AttendanceDay.Date.Subtract(payrollDate.AddMonths(-1).Date).TotalDays > 0
+                                   && x.AttendanceDay.Date.Subtract(payrollDate.Date).TotalDays <= 0);
+
+            if (payroll.IsExcludeWeeklyOffs)
+            {
+                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted
+                            && x.PresentDayStatus != 3);
+            }
+            else if (payroll.IsExcludeHolidays)
+            {
+                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted
+                            && x.PresentDayStatus != 4);
+            }
+            else if (payroll.IsExcludeHolidays && payroll.IsExcludeWeeklyOffs)
+            {
+                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted
+                            && x.PresentDayStatus != 4 && x.PresentDayStatus != 3);
+            }
+            else
+            {
+                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            }
+            decimal totalDays = attendanceDetailJsons.Count(x => x.SessionType == 1);
+            totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != 1) * 0.5m);
             return totalDays;
         }
 
@@ -104,13 +131,13 @@ namespace ServiceLayer.Code.PayrollCycle
 
             DateTime payrollDate = (DateTime)_currentSession.TimeZoneNow;
             int offsetindex = 0;
-            int daysPresnet = 0;
+            decimal daysPresnet = 0;
             int totalDaysInMonth = 0;
             int pageSize = 15;
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
-                if (payrollEmployeePageData.payrollEmployeeData == null || payrollEmployeePageData.payrollEmployeeData.Count == 0)
+                if (payrollEmployeePageData.payrollEmployeeData.Count == 0)
                     break;
 
                 List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData;
@@ -118,7 +145,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 // run pay cycle by considering actual days in months
                 if (payroll.PayCalculationId == 1)
                 {
-                    totalDaysInMonth = DateTime.DaysInMonth(payrollCommonData.presentDate.Year, payrollDate.Month);
+                    // totalDaysInMonth = DateTime.DaysInMonth(payrollCommonData.presentDate.Year, payrollDate.Month);
+                    totalDaysInMonth = payrollDate.Date.Subtract(payrollDate.AddMonths(-1).Date).Days;
                 }
                 else // run pay cycle by considering only weekdays in month
                 {
@@ -127,6 +155,9 @@ namespace ServiceLayer.Code.PayrollCycle
 
                 bool IsTaxCalculationRequired = false;
                 int daysUsedForDeduction = 0;
+
+                payrollEmployeeData = CombineMonthlyRecord(payrollEmployeeData);
+
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
                     try
@@ -138,7 +169,7 @@ namespace ServiceLayer.Code.PayrollCycle
                             daysUsedForDeduction = totalDaysInMonth - doj.Day + 1;
                         }
 
-                        daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate);
+                        daysPresnet = GetTotalAttendance(empPayroll, payrollEmployeeData, payrollDate, payroll);
 
                         var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
                         if (taxDetails == null)
@@ -148,12 +179,27 @@ namespace ServiceLayer.Code.PayrollCycle
                         if (presentData == null)
                             throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
 
+                        var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
+                        if (shiftDetail == null)
+                            throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
+
+                        int holidays = 0;
+                        int weekOff = 0;
+                        if (payroll.IsExcludeHolidays)
+                            holidays = _companyCalendar.GetHolidayBetweenTwoDates(payrollDate.AddMonths(-1), payrollDate).Result;
+
+                        if (payroll.IsExcludeWeeklyOffs)
+                            weekOff = _companyCalendar.CountWeekOffBetweenTwoDates(payrollDate.AddMonths(-1), payrollDate, shiftDetail).Result;
+
+                        decimal shiftDuration = (shiftDetail.Duration / 60);
+                        decimal hrsUsedForDeduction = (daysUsedForDeduction - holidays - weekOff) * shiftDuration;
+                        decimal hrsPresnet = daysPresnet * shiftDuration;
                         if (!presentData.IsPayrollCompleted)
                         {
-                            UpdateSalaryBreakup(payrollDate, totalDaysInMonth, daysPresnet, empPayroll);
-                            if (daysPresnet != daysUsedForDeduction)
+                            UpdateSalaryBreakup(payrollDate, hrsUsedForDeduction, hrsPresnet, empPayroll);
+                            if (hrsPresnet != hrsUsedForDeduction)
                             {
-                                var newAmount = (presentData.TaxDeducted / daysUsedForDeduction) * daysPresnet;
+                                var newAmount = (presentData.TaxDeducted / hrsUsedForDeduction) * hrsPresnet;
                                 presentData.TaxPaid = newAmount;
                                 presentData.TaxDeducted = newAmount;
                                 presentData.IsPayrollCompleted = true;
@@ -186,7 +232,22 @@ namespace ServiceLayer.Code.PayrollCycle
             await Task.CompletedTask;
         }
 
-        private static void UpdateSalaryBreakup(DateTime payrollDate, int daysInMonth, int daysWorked, PayrollEmployeeData empPayroll)
+        private List<PayrollEmployeeData> CombineMonthlyRecord(List<PayrollEmployeeData> payrollEmployeeData)
+        {
+            List<PayrollEmployeeData> newPayrollEmployeeData = new List<PayrollEmployeeData>();
+            foreach (var pay in payrollEmployeeData)
+            {
+                var record = newPayrollEmployeeData.Find(x => x.EmployeeId == pay.EmployeeId);
+                if (record == null)
+                    newPayrollEmployeeData.Add(pay);
+                else
+                    record.SecondMonthAttendanceDetail = pay.AttendanceDetail;
+            }
+
+            return newPayrollEmployeeData;
+        }
+
+        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal hrsUsedForDeduction, decimal hrsPresnet, PayrollEmployeeData empPayroll)
         {
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
             if (salaryBreakup == null)
@@ -197,7 +258,7 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
-                    item.FinalAmount = (item.FinalAmount / daysInMonth) * daysWorked;
+                    item.FinalAmount = (item.FinalAmount / hrsUsedForDeduction) * hrsPresnet;
                 }
 
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
@@ -210,7 +271,7 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             PayrollCommonData payrollCommonData = new PayrollCommonData();
             var result = _db.FetchDataSet("sp_payroll_cycle_setting_get_all");
-            if (result.Tables.Count != 5)
+            if (result.Tables.Count != 6)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Fail to get payroll cycle data to run it. Please contact to admin");
 
             if (result.Tables[0].Rows.Count != 1)
@@ -228,11 +289,15 @@ namespace ServiceLayer.Code.PayrollCycle
             if (result.Tables[4].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Salary group detail not found. Please contact to admin");
 
+            if (result.Tables[5].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Shift detail not found. Please contact to admin");
+
             payrollCommonData.payroll = Converter.ToType<Payroll>(result.Tables[0]);
             payrollCommonData.salaryComponents = Converter.ToList<SalaryComponents>(result.Tables[1]);
             payrollCommonData.surchargeSlabs = Converter.ToList<SurChargeSlab>(result.Tables[2]);
             payrollCommonData.ptaxSlab = Converter.ToList<PTaxSlab>(result.Tables[3]);
             payrollCommonData.salaryGroups = Converter.ToList<SalaryGroup>(result.Tables[4]);
+            payrollCommonData.shiftDetail = Converter.ToList<ShiftDetail>(result.Tables[5]);
 
             return payrollCommonData;
         }
