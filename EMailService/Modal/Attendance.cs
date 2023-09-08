@@ -6,8 +6,6 @@ namespace ModalLayer.Modal
 {
     public class Attendance : AttendanceDetailJson
     {
-        public long AttendanceId { set; get; }
-        public long EmployeeId { set; get; }
         public int UserTypeId { set; get; }
         public string AttendanceDetail { set; get; }
         public int TotalDays { set; get; }
@@ -17,17 +15,10 @@ namespace ModalLayer.Modal
         public float ExpectedHours { set; get; }
         public int ForYear { set; get; }
         public int ForMonth { set; get; }
-        public string EmployeeName { set; get; }
-        public string Email { set; get; }
-        public string Mobile { set; get; }
-        public long ReportingManagerId { set; get; }
-        public string ManagerName { set; get; }
         public DateTime? SubmittedOn { set; get; }
-        public DateTime? UpdatedOn { set; get; }
         public DateTime DOJ { set; get; }
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
-        public long? UpdatedBy { set; get; }
         public WorkType WorkTypeId { set; get; }
         public int PageIndex { get; set; }
     }
@@ -45,6 +36,13 @@ namespace ModalLayer.Modal
         public int FinancialYear { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public DateTime Doj { get; set; }
+    }
+
+    public class PayrollEmployeePageData
+    {
+        public List<LeaveRequestNotification> leaveRequestNotificatios { set; get; }
+        public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
+
     }
 
     public enum WorkType

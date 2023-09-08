@@ -50,7 +50,7 @@ namespace ServiceLayer.Code.PayrollCycle
             _logger = logger;
         }
 
-        private List<PayrollEmployeeData> GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
+        private PayrollEmployeePageData GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
         {
             var resultSet = _db.FetchDataSet("sp_employee_payroll_get_by_page", new
             {
@@ -60,13 +60,18 @@ namespace ServiceLayer.Code.PayrollCycle
                 PageSize = pageSize
             }, false);
 
-            if (resultSet == null || resultSet.Tables.Count != 2)
+            if (resultSet == null || resultSet.Tables.Count != 3)
                 throw HiringBellException.ThrowBadRequest($"[GetEmployeeDetail]: Employee data not found for date: {presentDate} of offSet: {offsetindex}");
 
-            List<PayrollEmployeeData> payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]);
+            PayrollEmployeePageData payrollEmployeePageData = new PayrollEmployeePageData
+            {
+                payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
+                leaveRequestNotificatios = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[2])
+            };
+
             List<EmployeeDeclaration> employeeDeclarations = Converter.ToList<EmployeeDeclaration>(resultSet.Tables[1]);
 
-            Parallel.ForEach(payrollEmployeeData, x =>
+            Parallel.ForEach(payrollEmployeePageData.payrollEmployeeData, x =>
             {
                 var context = employeeDeclarations.Find(i => i.EmployeeId == x.EmployeeId);
                 if (context != null)
@@ -75,7 +80,7 @@ namespace ServiceLayer.Code.PayrollCycle
                     x.employeeDeclaration = null;
             });
 
-            return payrollEmployeeData;
+            return payrollEmployeePageData;
         }
 
         private int GetTotalAttendance(PayrollEmployeeData empPayroll, List<PayrollEmployeeData> payrollEmployeeData, DateTime payrollDate)
@@ -104,9 +109,11 @@ namespace ServiceLayer.Code.PayrollCycle
             int pageSize = 15;
             while (true)
             {
-                List<PayrollEmployeeData> payrollEmployeeData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
-                if (payrollEmployeeData == null || payrollEmployeeData.Count == 0)
+                PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
+                if (payrollEmployeePageData.payrollEmployeeData == null || payrollEmployeePageData.payrollEmployeeData.Count == 0)
                     break;
+
+                List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData;
 
                 // run pay cycle by considering actual days in months
                 if (payroll.PayCalculationId == 1)
@@ -206,7 +213,7 @@ namespace ServiceLayer.Code.PayrollCycle
             if (result.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Fail to get payroll cycle data to run it. Please contact to admin");
 
-            if (result.Tables[0].Rows.Count == 0)
+            if (result.Tables[0].Rows.Count != 1)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Payroll cycle and company setting detail not found. Please contact to admin");
 
             if (result.Tables[1].Rows.Count == 0)
@@ -221,7 +228,7 @@ namespace ServiceLayer.Code.PayrollCycle
             if (result.Tables[4].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Salary group detail not found. Please contact to admin");
 
-            payrollCommonData.payrolls = Converter.ToList<Payroll>(result.Tables[0]);
+            payrollCommonData.payroll = Converter.ToType<Payroll>(result.Tables[0]);
             payrollCommonData.salaryComponents = Converter.ToList<SalaryComponents>(result.Tables[1]);
             payrollCommonData.surchargeSlabs = Converter.ToList<SurChargeSlab>(result.Tables[2]);
             payrollCommonData.ptaxSlab = Converter.ToList<PTaxSlab>(result.Tables[3]);
@@ -252,29 +259,28 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             _logger.LogInformation($"[RunPayrollCycle] method started");
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
-            foreach (var payroll in payrollCommonData.payrolls)
+            var payroll = payrollCommonData.payroll;
+
+            _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payroll.TimezoneName);
+            payrollCommonData.timeZone = _currentSession.TimeZone;
+            _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+
+            payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(+i);
+            _currentSession.TimeZoneNow = payrollCommonData.presentDate;
+            payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(+i);
+
+            if (DoesRunPayrollCycle(payroll.PayCycleDayOfMonth, payrollCommonData.presentDate))
             {
-                _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payroll.TimezoneName);
-                payrollCommonData.timeZone = _currentSession.TimeZone;
-                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-
-                payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).AddMonths(+i);
-                _currentSession.TimeZoneNow = payrollCommonData.presentDate;
-                payrollCommonData.utcPresentDate = DateTime.UtcNow.AddMonths(+i);
-
-                if (DoesRunPayrollCycle(payroll.PayCycleDayOfMonth, payrollCommonData.presentDate))
+                switch (payroll.PayFrequency)
                 {
-                    switch (payroll.PayFrequency)
-                    {
-                        case "monthly":
-                            _logger.LogInformation($"[RunPayrollCycle] method: runnig monthly payroll");
-                            await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
-                            break;
-                        case "daily":
-                            break;
-                        case "hourly":
-                            break;
-                    }
+                    case "monthly":
+                        _logger.LogInformation($"[RunPayrollCycle] method: runnig monthly payroll");
+                        await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
+                        break;
+                    case "daily":
+                        break;
+                    case "hourly":
+                        break;
                 }
             }
 
