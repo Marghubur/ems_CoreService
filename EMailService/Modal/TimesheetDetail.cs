@@ -23,6 +23,7 @@ namespace ModalLayer.Modal
         public bool IsSaved { get; set; }
         public bool IsSubmitted { get; set; }
         public List<WeeklyTimesheetDetail> TimesheetWeeklyData { get; set; }
+        public string ClientName { get; set; }
     }
 
     public class WeeklyTimesheetDetail : UserMangerCommonDetail

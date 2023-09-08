@@ -16,5 +16,6 @@ namespace CoreBottomHalf.Modal
         public string ManagerEmail { set; get; }
         public int Total { set; get; }
         public int Index { set; get; }
+        public int PageIndex { get; set; }
     }
 }

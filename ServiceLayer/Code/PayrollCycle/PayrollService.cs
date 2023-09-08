@@ -190,7 +190,7 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
             if (salaryBreakup == null)
-                throw HiringBellException.ThrowBadRequest("Invalid salary breakup found. Fail to run payroll.");
+                throw HiringBellException.ThrowBadRequest("Salary breakup not found. Fail to run payroll.");
 
             var presentMonthSalaryDetail = salaryBreakup.Find(x => x.MonthNumber == payrollDate.Month);
             if (presentMonthSalaryDetail != null)
@@ -258,7 +258,6 @@ namespace ServiceLayer.Code.PayrollCycle
         public async Task RunPayrollCycle(int i)
         {
             _logger.LogInformation($"[RunPayrollCycle] method started");
-
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
             var payroll = payrollCommonData.payroll;
 

@@ -234,7 +234,8 @@ namespace ServiceLayer.Code
                 leaveRequestNotification.EmployeeId,
                 leaveRequestNotification.FromDate,
                 leaveRequestNotification.ToDate,
-                leaveRequestNotification.RequestStatusId
+                leaveRequestNotification.RequestStatusId,
+                leaveRequestNotification.PageIndex
             });
             return await Task.FromResult(result);
         }

@@ -1,12 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Interface;
-using EMailService.Service;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -14,46 +11,31 @@ namespace ServiceLayer.Code
     public class TimesheetRequestService : ITimesheetRequestService
     {
         private readonly IDb _db;
-        private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        private readonly IAttendanceRequestService _attendanceRequestService;
-        private readonly IEMailManager _eMailManager;
-        private readonly IEmailService _emailService;
-        private readonly ICommonService _commonService;
         private readonly ApprovalEmailService _approvalEmailService;
 
         public TimesheetRequestService(IDb db,
-            ITimezoneConverter timezoneConverter,
             ApprovalEmailService approvalEmailService,
-            CurrentSession currentSession,
-            IEmailService emailService,
-            IAttendanceRequestService attendanceRequestService,
-            ICommonService commonService,
-            IEMailManager eMailManager)
+            CurrentSession currentSession)
         {
             _db = db;
-            _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _attendanceRequestService = attendanceRequestService;
-            _eMailManager = eMailManager;
-            _commonService = commonService;
-            _emailService = emailService;
             _approvalEmailService = approvalEmailService;
         }
 
-        public async Task<RequestModel> RejectTimesheetService(int timesheetId, int filterId = ApplicationConstants.Only)
+        public async Task<List<TimesheetDetail>> RejectTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateTimesheetRequest(timesheetId, ItemStatus.Rejected);
-            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            return await this.GetTimesheetRequestDataService(timesheetDetail);
         }
 
-        public async Task<RequestModel> ApprovalTimesheetService(int timesheetId, int filterId = ApplicationConstants.Only)
+        public async Task<List<TimesheetDetail>> ApprovalTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateTimesheetRequest(timesheetId, ItemStatus.Approved);
-            return _attendanceRequestService.GetRequestPageData(_currentSession.CurrentUserDetail.UserId, filterId);
+            return await this.GetTimesheetRequestDataService(timesheetDetail);
         }
 
-        public async Task<RequestModel> UpdateTimesheetRequest(int timesheetId, ItemStatus itemStatus)
+        public async Task UpdateTimesheetRequest(int timesheetId, ItemStatus itemStatus)
         {
             if (timesheetId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
@@ -81,12 +63,32 @@ namespace ServiceLayer.Code
 
             var timesheetDetails = JsonConvert.DeserializeObject<List<TimesheetDetail>>(timesheet.TimesheetWeeklyJson);
             await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
-            return _attendanceRequestService.FetchPendingRequestService(_currentSession.CurrentUserDetail.ReportingManagerId);
+            await Task.CompletedTask;
         }
 
         public List<DailyTimesheetDetail> ReAssigneTimesheetService(List<DailyTimesheetDetail> dailyTimesheetDetails, int filterId = ApplicationConstants.Only)
         {
             return null;
+        }
+
+        public async Task<List<TimesheetDetail>> GetTimesheetRequestDataService(TimesheetDetail timesheetDetail)
+        {
+            if (timesheetDetail.ReportingManagerId == 0)
+                throw new HiringBellException("Invalid reporting manager");
+
+            if (timesheetDetail.ForYear == 0)
+                throw new HiringBellException("Year is invalid");
+
+            var result = _db.GetList<TimesheetDetail>("sp_timesheet_requests_by_filter", new
+            {
+                timesheetDetail.ReportingManagerId,
+                timesheetDetail.ForYear,
+                timesheetDetail.TimesheetStatus,
+                timesheetDetail.EmployeeId,
+                timesheetDetail.PageIndex
+            });
+
+            return await Task.FromResult(result);
         }
     }
 }

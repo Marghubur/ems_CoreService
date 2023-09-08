@@ -399,6 +399,9 @@ namespace ServiceLayer.Code
 
         public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
         {
+            if (attendance.EmployeeId == 0)
+                throw HiringBellException.ThrowBadRequest("EMployee id is invalid");
+
             List<AttendanceDetailJson> attendenceDetails;
             AttendanceDetailBuildModal attendanceDetailBuildModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
@@ -424,6 +427,11 @@ namespace ServiceLayer.Code
                                 .ToList();
 
             //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
+            var leave = _db.GetList<LeaveRequestNotification>("sp_leave_request_notification_get_by_empid", new
+            {
+                EmployeeId = attendance.EmployeeId,
+                RequestStatusId = (int)ItemStatus.Approved
+            });
 
             int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
             if (attendances.Count == DateTime.UtcNow.Day || DateTime.UtcNow.Day < daysLimit)
@@ -444,6 +452,18 @@ namespace ServiceLayer.Code
                     daysLimit--;
                 }
 
+            }
+            if (leave != null && leave.Count > 0)
+            {
+                foreach (var item in attendances)
+                {
+                    var leaveDetail = leave.Any(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    if (leaveDetail)
+                    {
+                        item.IsOnLeave = true;
+                        item.IsOpen = false;
+                    }
+                }
             }
 
             return new AttendanceWithClientDetail

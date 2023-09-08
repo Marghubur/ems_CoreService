@@ -5,7 +5,6 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
