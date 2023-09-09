@@ -1,8 +1,9 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,6 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,6 +32,8 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly ILogger<PayrollService> _logger;
         private readonly ICompanyCalendar _companyCalendar;
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly KafkaNotificationService _kafkaNotificationService;
+
 
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
@@ -41,7 +43,8 @@ namespace ServiceLayer.Code.PayrollCycle
             FileLocationDetail fileLocationDetail,
             IBillService billService,
             ILogger<PayrollService> logger,
-            ICompanyCalendar companyCalendar)
+            ICompanyCalendar companyCalendar,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -52,6 +55,7 @@ namespace ServiceLayer.Code.PayrollCycle
             _fileLocationDetail = fileLocationDetail;
             _logger = logger;
             _companyCalendar = companyCalendar;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         private PayrollEmployeePageData GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
@@ -186,6 +190,7 @@ namespace ServiceLayer.Code.PayrollCycle
             decimal daysPresnet = 0;
             int totalDaysInMonth = 0;
             int pageSize = 15;
+            List<FileDetail> fileDetails = new List<FileDetail>();
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
@@ -261,15 +266,22 @@ namespace ServiceLayer.Code.PayrollCycle
                     }
 
                     _logger.LogInformation($"[CalculateRunPayrollForEmployees] method: generating and sending payroll email");
-                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
+                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId, fileDetails));
                 }
 
                 offsetindex = offsetindex + pageSize;
             }
 
             _logger.LogInformation($"[CalculateRunPayrollForEmployees] method ended");
-            _ = Task.Run(() => SendEmail(missingDetail, payrollDate.ToString("MMMM")));
-
+            //_ = Task.Run(() => SendEmail(missingDetail, payrollDate.ToString("MMMM")));
+            PayrollTemplateModel payrollTemplateModel = new PayrollTemplateModel
+            {
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                ToAddress = new List<string> { "istiyaq.mi9@gmail.com" },
+                kafkaServiceName = KafkaServiceName.Payroll,
+                FileDetails = fileDetails
+            };
+            await _kafkaNotificationService.SendEmailNotification(payrollTemplateModel);
             await Task.CompletedTask;
         }
 
@@ -393,7 +405,7 @@ namespace ServiceLayer.Code.PayrollCycle
             await Task.CompletedTask;
         }
 
-        private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId)
+        private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId, List<FileDetail> fileDetails)
         {
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method started");
             PayslipGenerationModal payslipGenerationModal = new PayslipGenerationModal
@@ -408,11 +420,11 @@ namespace ServiceLayer.Code.PayrollCycle
             var generatedfile = await _billService.GeneratePayslipService(payslipGenerationModal);
 
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Payslip generated");
-            var file = new FileDetail
+            fileDetails.Add(new FileDetail
             {
                 FileName = generatedfile.FileDetail.FileName,
                 FilePath = generatedfile.FileDetail.FilePath
-            };
+            });
 
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method ended");
             await Task.CompletedTask;
