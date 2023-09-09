@@ -120,7 +120,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
 
-        [Authorize(Roles = "Employee, Admin")]
         [HttpPost]
         [Route("GeneratePayslip")]
         public async Task<ApiResponse> GeneratePayslip(PayslipGenerationModal payslipGenerationModal)

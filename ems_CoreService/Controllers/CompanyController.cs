@@ -19,12 +19,14 @@ namespace OnlineDataBuilder.Controllers
     public class CompanyController : BaseController
     {
         private readonly ICompanyService _companyService;
+        private readonly IPayrollService _payrollService;
         private readonly HttpContext _httpContext;
 
-        public CompanyController(ICompanyService companyService, IHttpContextAccessor httpContext)
+        public CompanyController(ICompanyService companyService, IHttpContextAccessor httpContext, IPayrollService payrollService)
         {
             _companyService = companyService;
             _httpContext = httpContext.HttpContext;
+            _payrollService = payrollService;
         }
 
         [HttpGet("GetAllCompany")]
@@ -113,6 +115,13 @@ namespace OnlineDataBuilder.Controllers
         {
             var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting, isRunLeaveAccrual);
             return BuildResponse(settingDetail);
+        }
+
+        [HttpGet("RunPayroll/{MonthNumber}")]
+        public async Task<ApiResponse> RunPayroll(int MonthNumber)
+        {
+            await _payrollService.RunPayrollCycle(MonthNumber);
+            return BuildResponse(ApplicationConstants.Successfull);
         }
 
         [HttpGet("getcompanysettingdetail/{companyId}")]
