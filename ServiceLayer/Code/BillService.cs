@@ -1289,7 +1289,7 @@ namespace ServiceLayer.Code
                     imageFormat = ImageFormat.Gif;
                 else if (extension == "bmp")
                     imageFormat = ImageFormat.Bmp;
-                else if (extension == "jpeg")
+                else if (extension == "jpeg" || extension == "jpg")
                     imageFormat = ImageFormat.Jpeg;
                 else if (extension == "tiff")
                 {
