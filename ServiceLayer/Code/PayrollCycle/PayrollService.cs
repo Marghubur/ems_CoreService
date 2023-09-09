@@ -266,23 +266,52 @@ namespace ServiceLayer.Code.PayrollCycle
                     }
 
                     _logger.LogInformation($"[CalculateRunPayrollForEmployees] method: generating and sending payroll email");
-                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId, fileDetails));
+                    Task task = Task.Run(async () => await SendPayrollGeneratedEmail(payrollCommonData.presentDate, empPayroll.EmployeeId));
                 }
 
                 offsetindex = offsetindex + pageSize;
             }
 
             _logger.LogInformation($"[CalculateRunPayrollForEmployees] method ended");
-            //_ = Task.Run(() => SendEmail(missingDetail, payrollDate.ToString("MMMM")));
+            // _ = Task.Run(() => SendEmail(missingDetail, payrollDate.ToString("MMMM")));
             PayrollTemplateModel payrollTemplateModel = new PayrollTemplateModel
             {
                 CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                ToAddress = new List<string> { "istiyaq.mi9@gmail.com" },
+                ToAddress = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
                 kafkaServiceName = KafkaServiceName.Payroll,
-                FileDetails = fileDetails
+                Body = BuildPayrollTemplateBody(missingDetail)
             };
+
             await _kafkaNotificationService.SendEmailNotification(payrollTemplateModel);
             await Task.CompletedTask;
+        }
+
+        private string BuildPayrollTemplateBody(List<string> missingDetail)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine($"<div style=\"margin-bottom: 25px;\">Payroll of the month {DateTime.Now} completed</div>");
+
+            string status = "<b style=\"color: green\">Ran successfully</b>";
+            if (missingDetail.Count > 0 && missingDetail.Count <= 20)
+            {
+                foreach (var detail in missingDetail)
+                {
+                    builder.Append("<div>" + detail + "</div>");
+                }
+
+                status = "<b style=\"color: red\">Partially successfull</b>";
+            }
+            else if (missingDetail.Count > 20)
+            {
+                builder.Append("<div style=\"color: red;\"><b>Alert!!!</b>  " +
+                    "payroll cycle failed, more than 20 employee payroll cycle raise exception. " +
+                    "For detail please check the log files. Total failed count: " + missingDetail.Count + "</div>");
+
+                status = "<b style=\"color: red\">Many failed</b>";
+            }
+
+            builder.AppendLine($"<div style=\"margin-top 50px;\">Status: {status}</div>");
+            return builder.ToString();
         }
 
         private List<PayrollEmployeeData> CombineMonthlyRecord(List<PayrollEmployeeData> payrollEmployeeData)
@@ -405,7 +434,7 @@ namespace ServiceLayer.Code.PayrollCycle
             await Task.CompletedTask;
         }
 
-        private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId, List<FileDetail> fileDetails)
+        private async Task SendPayrollGeneratedEmail(DateTime presentDate, long empId)
         {
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method started");
             PayslipGenerationModal payslipGenerationModal = new PayslipGenerationModal
@@ -417,14 +446,7 @@ namespace ServiceLayer.Code.PayrollCycle
 
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Generating payslip");
 
-            var generatedfile = await _billService.GeneratePayslipService(payslipGenerationModal);
-
-            _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Payslip generated");
-            fileDetails.Add(new FileDetail
-            {
-                FileName = generatedfile.FileDetail.FileName,
-                FilePath = generatedfile.FileDetail.FilePath
-            });
+            await _billService.GeneratePayslipService(payslipGenerationModal);
 
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method ended");
             await Task.CompletedTask;
