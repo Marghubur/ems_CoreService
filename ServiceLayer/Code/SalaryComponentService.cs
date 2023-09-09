@@ -876,7 +876,7 @@ namespace ServiceLayer.Code
 
             //decimal taxExamptedComponents = GetTaxExamptedAmount(eCal.salaryGroup.GroupComponents);
             //eCal.TaxableCTC = Convert.ToDecimal(eCal.CTC - taxExamptedComponents);
-            eCal.TaxableCTC = eCal.CTC ;
+            eCal.TaxableCTC = eCal.CTC;
             decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
 
             int i = 0;
@@ -993,7 +993,17 @@ namespace ServiceLayer.Code
 
             decimal amount = 0;
             decimal taxableComponentAmount = 0;
-            var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
+            List<SalaryComponents> taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false).ToList();
+
+            var autoComponent = taxableComponents.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+            if (autoComponent == null)
+            {
+                var spaComponent = taxableComponents.Find(x => x.ComponentId == "SPA");
+                if (spaComponent != null && string.IsNullOrEmpty(spaComponent.Formula))
+                {
+                    spaComponent.Formula = ApplicationConstants.AutoCalculation;
+                }
+            }
 
             foreach (var item in taxableComponents)
             {
@@ -1089,14 +1099,11 @@ namespace ServiceLayer.Code
                 }
 
                 var component = calculatedSalaryBreakupDetail.Find(x => x.ComponentId == item.ComponentId);
-
-                if (component.Formula != ApplicationConstants.AutoCalculation)
+                if (component != null)
                 {
                     component.Formula = item.Formula;
                     component.FinalAmount = amount;
                 }
-                else
-                    component.FinalAmount = 0;
             }
 
             var taxableComponentAmount = calculatedSalaryBreakupDetail.FindAll(x => x.ComponentId != nameof(ComponentNames.Gross) && x.ComponentId != nameof(ComponentNames.CTC)).Sum(x => x.FinalAmount);

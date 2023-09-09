@@ -27,6 +27,7 @@ namespace ModalLayer.Modal.Leaves
         public string FileIds { get; set; }
         public int ApprovalWorkFlowId { set; get; }
         public int AutoExpiredAfter { set; get; }
+        public List<DateTime> LeaveDates { set; get; }
     }
 
     public class RequestChainModal

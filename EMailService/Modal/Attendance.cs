@@ -1,4 +1,5 @@
 ﻿using ModalLayer.Modal.Accounts;
+using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
 
@@ -41,7 +42,7 @@ namespace ModalLayer.Modal
 
     public class PayrollEmployeePageData
     {
-        public List<LeaveRequestNotification> leaveRequestNotificatios { set; get; }
+        public LeaveRequestDetail leaveRequestDetail { set; get; }
         public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
 
     }
