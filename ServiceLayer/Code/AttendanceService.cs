@@ -457,8 +457,8 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in attendances)
                 {
-                    var leaveDetail = leave.Any(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
-                    if (leaveDetail)
+                    var leaveDetail = leave.Find(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
                     {
                         item.IsOnLeave = true;
                         item.IsOpen = false;
