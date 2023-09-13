@@ -511,5 +511,20 @@ namespace ServiceLayer.Code
             }
             return null;
         }
+
+        public Leave GetLeaveDetailByEmpIdService(long employeeId)
+        {
+            if (employeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee selected");
+
+            var result = _db.Get<Leave>("sp_employee_leave_request_by_empid", new { EmployeeId = employeeId });
+            if (result == null)
+                throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
+
+            if (string.IsNullOrEmpty(result.LeaveQuotaDetail) || result.LeaveQuotaDetail == "[]")
+                throw HiringBellException.ThrowBadRequest("Leave quota detail not found. Please contact to admin");
+
+            return result;
+        }
     }
 }

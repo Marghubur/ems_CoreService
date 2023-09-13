@@ -161,5 +161,12 @@ namespace OnlineDataBuilder.Controllers
             var result = _leaveService.GetLeaveAttachByMangerService(leaveRequestNotification);
             return BuildResponse(result);
         }
+
+        [HttpGet("GetLeaveDetailByEmpId/{EmployeeId}")]
+        public IResponse<ApiResponse> GetLeaveDetailByEmpId([FromRoute] long EmployeeId)
+        {
+            var result = _leaveService.GetLeaveDetailByEmpIdService(EmployeeId);
+            return BuildResponse(result);
+        }
     }
 }
