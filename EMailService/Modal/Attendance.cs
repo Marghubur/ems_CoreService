@@ -9,7 +9,6 @@ namespace ModalLayer.Modal
     {
         public int UserTypeId { set; get; }
         public string AttendanceDetail { set; get; }
-        public string SecondMonthAttendanceDetail { set; get; }
         public int TotalDays { set; get; }
         public int TotalWeekDays { set; get; }
         public int DaysPending { set; get; }
