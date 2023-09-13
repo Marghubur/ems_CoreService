@@ -24,5 +24,6 @@ namespace ServiceLayer.Interface
         Task RunAccrualByEmployeeService(long EmployeeId);
         DataSet GetLeaveAttachmentService(string FileIds);
         DataSet GetLeaveAttachByMangerService(LeaveRequestNotification leaveRequestNotification);
+        Leave GetLeaveDetailByEmpIdService(long EmployeeId);
     }
 }

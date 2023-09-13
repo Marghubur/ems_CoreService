@@ -232,9 +232,6 @@ namespace ServiceLayer.Code
                 attendenceDetails.Add(new AttendanceDetailJson
                 {
                     AttendenceDetailId = workingDate.Day,
-                    IsHoliday = isHoliday,
-                    IsOnLeave = false,
-                    IsWeekend = isWeekend,
                     AttendanceDay = workingDate,
                     LogOn = officetime,
                     LogOff = logoff,
@@ -244,8 +241,7 @@ namespace ServiceLayer.Code
                     ApprovedBy = 0,
                     SessionType = 1,
                     TotalMinutes = totalMinute,
-                    IsOpen = i >= days ? true : false,
-                    Emails = "[]"
+                    IsOpen = i >= days ? true : false
                 });
 
                 i++;
@@ -457,8 +453,8 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in attendances)
                 {
-                    var leaveDetail = leave.Any(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
-                    if (leaveDetail)
+                    var leaveDetail = leave.Find(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
                     {
                         item.IsOnLeave = true;
                         item.IsOpen = false;

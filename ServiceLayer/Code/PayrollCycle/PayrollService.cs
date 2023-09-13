@@ -129,19 +129,6 @@ namespace ServiceLayer.Code.PayrollCycle
                     throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
             }
 
-            if (!string.IsNullOrEmpty(attrDetail.SecondMonthAttendanceDetail))
-            {
-                var otherMonthAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attrDetail.SecondMonthAttendanceDetail);
-                if (otherMonthAttendance == null)
-                    throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
-
-                attendanceDetailJsons.AddRange(otherMonthAttendance);
-            }
-
-            attendanceDetailJsons = attendanceDetailJsons
-                                    .FindAll(x => x.AttendanceDay.Date.Subtract(payrollDate.AddMonths(-1).Date).TotalDays > 0
-                                               && x.AttendanceDay.Date.Subtract(payrollDate.Date).TotalDays <= 0);
-
             if (payroll.IsExcludeWeeklyOffs)
             {
                 attendanceDetailJsons = attendanceDetailJsons.FindAll(x =>
@@ -212,7 +199,6 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
 
                 bool IsTaxCalculationRequired = false;
-                payrollEmployeeData = CombineMonthlyRecord(payrollEmployeeData);
 
                 foreach (PayrollEmployeeData empPayroll in payrollEmployeeData)
                 {
@@ -312,21 +298,6 @@ namespace ServiceLayer.Code.PayrollCycle
 
             builder.AppendLine($"<div style=\"margin-top 50px;\">Status: {status}</div>");
             return builder.ToString();
-        }
-
-        private List<PayrollEmployeeData> CombineMonthlyRecord(List<PayrollEmployeeData> payrollEmployeeData)
-        {
-            List<PayrollEmployeeData> newPayrollEmployeeData = new List<PayrollEmployeeData>();
-            foreach (var pay in payrollEmployeeData)
-            {
-                var record = newPayrollEmployeeData.Find(x => x.EmployeeId == pay.EmployeeId);
-                if (record == null)
-                    newPayrollEmployeeData.Add(pay);
-                else
-                    record.SecondMonthAttendanceDetail = pay.AttendanceDetail;
-            }
-
-            return newPayrollEmployeeData;
         }
 
         private static void UpdateSalaryBreakup(DateTime payrollDate, decimal hrsUsedForDeduction, decimal hrsPresnet, PayrollEmployeeData empPayroll)
