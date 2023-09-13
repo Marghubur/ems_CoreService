@@ -232,9 +232,6 @@ namespace ServiceLayer.Code
                 attendenceDetails.Add(new AttendanceDetailJson
                 {
                     AttendenceDetailId = workingDate.Day,
-                    IsHoliday = isHoliday,
-                    IsOnLeave = false,
-                    IsWeekend = isWeekend,
                     AttendanceDay = workingDate,
                     LogOn = officetime,
                     LogOff = logoff,
@@ -244,8 +241,7 @@ namespace ServiceLayer.Code
                     ApprovedBy = 0,
                     SessionType = 1,
                     TotalMinutes = totalMinute,
-                    IsOpen = i >= days ? true : false,
-                    Emails = "[]"
+                    IsOpen = i >= days ? true : false
                 });
 
                 i++;
