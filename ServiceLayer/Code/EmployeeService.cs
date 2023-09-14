@@ -582,7 +582,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Employee file converted");
             EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            employeeCalculation.Doj = DateTime.UtcNow;
+            employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = true;
 
             if (employeeEmailMobileCheck.EmployeeCount > 0)
@@ -803,7 +803,7 @@ namespace ServiceLayer.Code
                     BankName = employee.BankName,
                     BranchName = employee.BranchName,
                     CreatedBy = employee.EmployeeUid,
-                    CreatedOn = employee.CreatedOn,
+                    CreatedOn = employee.DateOfJoining,
                     Domain = employee.Domain,
                     Email = employee.Email,
                     EmployeeUid = employee.EmployeeUid,
@@ -913,7 +913,6 @@ namespace ServiceLayer.Code
                 },
                     true
                 );
-
 
                 if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
                 {
