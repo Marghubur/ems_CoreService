@@ -4,6 +4,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using DocumentFormat.OpenXml.Office2010.PowerPoint;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
@@ -167,7 +168,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return totalDays;
         }
 
-        private async Task CalculateRunPayrollForEmployees(Payroll payroll, PayrollCommonData payrollCommonData)
+        private async Task CalculateRunPayrollForEmployees(Payroll payroll, PayrollCommonData payrollCommonData, bool reRunFlag)
         {
             _logger.LogInformation($"[CalculateRunPayrollForEmployees] method started");
 
@@ -191,7 +192,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 // run pay cycle by considering actual days in months
                 if (payroll.PayCalculationId == 1)
                 {
-                    totalDaysInMonth = payrollDate.Date.Subtract(payrollDate.AddMonths(-1).Date).Days - 1;
+                    var payrollDateTimeZone = _timezoneConverter.ToTimeZoneDateTime(payrollDate, _currentSession.TimeZone);                    
+                    totalDaysInMonth = DateTime.DaysInMonth(payrollDateTimeZone.Year, payrollDateTimeZone.Month);
                 }
                 else // run pay cycle by considering only weekdays in month
                 {
@@ -221,15 +223,15 @@ namespace ServiceLayer.Code.PayrollCycle
                         var holidays = 0m;
                         var weekOff = 0;
 
-                        decimal shiftDuration = (shiftDetail.Duration / 60);
-                        decimal hrsUsedForDeduction = (totalDaysInMonth - holidays - weekOff) * shiftDuration;
-                        decimal hrsPresnet = daysPresnet * shiftDuration;
-                        if (!presentData.IsPayrollCompleted)
+                        decimal dailyWorkingHours = (shiftDetail.Duration / 60);
+                        decimal expectedHoursInMonth = (totalDaysInMonth - holidays - weekOff) * dailyWorkingHours;
+                        decimal actualHoursWorked = daysPresnet * dailyWorkingHours;
+                        if (!presentData.IsPayrollCompleted || reRunFlag)
                         {
-                            UpdateSalaryBreakup(payrollDate, hrsUsedForDeduction, hrsPresnet, empPayroll);
-                            if (hrsPresnet != hrsUsedForDeduction)
+                            UpdateSalaryBreakup(payrollDate, expectedHoursInMonth, actualHoursWorked, empPayroll);
+                            if (actualHoursWorked != expectedHoursInMonth)
                             {
-                                var newAmount = (presentData.TaxDeducted / hrsUsedForDeduction) * hrsPresnet;
+                                var newAmount = (presentData.TaxDeducted / expectedHoursInMonth) * actualHoursWorked;
                                 presentData.TaxPaid = newAmount;
                                 presentData.TaxDeducted = newAmount;
                                 IsTaxCalculationRequired = true;
@@ -268,7 +270,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 Body = BuildPayrollTemplateBody(missingDetail)
             };
 
-            await _kafkaNotificationService.SendEmailNotification(payrollTemplateModel);
+            _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
             await Task.CompletedTask;
         }
 
@@ -373,7 +375,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return flag;
         }
 
-        public async Task RunPayrollCycle(int i)
+        public async Task RunPayrollCycle(int i, bool reRunFlag = false)
         {
             _logger.LogInformation($"[RunPayrollCycle] method started");
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
@@ -392,7 +394,7 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 case "monthly":
                     _logger.LogInformation($"[RunPayrollCycle] method: runnig monthly payroll");
-                    await CalculateRunPayrollForEmployees(payroll, payrollCommonData);
+                    await CalculateRunPayrollForEmployees(payroll, payrollCommonData, reRunFlag);
                     break;
                 case "daily":
                     break;

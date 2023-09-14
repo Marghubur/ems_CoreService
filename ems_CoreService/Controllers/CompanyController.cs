@@ -120,7 +120,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("RunPayroll/{MonthNumber}")]
         public async Task<ApiResponse> RunPayroll(int MonthNumber)
         {
-            await _payrollService.RunPayrollCycle(MonthNumber);
+            await _payrollService.RunPayrollCycle(MonthNumber, true);
             return BuildResponse(ApplicationConstants.Successfull);
         }
 
