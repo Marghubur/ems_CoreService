@@ -469,9 +469,6 @@ namespace ServiceLayer.Code
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
 
-            if (isRunLeaveAccrual)
-                await _leaveCalculation.StartAccrualCycle(isRunLeaveAccrual);
-
             return companySettingDetail;
         }
 

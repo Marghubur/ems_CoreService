@@ -949,6 +949,8 @@ namespace ServiceLayer.Code
                 }
 
                 // var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
+
+                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
                 return employeeId;
             }
             catch
@@ -958,6 +960,14 @@ namespace ServiceLayer.Code
                 
                 throw;
             }
+        }
+
+        private async Task CheckRunLeaveAccrualCycle(long EmployeeId)
+        {
+            // check leave record exist 1. new registration, 2. update but accural didn't completed
+            // if not run accrual
+
+            await Task.CompletedTask;
         }
 
         private async Task<long> RegisterNewEmployee(Employee employee, DateTime doj)

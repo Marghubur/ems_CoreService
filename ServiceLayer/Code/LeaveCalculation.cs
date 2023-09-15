@@ -2,6 +2,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Modal.Leaves;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer;
@@ -48,11 +49,12 @@ namespace ServiceLayer.Code
             Apply apply,
             IHolidaysAndWeekoffs holidaysAndWeekoffs,
             Restriction restriction,
-            Approval approval, 
-            ICompanyCalendar companyCalendar, 
-            IFileService fileService, 
-            FileLocationDetail fileLocationDetail, 
-            ILogger<LeaveCalculation> logger) {
+            Approval approval,
+            ICompanyCalendar companyCalendar,
+            IFileService fileService,
+            FileLocationDetail fileLocationDetail,
+            ILogger<LeaveCalculation> logger)
+        {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
@@ -136,7 +138,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
-        public async Task<List<CompanySetting>> StartAccrualCycle(bool runTillMonthOfPresnetYear = false)
+        public async Task<List<CompanySetting>> StartAccrualCycle(RunAccrualModel runAccrualModel)
         {
             _logger.LogInformation("Start Accrual Cycle");
             var CompanySettings = _db.GetList<CompanySetting>("sp_company_setting_get_all");
@@ -146,19 +148,19 @@ namespace ServiceLayer.Code
                 {
                     _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
                     _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
-                    await RunAccrualCycle(runTillMonthOfPresnetYear);
+                    await RunAccrualCycle(runAccrualModel);
                 }
             }
             _logger.LogInformation("End Accrual Cycle");
             return CompanySettings;
         }
 
-        public async Task RunAccrualCycle(bool runTillMonthOfPresnetYear = false)
+        public async Task RunAccrualCycle(RunAccrualModel runAccrualModel)
         {
             LeavePlan leavePlan = default;
             List<LeavePlanType> leavePlanTypes = default;
             LeaveCalculationModal leaveCalculationModal = await LoadLeaveMasterData();
-            leaveCalculationModal.runTillMonthOfPresnetYear = runTillMonthOfPresnetYear;
+            leaveCalculationModal.runTillMonthOfPresnetYear = runAccrualModel.RunTillMonthOfPresnetYear;
 
             var offsetindex = 0;
             while (true)
@@ -166,11 +168,15 @@ namespace ServiceLayer.Code
                 try
                 {
                     _logger.LogInformation("Calling: sp_leave_accrual_cycle_data_by_employee");
-                    var employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
+                    List<EmployeeAccrualData> employeeAccrualData = _db.GetList<EmployeeAccrualData>("sp_leave_accrual_cycle_data_by_employee", new
                     {
+                        EmployeeId = runAccrualModel.EmployeeId,
                         OffsetIndex = offsetindex,
                         PageSize = 500
                     }, false);
+
+                    if (runAccrualModel.IsSingleRun && employeeAccrualData.Count > 1)
+                        throw HiringBellException.ThrowBadRequest("While running employee accural getting multiple employee detail.");
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
                     {
@@ -184,7 +190,7 @@ namespace ServiceLayer.Code
                         leavePlan = leaveCalculationModal.leavePlans
                             .FirstOrDefault(x => emp.LeavePlanId > 0 ? x.LeavePlanId == emp.LeavePlanId : x.IsDefaultPlan == true);
 
-                        if (runTillMonthOfPresnetYear)
+                        if (runAccrualModel.RunTillMonthOfPresnetYear)
                         {
                             emp.LeaveTypeBrief = new List<LeaveTypeBrief>();
                         }
@@ -207,7 +213,7 @@ namespace ServiceLayer.Code
                                 if (type != null)
                                 {
                                     var availableLeaves = await RunAccrualCycleAsync(leaveCalculationModal, type);
-                                    if (runTillMonthOfPresnetYear)
+                                    if (runAccrualModel.RunTillMonthOfPresnetYear)
                                         replaceLeaveTypeBriefCompletely(availableLeaves, emp.LeaveTypeBrief, type);
                                     else
                                         updateLeaveTypeBrief(availableLeaves, emp.LeaveTypeBrief, type, leaveCalculationModal);

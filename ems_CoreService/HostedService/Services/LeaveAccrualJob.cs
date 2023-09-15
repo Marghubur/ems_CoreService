@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using EMailService.Modal.Leaves;
+using Microsoft.Extensions.DependencyInjection;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
@@ -15,7 +16,14 @@ namespace OnlineDataBuilder.HostedService.Services
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
                 ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-                CompanySettingList = await _leaveCalculation.StartAccrualCycle();
+                RunAccrualModel runAccrualModel = new RunAccrualModel
+                {
+                    RunTillMonthOfPresnetYear = true,
+                    EmployeeId = 0,
+                    IsSingleRun = false
+                };
+
+                CompanySettingList = await _leaveCalculation.StartAccrualCycle(runAccrualModel);
             }
 
             return CompanySettingList;

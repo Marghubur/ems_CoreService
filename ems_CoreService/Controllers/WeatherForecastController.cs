@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -188,7 +189,14 @@ namespace OnlineDataBuilder.Controllers
         {
             _logger.LogInformation($"CS: {_fileLocationDetail.ConnectionString}"); ;
             _db.SetupConnectionString(_fileLocationDetail.ConnectionString);
-            await _leaveCalculation.StartAccrualCycle(true);
+            RunAccrualModel runAccrualModel = new RunAccrualModel
+            {
+                RunTillMonthOfPresnetYear = true,
+                EmployeeId = 0,
+                IsSingleRun = false
+            };
+
+            await _leaveCalculation.StartAccrualCycle(runAccrualModel);
         }
 
         private async Task RunDailyTimesheetCreationJob()
