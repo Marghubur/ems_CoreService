@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
+using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -964,8 +965,20 @@ namespace ServiceLayer.Code
 
         private async Task CheckRunLeaveAccrualCycle(long EmployeeId)
         {
-            // check leave record exist 1. new registration, 2. update but accural didn't completed
-            // if not run accrual
+            var result = _db.Get<Leave>("sp_employee_leave_request_by_empid", new { EmployeeId = EmployeeId });
+            if (result == null)
+                throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
+
+            if (string.IsNullOrEmpty(result.LeaveQuotaDetail) || result.LeaveQuotaDetail == "[]")
+            {
+                RunAccrualModel runAccrualModel = new RunAccrualModel
+                {
+                    RunTillMonthOfPresnetYear = true,
+                    EmployeeId = EmployeeId,
+                    IsSingleRun = true
+                };
+                await _leaveCalculation.RunAccrualCycle(runAccrualModel);
+            }
 
             await Task.CompletedTask;
         }
