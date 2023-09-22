@@ -625,9 +625,9 @@ namespace ServiceLayer.Code
             {
                 ActionType = ApplicationConstants.Submitted,
                 CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                DayCount = presentAttendance.TotalDays,
+                DayCount = 1,
                 DeveloperName = presentAttendance.EmployeeName,
-                FromDate = presentAttendance.AttendanceDay,
+                FromDate = _timezoneConverter.ToTimeZoneDateTime(presentAttendance.AttendanceDay, _currentSession.TimeZone),
                 ManagerName = presentAttendance.ManagerName,
                 Message = presentAttendance.UserComments,
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
