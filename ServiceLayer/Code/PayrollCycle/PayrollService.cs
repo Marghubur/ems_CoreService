@@ -6,6 +6,7 @@ using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocumentFormat.OpenXml.Office2010.PowerPoint;
 using EMailService.Modal;
+using EMailService.Modal.Payroll;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
@@ -174,11 +175,20 @@ namespace ServiceLayer.Code.PayrollCycle
 
             List<string> missingDetail = new List<string>();
             DateTime payrollDate = new DateTime(payrollCommonData.utcPresentDate.Year, payrollCommonData.utcPresentDate.Month, payroll.PayCycleDayOfMonth);
+
+            var payrollDateTimeZone = _timezoneConverter.ToTimeZoneDateTime(payrollDate, _currentSession.TimeZone);
+            int totalDaysInMonth = DateTime.DaysInMonth(payrollDateTimeZone.Year, payrollDateTimeZone.Month);
+
+            if (payrollCommonData.presentDate.Subtract(payrollDate).TotalDays < 0)
+            {
+                throw HiringBellException.ThrowBadRequest($"Payroll run date is defined: {payrollDate.ToString("dd MMMM, yyyy")}. You can run after defined date.");
+            }
+
             int offsetindex = 0;
             decimal daysPresnet = 0;
-            int totalDaysInMonth = 0;
             int pageSize = 15;
             List<FileDetail> fileDetails = new List<FileDetail>();
+            PayrollMonthlyDetail payrollMonthlyDetail = new PayrollMonthlyDetail();
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollDate, offsetindex, pageSize);
@@ -189,13 +199,9 @@ namespace ServiceLayer.Code.PayrollCycle
 
                 List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData;
 
-                // run pay cycle by considering actual days in months
-                if (payroll.PayCalculationId == 1)
-                {
-                    var payrollDateTimeZone = _timezoneConverter.ToTimeZoneDateTime(payrollDate, _currentSession.TimeZone);                    
-                    totalDaysInMonth = DateTime.DaysInMonth(payrollDateTimeZone.Year, payrollDateTimeZone.Month);
-                }
-                else // run pay cycle by considering only weekdays in month
+                // run pay cycle by considering actual days in months if value = 1
+                // else run pay cycle by considering only weekdays in month value = 0
+                if (payroll.PayCalculationId != 1)
                 {
                     totalDaysInMonth = TimezoneConverter.GetNumberOfWeekdaysInMonth(payrollCommonData.presentDate.Year, payrollDate.Month);
                 }
@@ -216,19 +222,19 @@ namespace ServiceLayer.Code.PayrollCycle
                         if (presentData == null)
                             throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
 
-                        var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
-                        if (shiftDetail == null)
-                            throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
-
-                        var holidays = 0m;
-                        var weekOff = 0;
-
-                        decimal dailyWorkingHours = (shiftDetail.Duration / 60);
-                        decimal expectedHoursInMonth = (totalDaysInMonth - holidays - weekOff) * dailyWorkingHours;
-                        decimal actualHoursWorked = daysPresnet * dailyWorkingHours;
                         if (!presentData.IsPayrollCompleted || reRunFlag)
                         {
-                            UpdateSalaryBreakup(payrollDate, expectedHoursInMonth, actualHoursWorked, empPayroll);
+                            var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
+                            if (shiftDetail == null)
+                                throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
+
+                            var holidays = 0m;
+                            var weekOff = 0;
+
+                            decimal dailyWorkingHours = (shiftDetail.Duration / 60);
+                            decimal expectedHoursInMonth = (totalDaysInMonth - holidays - weekOff) * dailyWorkingHours;
+                            decimal actualHoursWorked = daysPresnet * dailyWorkingHours;
+                            UpdateSalaryBreakup(payrollDate, expectedHoursInMonth, actualHoursWorked, empPayroll, payrollMonthlyDetail);
                             if (actualHoursWorked != expectedHoursInMonth)
                             {
                                 var newAmount = (presentData.TaxDeducted / expectedHoursInMonth) * actualHoursWorked;
@@ -240,6 +246,9 @@ namespace ServiceLayer.Code.PayrollCycle
                             {
                                 presentData.TaxPaid = presentData.TaxDeducted;
                             }
+
+                            payrollMonthlyDetail.TotalPayableToEmployees -= presentData.TaxPaid;
+                            payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
 
                             presentData.IsPayrollCompleted = true;
                             empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
@@ -271,7 +280,37 @@ namespace ServiceLayer.Code.PayrollCycle
             };
 
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
-            await Task.CompletedTask;
+            await UpdatePayrollMonthlyDetail(payrollMonthlyDetail, payrollDate);
+        }
+
+        private async Task UpdatePayrollMonthlyDetail(PayrollMonthlyDetail payrollMonthlyDetail, DateTime payrollDate)
+        {
+            payrollMonthlyDetail.ForYear = payrollDate.Year;
+            payrollMonthlyDetail.ForMonth = payrollDate.Month;
+            payrollMonthlyDetail.PayrollStatus = 16;
+            payrollMonthlyDetail.Reason = string.Empty;
+            payrollMonthlyDetail.PaymentRunDate = payrollDate;
+            payrollMonthlyDetail.ExecutedBy = _currentSession.CurrentUserDetail.UserId;
+            payrollMonthlyDetail.ExecutedOn = DateTime.Now;
+            payrollMonthlyDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+
+            await _db.ExecuteAsync("sp_payroll_monthly_detail_ins", new
+            {
+                payrollMonthlyDetail.PayrollMonthlyDetailId,
+                payrollMonthlyDetail.ForYear,
+                payrollMonthlyDetail.ForMonth,
+                payrollMonthlyDetail.TotalPayableToEmployees,
+                payrollMonthlyDetail.TotalPFByEmployer,
+                payrollMonthlyDetail.TotalProfessionalTax,
+                payrollMonthlyDetail.TotalDeduction,
+                payrollMonthlyDetail.PayrollStatus,
+                payrollMonthlyDetail.Reason,
+                payrollMonthlyDetail.PaymentRunDate,
+                payrollMonthlyDetail.ProofOfDocumentPath,
+                payrollMonthlyDetail.ExecutedBy,
+                payrollMonthlyDetail.ExecutedOn,
+                payrollMonthlyDetail.CompanyId
+            });
         }
 
         private string BuildPayrollTemplateBody(List<string> missingDetail)
@@ -302,7 +341,8 @@ namespace ServiceLayer.Code.PayrollCycle
             return builder.ToString();
         }
 
-        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal hrsUsedForDeduction, decimal hrsPresnet, PayrollEmployeeData empPayroll)
+        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal hrsUsedForDeduction, decimal hrsPresnet,
+            PayrollEmployeeData empPayroll, PayrollMonthlyDetail payrollMonthlyDetail)
         {
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
             if (salaryBreakup == null)
@@ -314,6 +354,20 @@ namespace ServiceLayer.Code.PayrollCycle
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
                     item.FinalAmount = (item.FinalAmount / hrsUsedForDeduction) * hrsPresnet;
+                    switch (item.ComponentId)
+                    {
+                        case ComponentNames.ProfessionalTax:
+                            payrollMonthlyDetail.TotalProfessionalTax += item.FinalAmount;
+                            break;
+                        case ComponentNames.EmployerPF:
+                            payrollMonthlyDetail.TotalPFByEmployer += item.FinalAmount;
+                            break;
+                        case ComponentNames.CTCId:                            
+                            break;
+                        default:
+                            payrollMonthlyDetail.TotalPayableToEmployees += item.FinalAmount;
+                            break;
+                    }
                 }
 
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
@@ -386,10 +440,12 @@ namespace ServiceLayer.Code.PayrollCycle
 
             DateTime firstDayOfYear = new DateTime(DateTime.Now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             payrollCommonData.utcPresentDate = firstDayOfYear.AddMonths(+i);
-            payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(payrollCommonData.utcPresentDate, _currentSession.TimeZone);
+            payrollCommonData.presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
-            //if (DoesRunPayrollCycle(payroll.PayCycleDayOfMonth, payrollCommonData.presentDate))
-            //{
+            int totalDaysInMonth = DateTime.DaysInMonth(payrollCommonData.utcPresentDate.Year, payrollCommonData.utcPresentDate.Month);
+            if (payroll.PayCycleDayOfMonth > totalDaysInMonth)
+                payroll.PayCycleDayOfMonth = totalDaysInMonth;
+
             switch (payroll.PayFrequency)
             {
                 case "monthly":
@@ -401,7 +457,6 @@ namespace ServiceLayer.Code.PayrollCycle
                 case "hourly":
                     break;
             }
-            // }
 
             _logger.LogInformation($"[RunPayrollCycle] method ended");
             await Task.CompletedTask;
