@@ -117,10 +117,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(settingDetail);
         }
 
-        [HttpGet("RunPayroll/{MonthNumber}")]
-        public async Task<ApiResponse> RunPayroll(int MonthNumber)
+        [HttpGet("RunPayroll/{MonthNumber}/{ReCalculateFlagId}")]
+        public async Task<ApiResponse> RunPayroll(int MonthNumber, int ReCalculateFlagId)
         {
-            await _payrollService.RunPayrollCycle(MonthNumber, true);
+            await _payrollService.RunPayrollCycle(MonthNumber, ReCalculateFlagId == 1);
             return BuildResponse(ApplicationConstants.Successfull);
         }
 
