@@ -364,6 +364,8 @@ namespace ServiceLayer.Code.PayrollCycle
                             break;
                         case ComponentNames.CTCId:                            
                             break;
+                        case ComponentNames.GrossId:
+                            break;
                         default:
                             payrollMonthlyDetail.TotalPayableToEmployees += item.FinalAmount;
                             break;
