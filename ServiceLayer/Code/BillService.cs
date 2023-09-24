@@ -40,6 +40,7 @@ namespace ServiceLayer.Code
         private readonly ITemplateService _templateService;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IDeclarationService _declarationService;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
@@ -50,7 +51,8 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
-            IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService)
+            IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService, 
+            IDeclarationService declarationService)
         {
             this.db = db;
             _logger = logger;
@@ -65,6 +67,7 @@ namespace ServiceLayer.Code
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
             _kafkaNotificationService = kafkaNotificationService;
+            _declarationService = declarationService;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -1087,7 +1090,7 @@ namespace ServiceLayer.Code
                 BillingTemplateModel billingTemplateModel = new BillingTemplateModel
                 {
                     FileDetails = file,
-                    DeveloperName = string.Concat(employee.FirstName, " " , employee.LastName),
+                    DeveloperName = string.Concat(employee.FirstName, " ", employee.LastName),
                     Month = generateBillFileDetail.MonthName,
                     Year = generateBillFileDetail.ForYear,
                     ToAddress = emails,
@@ -1196,7 +1199,7 @@ namespace ServiceLayer.Code
             _fileMaker._fileDetail = payslipModal.FileDetail;
 
             // Converting html context for pdf conversion.
-            var html = this.GetPayslipHtmlString(payslipModal.PdfTemplatePath, payslipModal, true);
+            var html = await GetPayslipHtmlString(payslipModal.PdfTemplatePath, payslipModal, true);
 
             var destinationFilePath = Path.Combine(payslipModal.FileDetail.DiskFilePath,
                 payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
@@ -1205,7 +1208,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private string GetPayslipHtmlString(string templatePath, PayslipGenerationModal payslipModal, bool isHeaderLogoRequired = false)
+        private async Task<string> GetPayslipHtmlString(string templatePath, PayslipGenerationModal payslipModal, bool isHeaderLogoRequired = false)
         {
             string html = string.Empty;
             var salaryDetailsHTML = string.Empty;
@@ -1215,6 +1218,9 @@ namespace ServiceLayer.Code
                 //x.ComponentId != ComponentNames.EmployerPF &&
                 x.IsIncludeInPayslip == true
             );
+            EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
+            string declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
+            var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
 
             foreach (var item in salaryDetail)
             {
@@ -1238,6 +1244,7 @@ namespace ServiceLayer.Code
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
             var TotalWorkingDays = GetWorkingDays(payslipModal.AttendanceDetail);
             var LossOfPayDays = ActualPayableDays - TotalWorkingDays;
+
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
             {
                 StreamReader reader = new StreamReader(stream);
@@ -1274,7 +1281,11 @@ namespace ServiceLayer.Code
                 Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).
-                Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00"));
+                Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00")).
+                Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
+                Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
+                Replace("[[EmployeeDeclaration]]", declarationHTML)
+                ;
             }
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
@@ -1478,6 +1489,380 @@ namespace ServiceLayer.Code
             }
 
             return ptaxAmount;
+        }
+
+        private string GetDeclarationDetailHTML(EmployeeDeclaration employeeDeclaration)
+        {
+            string declarationHTML = string.Empty;
+            if (employeeDeclaration.EmployeeCurrentRegime == 1)
+            {
+                if (employeeDeclaration.TaxSavingAlloance.FindAll(x => x.DeclaredValue > 0).Count == 0)
+                    employeeDeclaration.TaxSavingAlloance = new List<SalaryComponents>();
+
+                decimal hraAmount = 0;
+                var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == "HRA" && x.DeclaredValue > 0);
+                if (hraComponent != null)
+                {
+                    employeeDeclaration.TaxSavingAlloance.Add(hraComponent);
+                    hraAmount = employeeDeclaration.HRADeatils.HRAAmount;
+                };
+                var totalAllowTaxExemptAmount = ComponentTotalAmount(employeeDeclaration.TaxSavingAlloance) + hraAmount;
+                if (totalAllowTaxExemptAmount > 0)
+                {
+                    declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<thead>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"4\" style = \"padding-top:15px; padding-bottom: 10px; border-bottom: 1px solid #222; text-align: left;\">" + "Less: Allowance Tax Exemptions" + "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "SECTION" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "ALLOWANCE" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "GROSS AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: rigt; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "DEDUCTABLE AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</thead>";
+                    declarationHTML += "<tbody>";
+                    employeeDeclaration.TaxSavingAlloance.ForEach(x =>
+                    {
+                        if (x.DeclaredValue > 0)
+                        {
+                            declarationHTML += "<tr>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.Section + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.ComponentId + " (" + x.ComponentFullName + ")" + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: rigt; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "</tr>";
+                        }
+                    });
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"3\" style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "Total" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", totalAllowTaxExemptAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+
+                decimal sec16TaxExemptAmount = employeeDeclaration.Section16TaxExemption.Sum(x => x.DeclaredValue);
+                if (sec16TaxExemptAmount > 0)
+                {
+                    declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<thead>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"3\" style = \"padding-top:15px; padding-bottom: 10px; border-bottom: 1px solid #222; text-align: left;\">" + "Less: Section 16 Tax Exemptions" + "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</thead>";
+                    declarationHTML += "<tbody>";
+                    employeeDeclaration.Section16TaxExemption.ForEach(x =>
+                    {
+                        declarationHTML += "<tr>";
+                        declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                        declarationHTML += "<span class=\"text-muted\">" + x.Section + "</span>";
+                        declarationHTML += "</td>";
+                        declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                        declarationHTML += "<span class=\"text-muted\">" + x.ComponentId + " (" + x.ComponentFullName + ")" + "</span>";
+                        declarationHTML += "</td>";
+                        declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                        declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                        declarationHTML += "</td>";
+                        declarationHTML += "</tr>";
+                    });
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"2\"  style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "Total" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", sec16TaxExemptAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+
+                if (employeeDeclaration.SalaryDetail.GrossIncome - totalAllowTaxExemptAmount > 0)
+                {
+                    declarationHTML += "<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<tbody>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left; padding-top: 5px; padding-bottom: 5px;\">";
+                    declarationHTML += "<span style=\"font-size: 12px;\">" + "Taxable Amount under Head Salaries" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; \">";
+                    declarationHTML += "<span style=\"font-size: 12px;\">" + String.Format("{0:0.00}", employeeDeclaration.SalaryDetail.GrossIncome - totalAllowTaxExemptAmount - sec16TaxExemptAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+
+                    declarationHTML += "<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<tbody>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left;  padding-top: 5px; padding-bottom: 5px;\">";
+                    declarationHTML += "<span style=\"font-size: 12px;\">" + "Total Gross from all Heads" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px;\">";
+                    declarationHTML += "<span style=\"font-size: 12px;\">" + String.Format("{0:0.00}", employeeDeclaration.SalaryDetail.GrossIncome - totalAllowTaxExemptAmount - sec16TaxExemptAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+
+                decimal totalSection80CExempAmount = 0;
+                decimal totalOtherExemptAmount = 0;
+                employeeDeclaration.Declarations.ForEach(x =>
+                {
+                    if (x.DeclarationName == ApplicationConstants.OneAndHalfLakhsExemptions)
+                        totalSection80CExempAmount = x.TotalAmountDeclared;
+                    else if (x.DeclarationName == ApplicationConstants.OtherDeclarationName)
+                        totalOtherExemptAmount = x.TotalAmountDeclared;
+                });
+
+                if (totalSection80CExempAmount > 0)
+                {
+                    declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<thead>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"4\" style = \"padding-top:15px; padding-bottom: 10px; border-bottom: 1px solid #222; text-align: left;\">" + "Less: 1.5 Lac Tax Exemption (Section 80C + Others)" + "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "SECTION" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "ALLOWANCE" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "DECLARED AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: rigt; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "DEDUCTABLE AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</thead>";
+                    declarationHTML += "<tbody>";
+                    employeeDeclaration.ExemptionDeclaration.ForEach(x =>
+                    {
+                        if (x.DeclaredValue > 0)
+                        {
+                            declarationHTML += "<tr>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.Section + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td  style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.ComponentId + " (" + x.ComponentFullName + ")" + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td  style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "</tr>";
+                        }
+                    });
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"3\" style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "Total" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", totalSection80CExempAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+
+                if (totalOtherExemptAmount > 0)
+                {
+                    declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<thead>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"4\" style = \"padding-top:15px; padding-bottom: 10px; border-bottom: 1px solid #222; text-align: left;\">" + "Less: Other Tax Exemption" + "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "SECTION" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "ALLOWANCE" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "DECLARED AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: end; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span style=\"font-size:12px;\">" + "DEDUCTABLE AMOUNT" + " </span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</thead>";
+                    declarationHTML += "<tbody>";
+                    employeeDeclaration.OtherDeclaration.ForEach(x =>
+                    {
+                        if (x.DeclaredValue > 0)
+                        {
+                            declarationHTML += "<tr>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.Section + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + x.ComponentId + " (" + x.ComponentFullName + ")" + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", x.DeclaredValue) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "</tr>";
+                        }
+                    });
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th colspan = \"3\" style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "Total" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", totalOtherExemptAmount) + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+
+                declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                declarationHTML += "<tbody>";
+                declarationHTML += "<tr>";
+                declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span style=\"font-size:12px;\">" + "HRA Applied" + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "<th style=\"text-align: right; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span style=\"font-size:12px;\">" + "AMOUNT DECLARED" + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "</tr>";
+                declarationHTML += "<tr>";
+                declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span style=\"font-size:12px;\">" + "Actual HRA [Per Month]" + " </span>";
+                declarationHTML += "</td>";
+                declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span style=\"font-size:12px;\">" + String.Format("{0:0.00}", employeeDeclaration.HRADeatils.HRAAmount) + "</span>";
+                declarationHTML += "</td>";
+                declarationHTML += "</tr>";
+                declarationHTML += "<tr>";
+                declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span class=\"text-muted\">" + "Total" + "</span>";
+                declarationHTML += "</th>";
+                declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", (employeeDeclaration.HRADeatils.HRAAmount * 12)) + "</span>";
+                declarationHTML += "</th>";
+                declarationHTML += "</tr>";
+                declarationHTML += "</tbody>";
+                declarationHTML += "</table>";
+
+                decimal totalTaxableAmount = employeeDeclaration.SalaryDetail.GrossIncome - totalAllowTaxExemptAmount - sec16TaxExemptAmount - totalOtherExemptAmount - totalSection80CExempAmount - (employeeDeclaration.HRADeatils.HRAAmount * 12);
+                declarationHTML += "<table style=\"margin-top: 20px;\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                declarationHTML += "<tbody>";
+                declarationHTML += "<tr>";
+                declarationHTML += "<th style=\"text-align: left; padding-top: 5px; padding-bottom: 5px; \">";
+                declarationHTML += "<span style=\"font-size: 12px;\">" + "Total Taxable Amount" + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "<th style=\"text-align: right; padding-top: 5px; padding-bottom: 5px; \">";
+                declarationHTML += "<span style=\"font-size: 12px;\">" + String.Format("{0:0.00}", totalTaxableAmount) + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "</tr>";
+                declarationHTML += "</tbody>";
+                declarationHTML += "</table>";
+
+                declarationHTML += "<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                declarationHTML += "<tbody>";
+                declarationHTML += "<tr>";
+                declarationHTML += "<th style=\"text-align: left; padding-top: 5px; padding-bottom: 5px; \">";
+                declarationHTML += "<span style=\"font-size: 12px;\">" + "Net taxable income is" + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "<th style=\"text-align: right; padding-top: 5px; padding-bottom: 5px; \">";
+                declarationHTML += "<span style=\"font-size: 12px;\">" + String.Format("{0:0.00}", totalTaxableAmount) + " </span>";
+                declarationHTML += "</th>";
+                declarationHTML += "</tr>";
+                declarationHTML += "</tbody>";
+                declarationHTML += "</table>";
+
+                if (employeeDeclaration.IncomeTaxSlab.Count > 0 || employeeDeclaration.NewRegimIncomeTaxSlab.Count > 0)
+                {
+                    declarationHTML += "<h5 style=\"font-weight: bold; color: #222; padding-bottom: 0; margin-bottom: 0;\">" + "Tax Calculation" + "</h5>";
+                    declarationHTML += "<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">";
+                    declarationHTML += "<thead>";
+                    declarationHTML += "<tr>";
+                    declarationHTML += "<th style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "TAXABLE INCOME SLAB" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "<th style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                    declarationHTML += "<span class=\"text-muted\">" + "TAX AMOUNT" + "</span>";
+                    declarationHTML += "</th>";
+                    declarationHTML += "</tr>";
+                    declarationHTML += "</thead>";
+                    declarationHTML += "<tbody>";
+                    if (employeeDeclaration.EmployeeCurrentRegime == 1)
+                    {
+                        foreach (var item in employeeDeclaration.IncomeTaxSlab.OrderByDescending(x => x.Key))
+                        {
+                            declarationHTML += "<tr>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + item.Value.Description + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", item.Value.Value) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "</tr>";
+                        }
+                    }
+                    else
+                    {
+                        foreach (var item in employeeDeclaration.NewRegimIncomeTaxSlab.OrderByDescending(x => x.Key))
+                        {
+                            declarationHTML += "<tr>";
+                            declarationHTML += "<td style=\"text-align: left; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + item.Value.Description + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "<td style=\"text-align: right; padding-left: 15px; padding-top: 5px; padding-bottom: 5px; border-bottom: 1px solid #d9d9d9;\">";
+                            declarationHTML += "<span class=\"text-muted\">" + String.Format("{0:0.00}", item.Value.Value) + "</span>";
+                            declarationHTML += "</td>";
+                            declarationHTML += "</tr>";
+                        }
+                    };
+                    declarationHTML += "</tbody>";
+                    declarationHTML += "</table>";
+                }
+            }
+            return declarationHTML;
+        }
+
+        private decimal ComponentTotalAmount(List<SalaryComponents> salaryComponents)
+        {
+            var components = salaryComponents.FindAll(x => x.ComponentId != "HRA");
+            decimal amount = 0;
+            components.ForEach(x =>
+            {
+                if (x.DeclaredValue > 0)
+                    amount = amount + x.DeclaredValue;
+            });
+            return amount;
         }
     }
 }

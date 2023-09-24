@@ -38,7 +38,6 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IEmployeeService _employeeService;
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
@@ -49,8 +48,7 @@ namespace OnlineDataBuilder.Controllers
             CurrentSession currentSession,
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
-            FileLocationDetail fileLocationDetail, 
-            IEmployeeService employeeService)
+            FileLocationDetail fileLocationDetail)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -62,7 +60,6 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
-            _employeeService = employeeService;
         }
 
         [HttpGet]
@@ -169,24 +166,6 @@ namespace OnlineDataBuilder.Controllers
             await _payrollService.RunPayrollCycle(0);
 
             return await Task.FromResult("Payroll ran successfully");
-        }
-
-        [HttpGet("GetEmployees")]
-        [AllowAnonymous]
-        public async Task<List<Employee>> GetEmployees()
-        {
-            _logger.LogInformation("Starting get employee.");
-            _db.SetupConnectionString(_fileLocationDetail.ConnectionString);
-            FilterModel filterModel = new FilterModel
-            {
-                SearchString = "1=1",
-                IsActive = true,
-                PageSize = 10,
-                PageIndex = 1,
-                CompanyId = 1
-            };
-            var result = _employeeService.GetEmployees(filterModel);
-            return await Task.FromResult(result);
         }
 
         private async Task LeaveLevelMigration()
