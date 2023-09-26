@@ -100,9 +100,6 @@ namespace ServiceLayer.Code
                         ApprovalWorkFlowId = 0,
                         AssignieId = item.AssignieId,
                         IsRequired = item.IsRequired,
-                        IsForwardEnabled = item.IsForwardEnabled,
-                        ForwardWhen = item.ForwardWhen,
-                        ForwardAfterDays = item.ForwardAfterDays,
                         LastUpdatedOn = item.LastUpdatedOn,
                         ApprovalStatus = (int)ItemStatus.Pending
                     });
@@ -116,9 +113,6 @@ namespace ServiceLayer.Code
                             ApprovalWorkFlowId = DbProcedure.getParentKey(n.ApprovalWorkFlowId),
                             AssignieId = n.AssignieId,
                             IsRequired = n.IsRequired,
-                            IsForwardEnabled = n.IsForwardEnabled,
-                            ForwardWhen = n.ForwardWhen,
-                            ForwardAfterDays = n.ForwardAfterDays,
                             LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
                             ApprovalStatus = n.ApprovalStatus
                         }
@@ -167,14 +161,6 @@ namespace ServiceLayer.Code
                     if (item.AssignieId <= 0)
                         throw HiringBellException.ThrowBadRequest("Please add assigne first");
 
-                    if (item.IsForwardEnabled)
-                    {
-                        if (item.ForwardWhen <= 0)
-                            throw HiringBellException.ThrowBadRequest("Invalid reason selected");
-
-                        if (item.ForwardAfterDays <= 0)
-                            throw HiringBellException.ThrowBadRequest("Please add forward after days");
-                    }
                 }
             }
             int approvalRequiredCount =  approvalWorkFlowModal.ApprovalChainDetails.Count(x => x.IsRequired);
@@ -239,16 +225,13 @@ namespace ServiceLayer.Code
                         ApprovalWorkFlowId = n.ApprovalWorkFlowId,
                         AssignieId = n.AssignieId,
                         IsRequired = n.IsRequired,
-                        IsForwardEnabled = n.IsForwardEnabled,
-                        ForwardWhen = n.ForwardWhen,
-                        ForwardAfterDays = n.ForwardAfterDays,
                         LastUpdatedOn = n.LastUpdatedOn,
                         ApprovalStatus = n.ApprovalStatus
                     }
                  ).ToList<ApprovalChainDetail>();
             }
 
-            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 2 || x.RoleId == 19 || x.RoleId == 3 || x.RoleId == 5);
+            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 19 || x.RoleId == 3 || x.RoleId == 5);
 
             return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
         }
