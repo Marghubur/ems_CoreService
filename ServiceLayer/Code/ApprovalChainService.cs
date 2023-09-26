@@ -135,6 +135,7 @@ namespace ServiceLayer.Code
                     approvalWorkFlowModal.AutoExpireAfterDays,
                     approvalWorkFlowModal.IsSilentListner,
                     approvalWorkFlowModal.ListnerDetail,
+                    approvalWorkFlowModal.NoOfApprovalLevel,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                 DbProcedure.ApprovalChainDetail,
@@ -176,6 +177,12 @@ namespace ServiceLayer.Code
                     }
                 }
             }
+            int approvalRequiredCount =  approvalWorkFlowModal.ApprovalChainDetails.Count(x => x.IsRequired);
+            if (approvalRequiredCount > 0 && approvalWorkFlowModal.NoOfApprovalLevel == 0)
+                throw HiringBellException.ThrowBadRequest("No of Approval level is less than equal to required level");
+
+            if (approvalRequiredCount > 0 && approvalWorkFlowModal.NoOfApprovalLevel > approvalRequiredCount)
+                throw HiringBellException.ThrowBadRequest("No of Approval level is greater than required level");
         }
 
         public async Task<List<ApprovalWorkFlowModal>> GetPageDateService(FilterModel filterModel)
