@@ -370,7 +370,6 @@ namespace ServiceLayer.Code
                         requestNotification.LeaveRequestId,
                         requestNotification.UserMessage,
                         requestNotification.EmployeeId,
-                        requestNotification.AssigneeId,
                         requestNotification.ReportingManagerId,
                         requestNotification.ProjectId,
                         requestNotification.ProjectName,
@@ -480,10 +479,10 @@ namespace ServiceLayer.Code
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
-                EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee,
                 CompanyHoliday = companyHoliday,
-                ShiftDetail = leaveCalculationModal.shiftDetail
+                ShiftDetail = leaveCalculationModal.shiftDetail,
+                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList()
             };
         }
 

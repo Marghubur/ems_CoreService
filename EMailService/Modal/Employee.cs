@@ -76,5 +76,6 @@ namespace ModalLayer.Modal
         public long EmployeeId { set; get; }
         public string RoleName { get; set; }
         public string Email { get; set; }
+        public string Name { get; set; }
     }
 }
