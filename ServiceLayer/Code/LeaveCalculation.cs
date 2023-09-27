@@ -104,7 +104,7 @@ namespace ServiceLayer.Code
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
         {
             var result = _db.FetchDataSet("sp_leave_type_detail_get_by_employeeId", new { EmployeeId });
-            if (!ApplicationConstants.IsValidDataSet(result, 3))
+            if (!ApplicationConstants.IsValidDataSet(result, 4))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
             if (!ApplicationConstants.IsSingleRow(result.Tables[0]))
@@ -128,11 +128,13 @@ namespace ServiceLayer.Code
             if (shiftDetail == null)
                 throw HiringBellException.ThrowBadRequest($"Shift detail not found for employee id: {EmployeeId}");
 
+            List<LeaveRequestNotification> leaveRequestNotification = Converter.ToList<LeaveRequestNotification>(result.Tables[3]);
+
             LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal
             {
-                leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(result.Tables[0]),
                 shiftDetail = shiftDetail,
-                leaveTypeBriefs = leaveTypeBriefs
+                leaveTypeBriefs = leaveTypeBriefs,
+                lastAppliedLeave = leaveRequestNotification
             };
 
             return await Task.FromResult(leaveCalculationModal);
@@ -803,11 +805,11 @@ namespace ServiceLayer.Code
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
 
-            string result = string.Empty;
             List<int> leaveDetails = new List<int>();
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
-            List<RequestChainModal> requestChainModals = GetApprovalChainDetail(leaveCalculationModal, ref autoExpiryDays);
-            result = _db.Execute<LeaveRequestNotification>("sp_leave_notification_and_request_InsUpdate", new
+            LeaveRequestNotification requestChainDetail = GetApprovalChainDetail();
+
+            string result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
             {
                 LeaveRequestNotificationId = 0,
                 LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
@@ -816,71 +818,46 @@ namespace ServiceLayer.Code
                 ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
                 ProjectId = 0,
                 ProjectName = string.Empty,
-                FromDate = leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
-                ToDate = leaveCalculationModal.leaveRequestDetail.LeaveToDay,
+                FromDate = leaveRequestModal.LeaveFromDay,
+                ToDate = leaveRequestModal.LeaveToDay,
                 NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 RequestStatusId = (int)ItemStatus.Pending,
-                NoOfApprovalsRequired = 0,
-                ReporterDetail = "[]",
+                NoOfApprovalsRequired = requestChainDetail.NoOfApprovalsRequired,
+                ReporterDetail = requestChainDetail.ReporterDetail,
                 FileIds = fileIds,
                 FeedBack = "[]",
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
-                AutoActionAfterDays = 0,
-                IsAutoApprovedEnabled = false,
-                leaveCalculationModal.leaveRequestDetail.LeaveTypeId,
+                AutoActionAfterDays = requestChainDetail.AutoActionAfterDays,
+                IsAutoApprovedEnabled = requestChainDetail.IsAutoApprovedEnabled,
+                leaveCalculationModal.LeaveTypeId,
+                AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
 
-            leaveCalculationModal.leaveRequestDetail.EmployeeId = leaveRequestModal.EmployeeId;
-            leaveCalculationModal.leaveRequestDetail.Reason = leaveRequestModal.Reason;
-            leaveCalculationModal.leaveRequestDetail.LeaveFromDay = leaveRequestModal.LeaveFromDay;
-            leaveCalculationModal.leaveRequestDetail.LeaveToDay = leaveRequestModal.LeaveToDay;
-            leaveCalculationModal.leaveRequestDetail.LeaveTypeId = leaveRequestModal.LeaveTypeId;
-
-            if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
+            leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId = int.Parse(result);
+            if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
                 leaveDetails = JsonConvert.DeserializeObject<List<int>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
-
-            var leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
-            var RecordId = DateTime.UtcNow.Ticks.ToString();
-
-            if (requestChainModals.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Unable to find the approval work flow or reporting manage detail.");
-
-            var firstExecuter = requestChainModals.First();
-            leaveCalculationModal.AssigneId = firstExecuter.ExecuterId;
-            leaveCalculationModal.AssigneeEmail = firstExecuter.ExecuterEmail;
-
+            leaveDetails.Add(leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId);
             var leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
             var availableLeave = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - leaveCalculationModal.numberOfLeaveApplyring;
             leaveCalculationModal.leaveTypeBriefs = leaveTypeBriefs;
 
-            leaveCalculationModal.leaveRequestDetail.LeaveDetail = JsonConvert.SerializeObject(leaveDetails);
-            result = _db.Execute<LeaveRequestDetail>("sp_leave_notification_and_request_InsUpdate", new
+            result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
             {
                 leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
-                leaveCalculationModal.leaveRequestDetail.EmployeeId,
-                leaveCalculationModal.leaveRequestDetail.LeaveDetail,
-                leaveCalculationModal.leaveRequestDetail.Reason,
-                AssigneeId = firstExecuter.ExecuterId,
-                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
+                leaveRequestModal.EmployeeId,
+                LeaveDetail = JsonConvert.SerializeObject(leaveDetails),
                 Year = leaveRequestModal.LeaveToDay.Year,
-                leaveCalculationModal.leaveRequestDetail.LeaveFromDay,
-                leaveCalculationModal.leaveRequestDetail.LeaveToDay,
-                leaveCalculationModal.leaveRequestDetail.LeaveTypeId,
-                RequestStatusId = (int)ItemStatus.Pending,
+                IsPending = true,
                 AvailableLeaves = 0,
                 TotalLeaveApplied = 0,
                 TotalApprovedLeave = 0,
                 TotalLeaveQuota = totalAllocatedLeave,
-                LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs),
-                NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
-                LeaveRequestNotificationId = 0,
-                IsPending = true,
-                RecordId
+                LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs)
             }, true);
 
             if (string.IsNullOrEmpty(result))
@@ -925,10 +902,8 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        private List<RequestChainModal> GetApprovalChainDetail(LeaveCalculationModal leaveCalculationModal, ref int autoExipredDays)
+        private LeaveRequestNotification GetApprovalChainDetail()
         {
-
-            var requestChainModals = new List<RequestChainModal>();
             var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
@@ -942,68 +917,16 @@ namespace ServiceLayer.Code
             if (employeeWithRoles.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Reportee deatails not found. Please contact to admin");
 
-            var ApprovalChain = approvalChainDetail.First();
+            ApprovalChainDetail ApprovalChain = approvalChainDetail.First();
             LeaveRequestNotification notification = new LeaveRequestNotification
             {
-                NoOfApprovalsRequired = approvalChain.
-            }
-            leaveCalculationModal
+                NoOfApprovalsRequired = ApprovalChain.NoOfApprovalLevel,
+                AutoActionAfterDays = ApprovalChain.AutoExpireAfterDays,
+                IsAutoApprovedEnabled = ApprovalChain.IsRequired,
+                ReporterDetail = JsonConvert.SerializeObject(employeeWithRoles)
+            };
 
-            if (resultSet.Tables.Count != 2)
-            {
-                autoExipredDays = 0;
-                requestChainModals = AssignReportingManager(leaveCalculationModal);
-            }
-            else
-            {
-
-                if (approvalChainDetail.Count > 0)
-                {
-                    autoExipredDays = approvalChainDetail.First().AutoExpireAfterDays;
-
-                    bool flag = false;
-                    int index = 0;
-                    while (index < approvalChainDetail.Count)
-                    {
-                        var n = approvalChainDetail.ElementAt(index);
-                        flag = GetExecuterId(leaveCalculationModal, n, employeeWithRoles);
-
-                        if (flag)
-                        {
-                            requestChainModals.Add(new RequestChainModal
-                            {
-                                ExecuterId = n.AssignieId,
-                                IsActive = index == 0 ? true : false,
-                                ExecuterEmail = n.AssignieeEmail,
-                                FeedBack = String.Empty,
-                                Level = (index + 1),
-                                ReactedOn = DateTime.UtcNow,
-                                Status = (index + 1) == 1 ? (int)ItemStatus.Pending : (int)ItemStatus.NotSubmitted,
-                                ForwardAfterDays = n.ForwardAfterDays,
-                                ForwardWhenStatus = n.ForwardWhen,
-                                IsRequired = n.IsRequired
-                            });
-                        }
-                        else
-                        {
-                            autoExipredDays = 0;
-                            if (requestChainModals.Count == 0)
-                                requestChainModals = AssignReportingManager(leaveCalculationModal);
-                            break;
-                        }
-
-
-                        index++;
-                    }
-                }
-                else
-                {
-                    autoExipredDays = 0;
-                    requestChainModals = AssignReportingManager(leaveCalculationModal);
-                }
-            }
-
-            return requestChainModals;
+            return notification;
         }
 
         private bool GetExecuterId(LeaveCalculationModal leaveCalculationModal, ApprovalChainDetail chain, List<EmployeeWithRoles> employeeWithRoles)

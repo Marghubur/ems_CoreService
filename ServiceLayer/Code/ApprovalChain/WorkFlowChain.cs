@@ -59,11 +59,11 @@ namespace ServiceLayer.Code.ApprovalChain
             var approvalChainDetail = chainDetails.Find(x => x.AssignieId == assigneeId);
 
             // if approved
-            if (approvalChainDetail.IsRequired)
-            {
-                if (approvalChainDetail.ForwardWhen == (int)ItemStatus.Pending)
-                    flag = false;
-            }
+            //if (approvalChainDetail.IsRequired)
+            //{
+            //    if (approvalChainDetail.ForwardWhen == (int)ItemStatus.Pending)
+            //        flag = false;
+            //}
 
             return flag;
         }

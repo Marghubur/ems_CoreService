@@ -69,9 +69,6 @@ namespace ServiceLayer.Code
                     {
                         chainDetail.AssignieId = item.AssignieId;
                         chainDetail.IsRequired = item.IsRequired;
-                        chainDetail.IsForwardEnabled = item.IsForwardEnabled;
-                        chainDetail.ForwardWhen = item.ForwardWhen;
-                        chainDetail.ForwardAfterDays = item.ForwardAfterDays;
                     }
                     else
                     {
@@ -81,9 +78,6 @@ namespace ServiceLayer.Code
                             ApprovalWorkFlowId = 0,
                             AssignieId = item.AssignieId,
                             IsRequired = item.IsRequired,
-                            IsForwardEnabled = item.IsForwardEnabled,
-                            ForwardWhen = item.ForwardWhen,
-                            ForwardAfterDays = item.ForwardAfterDays,
                             LastUpdatedOn = item.LastUpdatedOn,
                             ApprovalStatus = (int)ItemStatus.Pending
                         });
