@@ -22,6 +22,13 @@ namespace ModalLayer.Modal
         public DateTime? LastReactedOn { set; get; }
         public string LeaveDetail { set; get; }
         public string RecordIdStr { set; get; }
-        public string RecordId { set; get; }        
+        public string RecordId { set; get; }
+        public int NoOfApprovalsRequired { get; set; }
+        public string ReporterDetail { get; set; }
+        public string FileIds { get; set; }
+        public string FeedBack { get; set; }
+        public string LeaveTypeName { get; set; }
+        public int AutoActionAfterDays { get; set; }
+        public bool IsAutoApprovedEnabled { get; set; }
     }
 }
