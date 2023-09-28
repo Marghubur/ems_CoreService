@@ -104,9 +104,9 @@ namespace ServiceLayer.Code.Leaves
                 CheckForExistingLeave(leaveCalculationModal, fromDate, toDate);
             }
 
-            List<CompleteLeaveDetail> completeLeaveDetail = new List<CompleteLeaveDetail>();
+            List<LeaveRequestNotification> completeLeaveDetail = new List<LeaveRequestNotification>();
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null)
-                completeLeaveDetail = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+                completeLeaveDetail = leaveCalculationModal.lastAppliedLeave;
 
             // check total leave applied and restrict for current year
             if ((completeLeaveDetail.Count + leaveCalculationModal.numberOfLeaveApplyring) >
@@ -115,7 +115,7 @@ namespace ServiceLayer.Code.Leaves
 
             // check total leave applied and restrict for current month
             decimal count = completeLeaveDetail
-                .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.LeaveFromDay, _currentSession.TimeZone).Date.Month ==
+                .Where(x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date.Month ==
                 leaveCalculationModal.timeZoneFromDate.Date.Month)
                 .Sum(i => i.NumOfDays);
             if ((count + leaveCalculationModal.numberOfLeaveApplyring) > _leavePlanConfiguration.leavePlanRestriction.LimitOfMaximumLeavesInCalendarMonth)

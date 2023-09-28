@@ -38,6 +38,7 @@ namespace ModalLayer.Modal.Leaves
         public List<ProjectMemberDetail> projectMemberDetail { set; get; }
         public bool IsAllLeaveAvailable { set; get; }
         public int ProjectOffset { set; get; } = 0;
+        public List<string> ReporterEmail { get; set; }
         public int GetNextOffset()
         {
             return ProjectOffset += 100;

@@ -605,7 +605,7 @@ namespace ServiceLayer.Code
         }
 
 
-        private void CheckSameDateAlreadyApplied(List<CompleteLeaveDetail> completeLeaveDetails, LeaveCalculationModal leaveCalculationModal)
+        private void CheckSameDateAlreadyApplied(List<LeaveRequestNotification> completeLeaveDetails, LeaveCalculationModal leaveCalculationModal)
         {
             try
             {
@@ -615,26 +615,26 @@ namespace ServiceLayer.Code
                     DateTime initFilterDate = now.AddDays(Convert.ToDouble(-backDayLimit));
 
                     var empLeave = completeLeaveDetails
-                                    .Where(x => x.LeaveFromDay.Subtract(initFilterDate).TotalDays >= 0);
+                                    .Where(x => x.FromDate.Subtract(initFilterDate).TotalDays >= 0);
                     if (empLeave.Any())
                     {
                         var startDate = leaveCalculationModal.fromDate;
                         var endDate = leaveCalculationModal.toDate;
                         Parallel.ForEach(empLeave, i =>
                         {
-                            if (i.LeaveFromDay.Month == startDate.Month)
+                            if (i.FromDate.Month == startDate.Month)
                             {
-                                if (startDate.Date.Subtract(i.LeaveFromDay.Date).TotalDays >= 0 &&
-                                    startDate.Date.Subtract(i.LeaveToDay.Date).TotalDays <= 0)
+                                if (startDate.Date.Subtract(i.FromDate.Date).TotalDays >= 0 &&
+                                    startDate.Date.Subtract(i.ToDate.Date).TotalDays <= 0)
                                     throw new HiringBellException($"From date: " +
                                         $"{_timezoneConverter.ToTimeZoneDateTime(startDate, _currentSession.TimeZone)} " +
                                         $"already exist in another leave request");
                             }
 
-                            if (i.LeaveToDay.Month == endDate.Month)
+                            if (i.ToDate.Month == endDate.Month)
                             {
-                                if (endDate.Date.Subtract(i.LeaveFromDay.Date).TotalDays >= 0 &&
-                                    endDate.Date.Subtract(i.LeaveToDay.Date).TotalDays <= 0)
+                                if (endDate.Date.Subtract(i.FromDate.Date).TotalDays >= 0 &&
+                                    endDate.Date.Subtract(i.ToDate.Date).TotalDays <= 0)
                                     throw new HiringBellException($"To date: " +
                                         $"{_timezoneConverter.ToTimeZoneDateTime(endDate, _currentSession.TimeZone)} " +
                                         $"already exist in another leave request");
@@ -659,8 +659,9 @@ namespace ServiceLayer.Code
         {
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             {
-                List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
-                completeLeaveDetails = completeLeaveDetails.Where(x => x.LeaveStatus != (int)ItemStatus.Rejected).ToList();
+                List<LeaveRequestNotification> completeLeaveDetails = leaveCalculationModal.lastAppliedLeave;
+                //List<CompleteLeaveDetail> completeLeaveDetails = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+                //completeLeaveDetails = completeLeaveDetails.Where(x => x.LeaveStatus != (int)ItemStatus.Rejected).ToList();
                 if (completeLeaveDetails.Count > 0)
                 {
                     CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
@@ -783,11 +784,10 @@ namespace ServiceLayer.Code
                     leaveRequestModal.DocumentProffAttached = true;
 
                 var leaveCalculationModal = await PrepareCheckLeaveCriteria(leaveRequestModal);
-
                 LeavePlanType leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
 
-
-                var appliedDetail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal, fileCollection, fileDetail);
+                List<string> reporterEmail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal, fileCollection, fileDetail);
+                leaveCalculationModal.ReporterEmail = reporterEmail;
                 return leaveCalculationModal;
             }
             catch
@@ -796,7 +796,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task<string> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
+        private async Task<List<string>> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
             var leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             if (leavePlanType == null)
@@ -807,7 +807,8 @@ namespace ServiceLayer.Code
 
             List<int> leaveDetails = new List<int>();
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
-            LeaveRequestNotification requestChainDetail = GetApprovalChainDetail();
+            List<string> emails = new List<string>();
+            LeaveRequestNotification requestChainDetail = GetApprovalChainDetail(leaveRequestModal.EmployeeId, out emails);
 
             string result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
             {
@@ -863,7 +864,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
 
-            return await Task.FromResult(result);
+            return await Task.FromResult(emails);
         }
 
         private async Task<string> SaveLeaveAttachment(IFormFileCollection fileCollection, List<Files> fileDetail, Employee employee)
@@ -902,11 +903,14 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        private LeaveRequestNotification GetApprovalChainDetail()
+        private LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
+            string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
             var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
+                EmployeeId = employeeId,
+                DesignationIds = designationId
             });
 
             List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
@@ -925,7 +929,7 @@ namespace ServiceLayer.Code
                 IsAutoApprovedEnabled = ApprovalChain.IsRequired,
                 ReporterDetail = JsonConvert.SerializeObject(employeeWithRoles)
             };
-
+            emails = employeeWithRoles.Select(x => x.Email).ToList();
             return notification;
         }
 

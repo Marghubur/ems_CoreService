@@ -5,8 +5,6 @@ namespace ModalLayer.Modal.Leaves
 {
     public class LeaveRequestDetail : EmployeeCommonFields
     {
-        public int UserTypeId { get; set; }
-        public string RecordId { set; get; }
         public long LeaveId { set; get; }
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
@@ -33,5 +31,6 @@ namespace ModalLayer.Modal.Leaves
         public DateTime UpdatedOn { get; set; }
         public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
         public bool IsPending { set; get; }
+        public int NoOfApprovalsRequired { get; set; }
     }
 }
