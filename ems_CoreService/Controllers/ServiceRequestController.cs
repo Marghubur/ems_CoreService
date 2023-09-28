@@ -26,7 +26,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPost("AddUpdateServiceRequest")]
         public async Task<ApiResponse> AddUpdateServiceRequest(ServiceRequest serviceRequest)
         {

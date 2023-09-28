@@ -864,6 +864,30 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
 
+            leaveCalculationModal.lastAppliedLeave.Add(new LeaveRequestNotification
+            {
+                LeaveRequestNotificationId = leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId,
+                LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
+                UserMessage = leaveRequestModal.Reason,
+                EmployeeId = leaveRequestModal.EmployeeId,
+                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
+                ProjectId = 0,
+                ProjectName = string.Empty,
+                FromDate = leaveRequestModal.LeaveFromDay,
+                ToDate = leaveRequestModal.LeaveToDay,
+                NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
+                RequestStatusId = (int)ItemStatus.Pending,
+                NoOfApprovalsRequired = requestChainDetail.NoOfApprovalsRequired,
+                ReporterDetail = requestChainDetail.ReporterDetail,
+                FileIds = fileIds,
+                FeedBack = "[]",
+                LeaveTypeName = leaveRequestModal.LeavePlanName,
+                AutoActionAfterDays = requestChainDetail.AutoActionAfterDays,
+                IsAutoApprovedEnabled = requestChainDetail.IsAutoApprovedEnabled,
+                LeaveTypeId = leaveCalculationModal.LeaveTypeId,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            });
+
             return await Task.FromResult(emails);
         }
 
