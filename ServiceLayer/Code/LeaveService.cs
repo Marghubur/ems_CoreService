@@ -446,12 +446,13 @@ namespace ServiceLayer.Code
                 leaveTemplateModel.ToAddress.Add(x);
             });
 
-            await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+            //await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
-                Employee = leaveCalculationModal.employee
+                Employee = leaveCalculationModal.employee,
+                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave
             };
         }
 
