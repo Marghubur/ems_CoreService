@@ -19,7 +19,7 @@
         SeniorHR = 5,
         HR = 6,
         Manager = 7,
-        SolutionArcgitect = 8,
+        SolutionArchitect = 8,
         ApplicationArchitect = 9,
         Networking = 10,
         TestLead = 11,
