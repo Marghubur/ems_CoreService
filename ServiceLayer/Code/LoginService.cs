@@ -194,7 +194,8 @@ namespace ServiceLayer.Code
                                                        value = x.Field<long>("I"),
                                                        text = x.Field<string>("N"),
                                                        email = x.Field<string>("E"),
-                                                       selected = false
+                                                       selected = false,
+                                                       DesignationId = x.Field<int>("D")
                                                    }).ToList<AutoCompleteEmployees>();
 
                     if (loginDetail != null && currentCompany != null)

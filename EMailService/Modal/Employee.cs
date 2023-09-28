@@ -77,5 +77,7 @@ namespace ModalLayer.Modal
         public string RoleName { get; set; }
         public string Email { get; set; }
         public string Name { get; set; }
+        public bool IsRequired { get; set; }
+        public int Status { get; set; } = (int)ItemStatus.Pending;
     }
 }

@@ -441,6 +441,10 @@ namespace ServiceLayer.Code
                     ToAddress = new List<string> { _currentSession.CurrentUserDetail.Email }
                 };
             }
+            leaveCalculationModal.ReporterEmail.ForEach(x =>
+            {
+                leaveTemplateModel.ToAddress.Add(x);
+            });
 
             await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
             return new

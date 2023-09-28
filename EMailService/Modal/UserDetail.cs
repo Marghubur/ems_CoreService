@@ -66,5 +66,6 @@ namespace ModalLayer.Modal
         public string text { set; get; }
         public string email { get; set; }
         public bool selected { set; get; }
+        public int DesignationId { get; set; }
     }
 }
