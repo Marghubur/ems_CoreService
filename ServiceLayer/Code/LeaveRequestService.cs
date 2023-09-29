@@ -50,7 +50,8 @@ namespace ServiceLayer.Code
                 EmployeeId = leaveRequestDetail.EmployeeId,
                 FromDate = leaveRequestDetail.LeaveFromDay,
                 ToDate = leaveRequestDetail.LeaveToDay,
-                RequestStatusId = leaveRequestDetail.RequestStatusId
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
             };
             return await GetLeaveRequestNotificationService(leaveRequestNotification);
         }
@@ -64,7 +65,8 @@ namespace ServiceLayer.Code
                 EmployeeId = leaveRequestDetail.EmployeeId,
                 FromDate = leaveRequestDetail.LeaveFromDay,
                 ToDate = leaveRequestDetail.LeaveToDay,
-                RequestStatusId = leaveRequestDetail.RequestStatusId
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
             };
             return await GetLeaveRequestNotificationService(leaveRequestNotification);
         }
@@ -92,6 +94,7 @@ namespace ServiceLayer.Code
 
         public async Task UpdateLeaveDetail(LeaveRequestDetail requestDetail, ItemStatus status)
         {
+            bool isSendEmailNotification = false;
             if (requestDetail.LeaveRequestNotificationId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid request. Please check your detail first.");
 
@@ -119,6 +122,7 @@ namespace ServiceLayer.Code
             if (rejected > 0)
             {
                 leaveRequestDetail.RequestStatusId = (int)ItemStatus.Rejected;
+                isSendEmailNotification = true;
             }
             else
             {
@@ -127,11 +131,13 @@ namespace ServiceLayer.Code
                 int totalApprovalCount = reporterDetails.Count(x => x.Status == (int)ItemStatus.Approved);
 
                 if (requiredCounts == approvedRequiredCount && totalApprovalCount >= leaveRequestDetail.NoOfApprovalsRequired)
+                {
                     leaveRequestDetail.RequestStatusId = (int)ItemStatus.Approved;
+                    isSendEmailNotification = true;
+                }
                 else
                     leaveRequestDetail.RequestStatusId = (int)ItemStatus.Pending;
             }
-
             string message = _db.Execute<LeaveRequestNotification>("sp_leave_notification_and_request_InsUpdate", new
             {
                 requestDetail.LeaveRequestNotificationId,
@@ -158,23 +164,26 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(message))
                 throw new HiringBellException("Unable to update leave status. Please contact to admin");
 
-            var leaveTemplateModel = new LeaveTemplateModel
+            if (isSendEmailNotification)
             {
-                kafkaServiceName = KafkaServiceName.Leave,
-                RequestType = nameof(RequestType.Leave),
-                ActionType = status == ItemStatus.Approved ? nameof(ItemStatus.Approved) : nameof(ItemStatus.Rejected),
-                FromDate = leaveRequestDetail.LeaveFromDay,
-                ToDate = leaveRequestDetail.LeaveToDay,
-                Message = leaveRequestDetail.Reason,
-                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                DayCount = (int)leaveRequestDetail.LeaveToDay.Subtract(leaveRequestDetail.LeaveFromDay).TotalDays + 1,
-                ToAddress = new List<string> { leaveRequestDetail.Email }
-            };
+                var leaveTemplateModel = new LeaveTemplateModel
+                {
+                    kafkaServiceName = KafkaServiceName.Leave,
+                    RequestType = nameof(RequestType.Leave),
+                    ActionType = status == ItemStatus.Approved ? nameof(ItemStatus.Approved) : nameof(ItemStatus.Rejected),
+                    FromDate = leaveRequestDetail.LeaveFromDay,
+                    ToDate = leaveRequestDetail.LeaveToDay,
+                    Message = leaveRequestDetail.Reason,
+                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = (int)leaveRequestDetail.LeaveToDay.Subtract(leaveRequestDetail.LeaveFromDay).TotalDays + 1,
+                    ToAddress = new List<string> { leaveRequestDetail.Email }
+                };
 
-            await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
-            //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+                await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+                //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
+            }
 
             await Task.CompletedTask;
         }

@@ -446,7 +446,7 @@ namespace ServiceLayer.Code
                 leaveTemplateModel.ToAddress.Add(x);
             });
 
-            //await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+            await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
