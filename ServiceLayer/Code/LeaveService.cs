@@ -442,6 +442,7 @@ namespace ServiceLayer.Code
                     DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
                 };
             }
+            leaveTemplateModel.ToAddress = new List<string>();
             leaveCalculationModal.ReporterEmail.ForEach(x =>
             {
                 leaveTemplateModel.ToAddress.Add(x);
