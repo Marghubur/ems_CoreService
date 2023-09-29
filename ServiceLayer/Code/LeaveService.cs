@@ -423,7 +423,6 @@ namespace ServiceLayer.Code
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
-                    ToAddress = new List<string> { _currentSession.CurrentUserDetail.EmailId }
                 };
             }
 
@@ -441,7 +440,6 @@ namespace ServiceLayer.Code
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
-                    ToAddress = new List<string> { _currentSession.CurrentUserDetail.Email }
                 };
             }
             leaveCalculationModal.ReporterEmail.ForEach(x =>
