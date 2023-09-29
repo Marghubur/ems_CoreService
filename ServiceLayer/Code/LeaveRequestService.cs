@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -25,13 +26,15 @@ namespace ServiceLayer.Code
         private readonly ApprovalEmailService _approvalEmailService;
         private readonly WorkFlowChain _workFlowChain;
         private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly ITimezoneConverter _timezoneConverter;
 
         public LeaveRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
             WorkFlowChain workFlowChain,
             IAttendanceRequestService attendanceRequestService,
-            KafkaNotificationService kafkaNotificationService)
+            KafkaNotificationService kafkaNotificationService,
+            ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _workFlowChain = workFlowChain;
@@ -39,6 +42,7 @@ namespace ServiceLayer.Code
             _attendanceRequestService = attendanceRequestService;
             _approvalEmailService = approvalEmailService;
             _kafkaNotificationService = kafkaNotificationService;
+            _timezoneConverter = timezoneConverter;
         }
 
         public async Task<List<LeaveRequestNotification>> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -171,11 +175,11 @@ namespace ServiceLayer.Code
                     kafkaServiceName = KafkaServiceName.Leave,
                     RequestType = nameof(RequestType.Leave),
                     ActionType = status == ItemStatus.Approved ? nameof(ItemStatus.Approved) : nameof(ItemStatus.Rejected),
-                    FromDate = leaveRequestDetail.LeaveFromDay,
-                    ToDate = leaveRequestDetail.LeaveToDay,
+                    FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestDetail.LeaveFromDay, _currentSession.TimeZone),
+                    ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestDetail.LeaveToDay, _currentSession.TimeZone),
                     Message = leaveRequestDetail.Reason,
-                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    DeveloperName = leaveRequestDetail.FirstName + " " + leaveRequestDetail.LastName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestDetail.LeaveToDay.Subtract(leaveRequestDetail.LeaveFromDay).TotalDays + 1,
                     ToAddress = new List<string> { leaveRequestDetail.Email }

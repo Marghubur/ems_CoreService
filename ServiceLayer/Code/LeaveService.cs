@@ -3,6 +3,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -23,18 +24,20 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly KafkaNotificationService _kafkaNotificationService;
-
+        private readonly ILogger<LeaveService> _logger;
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             ILeaveCalculation leaveCalculation,
-            KafkaNotificationService kafkaNotificationService)
+            KafkaNotificationService kafkaNotificationService,
+            ILogger<LeaveService> logger)
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
             _leaveCalculation = leaveCalculation;
             _kafkaNotificationService = kafkaNotificationService;
+            _logger = logger;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -446,6 +449,7 @@ namespace ServiceLayer.Code
                 leaveTemplateModel.ToAddress.Add(x);
             });
 
+            _logger.LogInformation($"Call to kafka: {leaveCalculationModal.ReporterEmail.ToString()}");
             await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
             return new
             {
