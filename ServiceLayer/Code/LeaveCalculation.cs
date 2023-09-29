@@ -826,7 +826,7 @@ namespace ServiceLayer.Code
                 NoOfApprovalsRequired = requestChainDetail.NoOfApprovalsRequired,
                 ReporterDetail = requestChainDetail.ReporterDetail,
                 FileIds = fileIds,
-                FeedBack = "[]",
+                FeedBack = ApplicationConstants.EmptyJsonArray,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
                 AutoActionAfterDays = requestChainDetail.AutoActionAfterDays,
                 IsAutoApprovedEnabled = requestChainDetail.IsAutoApprovedEnabled,
@@ -835,7 +835,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("fail to insert or update");
+                throw new HiringBellException("fail to insert or update leave notification detail");
 
             leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId = int.Parse(result);
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
@@ -862,7 +862,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("fail to insert or update");
+                throw new HiringBellException("fail to insert or update leave detail");
 
             leaveCalculationModal.lastAppliedLeave.Add(new LeaveRequestNotification
             {
@@ -880,14 +880,15 @@ namespace ServiceLayer.Code
                 NoOfApprovalsRequired = requestChainDetail.NoOfApprovalsRequired,
                 ReporterDetail = requestChainDetail.ReporterDetail,
                 FileIds = fileIds,
-                FeedBack = "[]",
+                FeedBack = ApplicationConstants.EmptyJsonArray,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
                 AutoActionAfterDays = requestChainDetail.AutoActionAfterDays,
                 IsAutoApprovedEnabled = requestChainDetail.IsAutoApprovedEnabled,
                 LeaveTypeId = leaveCalculationModal.LeaveTypeId,
-                AdminId = _currentSession.CurrentUserDetail.UserId
+                AdminId = _currentSession.CurrentUserDetail.UserId,
+                CreatedOn = DateTime.UtcNow
             });
-
+            leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList();
             return await Task.FromResult(emails);
         }
 
