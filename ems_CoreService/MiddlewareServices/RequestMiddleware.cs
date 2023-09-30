@@ -3,6 +3,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -25,14 +26,17 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly string TokenName = "Authorization";
         private readonly ITimezoneConverter _timezoneConverter;
         private IDb _db;
+        private readonly ILogger<RequestMiddleware> _logger;
 
         public RequestMiddleware(RequestDelegate next,
             IConfiguration configuration,
-            ITimezoneConverter timezoneConverter)
+            ITimezoneConverter timezoneConverter,
+            ILogger<RequestMiddleware> logger)
         {
             this.configuration = configuration;
             _timezoneConverter = timezoneConverter;
             _next = next;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context, CurrentSession currentSession, IDb db)
@@ -44,11 +48,20 @@ namespace SchoolInMindServer.MiddlewareServices
                 {
                     if (header.Value.FirstOrDefault() != null)
                     {
+                        _logger.LogInformation("Reading core service header");
                         if (header.Key == TokenName)
+                        {
+                            _logger.LogInformation($"Reading: {TokenName}");
+                            _logger.LogInformation($"Reading: {header.Value.FirstOrDefault()}");
                             currentSession.Authorization = header.Value.FirstOrDefault();
+                        }
 
                         if (header.Key == "database")
+                        {
+                            _logger.LogInformation($"Reading: database");
+                            _logger.LogInformation($"Reading: {JsonConvert.DeserializeObject<DbConfigModal>(header.Value)}");
                             dbConfig = JsonConvert.DeserializeObject<DbConfigModal>(header.Value);
+                        }
                     }
                 });
 

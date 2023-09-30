@@ -8,9 +8,7 @@ namespace ModalLayer.Modal
         public long LeaveRequestNotificationId { set; get; }
         public long LeaveRequestId { set; get; }
         public string UserMessage { set; get; }
-        public long EmployeeId { set; get; }
         public long AssigneeId { set; get; }
-        public long ReportingManagerId { set; get; }
         public long ProjectId { set; get; }
         public string ProjectName { set; get; }
         public DateTime FromDate { set; get; }

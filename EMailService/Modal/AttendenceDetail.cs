@@ -31,26 +31,6 @@ namespace ModalLayer.Modal
         public List<string> EmailList { get; set; }
     }
 
-    public class AttendanceDetailJson : UserMangerCommonDetail
-    {
-        public int AttendenceDetailId { set; get; }
-        public DateTime AttendanceDay { get; set; }
-        public int TotalMinutes { get; set; } // total effective minutes
-        public bool IsHoliday { get; set; }
-        public int PresentDayStatus { get; set; } = (int)DayStatus.Empty;
-        public bool IsOnLeave { get; set; }
-        public string LogOn { get; set; } // HH:MM
-        public string LogOff { get; set; } // HH:MM
-        public int SessionType { get; set; } // 1 = full day, 2 = first half and 3 = second half
-        public string UserComments { get; set; }
-        public bool IsOpen { get; set; }
-        public bool IsWeekend { get; set; }
-        public string Emails { get; set; }
-        public long ApprovedBy { set; get; }
-        public string ApprovedName { set; get; }
-        public long AttendanceId { get; set; }
-    }
-
     public class AttendanceWithClientDetail
     {
         public List<AttendanceDetailJson> AttendacneDetails { set; get; }
@@ -70,5 +50,29 @@ namespace ModalLayer.Modal
         public ShiftDetail shiftDetail { set; get; }
         public LeaveDetail leaveDetail { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
+    }
+
+    public class AttendanceJson
+    {
+        public int AttendenceDetailId { set; get; }
+        public bool IsHoliday { set; get; }
+        public bool IsOnLeave { set; get; }
+        public bool IsWeekend { set; get; }
+        public DateTime AttendanceDay { set; get; }
+        public string LogOn { set; get; }
+        public string LogOff { set; get; }
+        public int PresentDayStatus { set; get; }
+        public string UserComments { set; get; }
+        public string ApprovedName { set; get; }
+        public long ApprovedBy { set; get; }
+        public int SessionType { set; get; }
+        public int TotalMinutes { set; get; }
+        public bool IsOpen { set; get; }
+        public string Emails { set; get; }
+    }
+
+    public class AttendanceDetailJson : UserMangerCommonDetail
+    {
+        public long AttendanceId { get; set; }
     }
 }

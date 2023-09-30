@@ -32,9 +32,7 @@ namespace ModalLayer.Modal
         public DateTime PresentDate { get; set; }
         public int ExpectedBurnedMinutes { get; set; }
         public int ActualBurnedMinutes { get; set; }
-        public bool IsHoliday { get; set; }
         public bool IsWeekEnd { get; set; }
-        public bool IsOpen { get; set; }
     }
 
     public class DailyTimesheetDetail

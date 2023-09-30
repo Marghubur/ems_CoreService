@@ -82,9 +82,9 @@ namespace ServiceLayer.Code
             return todayDate;
         }
 
-        private async Task<List<AttendanceDetailJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining)
+        private async Task<List<AttendanceJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining)
         {
-            List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
+            List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
             var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
             int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
 
@@ -134,7 +134,7 @@ namespace ServiceLayer.Code
                     }
                 }
 
-                attendenceDetails.Add(new AttendanceDetailJson
+                attendenceDetails.Add(new AttendanceJson
                 {
                     AttendenceDetailId = workingDate.Day,
                     IsHoliday = isHoliday,
@@ -183,6 +183,7 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
+
             attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
             return attendenceDetails;
         }
