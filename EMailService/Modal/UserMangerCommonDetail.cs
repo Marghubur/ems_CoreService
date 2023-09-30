@@ -1,8 +1,10 @@
 ﻿using ModalLayer;
+using ModalLayer.Modal;
+using System;
 
 namespace CoreBottomHalf.Modal
 {
-    public class UserMangerCommonDetail : CreationInfo
+    public class UserMangerCommonDetail : AttendanceJson
     {
         public long EmployeeId { set; get; }
         public long ReportingManagerId { set; get; }
@@ -17,5 +19,10 @@ namespace CoreBottomHalf.Modal
         public int Total { set; get; }
         public int Index { set; get; }
         public int PageIndex { get; set; }
+        public long CreatedBy { get; set; }
+        public long? UpdatedBy { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public DateTime? UpdatedOn { get; set; }
+        public long AdminId { get; set; }
     }
 }

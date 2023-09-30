@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
@@ -25,12 +26,15 @@ namespace ServiceLayer.Code
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly KafkaNotificationService _kafkaNotificationService;
         private readonly ILogger<LeaveService> _logger;
+        private readonly ITimezoneConverter _timezoneConverter;
+
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             ILeaveCalculation leaveCalculation,
             KafkaNotificationService kafkaNotificationService,
-            ILogger<LeaveService> logger)
+            ILogger<LeaveService> logger,
+            ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _currentSession = currentSession;
@@ -38,6 +42,7 @@ namespace ServiceLayer.Code
             _leaveCalculation = leaveCalculation;
             _kafkaNotificationService = kafkaNotificationService;
             _logger = logger;
+            _timezoneConverter = timezoneConverter;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -416,8 +421,8 @@ namespace ServiceLayer.Code
                     kafkaServiceName = KafkaServiceName.Leave,
                     RequestType = nameof(RequestType.Leave),
                     ActionType = nameof(ItemStatus.Submitted),
-                    FromDate = leaveRequestModal.LeaveFromDay,
-                    ToDate = leaveRequestModal.LeaveToDay,
+                    FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveFromDay, _currentSession.TimeZone),
+                    ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveToDay, _currentSession.TimeZone),
                     Message = leaveRequestModal.Reason,
                     ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
@@ -433,9 +438,8 @@ namespace ServiceLayer.Code
                     kafkaServiceName = KafkaServiceName.Leave,
                     RequestType = nameof(RequestType.Leave),
                     ActionType = "Auto Approved",
-                    FromDate = leaveRequestModal.LeaveFromDay,
-                    ToDate = leaveRequestModal.LeaveToDay,
-                    Message = leaveRequestModal.Reason,
+                    FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveFromDay, _currentSession.TimeZone),
+                    ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveToDay, _currentSession.TimeZone),
                     ManagerName = _currentSession.CurrentUserDetail.ManagerName,
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,

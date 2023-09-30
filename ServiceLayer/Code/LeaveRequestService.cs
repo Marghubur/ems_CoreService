@@ -22,24 +22,18 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly IAttendanceRequestService _attendanceRequestService;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly WorkFlowChain _workFlowChain;
         private readonly KafkaNotificationService _kafkaNotificationService;
         private readonly ITimezoneConverter _timezoneConverter;
 
         public LeaveRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            WorkFlowChain workFlowChain,
-            IAttendanceRequestService attendanceRequestService,
             KafkaNotificationService kafkaNotificationService,
             ITimezoneConverter timezoneConverter)
         {
             _db = db;
-            _workFlowChain = workFlowChain;
             _currentSession = currentSession;
-            _attendanceRequestService = attendanceRequestService;
             _approvalEmailService = approvalEmailService;
             _kafkaNotificationService = kafkaNotificationService;
             _timezoneConverter = timezoneConverter;

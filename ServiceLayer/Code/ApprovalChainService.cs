@@ -208,6 +208,7 @@ namespace ServiceLayer.Code
                     AutoExpireAfterDays = firstRecord.AutoExpireAfterDays,
                     IsSilentListner = firstRecord.IsSilentListner,
                     ListnerDetail = firstRecord.ListnerDetail,
+                    NoOfApprovalLevel = firstRecord.NoOfApprovalLevel,
                     ApprovalChainDetails = new List<ApprovalChainDetail>()
                 };
 
