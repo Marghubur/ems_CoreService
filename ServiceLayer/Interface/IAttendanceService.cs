@@ -9,7 +9,7 @@ namespace ServiceLayer.Interface
     {
         Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
-        Task<AttendanceDetailJson> SubmitAttendanceService(Attendance attendance);
+        Task<AttendanceJson> SubmitAttendanceService(Attendance attendance);
         Task<string> RaiseMissingAttendanceRequestService(ComplaintOrRequestWithEmail compalintOrRequest);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceApprovalRequestService(FilterModel filter);

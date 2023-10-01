@@ -146,7 +146,7 @@ namespace ServiceLayer.Code
                 if (attendance.PendingRequestCount > 0)
                     attendance.PendingRequestCount = --attendance.PendingRequestCount;
 
-                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
+                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
                     throw new HiringBellException("Unable to update present request. Please contact to admin.");

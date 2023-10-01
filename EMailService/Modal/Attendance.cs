@@ -48,6 +48,7 @@ namespace ModalLayer.Modal
 
     public enum WorkType
     {
+        EMPTY = 0,
         WORKFROMHOME = 1,
         WORKFROMOFFICE = 2,
         LEAVE = 3,

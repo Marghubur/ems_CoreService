@@ -33,7 +33,7 @@ namespace ModalLayer.Modal
 
     public class AttendanceWithClientDetail
     {
-        public List<AttendanceDetailJson> AttendacneDetails { set; get; }
+        public List<AttendanceJson> AttendacneDetails { set; get; }
         public long AttendanceId { set; get; }
         public Employee EmployeeDetail { set; get; }
     }
@@ -69,6 +69,7 @@ namespace ModalLayer.Modal
         public int TotalMinutes { set; get; }
         public bool IsOpen { set; get; }
         public string Emails { set; get; }
+        public int WorkTypeId { get; set; }
     }
 
     public class AttendanceDetailJson : UserMangerCommonDetail
