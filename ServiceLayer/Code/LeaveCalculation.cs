@@ -896,7 +896,7 @@ namespace ServiceLayer.Code
         {
             DbResult Result = null;
             List<int> fileIds = new List<int>();
-            if (fileCollection.Count > 0)
+            if (fileCollection != null && fileCollection.Count > 0)
             {
                 var documentPath = Path.Combine(
                     _fileLocationDetail.UserFolder,
@@ -928,7 +928,7 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        private LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
+        public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
             var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new

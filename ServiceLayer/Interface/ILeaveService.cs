@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using EMailService.Modal;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
@@ -25,5 +26,6 @@ namespace ServiceLayer.Interface
         DataSet GetLeaveAttachmentService(string FileIds);
         DataSet GetLeaveAttachByMangerService(LeaveRequestNotification leaveRequestNotification);
         Leave GetLeaveDetailByEmpIdService(long EmployeeId);
+        Task<string> AdjustLOPAsLeaveService(LOPAdjustmentDetail lOPAdjustmentDetail);
     }
 }
