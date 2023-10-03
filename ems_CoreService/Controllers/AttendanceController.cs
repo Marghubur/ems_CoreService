@@ -62,7 +62,7 @@ namespace OnlineDataBuilder.Controllers
                 producer.Flush(TimeSpan.FromSeconds(10));
                 _logger.LogInformation($"[Kafka] Messge send successfully");
             }
-            
+
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
@@ -132,6 +132,20 @@ namespace OnlineDataBuilder.Controllers
         public async Task<ApiResponse> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
         {
             var result = await _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("AdjustAttendance")]
+        public async Task<ApiResponse> AdjustAttendance(Attendance attendance)
+        {
+            var result = await _attendanceService.AdjustAttendanceService(attendance);
+            return BuildResponse(result, HttpStatusCode.OK);
+        }
+
+        [HttpGet("GetLOPAdjustment/{month}/{year}")]
+        public async Task<ApiResponse> GetLOPAdjustment([FromRoute] int month, [FromRoute] int year)
+        {
+            var result = await _attendanceService.GetLOPAdjustmentService(month, year);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

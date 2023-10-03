@@ -3,13 +3,13 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Confluent.Kafka;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -27,31 +27,25 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly AttendanceEmailService _attendanceEmailService;
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly ProducerConfig _producerConfig;
         private readonly KafkaNotificationService _kafkaNotificationService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ICompanyService companyService,
-            AttendanceEmailService attendanceEmailService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            ProducerConfig producerConfig,
             KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _companyService = companyService;
             _currentSession = currentSession;
             _timezoneConverter = timezoneConverter;
-            _attendanceEmailService = attendanceEmailService;
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
-            _producerConfig = producerConfig;
             _kafkaNotificationService = kafkaNotificationService;
         }
 
@@ -188,9 +182,9 @@ namespace ServiceLayer.Code
             return attendenceDetails;
         }
 
-        private async Task<List<AttendanceDetailJson>> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
+        private async Task<List<AttendanceJson>> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
         {
-            List<AttendanceDetailJson> attendenceDetails = new List<AttendanceDetailJson>();
+            List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
             var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
             int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
 
@@ -230,7 +224,7 @@ namespace ServiceLayer.Code
                 else if (appliedFlag)
                     presentDayStatus = (int)ItemStatus.MissingAttendanceRequest;
 
-                attendenceDetails.Add(new AttendanceDetailJson
+                attendenceDetails.Add(new AttendanceJson
                 {
                     AttendenceDetailId = workingDate.Day,
                     AttendanceDay = workingDate,
@@ -242,7 +236,11 @@ namespace ServiceLayer.Code
                     ApprovedBy = 0,
                     SessionType = 1,
                     TotalMinutes = totalMinute,
-                    IsOpen = i >= days ? true : false
+                    IsOpen = i >= days ? true : false,
+                    IsHoliday = isHoliday,
+                    IsOnLeave = false,
+                    IsWeekend = isWeekend,
+                    WorkTypeId = (int)WorkType.EMPTY
                 });
 
                 i++;
@@ -373,7 +371,7 @@ namespace ServiceLayer.Code
 
                     if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
                     {
-                        List<AttendanceDetailJson> attendenceDetails;
+                        List<AttendanceJson> attendenceDetails;
                         var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
                         attendanceModal.attendanceSubmissionLimit = 2;
@@ -397,9 +395,9 @@ namespace ServiceLayer.Code
         public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
         {
             if (attendance.EmployeeId == 0)
-                throw HiringBellException.ThrowBadRequest("EMployee id is invalid");
+                throw HiringBellException.ThrowBadRequest("Employee id is invalid");
 
-            List<AttendanceDetailJson> attendenceDetails;
+            List<AttendanceJson> attendenceDetails;
             AttendanceDetailBuildModal attendanceDetailBuildModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
             attendanceDetailBuildModal.attendanceSubmissionLimit = attendanceDetailBuildModal.employee.AttendanceSubmissionLimit;
@@ -454,7 +452,8 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in attendances)
                 {
-                    var leaveDetail = leave.Find(x => x.FromDate.Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    var leaveDetail = leave.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
                     {
                         item.IsOnLeave = true;
@@ -471,13 +470,13 @@ namespace ServiceLayer.Code
             };
         }
 
-        private AttendanceDetailBuildModal GetAttendanceDetail(Attendance attendance, out List<AttendanceDetailJson> attendenceDetails)
+        private AttendanceDetailBuildModal GetAttendanceDetail(Attendance attendance, out List<AttendanceJson> attendenceDetails)
         {
             var now = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendance.AttendanceDay, _currentSession.TimeZone);
             if (now.Day != 1)
                 throw HiringBellException.ThrowBadRequest("Invalid from date submitted.");
 
-            attendenceDetails = new List<AttendanceDetailJson>();
+            attendenceDetails = new List<AttendanceJson>();
             AttendanceDetailBuildModal attendanceDetailBuildModal = new AttendanceDetailBuildModal();
             attendanceDetailBuildModal.firstDate = (DateTime)attendance.AttendanceDay;
 
@@ -512,7 +511,7 @@ namespace ServiceLayer.Code
                 !string.IsNullOrEmpty(Result.Tables[0].Rows[0]["AttendanceDetail"].ToString()))
             {
                 attendanceDetailBuildModal.attendance = Converter.ToType<Attendance>(Result.Tables[0]);
-                attendenceDetails = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendanceDetailBuildModal.attendance.AttendanceDetail);
+                attendenceDetails = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendanceDetailBuildModal.attendance.AttendanceDetail);
             }
             else
             {
@@ -549,7 +548,7 @@ namespace ServiceLayer.Code
             return attendanceSet;
         }
 
-        public async Task<AttendanceDetailJson> SubmitAttendanceService(Attendance attendance)
+        public async Task<AttendanceJson> SubmitAttendanceService(Attendance attendance)
         {
             string Result = string.Empty;
 
@@ -564,7 +563,7 @@ namespace ServiceLayer.Code
 
             // this value should come from database as configured by user.
             int dailyWorkingHours = 8;
-            var attendanceList = new List<AttendanceDetailJson>();
+            var attendanceList = new List<AttendanceJson>();
 
             // check back date limit to allow attendance
             await AttendanceBackdayLimit(attendance.AttendanceDay);
@@ -581,7 +580,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Fail to get manager detail");
 
             attendanceList = JsonConvert
-                .DeserializeObject<List<AttendanceDetailJson>>(presentAttendance.AttendanceDetail);
+                .DeserializeObject<List<AttendanceJson>>(presentAttendance.AttendanceDetail);
 
             presentAttendance.AttendanceDay = attendance.AttendanceDay;
             var workingattendance = attendanceList.Find(x => x.AttendenceDetailId == attendance.AttendenceDetailId);
@@ -590,11 +589,11 @@ namespace ServiceLayer.Code
             int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
             presentAttendance.DaysPending = pendingDays;
             presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
+            workingattendance.WorkTypeId = (int)attendance.WorkTypeId;
             attendance.PendingRequestCount = ++attendance.PendingRequestCount;
             // check for halfday or fullday.
             await this.CheckHalfdayAndFullday(workingattendance, attendance);
 
-            string ProjectName = string.Empty;
             Result = _db.Execute<Attendance>("sp_attendance_insupd", new
             {
                 AttendanceId = presentAttendance.AttendanceId,
@@ -618,9 +617,6 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable submit the attendace");
-
-            Result = ApplicationConstants.Updated;
-            var result = JsonConvert.SerializeObject(presentAttendance);
 
             AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
             {
@@ -689,7 +685,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        private async Task<string> InsertUpdateAttendanceRequest(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, int attendanceId)
+        private async Task<AttendanceRequestModal> InsertUpdateAttendanceRequest(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, int attendanceId)
         {
             Attendance attendance = null;
             Employee managerDetail = null;
@@ -719,7 +715,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(attendance.AttendanceDetail) || attendance.AttendanceDetail == "[]")
                 throw HiringBellException.ThrowBadRequest("Inlvalid attendance detail found. Please contact to admin.");
 
-            List<AttendanceDetailJson> attrDetails = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(attendance.AttendanceDetail);
+            List<AttendanceJson> attrDetails = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendance.AttendanceDetail);
             compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(x =>
             {
                 var item = attrDetails.Find(i => i.AttendenceDetailId == x.TargetOffset);
@@ -768,7 +764,26 @@ namespace ServiceLayer.Code
                            }).ToList();
 
             var result = await _db.BulkExecuteAsync("sp_complaint_or_request_InsUpdate", records, true);
-            return result.ToString();
+            List<string> allAttendanceDates = new List<string>();
+            compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(x =>
+            {
+                allAttendanceDates.Add(_timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone).ToString("dddd, dd MMMM yyyy"));
+            });
+
+            AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+            {
+                ActionType = ApplicationConstants.Submitted,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                ManagerName = managerDetail.FirstName + " " + managerDetail.LastName,
+                Message = compalintOrRequestWithEmail.EmailBody,
+                RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                ToAddress = new List<string> { managerDetail.Email },
+                kafkaServiceName = KafkaServiceName.BlockAttendance,
+                Body = String.Join(", ", allAttendanceDates),
+                Note = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeMessage,
+            };
+            return attendanceRequestModal;
         }
 
         public async Task<string> RaiseMissingAttendanceRequestService(ComplaintOrRequestWithEmail complaintOrRequestWithEmail)
@@ -789,9 +804,11 @@ namespace ServiceLayer.Code
             if (anyRecord)
                 throw HiringBellException.ThrowBadRequest("Invalid data passed. Please contact to admin.");
 
-            var Result = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
-            await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
-            return Result;
+            AttendanceRequestModal attendanceRequestModal = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
+
+            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+            //await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
+            return "Attendance raised successfully";
         }
 
         public AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail)
@@ -833,7 +850,7 @@ namespace ServiceLayer.Code
             return new { MonthlyAttendance = monthlyAttendance, YearlyAttendance = result };
         }
 
-        private async Task CheckAndCreateAttendance(AttendanceDetailJson workingAttendance)
+        private async Task CheckAndCreateAttendance(AttendanceJson workingAttendance)
         {
             switch (workingAttendance.PresentDayStatus)
             {
@@ -849,7 +866,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task CheckHalfdayAndFullday(AttendanceDetailJson workingAttendance, Attendance attendance)
+        private async Task CheckHalfdayAndFullday(AttendanceJson workingAttendance, Attendance attendance)
         {
             if (attendance.SessionType > 1 && workingAttendance.SessionType == 1)
             {
@@ -1101,6 +1118,142 @@ namespace ServiceLayer.Code
             emailSenderModal.Title = $"{attendance.EmployeeName} requested for approved blocked attendance.";
 
             return await Task.FromResult(emailSenderModal);
+        }
+
+        public async Task<List<AttendanceJson>> AdjustAttendanceService(Attendance attendance)
+        {
+            if (attendance.AttendanceId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
+
+            if (attendance.AttendanceDay == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+
+            var attendancemonth = _timezoneConverter.ToIstTime(attendance.AttendanceDay).Month;
+            var attendanceyear = _timezoneConverter.ToIstTime(attendance.AttendanceDay).Year;
+
+            // this value should come from database as configured by user.
+            int dailyWorkingHours = 8;
+            var attendanceList = new List<AttendanceJson>();
+
+            // check for leave, holiday and weekends
+            await this.IsGivenDateAllowed(attendance.AttendanceDay);
+
+            var presentAttendance = _db.Get<Attendance>("sp_attendance_get_byid", new { AttendanceId = attendance.AttendanceId });
+            if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+
+            attendanceList = JsonConvert
+                .DeserializeObject<List<AttendanceJson>>(presentAttendance.AttendanceDetail);
+
+            var workingattendance = attendanceList.Find(x => x.AttendenceDetailId == attendance.AttendenceDetailId);
+            workingattendance.UserComments = attendance.UserComments;
+            workingattendance.PresentDayStatus = (int)ItemStatus.Approved;
+            int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
+            presentAttendance.DaysPending = pendingDays;
+            presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
+            workingattendance.WorkTypeId = (int)WorkType.WORKFROMHOME;
+
+            string Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+            {
+                AttendanceId = presentAttendance.AttendanceId,
+                AttendanceDetail = JsonConvert.SerializeObject(attendanceList),
+                UserTypeId = presentAttendance.UserTypeId,
+                EmployeeId = presentAttendance.EmployeeId,
+                TotalDays = presentAttendance.TotalDays,
+                TotalWeekDays = presentAttendance.TotalWeekDays,
+                DaysPending = presentAttendance.DaysPending,
+                TotalBurnedMinutes = presentAttendance.TotalHoursBurend,
+                ForYear = presentAttendance.ForYear,
+                ForMonth = presentAttendance.ForMonth,
+                UserId = _currentSession.CurrentUserDetail.EmployeeId,
+                PendingRequestCount = ++presentAttendance.PendingRequestCount,
+                EmployeeName = presentAttendance.EmployeeName,
+                Email = presentAttendance.Email,
+                Mobile = presentAttendance.Mobile,
+                ReportingManagerId = presentAttendance.ReportingManagerId,
+                ManagerName = presentAttendance.ManagerName
+            }, true);
+
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable submit the attendace");
+
+            AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+            {
+                ActionType = ApplicationConstants.Approved,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = 1,
+                DeveloperName = presentAttendance.EmployeeName,
+                FromDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDay, _currentSession.TimeZone),
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                Message = presentAttendance.UserComments,
+                RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                ToAddress = new List<string> { presentAttendance.Email },
+                kafkaServiceName = KafkaServiceName.Attendance
+            };
+
+            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+
+            return attendanceList;
+        }
+
+        public Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year)
+        {
+            List<LOPAdjustmentDetail> lOPAdjustmentDetails = new List<LOPAdjustmentDetail>();
+            var ds = _db.GetDataSet("sp_leave_and_lop_get", new
+            {
+                Month = month,
+                Year = year,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            }, false);
+
+            if (ds == null && ds.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("LOP detail not found. Please contact to admin.");
+
+            if (ds.Tables[1].Rows.Count == 0)
+                throw new HiringBellException("Fail to get employee attendance details. Please contact to admin.");
+
+            if (ds.Tables[2].Rows.Count == 0)
+                throw new HiringBellException("Fail to get attendance setting details. Please contact to admin.");
+
+            AttendanceSetting attendanceSetting = Converter.ToType<AttendanceSetting>(ds.Tables[2]);
+            List<LeaveRequestNotification> leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[0]);
+            List<Attendance> attendance = Converter.ToList<Attendance>(ds.Tables[1]);
+            attendance.ForEach(x =>
+            {
+                int daysLimit = attendanceSetting.BackDateLimitToApply + 1;
+                List<AttendanceJson> attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(x.AttendanceDetail);
+                List<LeaveRequestNotification> leaves = leaveRequestNotifications.FindAll(x => x.EmployeeId == x.EmployeeId);
+                DateTime lastAppliedDate = DateTime.UtcNow.AddDays(-daysLimit);
+                attendanceDetail.ForEach(i =>
+                {
+                    if (leaves != null && leaves.Count > 0)
+                    {
+                        var leaveDetail = leaves.Find(x => x.FromDate.Date.Subtract(i.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(i.AttendanceDay.Date).TotalDays >= 0);
+                        if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
+                        {
+                            i.IsOnLeave = true;
+                            i.IsOpen = false;
+                        }
+                    }
+                    if (!i.IsOnLeave && i.PresentDayStatus != 3 && i.PresentDayStatus != 4 && i.AttendanceDay.Date.Subtract(lastAppliedDate.Date).TotalDays <= 0)
+                        i.IsOpen = false;
+
+                });
+                List<AttendanceJson> blockedAttendance = attendanceDetail.FindAll(a => !a.IsOpen && !a.IsOnLeave && a.PresentDayStatus == 0);
+                if (blockedAttendance != null && blockedAttendance.Count > 0)
+                {
+                    lOPAdjustmentDetails.Add(new LOPAdjustmentDetail
+                    {
+                        ActualLOP = blockedAttendance.Count,
+                        Email = x.Email,
+                        EmployeeId = x.EmployeeId,
+                        EmployeeName = x.EmployeeName,
+                        BlockedDates = blockedAttendance.Select(x => x.AttendanceDay).ToList()
+                    });
+                }
+            });
+
+            return Task.FromResult(lOPAdjustmentDetails);
         }
 
         public async Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)

@@ -17,5 +17,7 @@ namespace ServiceLayer.Interface
         Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail);
         Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId);
         Task RunAccrualCycleByEmployee(long EmployeeId);
+        Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal);
+        LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails);
     }
 }

@@ -1,12 +1,15 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -536,6 +539,161 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Leave quota detail not found. Please contact to admin");
 
             return result;
+        }
+
+        public async Task<string> AdjustLOPAsLeaveService(LOPAdjustmentDetail lOPAdjustmentDetail)
+        {
+            validateLOPAdjustmentDetail(lOPAdjustmentDetail);
+            List<int> leaveDetails = new List<int>();
+            string result = string.Empty;
+
+            var leaveCalculationModal = LoadCalculationData(lOPAdjustmentDetail.EmployeeId);
+            var leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
+            var availableLeave = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == lOPAdjustmentDetail.LeaveTypeId);
+
+            if (lOPAdjustmentDetail.LOPAdjusment > availableLeave.AvailableLeaves)
+                throw HiringBellException.ThrowBadRequest("LOP adjustment is greater than leave quota");
+
+            if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
+                leaveDetails = JsonConvert.DeserializeObject<List<int>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
+
+            lOPAdjustmentDetail.BlockedDates.ForEach(x =>
+            {
+                result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
+                {
+                    LeaveRequestNotificationId = 0,
+                    LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
+                    UserMessage = lOPAdjustmentDetail.Comment,
+                    lOPAdjustmentDetail.EmployeeId,
+                    ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
+                    ProjectId = 0,
+                    ProjectName = string.Empty,
+                    FromDate = x,
+                    ToDate = x,
+                    NumOfDays = 1M,
+                    RequestStatusId = (int)ItemStatus.Approved,
+                    NoOfApprovalsRequired = 0,
+                    ReporterDetail = ApplicationConstants.EmptyJsonArray,
+                    FileIds = ApplicationConstants.EmptyJsonArray,
+                    FeedBack = ApplicationConstants.EmptyJsonArray,
+                    LeaveTypeName = lOPAdjustmentDetail.LeavePlanName,
+                    AutoActionAfterDays = 0,
+                    IsAutoApprovedEnabled = false,
+                    leaveCalculationModal.LeaveTypeId,
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result))
+                    throw new HiringBellException("fail to insert or update leave notification detail");
+                leaveDetails.Add(int.Parse(result));
+
+                var leaveTemplateModel = new LeaveTemplateModel
+                {
+                    kafkaServiceName = KafkaServiceName.Leave,
+                    RequestType = nameof(RequestType.Leave),
+                    ActionType = nameof(ItemStatus.Approved),
+                    FromDate = _timezoneConverter.ToTimeZoneDateTime(x, _currentSession.TimeZone),
+                    ToDate = _timezoneConverter.ToTimeZoneDateTime(x, _currentSession.TimeZone),
+                    Message = lOPAdjustmentDetail.Comment,
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = 1,
+                    ToAddress = new List<string> { leaveCalculationModal.employee.Email }
+                };
+
+                _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(leaveTemplateModel));
+            });
+
+            availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - lOPAdjustmentDetail.BlockedDates.Count;
+            leaveCalculationModal.leaveTypeBriefs = leaveTypeBriefs;
+
+            result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
+            {
+                leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
+                lOPAdjustmentDetail.EmployeeId,
+                LeaveDetail = JsonConvert.SerializeObject(leaveDetails),
+                Year = leaveCalculationModal.leaveRequestDetail.Year,
+                IsPending = false,
+                AvailableLeaves = 0,
+                TotalLeaveApplied = 0,
+                TotalApprovedLeave = 0,
+                TotalLeaveQuota = leaveCalculationModal.leaveRequestDetail.TotalLeaveQuota,
+                LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs)
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("fail to insert or update leave detail");
+
+            return await Task.FromResult("Successfully");
+        }
+
+        private void validateLOPAdjustmentDetail(LOPAdjustmentDetail lOPAdjustmentDetail)
+        {
+            if (lOPAdjustmentDetail.BlockedDates.Count > lOPAdjustmentDetail.LOPAdjusment)
+                lOPAdjustmentDetail.BlockedDates = lOPAdjustmentDetail.BlockedDates.Take(lOPAdjustmentDetail.LOPAdjusment).ToList();
+
+            if (lOPAdjustmentDetail.EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Employee id noyt found.");
+
+            if (lOPAdjustmentDetail.LeaveTypeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid leave type selected");
+
+            if (lOPAdjustmentDetail.ActualLOP < lOPAdjustmentDetail.LOPAdjusment)
+                throw HiringBellException.ThrowBadRequest("LOP adjustment is greater tha actual LOP");
+
+            if (lOPAdjustmentDetail.BlockedDates == null || lOPAdjustmentDetail.BlockedDates.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Blocked dates are not found");
+
+            if (lOPAdjustmentDetail.BlockedDates.Count != lOPAdjustmentDetail.LOPAdjusment)
+                throw HiringBellException.ThrowBadRequest("Blocked dates are more than lop adjustment days");
+        }
+
+        private LeaveCalculationModal LoadCalculationData(long EmployeeId)
+        {
+            LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal();
+            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new
+            {
+                EmployeeId,
+                _currentSession.CurrentUserDetail.ReportingManagerId,
+                IsActive = 1,
+                Year = DateTime.UtcNow.Year
+            }, false);
+
+            if (ds != null && ds.Tables.Count == 8)
+            {
+                if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
+                    throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
+
+                leaveCalculationModal.employee = Converter.ToType<Employee>(ds.Tables[0]);
+                if (string.IsNullOrEmpty(leaveCalculationModal.employee.LeaveTypeBriefJson))
+                    throw HiringBellException.ThrowBadRequest("Unable to get employee leave detail. Please contact to admin.");
+
+                leaveCalculationModal.leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.employee.LeaveTypeBriefJson);
+                if (leaveCalculationModal.leaveTypeBriefs.Count == 0)
+                    throw HiringBellException.ThrowBadRequest("Unable to get employee leave detail. Please contact to admin.");
+
+                leaveCalculationModal.shiftDetail = Converter.ToType<ShiftDetail>(ds.Tables[5]);
+                leaveCalculationModal.leavePlanTypes = Converter.ToList<LeavePlanType>(ds.Tables[1]);
+                leaveCalculationModal.leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(ds.Tables[2]);
+                leaveCalculationModal.lastAppliedLeave = Converter.ToList<LeaveRequestNotification>(ds.Tables[6]);
+                if (leaveCalculationModal.lastAppliedLeave.Count > 0)
+                    leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.Where(x => x.RequestStatusId != (int)ItemStatus.Rejected).ToList();
+
+                if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail))
+                    leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail = JsonConvert
+                        .DeserializeObject<List<EmployeeLeaveQuota>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
+                else
+                    leaveCalculationModal.leaveRequestDetail.EmployeeLeaveQuotaDetail = new List<EmployeeLeaveQuota>();
+
+                leaveCalculationModal.companySetting = Converter.ToType<CompanySetting>(ds.Tables[3]);
+                leaveCalculationModal.leavePlan = Converter.ToType<LeavePlan>(ds.Tables[4]);
+                leaveCalculationModal.projectMemberDetail = Converter.ToList<ProjectMemberDetail>(ds.Tables[7]);
+            }
+            else
+                throw new HiringBellException("Employee does not exist. Please contact to admin.");
+
+            return leaveCalculationModal;
         }
     }
 }

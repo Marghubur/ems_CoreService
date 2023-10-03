@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using EMailService.Modal;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace ServiceLayer.Interface
     {
         Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance);
         AttendanceWithClientDetail EnablePermission(AttendenceDetail attendenceDetail);
-        Task<AttendanceDetailJson> SubmitAttendanceService(Attendance attendance);
+        Task<AttendanceJson> SubmitAttendanceService(Attendance attendance);
         Task<string> RaiseMissingAttendanceRequestService(ComplaintOrRequestWithEmail compalintOrRequest);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceRequestService(FilterModel filter);
         Task<List<ComplaintOrRequest>> GetMissingAttendanceApprovalRequestService(FilterModel filter);
@@ -18,5 +19,7 @@ namespace ServiceLayer.Interface
         Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task GenerateAttendanceService();
+        Task<List<AttendanceJson>> AdjustAttendanceService(Attendance attendance);
+        Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
     }
 }

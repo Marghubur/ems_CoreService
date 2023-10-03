@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using EMailService.Modal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -166,6 +167,13 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> GetLeaveDetailByEmpId([FromRoute] long EmployeeId)
         {
             var result = _leaveService.GetLeaveDetailByEmpIdService(EmployeeId);
+            return BuildResponse(result);
+        }
+
+        [HttpPost("AdjustLOPAsLeave")]
+        public async Task<ApiResponse> AdjustLOPAsLeave(LOPAdjustmentDetail lOPAdjustmentDetail)
+        {
+            var result = await _leaveService.AdjustLOPAsLeaveService(lOPAdjustmentDetail);
             return BuildResponse(result);
         }
     }
