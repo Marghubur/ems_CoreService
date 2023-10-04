@@ -20,5 +20,6 @@ namespace ServiceLayer.Interface
         List<Calendar> HolidayInsertUpdateService(Calendar calendar);
         List<Calendar> DeleteHolidayService(long CompanyCalendarId);
         Task<int> CountWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate, ShiftDetail shiftDetail);
+        Task<decimal> GetHolidayCountInMonth(int month, int year);
     }
 }

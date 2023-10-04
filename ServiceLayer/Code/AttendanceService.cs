@@ -584,15 +584,16 @@ namespace ServiceLayer.Code
 
             presentAttendance.AttendanceDay = attendance.AttendanceDay;
             var workingattendance = attendanceList.Find(x => x.AttendenceDetailId == attendance.AttendenceDetailId);
-            await this.CheckAndCreateAttendance(workingattendance);
+            await CheckAndCreateAttendance(workingattendance);
             workingattendance.UserComments = attendance.UserComments;
+            // check for halfday or fullday.
+            await CheckHalfdayAndFullday(workingattendance, attendance, presentAttendance.EmployeeId);
+
             int pendingDays = attendanceList.Count(x => x.PresentDayStatus == (int)ItemStatus.Pending);
             presentAttendance.DaysPending = pendingDays;
             presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
             workingattendance.WorkTypeId = (int)attendance.WorkTypeId;
             attendance.PendingRequestCount = ++attendance.PendingRequestCount;
-            // check for halfday or fullday.
-            await this.CheckHalfdayAndFullday(workingattendance, attendance);
 
             Result = _db.Execute<Attendance>("sp_attendance_insupd", new
             {
@@ -866,8 +867,12 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task CheckHalfdayAndFullday(AttendanceJson workingAttendance, Attendance attendance)
+        private async Task CheckHalfdayAndFullday(AttendanceJson workingAttendance, Attendance attendance, long employeeId)
         {
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_getby_empid", new { EmployeeId = employeeId });
+            if (shiftDetail == null)
+                throw HiringBellException.ThrowBadRequest("Employee shift detail not found. Please contact to admin");
+
             if (attendance.SessionType > 1 && workingAttendance.SessionType == 1)
             {
                 var logoff = workingAttendance.LogOff;
@@ -878,7 +883,7 @@ namespace ServiceLayer.Code
                 workingAttendance.LogOff = logoff;
                 workingAttendance.LogOn = logoff;
                 workingAttendance.SessionType = attendance.SessionType;
-                workingAttendance.TotalMinutes = workingAttendance.TotalMinutes / 2;
+                workingAttendance.TotalMinutes = shiftDetail.Duration / 2;
             }
             else if (attendance.SessionType == 1 && workingAttendance.SessionType > 1)
             {
@@ -889,7 +894,7 @@ namespace ServiceLayer.Code
                 workingAttendance.LogOff = ConvertToMin(totaltime);
                 workingAttendance.LogOn = ConvertToMin(totaltime + 60);
                 workingAttendance.SessionType = attendance.SessionType;
-                workingAttendance.TotalMinutes = workingAttendance.TotalMinutes * 2;
+                workingAttendance.TotalMinutes = shiftDetail.Duration;
             }
             await Task.CompletedTask;
         }

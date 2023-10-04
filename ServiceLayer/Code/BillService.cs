@@ -51,7 +51,7 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
-            IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService, 
+            IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService,
             IDeclarationService declarationService)
         {
             this.db = db;
@@ -1326,10 +1326,12 @@ namespace ServiceLayer.Code
             return html;
         }
 
-        private int GetWorkingDays(Attendance AttendanceDetail)
+        private decimal GetWorkingDays(Attendance AttendanceDetail)
         {
             List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(AttendanceDetail.AttendanceDetail);
-            int totalDays = attendanceDetailJsons.Count(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+            decimal totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
+            totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
             return totalDays;
         }
 
