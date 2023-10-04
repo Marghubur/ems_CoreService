@@ -2,7 +2,6 @@
 using BottomhalfCore.Services.Interface;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -161,6 +160,18 @@ namespace ServiceLayer
             var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
 
             return await Task.FromResult(holidays);
+        }
+
+        public async Task<decimal> GetHolidayCountInMonth(int month, int year)
+        {
+            decimal totalDays = 0;
+            DateTime fromDate = new DateTime(year, month, 1);
+            DateTime toDate = fromDate.AddMonths(1).AddDays(-1);
+            LoadHolidayCalendar();
+            int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
+            int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
+            totalDays = (decimal)(fullDayHoliday + (halfDayHoliday * 0.5));
+            return await Task.FromResult(totalDays);
         }
 
         public async Task<bool> IsWeekOff(DateTime date)
