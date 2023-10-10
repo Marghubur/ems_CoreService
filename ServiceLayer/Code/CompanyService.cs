@@ -21,16 +21,12 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-        private readonly ICacheManager _cacheManager;
-        private readonly ILeaveCalculation _leaveCalculation;
-        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession, ICacheManager cacheManager, ILeaveCalculation leaveCalculation)
+        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
-            _cacheManager = cacheManager;
-            _leaveCalculation = leaveCalculation;
         }
         public List<OrganizationDetail> GetAllCompany()
         {

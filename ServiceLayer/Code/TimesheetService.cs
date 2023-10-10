@@ -1,8 +1,11 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Crmf;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
@@ -18,17 +21,20 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly TimesheetEmailService _timesheetEmailService;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public TimesheetService(
             IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            TimesheetEmailService timesheetEmailService)
+            TimesheetEmailService timesheetEmailService,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _timesheetEmailService = timesheetEmailService;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         #region NEW CODE
@@ -241,7 +247,9 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
-            await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
+            TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = await GetTemplate(timesheetDetail);
+            await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
+            //await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult(timesheetDetail);
         }
 
@@ -375,6 +383,46 @@ namespace ServiceLayer.Code
             billingDetail.Organizations = Result.Tables[3];
 
             return billingDetail;
+        }
+
+        private async Task<TimesheetApprovalTemplateModel> GetTemplate(TimesheetDetail timesheetDetail)
+        {
+            var fromDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetStartDate, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)timesheetDetail.TimesheetEndDate, _currentSession.TimeZone);
+            long reportManagerId = 0;
+            if (_currentSession.CurrentUserDetail.ReportingManagerId == 0)
+                reportManagerId = 1;
+            else
+                reportManagerId = _currentSession.CurrentUserDetail.ReportingManagerId;
+            FilterModel filterModel = new FilterModel
+            {
+                SearchString = $"1=1 and EmployeeUid = {reportManagerId}",
+                SortBy = "",
+                PageIndex = 1,
+                PageSize = 10
+            };
+
+            var managerDetail = _db.Get<Employee>("SP_Employees_Get", filterModel);
+            if (managerDetail == null)
+                throw new Exception("No manager record found. Please add manager first.");
+
+            var numOfDays = fromDate.Date.Subtract(toDate.Date).TotalDays + 1;
+
+            TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = new TimesheetApprovalTemplateModel
+            {
+                ActionType = ApplicationConstants.Submitted,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = Convert.ToInt32(numOfDays),
+                DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                FromDate = fromDate,
+                ToDate = toDate,
+                ManagerName = managerDetail.ManagerName,
+                Message = string.IsNullOrEmpty(timesheetDetail.UserComments)? "NA" : timesheetDetail.UserComments,
+                ToAddress = new List<string> { managerDetail.Email },
+                kafkaServiceName = KafkaServiceName.Timesheet
+            };
+
+            return await Task.FromResult(timesheetApprovalTemplateModel);
         }
     }
 }

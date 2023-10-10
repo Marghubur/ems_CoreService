@@ -1,13 +1,10 @@
-﻿using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 
 namespace ServiceLayer.Interface
 {
     public interface IInitialRegistrationService
     {
-        string InitialOrgRegistrationService(RegistrationForm registrationForm);
+        string InitialOrgRegistrationService(RegistrationForm registrationForm, Files files, IFormFileCollection fileCollection);
     }
 }

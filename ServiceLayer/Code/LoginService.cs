@@ -1,14 +1,15 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using EMailService.Service;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ems_CoreService.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Net.Mail;
@@ -23,27 +24,20 @@ namespace ServiceLayer.Code
         private readonly JwtSetting _jwtSetting;
         private readonly IAuthenticationService _authenticationService;
         private readonly IConfiguration _configuration;
-        private readonly IEMailManager _emailManager;
-        private readonly ICommonService _commonService;
-        private readonly ForgotPasswordEmailService _forgotPasswordEmailService;
         private readonly CurrentSession _currentSession;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public LoginService(IDb db, IOptions<JwtSetting> options,
             IAuthenticationService authenticationService,
-            IEMailManager emailManager,
-            ICommonService commonService,
             IConfiguration configuration,
-            ForgotPasswordEmailService forgotPasswordEmailService,
-            CurrentSession currentSession)
+            CurrentSession currentSession, KafkaNotificationService kafkaNotificationService)
         {
             this.db = db;
             _configuration = configuration;
             _jwtSetting = options.Value;
             _authenticationService = authenticationService;
-            _emailManager = emailManager;
-            _commonService = commonService;
-            _forgotPasswordEmailService = forgotPasswordEmailService;
             _currentSession = currentSession;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         public Boolean RemoveUserDetailService(string Token)
@@ -110,6 +104,7 @@ namespace ServiceLayer.Code
                 encryptedPassword = loginDetail.Password;
                 authUser.OrganizationId = loginDetail.OrganizationId;
                 authUser.CompanyId = loginDetail.CompanyId;
+                authUser.CompanyName = loginDetail.CompanyName;
             }
             else
             {
@@ -321,9 +316,6 @@ namespace ServiceLayer.Code
             try
             {
                 string Status = string.Empty;
-                if (string.IsNullOrEmpty(email))
-                    throw new HiringBellException("Email is null or empty");
-
                 ValidateEmailId(email);
                 UserDetail authUser = new UserDetail();
                 authUser.EmailId = email;
@@ -334,7 +326,15 @@ namespace ServiceLayer.Code
 
                 var password = _authenticationService.Decrypt(encryptedPassword, _configuration.GetSection("EncryptSecret").Value);
 
-                await _forgotPasswordEmailService.SendForgotPasswordEmail(password, email);
+                //await _forgotPasswordEmailService.SendForgotPasswordEmail(password, email);
+                ForgotPasswordTemplateModel forgotPasswordTemplateModel = new ForgotPasswordTemplateModel
+                {
+                    CompanyName = authUser.CompanyName,
+                    NewPassword = password,
+                    ToAddress = new List<string> { email },
+                    kafkaServiceName = KafkaServiceName.ForgotPassword
+                };
+                await _kafkaNotificationService.SendEmailNotification(forgotPasswordTemplateModel);
                 Status = ApplicationConstants.Successfull;
                 return Status;
             }
@@ -360,6 +360,9 @@ namespace ServiceLayer.Code
 
         private void ValidateEmailId(string email)
         {
+            if (string.IsNullOrEmpty(email))
+                throw new HiringBellException("Email is null or empty");
+
             var mail = new MailAddress(email);
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
