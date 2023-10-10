@@ -2,13 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -20,11 +16,9 @@ namespace OnlineDataBuilder.Controllers
     public class TimesheetController : BaseController
     {
         private readonly ITimesheetService _timesheetService;
-        private readonly HttpContext _httpContext;
-        public TimesheetController(ITimesheetService timesheetService, IHttpContextAccessor httpContext)
+        public TimesheetController(ITimesheetService timesheetService)
         {
             _timesheetService = timesheetService;
-            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost("GetTimesheetByFilter")]
@@ -83,7 +77,7 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] GenerateBillFileDetail fileDetail)
         {
             var result = _timesheetService.EditEmployeeBillDetailService(fileDetail);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            return BuildResponse(result, HttpStatusCode.OK);
         }
     }
 }

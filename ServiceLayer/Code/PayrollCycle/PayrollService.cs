@@ -126,9 +126,7 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             attendanceDetailJsons = attendanceDetailJsons.FindAll(x =>
-                x.PresentDayStatus != (int)AttendanceEnum.Rejected &&
-                x.PresentDayStatus != (int)AttendanceEnum.NotSubmitted
-            );
+                x.PresentDayStatus == (int)AttendanceEnum.Approved);
 
             //decimal totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
             //totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);

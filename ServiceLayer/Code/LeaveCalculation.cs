@@ -944,7 +944,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
 
             if (employeeWithRoles.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Reportee deatails not found. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
 
             ApprovalChainDetail ApprovalChain = approvalChainDetail.First();
             LeaveRequestNotification notification = new LeaveRequestNotification

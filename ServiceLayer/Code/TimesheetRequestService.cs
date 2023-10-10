@@ -1,8 +1,10 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using BottomhalfCore.DatabaseLayer.Common.Code;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,14 +15,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
+        private readonly KafkaNotificationService _kafkaNotificationService;
 
         public TimesheetRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
-            CurrentSession currentSession)
+            CurrentSession currentSession,
+            KafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _currentSession = currentSession;
             _approvalEmailService = approvalEmailService;
+            _kafkaNotificationService = kafkaNotificationService;
         }
 
         public async Task<List<TimesheetDetail>> RejectTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
@@ -61,8 +66,23 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(Result))
                 throw new HiringBellException("Unable to update attendance status");
 
-            var timesheetDetails = JsonConvert.DeserializeObject<List<TimesheetDetail>>(timesheet.TimesheetWeeklyJson);
-            await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
+           // var timesheetDetails = JsonConvert.DeserializeObject<List<TimesheetDetail>>(timesheet.TimesheetWeeklyJson);
+            var numOfDays = timesheet.TimesheetStartDate.Date.Subtract(timesheet.TimesheetEndDate.Date).TotalDays + 1;
+            TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = new TimesheetApprovalTemplateModel
+            {
+                ActionType = itemStatus == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = Convert.ToInt32(numOfDays),
+                DeveloperName = timesheet.FirstName + " " + timesheet.LastName,
+                FromDate = timesheet.TimesheetStartDate,
+                ToDate = timesheet.TimesheetEndDate,
+                ManagerName = _currentSession.CurrentUserDetail.FullName,
+                ToAddress = new List<string> { timesheet.Email },
+                //kafkaServiceName = KafkaServiceName.Timesheet
+            };
+
+            await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
+            //await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
             await Task.CompletedTask;
         }
 
