@@ -963,7 +963,7 @@ namespace ServiceLayer.Code
             var record = employeeWithRoles.Find(x => x.DesignationId == chain.AssignieId);
             if (record != null)
             {
-                chain.AssignieId = record.EmployeeId;
+                chain.AssignieId = record.EmployeeUid;
                 chain.AssignieeEmail = record.Email;
                 return true;
             }
