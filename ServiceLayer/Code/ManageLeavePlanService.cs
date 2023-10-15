@@ -40,7 +40,7 @@ namespace ServiceLayer.Code
                 leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
 
             List<EmployeeRole> employeeRole = Converter.ToList<EmployeeRole>(resultSet.Tables[2]);
-            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 11 || x.RoleId == 12 || x.RoleId == 13 || x.RoleId == 16);
+            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 3 || x.RoleId == 5 || x.RoleId == 19);
             return new { leavePlanConfiguration, approvalWorkFlowChain, employeeRole };
         }
 
