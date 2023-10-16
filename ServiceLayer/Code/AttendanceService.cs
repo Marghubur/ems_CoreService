@@ -447,6 +447,13 @@ namespace ServiceLayer.Code
                     daysLimit--;
                 }
 
+            } else
+            {
+                attendances.ForEach(x =>
+                {
+                    if (x.PresentDayStatus == (int)ItemStatus.NotSubmitted && x.PresentDayStatus != (int)DayStatus.Weekend && x.PresentDayStatus != (int)DayStatus.Weekend)
+                        x.IsOpen = false;
+                });
             }
             if (leave != null && leave.Count > 0)
             {

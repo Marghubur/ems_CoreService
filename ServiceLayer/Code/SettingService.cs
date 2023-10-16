@@ -1,13 +1,14 @@
-﻿using Bot.CoreBottomHalf.CommonModal;
-using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using ems_CoreService.Model;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,24 +19,17 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IFileService _fileService;
-        private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
         private readonly ICommonService _commonService;
-
-        public SettingService(IDb db, 
-            CurrentSession currentSession, 
-            FileLocationDetail fileLocationDetail, 
-            IFileService fileService, 
-            IEvaluationPostfixExpression postfixToInfixConversion, 
-            ICommonService commonService)
+        private readonly IDeclarationService _declarationService;
+        public SettingService(IDb db,
+            CurrentSession currentSession,
+            ICommonService commonService,
+            IDeclarationService declarationService)
         {
             _db = db;
             _currentSession = currentSession;
-            _fileLocationDetail = fileLocationDetail;
-            _fileService = fileService;
-            _postfixToInfixConversion = postfixToInfixConversion;
             _commonService = commonService;
+            _declarationService = declarationService;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -249,7 +243,7 @@ namespace ServiceLayer.Code
                 existingComponent.Formula = component.Formula;
                 existingComponent.IncludeInPayslip = component.IncludeInPayslip;
             }
-            
+
             salaryGroup.SalaryComponents = _commonService.GetStringifySalaryGroupData(salaryGroup.GroupComponents);
             var status = await _db.ExecuteAsync("sp_salary_group_insupd", new
             {
@@ -266,7 +260,70 @@ namespace ServiceLayer.Code
             if (!ApplicationConstants.IsExecuted(status.statusMessage))
                 throw new HiringBellException("Fail to update the record.");
 
+            await UpdateSalaryDetails(salaryGroup.SalaryGroupId, component);
             return status.statusMessage;
+        }
+
+        private async Task UpdateSalaryDetails(int salaryGroupId, SalaryComponents component)
+        {
+            var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_groupid", new { SalaryGroupId = salaryGroupId });
+            if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
+            {
+                employeeSalaryDetail.ForEach(async x =>
+                {
+                    List<AnnualSalaryBreakup> annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(x.CompleteSalaryDetail);
+                    if (annualSalaryBreakup != null && annualSalaryBreakup.Count > 0)
+                    {
+                        var remainingMonthSalaryBreakup = annualSalaryBreakup.FindAll(x => !x.IsPayrollExecutedForThisMonth);
+                        if (remainingMonthSalaryBreakup != null && remainingMonthSalaryBreakup.Count > 0)
+                        {
+                            remainingMonthSalaryBreakup.ForEach(i =>
+                            {
+                                var salaryComponent = i.SalaryBreakupDetails.Find(y => y.ComponentId == component.ComponentId);
+                                if (salaryComponent != null)
+                                {
+                                    salaryComponent.Formula = component.Formula;
+                                    salaryComponent.IsIncludeInPayslip = component.IncludeInPayslip;
+                                }
+                            });
+
+                            x.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakup);
+                        }
+
+                    }
+                });
+                var data = (from n in employeeSalaryDetail
+                            select new
+                            {
+                                EmployeeId = n.EmployeeId,
+                                CompleteSalaryDetail = n.CompleteSalaryDetail,
+                                TaxDetail = n.TaxDetail,
+                                CTC = n.CTC
+                            }).ToList();
+
+                var result = await _db.BulkExecuteAsync("sp_employee_salary_detail_upd_salarydetail", data, true);
+                if (result != employeeSalaryDetail.Count)
+                    throw HiringBellException.ThrowBadRequest("Fail to update salary breakup");
+
+                employeeSalaryDetail.ForEach(async x =>
+                {
+                    DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
+                    {
+                        EmployeeId = x.EmployeeId,
+                        UserTypeId = (int)UserType.Compnay
+                    });
+
+                    if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
+                        throw HiringBellException.ThrowBadRequest("Unable to get the detail");
+
+                    EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+                    if (employeeDeclaration == null)
+                        throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
+
+                    await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                });
+
+            };
         }
 
         private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)
