@@ -1,6 +1,8 @@
 ﻿using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +81,22 @@ namespace ServiceLayer.Code
             string value = Regex.Replace(code, "[A-Za-z ]", "");
             long id = long.Parse(value);
             return id;
+        }
+
+        public string GetStringifySalaryGroupData(List<SalaryComponents> salaryComponents)
+        {
+            return JsonConvert.SerializeObject(salaryComponents.Select(x => new
+            {
+                Formula = x.Formula,
+                Section = x.Section,
+                TaxExempt = x.TaxExempt,
+                ComponentId = x.ComponentId,
+                ComponentTypeId = x.ComponentTypeId,
+                IncludeInPayslip = x.IncludeInPayslip,
+                ComponentFullName = x.ComponentFullName,
+                IsComponentEnabled = x.IsComponentEnabled,
+                ComponentCatagoryId = x.ComponentCatagoryId
+            }));
         }
     }
 }

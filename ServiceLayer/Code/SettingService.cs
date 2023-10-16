@@ -8,11 +8,9 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
@@ -23,13 +21,21 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly IEvaluationPostfixExpression _postfixToInfixConversion;
-        public SettingService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IFileService fileService, IEvaluationPostfixExpression postfixToInfixConversion)
+        private readonly ICommonService _commonService;
+
+        public SettingService(IDb db, 
+            CurrentSession currentSession, 
+            FileLocationDetail fileLocationDetail, 
+            IFileService fileService, 
+            IEvaluationPostfixExpression postfixToInfixConversion, 
+            ICommonService commonService)
         {
             _db = db;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _postfixToInfixConversion = postfixToInfixConversion;
+            _commonService = commonService;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -240,33 +246,11 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(component.Formula))
                     throw new HiringBellException("Given formula is not correct or unable to submit. Please try again or contact to admin");
 
-                if (component.Formula.Contains('%'))
-                {
-                    int result = 0;
-                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
-                     .TakeWhile(x => char.IsDigit(x))
-                     .ToArray()), out result);
-                    existingComponent.PercentageValue = result;
-                    existingComponent.MaxLimit = 0;
-                    existingComponent.DeclaredValue = 0;
-                    existingComponent.CalculateInPercentage = true;
-                }
-                else
-                {
-                    int result = 0;
-                    var value = int.TryParse(new string(component.Formula.SkipWhile(x => !char.IsDigit(x))
-                     .TakeWhile(x => char.IsDigit(x))
-                     .ToArray()), out result);
-                    existingComponent.DeclaredValue = result;
-                    existingComponent.MaxLimit = 0;
-                    existingComponent.PercentageValue = 0;
-                    existingComponent.CalculateInPercentage = false;
-                }
                 existingComponent.Formula = component.Formula;
                 existingComponent.IncludeInPayslip = component.IncludeInPayslip;
             }
-
-            salaryGroup.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
+            
+            salaryGroup.SalaryComponents = _commonService.GetStringifySalaryGroupData(salaryGroup.GroupComponents);
             var status = await _db.ExecuteAsync("sp_salary_group_insupd", new
             {
                 salaryGroup.SalaryGroupId,
