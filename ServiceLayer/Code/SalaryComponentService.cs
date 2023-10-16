@@ -22,12 +22,13 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILogger<DeclarationService> _logger;
         private readonly IUtilityService _utilityService;
+        private readonly ICommonService _commonService;
 
         public SalaryComponentService(IDb db, CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter,
             IUtilityService utilityService,
-        ILogger<DeclarationService> logger)
+        ILogger<DeclarationService> logger, ICommonService commonService)
         {
             _db = db;
             _currentSession = currentSession;
@@ -35,6 +36,7 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _utilityService = utilityService;
             _logger = logger;
+            _commonService = commonService;
         }
 
         public SalaryComponents GetSalaryComponentByIdService()
@@ -233,7 +235,8 @@ namespace ServiceLayer.Code
             if (salaryGrp == null)
             {
                 salaryGrp = salaryGroup;
-                salaryGrp.SalaryComponents = JsonConvert.SerializeObject(initialSalaryComponents);
+                salaryGrp.SalaryComponents = _commonService.GetStringifySalaryGroupData(initialSalaryComponents);
+
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
             else
@@ -537,11 +540,6 @@ namespace ServiceLayer.Code
             {
                 if (string.IsNullOrEmpty(salaryGrp.SalaryComponents))
                     salaryGrp.SalaryComponents = "[]";
-                //else
-                //    if (salaryGroup.GroupComponents == null && salaryGroup.SalaryComponents == null)
-                //        salaryGroup.SalaryComponents = "[]";
-                //    else
-                //        salaryGrp.SalaryComponents = JsonConvert.SerializeObject(salaryGroup.GroupComponents);
 
                 salaryGrp.GroupName = salaryGroup.GroupName;
                 salaryGrp.GroupDescription = salaryGroup.GroupDescription;

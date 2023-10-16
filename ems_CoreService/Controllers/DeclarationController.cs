@@ -46,6 +46,7 @@ namespace OnlineDataBuilder.Controllers
                 var result = await _declarationService.UpdateDeclarationDetail(EmployeeDeclarationId, DeclarationDetail, fileDetail, files);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
+
             return BuildResponse("No files found", HttpStatusCode.OK);
         }
 

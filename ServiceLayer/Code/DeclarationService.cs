@@ -73,7 +73,7 @@ namespace ServiceLayer.Code
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
             if (declaration.EmployeeCurrentRegime != 1)
-                throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
+                throw HiringBellException.ThrowBadRequest("You can't submit the declration because you have selected new tax regime");
 
             declaration.Email = employeeDeclaration.Email;
             SalaryComponents salaryComponent = null;
@@ -118,20 +118,21 @@ namespace ServiceLayer.Code
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
         {
-            (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) = GetDeclarationWithComponents(EmployeeDeclarationId);
-            if (declarations.Count != 1)
+            EmployeeDeclaration declaration = GetDeclarationWithComponents(EmployeeDeclarationId);
+            if (declaration == null)
                 throw new HiringBellException("Fail to get current employee declaration detail");
-            return declarations.FirstOrDefault();
+
+            return declaration;
         }
 
-        public (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) GetDeclarationWithComponents(long EmployeeDeclarationId)
+        public EmployeeDeclaration GetDeclarationWithComponents(long EmployeeDeclarationId)
         {
-            (List<EmployeeDeclaration> declarations, List<SalaryComponents> salaryComponents) = _db.GetList<EmployeeDeclaration, SalaryComponents>("sp_employee_declaration_get_byId",
-                new
-                {
-                    EmployeeDeclarationId = EmployeeDeclarationId
-                });
-            return (declarations, salaryComponents);
+            EmployeeDeclaration declaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byId", new
+            {
+                EmployeeDeclarationId = EmployeeDeclarationId
+            });
+
+            return declaration;
         }
 
         private async Task<bool> GetEmployeeDeclaration(EmployeeDeclaration employeeDeclaration, List<SalaryComponents> salaryComponents)
@@ -324,11 +325,9 @@ namespace ServiceLayer.Code
         {
             try
             {
-                (List<EmployeeDeclaration> declarations, List<SalaryComponents> dbSalaryComponents) = this.GetDeclarationWithComponents(EmployeeDeclarationId);
-                if (declarations.Count != 1)
+                EmployeeDeclaration declaration = this.GetDeclarationWithComponents(EmployeeDeclarationId);
+                if (declaration == null)
                     throw new HiringBellException("Fail to get current employee declaration detail");
-
-                EmployeeDeclaration declaration = declarations.FirstOrDefault();
 
                 if (declaration == null || string.IsNullOrEmpty(declaration.DeclarationDetail))
                     throw new HiringBellException("Requested component not found. Please contact to admin.");
@@ -1020,7 +1019,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(ComponentId))
                 throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
 
-            var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            var resultset = _db.FetchDataSet("sp_employee_declaration_components_get_byId", new { EmployeeDeclarationId = DeclarationId });
             EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
             List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
             if (declaration == null || salaryComponent == null)
@@ -1040,7 +1039,7 @@ namespace ServiceLayer.Code
 
             string ComponentId = ComponentNames.HRA;
 
-            var resultset = _db.FetchDataSet("sp_employee_declaration_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            var resultset = _db.FetchDataSet("sp_employee_declaration_components_get_byId", new { EmployeeDeclarationId = DeclarationId });
             EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
             List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
             if (declaration == null || salaryComponent == null)
