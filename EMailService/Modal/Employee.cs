@@ -73,7 +73,7 @@ namespace ModalLayer.Modal
     public class EmployeeWithRoles
     {
         public int DesignationId { get; set; }
-        public long EmployeeId { set; get; }
+        public long EmployeeUid { set; get; }
         public string RoleName { get; set; }
         public string Email { get; set; }
         public string Name { get; set; }
