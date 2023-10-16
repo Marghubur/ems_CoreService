@@ -17,7 +17,7 @@ namespace ServiceLayer.Interface
         Task<EmployeeDeclaration> HouseRentDeclarationService(long EmployeeDeclarationId, HousingDeclartion DeclarationDetail, IFormFileCollection FileCollection, List<Files> fileDetail);
         Task<EmployeeDeclaration> GetEmployeeDeclarationDetail(long EmployeeId, bool reCalculateFlag = false);
         Task<EmployeeDeclaration> GetEmployeeIncomeDetailService(FilterModel filterModel);
-        Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false);
+        Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false, bool isCTCChanged = false);
         Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData, bool IsTaxCalculationRequired);
         Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear);
         Task<string> SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);

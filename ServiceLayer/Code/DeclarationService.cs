@@ -208,7 +208,7 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[1].Rows.Count > 0)
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
-            employeeDeclaration.SalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag);
+            employeeDeclaration.SalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag, false);
 
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.Sections = _sections;
@@ -388,7 +388,7 @@ namespace ServiceLayer.Code
                 .Sum(x => x.FinalAmount);
         }
 
-        public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false)
+        public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false, bool isCTCChanged = false)
         {
             EmployeeCalculation employeeCalculation = new EmployeeCalculation
             {
@@ -396,6 +396,8 @@ namespace ServiceLayer.Code
                 employeeDeclaration = employeeDeclaration,
                 employee = new Employee { EmployeeUid = EmployeeId }
             };
+            if (isCTCChanged)
+                employeeCalculation.employee.IsCTCChanged = isCTCChanged;
 
             await _salaryComponentService.GetEmployeeSalaryDetail(employeeCalculation);
             return await CalculateSalaryNDeclaration(employeeCalculation, reCalculateFlag);
