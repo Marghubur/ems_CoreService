@@ -1009,23 +1009,65 @@ namespace ServiceLayer.Code
 
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
                 {
-                    amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                    amount = amount / 12;
-
-                    //eCal.companySetting.IsJoiningBarrierDayPassed = false;
-
-                    if (currentYearMonthFlag)
+                    if (item.ComponentId == "EPER-PF")
                     {
-                        //eCal.companySetting.IsJoiningBarrierDayPassed = true;
-                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                        int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
-                        if (daysWorked <= 0)
+                        if (eCal.pfEsiSetting.PFEnable)
                         {
-                            amount = 0;
+                            item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
+                            amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                            amount = amount / 12;
+
+                            if (currentYearMonthFlag)
+                            {
+                                int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                                int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                                if (daysWorked <= 0)
+                                {
+                                    amount = 0;
+                                }
+                                else
+                                {
+                                    amount = (amount / numberOfDays) * daysWorked;
+                                }
+                            }
                         }
                         else
                         {
-                            amount = (amount / numberOfDays) * daysWorked;
+                            item.IncludeInPayslip = false;
+                        }
+                    }
+                    else if (item.ComponentId == "ECI")
+                    {
+                        if (eCal.pfEsiSetting.EsiEnable)
+                        {
+                            amount = eCal.pfEsiSetting.EsiEmployerContribution + eCal.pfEsiSetting.EsiEmployeeContribution;
+                            item.IncludeInPayslip = eCal.pfEsiSetting.IsHideEsiEmployer;
+                        }
+                        else
+                        {
+                            item.IncludeInPayslip = false;
+                        }
+                    }
+                    else
+                    {
+                        amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                        amount = amount / 12;
+
+                        //eCal.companySetting.IsJoiningBarrierDayPassed = false;
+
+                        if (currentYearMonthFlag)
+                        {
+                            //eCal.companySetting.IsJoiningBarrierDayPassed = true;
+                            int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                            int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                            if (daysWorked <= 0)
+                            {
+                                amount = 0;
+                            }
+                            else
+                            {
+                                amount = (amount / numberOfDays) * daysWorked;
+                            }
                         }
                     }
                 }
@@ -1070,24 +1112,71 @@ namespace ServiceLayer.Code
             DateTime currentDate = annualSalaryBreakup.PresentMonthDate;
 
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
+            eCal.pfEsiSetting = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            if (eCal.pfEsiSetting == null)
+                throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
+
             foreach (var item in taxableComponents)
             {
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
                 {
-                    amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                    amount = (amount / 12);
-
-                    if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                    if (item.ComponentId == "EPER-PF")
                     {
-                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                        int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
-                        if (daysWorked <= 0)
+                        if (eCal.pfEsiSetting.PFEnable)
                         {
-                            amount = 0;
+                            item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
+                            amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                            amount = (amount / 12);
+
+                            if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                            {
+                                int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                                int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                                if (daysWorked <= 0)
+                                {
+                                    amount = 0;
+                                }
+                                else
+                                {
+                                    amount = (amount / numberOfDays) * daysWorked;
+                                }
+                            }
                         }
                         else
                         {
-                            amount = (amount / numberOfDays) * daysWorked;
+                            
+                            item.IncludeInPayslip = false;
+                        }
+                    }
+                    else if (item.ComponentId == "ECI")
+                    {
+                        if (eCal.pfEsiSetting.EsiEnable)
+                        {
+                            amount = eCal.pfEsiSetting.EsiEmployerContribution + eCal.pfEsiSetting.EsiEmployeeContribution;
+                            item.IncludeInPayslip = eCal.pfEsiSetting.IsHideEsiEmployer;
+                        }
+                        else
+                        {
+                            item.IncludeInPayslip = false;
+                        }
+                    }
+                    else
+                    {
+                        amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                        amount = (amount / 12);
+
+                        if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
+                        {
+                            int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                            int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                            if (daysWorked <= 0)
+                            {
+                                amount = 0;
+                            }
+                            else
+                            {
+                                amount = (amount / numberOfDays) * daysWorked;
+                            }
                         }
                     }
                 }
@@ -1101,6 +1190,7 @@ namespace ServiceLayer.Code
                 {
                     component.Formula = item.Formula;
                     component.FinalAmount = amount;
+                    component.IsIncludeInPayslip = item.IncludeInPayslip;
                 }
             }
 
@@ -1154,6 +1244,9 @@ namespace ServiceLayer.Code
 
             bool currentYearMonthFlag = false;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
+            eCal.pfEsiSetting = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            if (eCal.pfEsiSetting == null)
+                throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
 
             while (index < 12)
             {

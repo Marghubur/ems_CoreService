@@ -4,11 +4,9 @@ using ems_CoreService.Model;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -85,59 +83,131 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
             else
-                await updateComponentByUpdatingPfEsiSetting(existing);
+                await UpdateEmployeeSalaryDetails(existing);
 
             return existing;
         }
 
-        private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
+        private async Task UpdateEmployeeSalaryDetails(PfEsiSetting pfEsiSetting)
         {
-            var ds = _db.GetDataSet("sp_salary_group_and_components_get", new { CompanyId = pfesiSetting.CompanyId });
-
-            if (!ds.IsValidDataSet(ds))
-                throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
-
-            // var salaryComponents = Converter.ToList<SalaryComponents>(ds.Tables[1]);
-            var groups = Converter.ToList<SalaryGroup>(ds.Tables[0]);
-
-            foreach (var gp in groups)
+            var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get");
+            if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
             {
-                var salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(gp.SalaryComponents);
-
-                var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
-                if (component == null)
-                    throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
-
-                component.DeclaredValue = pfesiSetting.EmployerPFLimit;
-                component.EmployerContribution = pfesiSetting.EmployerPFLimit;
-                component.Formula = pfesiSetting.EmployerPFLimit.ToString();
-                component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-
-                component = salaryComponents.Find(x => x.ComponentId == "ECI");
-                if (component == null)
-                    throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
-
-                component.DeclaredValue = pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution;
-                component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
-                component.IncludeInPayslip = pfesiSetting.IsHideEsiEmployer;
-                component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
-                component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
-
-                gp.SalaryComponents = JsonConvert.SerializeObject(component);
-                _db.Execute("sp_salary_group_insupd", new
+                employeeSalaryDetail.ForEach(x =>
                 {
-                    gp.SalaryGroupId,
-                    gp.CompanyId,
-                    gp.SalaryComponents,
-                    gp.GroupName,
-                    gp.GroupDescription,
-                    gp.MinAmount,
-                    gp.MaxAmount,
-                }, true);
-            }
+                    List<AnnualSalaryBreakup> annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(x.CompleteSalaryDetail);
+                    if (annualSalaryBreakup != null && annualSalaryBreakup.Count > 0)
+                    {
+                        var remainingMonthSalaryBreakup = annualSalaryBreakup.FindAll(x => !x.IsPayrollExecutedForThisMonth);
+                        if (remainingMonthSalaryBreakup != null && remainingMonthSalaryBreakup.Count > 0)
+                        {
+                            remainingMonthSalaryBreakup.ForEach(i =>
+                            {
+                                var employeePFComponent = i.SalaryBreakupDetails.Find(y => y.ComponentId == "EPER-PF");
+                                if (employeePFComponent != null)
+                                {
+                                    if (pfEsiSetting.PFEnable)
+                                    {
+                                        employeePFComponent.IsIncludeInPayslip = !pfEsiSetting.IsHidePfEmployer;
+                                    }
+                                    else
+                                    {
+                                        employeePFComponent.IsIncludeInPayslip = false;
+                                    }
+                                }
+                                var employeeECIComponent = i.SalaryBreakupDetails.Find(y => y.ComponentId == "ECI");
+                                if (employeeECIComponent != null)
+                                {
+                                    if (pfEsiSetting.EsiEnable)
+                                    {
+                                        var amount = pfEsiSetting.EsiEmployerContribution + pfEsiSetting.EsiEmployeeContribution;
+                                        employeeECIComponent.IsIncludeInPayslip = pfEsiSetting.IsHideEsiEmployer;
+                                    }
+                                    else
+                                    {
+                                        employeeECIComponent.IsIncludeInPayslip = false;
+                                    }
+                                }
+                            });
 
-            await Task.CompletedTask;
+                            x.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakup);
+                        }
+
+                    }
+                });
+                var data = (from n in employeeSalaryDetail
+                            select new
+                            {
+                                EmployeeId = n.EmployeeId,
+                                CompleteSalaryDetail = n.CompleteSalaryDetail,
+                                TaxDetail = n.TaxDetail,
+                                CTC = n.CTC
+                            }).ToList();
+
+                var result = await _db.BulkExecuteAsync("sp_employee_salary_detail_upd_salarydetail", data, true);
+                if (result != employeeSalaryDetail.Count)
+                    throw HiringBellException.ThrowBadRequest("Fail to update salary breakup");
+
+                employeeSalaryDetail.ForEach(async x =>
+                {
+                    DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
+                    {
+                        EmployeeId = x.EmployeeId,
+                        UserTypeId = (int)UserType.Compnay
+                    });
+
+                    if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
+                        throw HiringBellException.ThrowBadRequest("Unable to get the detail");
+
+                    EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+                    if (employeeDeclaration == null)
+                        throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
+
+                    await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                });
+
+            };
         }
+
+        //private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
+        //{
+        //    var ds = _db.GetDataSet("sp_salary_group_and_components_get", new { CompanyId = pfesiSetting.CompanyId });
+
+        //    if (!ds.IsValidDataSet(ds))
+        //        throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
+
+        //    // var salaryComponents = Converter.ToList<SalaryComponents>(ds.Tables[1]);
+        //    var groups = Converter.ToList<SalaryGroup>(ds.Tables[0]);
+
+        //    foreach (var gp in groups)
+        //    {
+        //        var salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(gp.SalaryComponents);
+
+        //        var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
+        //        if (component == null)
+        //            throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
+
+        //        component.DeclaredValue = pfesiSetting.EmployerPFLimit;
+        //        component.EmployerContribution = pfesiSetting.EmployerPFLimit;
+        //        component.Formula = pfesiSetting.EmployerPFLimit.ToString();
+        //        component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
+
+        //        component = salaryComponents.Find(x => x.ComponentId == "ECI");
+        //        if (component == null)
+        //            throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
+
+        //        component.DeclaredValue = pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution;
+        //        component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
+        //        component.IncludeInPayslip = pfesiSetting.IsHideEsiEmployer;
+        //        component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
+        //        component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
+
+        //        gp.SalaryComponents = _commonService.GetStringifySalaryGroupData(salaryComponents);
+        //    }
+
+        //    await _db.BulkExecuteAsync("sp_salary_group_insupd", groups, true);
+        //    await Task.CompletedTask;
+        //}
 
         public List<OrganizationDetail> GetOrganizationInfo()
         {
@@ -269,7 +339,7 @@ namespace ServiceLayer.Code
             var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_groupid", new { SalaryGroupId = salaryGroupId });
             if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
             {
-                employeeSalaryDetail.ForEach(async x =>
+                employeeSalaryDetail.ForEach(x =>
                 {
                     List<AnnualSalaryBreakup> annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(x.CompleteSalaryDetail);
                     if (annualSalaryBreakup != null && annualSalaryBreakup.Count > 0)
