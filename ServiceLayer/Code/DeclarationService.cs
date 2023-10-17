@@ -592,6 +592,11 @@ namespace ServiceLayer.Code
             {
                 completeSalaryBreakups = _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
             }
+            //else if ()
+            //{
+            //    completeSalaryBreakups = _salaryComponentService.UpdateSalaryBreakUp(empCal, salaryBreakup);
+            //    reCalculateFlag = true;
+            //}
 
             _logger.LogInformation("Leaving method: CreateBreakUp");
 

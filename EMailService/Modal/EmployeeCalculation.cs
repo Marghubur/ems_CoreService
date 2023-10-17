@@ -30,6 +30,7 @@ namespace ModalLayer.Modal
         public List<PTaxSlab> ptaxSlab { set; get; }
         public PreviousEmployerDetail previousEmployerDetail { set; get; }
         public ShiftDetail shiftDetail { set; get; }
+        public PfEsiSetting pfEsiSetting { get; set; }
     }
 
     public class PreviousEmployerDetail
