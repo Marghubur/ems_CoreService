@@ -832,14 +832,10 @@ namespace ServiceLayer.Code
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
 
             List<int> leaveDetails = new List<int>();
-            _logger.LogInformation("Method: SaveLeaveAttachment start");
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
-            _logger.LogInformation("Method: SaveLeaveAttachment end");
 
             List<string> emails = new List<string>();
-            _logger.LogInformation("Method: GetApprovalChainDetail start");
             LeaveRequestNotification requestChainDetail = GetApprovalChainDetail(leaveRequestModal.EmployeeId, out emails);
-            _logger.LogInformation("Method: SaveLeaveAttachment end");
 
             string result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
             {
@@ -979,13 +975,19 @@ namespace ServiceLayer.Code
                 DesignationIds = designationId
             });
 
-            List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
-            List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
-            if (approvalChainDetail.Count == 0)
+            if (resultSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Workflow chain count is not match");
+
+            if (resultSet.Tables[0] != null || resultSet.Tables[0].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
 
-            if (employeeWithRoles.Count == 0)
+            if (resultSet.Tables[1] != null || resultSet.Tables[1].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
+
+            List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
+            List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
+
+            _logger.LogInformation("sp_workflow_chain_by_ids, return two table");
 
             ApprovalChainDetail ApprovalChain = approvalChainDetail.First();
             LeaveRequestNotification notification = new LeaveRequestNotification
