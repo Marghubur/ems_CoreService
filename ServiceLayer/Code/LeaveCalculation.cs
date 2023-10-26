@@ -449,7 +449,7 @@ namespace ServiceLayer.Code
             ValidateAndGetLeavePlanConfiguration(_leavePlanType);
             leaveCalculationModal.leavePlanConfiguration = _leavePlanConfiguration;
 
-            _logger.LogInformation("Method: LoadPrepareRequiredData start");
+            _logger.LogInformation("Method: LoadPrepareRequiredData end");
             return await Task.FromResult(leaveCalculationModal);
         }
 
@@ -825,13 +825,21 @@ namespace ServiceLayer.Code
             if (leavePlanType == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get leave plan type detai. Please contact to admin.");
 
+            _logger.LogInformation("Method: ValidateAndGetLeavePlanConfiguration start");
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
+            _logger.LogInformation("Method: ValidateAndGetLeavePlanConfiguration end");
+
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
 
             List<int> leaveDetails = new List<int>();
+            _logger.LogInformation("Method: SaveLeaveAttachment start");
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
+            _logger.LogInformation("Method: SaveLeaveAttachment end");
+
             List<string> emails = new List<string>();
+            _logger.LogInformation("Method: GetApprovalChainDetail start");
             LeaveRequestNotification requestChainDetail = GetApprovalChainDetail(leaveRequestModal.EmployeeId, out emails);
+            _logger.LogInformation("Method: SaveLeaveAttachment end");
 
             string result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
             {
@@ -857,14 +865,18 @@ namespace ServiceLayer.Code
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
+            _logger.LogInformation("Data inserted inserted in leave request notification and result: " + result);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update leave notification detail");
 
             leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId = int.Parse(result);
+            _logger.LogInformation("LeaveRequestNotifucationId: " + leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId);
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
                 leaveDetails = JsonConvert.DeserializeObject<List<int>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
             leaveDetails.Add(leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId);
+            _logger.LogInformation("LeaveDetails: " + leaveDetails.ToString());
+
             var leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
             var availableLeave = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - leaveCalculationModal.numberOfLeaveApplyring;
@@ -884,6 +896,7 @@ namespace ServiceLayer.Code
                 LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs)
             }, true);
 
+            _logger.LogInformation("Data inserted inserted in leave request notification and result: " + result);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update leave detail");
 
@@ -912,13 +925,14 @@ namespace ServiceLayer.Code
                 CreatedOn = DateTime.UtcNow
             });
             leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList();
-            _logger.LogInformation("Method: ApplyAndSaveChanges start");
+            _logger.LogInformation("Method: ApplyAndSaveChanges end");
 
             return await Task.FromResult(emails);
         }
 
         private async Task<string> SaveLeaveAttachment(IFormFileCollection fileCollection, List<Files> fileDetail, Employee employee)
         {
+            _logger.LogInformation("Method: SaveLeaveAttachment start");
             DbResult Result = null;
             List<int> fileIds = new List<int>();
             if (fileCollection != null && fileCollection.Count > 0)
@@ -950,11 +964,13 @@ namespace ServiceLayer.Code
                     fileIds.Add(Convert.ToInt32(Result.statusMessage));
                 }
             }
+            _logger.LogInformation("Method: SaveLeaveAttachment end");
             return JsonConvert.SerializeObject(fileIds);
         }
 
         public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
+            _logger.LogInformation("Method: GetApprovalChainDetail start");
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
             var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
             {
@@ -980,6 +996,8 @@ namespace ServiceLayer.Code
                 ReporterDetail = JsonConvert.SerializeObject(employeeWithRoles)
             };
             emails = employeeWithRoles.Select(x => x.Email).ToList();
+            _logger.LogInformation("Method: GetApprovalChainDetail end");
+
             return notification;
         }
 
