@@ -6,13 +6,16 @@ using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
+using ExcelDataReader;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -21,6 +24,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Reflection;
 using System.Threading.Tasks;
 using File = System.IO.File;
 
@@ -149,7 +153,10 @@ namespace ServiceLayer.Code
                         ClientJson = employeeJson.EmployeeDetail.ClientJson,
                         Total = employeeArchiveModal[0].Total,
                         UpdatedOn = employeeJson.EmployeeProfessionalDetail.UpdatedOn,
-                        CreatedOn = employeeJson.EmployeeProfessionalDetail.CreatedOn
+                        CreatedOn = employeeJson.EmployeeProfessionalDetail.CreatedOn,
+                        FileName = item.FileName,
+                        FileExtension = item.FileExtension,
+                        FilePath = item.FilePath
                     });
                 }
             }
@@ -958,7 +965,7 @@ namespace ServiceLayer.Code
             {
                 if (IsNewRegistration && eCal.employee.EmployeeId > 0)
                     _db.Execute("sp_employee_delete_by_EmpId", new { EmployeeId = eCal.employee.EmployeeId }, false);
-                
+
                 throw;
             }
         }
@@ -1587,6 +1594,218 @@ namespace ServiceLayer.Code
             }
 
             _logger.LogInformation("Leaving method: RegisterEmployeeService");
+        }
+
+        public async Task<List<Employee>> ReadEmployeeDataService(IFormFileCollection files)
+        {
+            try
+            {
+                var uploadedEmployeeData = await ReadPayrollExcelData(files);
+                await UpdateEmployeeData(uploadedEmployeeData);
+                return uploadedEmployeeData;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private async Task UpdateEmployeeData(List<Employee> employeeData)
+        {
+            int i = 0;
+            int skipIndex = 0;
+            int chunkSize = 2;
+            while (i < employeeData.Count)
+            {
+                var emps = employeeData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
+
+                var ids = JsonConvert.SerializeObject(emps.Select(x => x.EmployeeId).ToList());
+                var employees = _db.GetList<Employee>("sp_active_employees_by_ids", new { EmployeeIds = ids });
+
+                foreach (Employee e in emps)
+                {
+                    var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
+                    if (em != null)
+                    {
+                        if (e.CTC > 0)
+                        {
+                            em.CTC = e.CTC;
+                            em.IsCTCChanged = true;
+                            await UpdateEmployeeService(em, null);
+                        }
+                    }
+                    else
+                    {
+                        await RegisterEmployeeService(e, null);
+                    }
+                }
+
+                i++;
+            }
+            await Task.CompletedTask;
+        }
+
+        private async Task<List<Employee>> ReadPayrollExcelData(IFormFileCollection files)
+        {
+            DataTable dataTable = null;
+            List<Employee> employeesList = new List<Employee>();
+
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    foreach (IFormFile file in files)
+                    {
+                        await file.CopyToAsync(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        FileInfo fileInfo = new FileInfo(file.FileName);
+                        if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
+                        {
+                            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                            using (var reader = ExcelReaderFactory.CreateReader(ms))
+                            {
+                                var result = reader.AsDataSet(new ExcelDataSetConfiguration
+                                {
+                                    ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                                    {
+                                        UseHeaderRow = true
+                                    }
+                                });
+
+                                dataTable = result.Tables[0];
+
+                                employeesList = MappedEmployee(dataTable);
+                            }
+                        }
+                        else
+                        {
+                            throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+            return employeesList;
+        }
+
+
+        public static List<Employee> MappedEmployee(DataTable table)
+        {
+            string TypeName = string.Empty;
+            DateTime date = DateTime.Now;
+            DateTime defaultDate = Convert.ToDateTime("1976-01-01");
+            List<Employee> items = new List<Employee>();
+
+            try
+            {
+                List<PropertyInfo> props = typeof(Employee).GetProperties().ToList();
+                List<string> fieldNames = ValidateHeaders(table, props);
+
+                if (table.Rows.Count > 0)
+                {
+                    int i = 0;
+                    DataRow dr = null;
+                    while (i < table.Rows.Count)
+                    {
+                        dr = table.Rows[i];
+
+                        Employee t = new Employee();
+                        fieldNames.ForEach(n =>
+                        {
+                            var x = props.Find(i => i.Name == n);
+                            if (x != null)
+                            {
+                                try
+                                {
+                                    if (x.PropertyType.IsGenericType)
+                                        TypeName = x.PropertyType.GenericTypeArguments.First().Name;
+                                    else
+                                        TypeName = x.PropertyType.Name;
+
+                                    switch (TypeName)
+                                    {
+                                        case nameof(Boolean):
+                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            break;
+                                        case nameof(Int32):
+                                            x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            break;
+                                        case nameof(Int64):
+                                            x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            break;
+                                        case nameof(Decimal):
+                                            x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            break;
+                                        case nameof(String):
+                                            x.SetValue(t, dr[x.Name].ToString());
+                                            break;
+                                        case nameof(DateTime):
+                                            if (dr[x.Name].ToString() != null)
+                                            {
+                                                date = Convert.ToDateTime(dr[x.Name].ToString());
+                                                date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                                                x.SetValue(t, date);
+                                            }
+                                            else
+                                            {
+                                                x.SetValue(t, defaultDate);
+                                            }
+                                            break;
+                                        default:
+                                            x.SetValue(t, dr[x.Name]);
+                                            break;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw ex;
+                                }
+                            }
+                        });
+
+                        items.Add(t);
+                        i++;
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return items;
+        }
+
+        private static List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
+        {
+            List<string> columnList = new List<string>();
+
+            foreach (DataColumn column in table.Columns)
+            {
+                if (!column.ColumnName.ToLower().Contains("column"))
+                {
+                    if (!columnList.Contains(column.ColumnName))
+                    {
+                        columnList.Add(column.ColumnName);
+                    }
+                    else
+                    {
+                        throw HiringBellException.ThrowBadRequest($"Multiple header found \"{column.ColumnName}\" field.");
+                    }
+                }
+            }
+
+            return columnList;
         }
     }
 }

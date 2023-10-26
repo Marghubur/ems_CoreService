@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -22,6 +23,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly IBillService _billService;
         private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
         private readonly HttpContext _httpContext;
+        private readonly IHTMLConverter iHTMLConverter;
         public FileMakerController(IConfiguration configuration,
             IOnlineDocumentService onlineDocumentService,
             IFileService fileService, IBillService billService,
@@ -30,7 +32,7 @@ namespace OnlineDataBuilder.Controllers
         {
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
-            _billService  = billService;
+            _billService = billService;
             _httpContext = httpContext.HttpContext;
             _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }

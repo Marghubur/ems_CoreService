@@ -163,7 +163,7 @@ namespace ServiceLayer.Code
                 PageSize = 1000
             });
 
-            if (ds != null && ds.Tables.Count == 7)
+            if (ds != null && ds.Tables.Count == 8)
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
@@ -174,7 +174,7 @@ namespace ServiceLayer.Code
                     loginResponse.Roles = ds.Tables[4];
                     loginResponse.UserTypeId = authUser.UserTypeId;
                     var companies = Converter.ToList<Organization>(ds.Tables[5]);
-
+                    Files file = Converter.ToType<Files>(ds.Tables[7]);
                     if (ds.Tables[6].Rows.Count > 0 && ds.Tables[6].Rows[0][1] != DBNull.Value)
                     {
                         loginResponse.UserLayoutConfiguration =
@@ -183,6 +183,7 @@ namespace ServiceLayer.Code
 
                     loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);
                     var currentCompany = loginResponse.Companies.Find(x => x.CompanyId == loginDetail.CompanyId);
+                    currentCompany.LogoPath = @$"{file.FilePath}\{file.FileName}"; 
                     loginResponse.EmployeeList = ds.Tables[2].AsEnumerable()
                                                    .Select(x => new AutoCompleteEmployees
                                                    {

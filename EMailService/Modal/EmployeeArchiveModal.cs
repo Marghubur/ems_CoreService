@@ -12,6 +12,9 @@ namespace ModalLayer.Modal
         public DateTime CreatedOn { set; get; }
         public string ClientJson { set; get; }
         public int Total { set; get; }
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+        public string FileExtension { get; set; }
     }
 
     public class EmployeeCompleteDetailModal

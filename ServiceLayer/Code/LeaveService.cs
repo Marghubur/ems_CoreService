@@ -491,13 +491,39 @@ namespace ServiceLayer.Code
             //if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             //    this.UpdateLeavePlanDetail(leaveCalculationModal);
             var companyHoliday = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var monthlyLeaveData = new Dictionary<string, decimal>();
+            for (int i = 1; i <= 12; i++)
+            {
+                var leaveCurrentMonth = leaveCalculationModal.lastAppliedLeave.FindAll(x => x.FromDate.Month == i && x.ToDate.Month == i);
+                var leaveCurrentAndNextMonth = leaveCalculationModal.lastAppliedLeave.Find(x => x.FromDate.Month == i && x.ToDate.Month == i + 1);
+                var leavePrevAndCurrentMonth = leaveCalculationModal.lastAppliedLeave.Find(x => x.FromDate.Month == i - 1 && x.ToDate.Month == i);
+
+                string monthName = new DateTime(2023, i, 1).ToString("MMM");
+                decimal totalDays = 0M;
+                if (leaveCurrentMonth != null && leaveCurrentMonth.Count > 0)
+                    totalDays += leaveCurrentMonth.Sum(x => x.NumOfDays);
+
+                if (leaveCurrentAndNextMonth != null)
+                {
+                    var lastDateOfMonth = new DateTime(2023, i, 1).AddMonths(1).AddDays(-1);
+                    totalDays += (decimal)lastDateOfMonth.Subtract(leaveCurrentAndNextMonth.FromDate).TotalDays + 1;
+                }
+
+                if (leavePrevAndCurrentMonth != null)
+                    totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
+
+                monthlyLeaveData.Add(monthName, totalDays);
+
+            }
+
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 Employee = leaveCalculationModal.employee,
                 CompanyHoliday = companyHoliday,
                 ShiftDetail = leaveCalculationModal.shiftDetail,
-                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList()
+                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList(),
+                MonthlyLeaveData = monthlyLeaveData
             };
         }
 

@@ -30,7 +30,6 @@ namespace OnlineDataBuilder.Controllers
                 IFormFileCollection file = _httpContext.Request.Form.Files;
                 await _uploadPayrollDataService.ReadPayrollDataService(file);
                 return BuildResponse("file found");
-
             }
             catch (Exception ex)
             {

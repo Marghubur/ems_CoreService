@@ -47,5 +47,6 @@ namespace ModalLayer.Modal
         public bool IsPrimaryCompany { get; set; }
         public string OldFileName { get; set; }
         public int WorkShiftId { get; set; }
+        public string LogoPath { get; set; }
     }
 }

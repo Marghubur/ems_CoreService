@@ -14,5 +14,8 @@
         public string City { set; get; }
         public int Pincode { set; get; }
         public string Address { set; get; }
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+        public string FileExtension { get; set; }
     }
 }
