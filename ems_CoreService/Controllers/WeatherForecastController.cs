@@ -62,7 +62,6 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
-            _billService = billService;
         }
 
         [HttpGet]
