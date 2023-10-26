@@ -23,12 +23,10 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly ILeaveService _leaveService;
         private readonly HttpContext _httpContext;
-        private readonly ILogger<LeaveController> _logger;
-        public LeaveController(ILeaveService leaveService, IHttpContextAccessor httpContext, ILogger<LeaveController> logger)
+        public LeaveController(ILeaveService leaveService, IHttpContextAccessor httpContext)
         {
             _leaveService = leaveService;
             _httpContext = httpContext.HttpContext;
-            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -131,11 +129,11 @@ namespace OnlineDataBuilder.Controllers
                 _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
                 if (leave.Count > 0)
                 {
-                    _logger.LogInformation("Leave Data: " + leave.ToString());
-                    _logger.LogInformation("File Data: " + FileData.ToString());
-
                     var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
-                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                    List<Files> files = null;
+                    if (!string.IsNullOrEmpty(FileData))
+                        files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
                     var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
                     return BuildResponse(result, HttpStatusCode.OK);
@@ -143,9 +141,8 @@ namespace OnlineDataBuilder.Controllers
                 return BuildResponse("No files found", HttpStatusCode.OK);
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError("Error: " + ex.Message);
                 throw;
             }
         }
