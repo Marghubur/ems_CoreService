@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -130,9 +129,7 @@ namespace OnlineDataBuilder.Controllers
                 if (leave.Count > 0)
                 {
                     var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
-                    List<Files> files = null;
-                    if (!string.IsNullOrEmpty(FileData))
-                        files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
 
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
                     var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
