@@ -967,7 +967,15 @@ namespace ServiceLayer.Code
         public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
             _logger.LogInformation("Method: GetApprovalChainDetail start");
+            _logger.LogInformation("Jsonconvert serilization start");
+            _logger.LogInformation("Designation value: " + (new List<int> { (int)Roles.Admin, (int)Roles.Manager }).ToString());
+
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
+            _logger.LogInformation("Jsonconvert serilization end");
+            _logger.LogInformation("DesignationId: " + designationId);
+
+            _logger.LogInformation("EmployeeId: " + employeeId.ToString());
+            _logger.LogInformation("ApprovalWorlFlowId: " + _leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId.ToString());
             var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
@@ -976,13 +984,22 @@ namespace ServiceLayer.Code
             });
 
             if (resultSet.Tables.Count != 2)
+            {
+                _logger.LogInformation("Workflow chain count is not match");
                 throw HiringBellException.ThrowBadRequest("Workflow chain count is not match");
+            }
 
             if (resultSet.Tables[0] != null || resultSet.Tables[0].Rows.Count == 0)
+            {
+                _logger.LogInformation("Approval chain deatails not found. Please contact to admin");
                 throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
+            }
 
             if (resultSet.Tables[1] != null || resultSet.Tables[1].Rows.Count == 0)
+            {
+                _logger.LogInformation("Reportee details not found. Please contact to admin");
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
+            }
 
             List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
             List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
