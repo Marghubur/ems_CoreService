@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -22,10 +23,12 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly ILeaveService _leaveService;
         private readonly HttpContext _httpContext;
-        public LeaveController(ILeaveService leaveService, IHttpContextAccessor httpContext)
+        private readonly ILogger<LeaveController> _logger;
+        public LeaveController(ILeaveService leaveService, IHttpContextAccessor httpContext, ILogger<LeaveController> logger)
         {
             _leaveService = leaveService;
             _httpContext = httpContext.HttpContext;
+            _logger = logger;
         }
 
         [AllowAnonymous]
@@ -121,18 +124,27 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ApplyLeave")]
         public async Task<ApiResponse> ApplyLeave()
         {
-            StringValues leave = default(string);
-            _httpContext.Request.Form.TryGetValue("leave", out leave);
-            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
-            if (leave.Count > 0)
+            try
             {
-                var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
-                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
-                return BuildResponse(result, HttpStatusCode.OK);
+                StringValues leave = default(string);
+                _httpContext.Request.Form.TryGetValue("leave", out leave);
+                _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+                if (leave.Count > 0)
+                {
+                    var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
+                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                    IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+                    var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
+                    return BuildResponse(result, HttpStatusCode.OK);
+                }
+                return BuildResponse("No files found", HttpStatusCode.OK);
+
             }
-            return BuildResponse("No files found", HttpStatusCode.OK);
+            catch (Exception ex)
+            {
+                _logger.LogError("Error: " + ex.Message);
+                throw;
+            }
         }
 
         [HttpPost("GetAllLeavesByEmpId")]

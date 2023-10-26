@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -175,11 +174,18 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("UploadEmployeeExcel")]
-        public async Task<ApiResponse> UploadEmployeeExcel([FromBody] List<Employee> employees)
+        public async Task<ApiResponse> UploadEmployeeExcel()
         {
-            var files = new FormCollection(new Dictionary<string, StringValues>());
-            var result = await _employeeService.UploadEmployeeExcelService(employees, files.Files);
-            return BuildResponse(result);
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                await _employeeService.ReadEmployeeDataService(file);
+                return BuildResponse("file found");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

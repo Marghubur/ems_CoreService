@@ -25,5 +25,6 @@ namespace ServiceLayer.Interface
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
         Task<string> ExportEmployeeService(int CompanyId, int FileType);
         Task<string> UploadEmployeeExcelService(List<Employee> employees, IFormFileCollection formFiles);
+        Task<List<Employee>> ReadEmployeeDataService(IFormFileCollection files);
     }
 }

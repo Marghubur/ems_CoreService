@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -60,6 +62,7 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
+            _billService = billService;
         }
 
         [HttpGet]
