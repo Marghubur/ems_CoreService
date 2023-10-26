@@ -131,6 +131,9 @@ namespace OnlineDataBuilder.Controllers
                 _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
                 if (leave.Count > 0)
                 {
+                    _logger.LogInformation("Leave Data: " + leave.ToString());
+                    _logger.LogInformation("File Data: " + FileData.ToString());
+
                     var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
