@@ -14,6 +14,7 @@ using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -976,61 +977,50 @@ namespace ServiceLayer.Code
 
             _logger.LogInformation("EmployeeId: " + employeeId.ToString());
             _logger.LogInformation("ApprovalWorlFlowId: " + _leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId.ToString());
-            var resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
+            var resultSet = new DataSet();
+            try
             {
-                Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
-                EmployeeId = employeeId,
-                DesignationIds = designationId
-            });
+                resultSet = _db.GetDataSet("sp_workflow_chain_by_ids", new
+                {
+                    Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
+                    EmployeeId = employeeId,
+                    DesignationIds = designationId
+                });
 
-            (List<ApprovalChainDetail> approvalChainDetail, List< EmployeeWithRoles > employeeWithRoles) = _db.GetList<ApprovalChainDetail, EmployeeWithRoles>("sp_workflow_chain_by_ids", new
+            }
+            catch (Exception ex)
             {
-                Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
-                EmployeeId = employeeId,
-                DesignationIds = designationId
-            }, false);
-            _logger.LogInformation("Approval chain details count" + approvalChainDetail.Count.ToString());
-            _logger.LogInformation("Empoyee with roles details count" + employeeWithRoles.Count.ToString());
-
-            //_logger.LogInformation("Procedure: " + "sp_workflow_chain_by_ids called");
-            //_logger.LogInformation("Table count: " + resultSet.Tables.Count.ToString());
-
-            //if (resultSet.Tables.Count != 2)
-            //{
-            //    _logger.LogInformation("Workflow chain count is not match");
-            //    throw HiringBellException.ThrowBadRequest("Workflow chain count is not match");
-            //}
-
-            //_logger.LogInformation("Check ist table rows count start");
-            //if (resultSet.Tables[0] != null || resultSet.Tables[0].Rows.Count == 0)
-            //{
-            //    _logger.LogInformation("Approval chain deatails not found. Please contact to admin");
-            //    throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
-            //}
-            //_logger.LogInformation("Check ist table rows count end");
-
-            //_logger.LogInformation("Check 2nd table rows count start");
-            //if (resultSet.Tables[1] != null || resultSet.Tables[1].Rows.Count == 0)
-            //{
-            //    _logger.LogInformation("Reportee details not found. Please contact to admin");
-            //    throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
-            //}
-
-            //_logger.LogInformation("Check 2nd table rows count end");
-            //List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
-            //List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
-
-            if (approvalChainDetail == null || approvalChainDetail.Count == 0)
-            {
-                _logger.LogInformation("Approval chain details not found. Please contact to admin");
-                throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
+                _logger.LogError("Error: " + ex.Message);
+                throw;
             }
 
-            if (employeeWithRoles == null || employeeWithRoles.Count == 0)
+            _logger.LogInformation("Procedure: " + "sp_workflow_chain_by_ids called");
+            _logger.LogInformation("Table count: " + resultSet.Tables.Count.ToString());
+
+            if (resultSet.Tables.Count != 2)
+            {
+                _logger.LogInformation("Workflow chain count is not match");
+                throw HiringBellException.ThrowBadRequest("Workflow chain count is not match");
+            }
+
+            _logger.LogInformation("Check ist table rows count start");
+            if (resultSet.Tables[0] != null || resultSet.Tables[0].Rows.Count == 0)
+            {
+                _logger.LogInformation("Approval chain deatails not found. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
+            }
+            _logger.LogInformation("Check ist table rows count end");
+
+            _logger.LogInformation("Check 2nd table rows count start");
+            if (resultSet.Tables[1] != null || resultSet.Tables[1].Rows.Count == 0)
             {
                 _logger.LogInformation("Reportee details not found. Please contact to admin");
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
             }
+
+            _logger.LogInformation("Check 2nd table rows count end");
+            List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
+            List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
 
             _logger.LogInformation("sp_workflow_chain_by_ids, return two table");
 
