@@ -48,6 +48,7 @@ namespace ServiceLayer.Code.Leaves
         // projected leave if applied for future date.
         public decimal ProjectedFutureLeaveAccrualedBalance(DateTime leaveFromDate, decimal leavePerMonth, LeavePlanConfiguration leavePlanConfiguration)
         {
+            _logger.LogInformation("Method: ProjectedFutureLeaveAccrualedBalance start");
             decimal leaves = 0;
             int futureProjectedMonths = 0;
             if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom >= DateTime.UtcNow.Day)
@@ -61,7 +62,7 @@ namespace ServiceLayer.Code.Leaves
                 leaves += MonthlyAccrual(leavePerMonth);
                 i++;
             }
-
+            _logger.LogInformation("Method: ProjectedFutureLeaveAccrualedBalance end");
             return leaves;
         }
 

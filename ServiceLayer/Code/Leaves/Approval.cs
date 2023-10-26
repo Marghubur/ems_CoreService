@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Microsoft.Extensions.Logging;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System.Threading.Tasks;
 
@@ -8,14 +9,17 @@ namespace ServiceLayer.Code.Leaves
     {
         private LeavePlanConfiguration _leavePlanConfiguration;
         private CurrentSession _currentSession;
-
-        public Approval(CurrentSession currentSession)
+        private readonly ILogger<Approval> _logger;
+        public Approval(CurrentSession currentSession, ILogger<Approval> logger)
         {
             _currentSession = currentSession;
+            _logger = logger;
         }
 
         public async Task CheckLeaveApproval(LeaveCalculationModal leaveCalculationModal)
         {
+            _logger.LogInformation("Method: CheckLeaveApproval start");
+
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
             //await CheckLeaveRequiredForApproval(leaveCalculationModal);
 
@@ -24,6 +28,7 @@ namespace ServiceLayer.Code.Leaves
             else
                 leaveCalculationModal.IsEmailNotificationPasued = false;
 
+            _logger.LogInformation("Method: CheckLeaveApproval end");
             await Task.CompletedTask;
         }
 
