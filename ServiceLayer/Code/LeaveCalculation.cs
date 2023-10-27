@@ -1004,7 +1004,7 @@ namespace ServiceLayer.Code
             }
 
             _logger.LogInformation("Check ist table rows count start");
-            if (resultSet.Tables[0] != null || resultSet.Tables[0].Rows.Count == 0)
+            if (resultSet.Tables[0] == null || resultSet.Tables[0].Rows.Count == 0)
             {
                 _logger.LogInformation("Approval chain deatails not found. Please contact to admin");
                 throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
@@ -1012,7 +1012,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Check ist table rows count end");
 
             _logger.LogInformation("Check 2nd table rows count start");
-            if (resultSet.Tables[1] != null || resultSet.Tables[1].Rows.Count == 0)
+            if (resultSet.Tables[1] == null || resultSet.Tables[1].Rows.Count == 0)
             {
                 _logger.LogInformation("Reportee details not found. Please contact to admin");
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
