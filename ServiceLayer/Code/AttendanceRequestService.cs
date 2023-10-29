@@ -2,6 +2,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -137,7 +138,7 @@ namespace ServiceLayer.Code
 
                 var attendance = _db.Get<Attendance>("sp_attendance_get_byid", new
                 {
-                    AttendanceId = attendanceDetail.AttendanceId
+                    attendanceDetail.AttendanceId
                 });
 
                 if (attendance == null)
@@ -155,15 +156,15 @@ namespace ServiceLayer.Code
 
                 currentAttendance.PresentDayStatus = (int)status;
                 //ChnageSessionType(currentAttendance);
-                var Result = _db.Execute<Attendance>("sp_attendance_update_request", new
+                var Result = _db.Execute<Attendance>(Procedures.Attendance_Update_Request, new
                 {
-                    AttendanceId = attendanceDetail.AttendanceId,
+                    attendanceDetail.AttendanceId,
                     AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
                     attendance.PendingRequestCount,
-                    UserId = _currentSession.CurrentUserDetail.UserId
+                    _currentSession.CurrentUserDetail.UserId
                 }, true);
 
-                if (string.IsNullOrEmpty(Result))
+                if (ApplicationConstants.IsExecuted(Result))
                     throw new HiringBellException("Unable to update attendance status");
 
                 AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
@@ -202,7 +203,7 @@ namespace ServiceLayer.Code
             if (attendance.ForYear == 0)
                 throw new HiringBellException("Year is invalid");
 
-            var result = _db.GetList<Attendance>("sp_attendance_requests_by_filter", new
+            var result = _db.GetList<Attendance>(Procedures.Attendance_Requests_By_Filter, new
             {
                 attendance.ReportingManagerId,
                 attendance.ForMonth,
@@ -218,7 +219,7 @@ namespace ServiceLayer.Code
             result.ForEach(x =>
             {
                 if (x.AttendanceDetail == null || x.AttendanceDetail == "[]")
-                    throw new HiringBellException("Attendance detail not founf");
+                    throw new HiringBellException("Attendance detail not found");
 
                 var attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(x.AttendanceDetail);
                 if (x.ForMonth == attendance.ForMonth)

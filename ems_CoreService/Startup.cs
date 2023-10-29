@@ -17,9 +17,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer;
-using ModalLayer.Kafka;
 using ModalLayer.Modal;
 using Newtonsoft.Json.Serialization;
 using OnlineDataBuilder.Model;
@@ -125,7 +126,15 @@ namespace OnlineDataBuilder
             services.AddScoped<IUserService, UserService>();
 
             services.AddHttpContextAccessor();
-            services.AddScoped<CurrentSession>();
+            services.AddScoped<CurrentSession>(x =>
+            {
+                return new CurrentSession
+                {
+                    Environment = Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
+                                    ModalLayer.Modal.Environments.Development :
+                                    ModalLayer.Modal.Environments.Production
+                };
+            });
             services.AddScoped<IFileMaker, CreatePDFFile>();
             services.AddScoped<IHtmlMaker, ToHtml>();
             services.AddScoped<IManageUserCommentService, ManageUserCommentService>();
@@ -170,8 +179,18 @@ namespace OnlineDataBuilder
             var kafkaServerDetail = new ProducerConfig();
             Configuration.Bind("KafkaServerDetail", kafkaServerDetail);
 
-            services.AddSingleton<ProducerConfig>(kafkaServerDetail);            
-            services.AddSingleton<KafkaNotificationService>();            
+            services.AddSingleton<ProducerConfig>(kafkaServerDetail);
+            services.AddSingleton<KafkaNotificationService>(x =>
+            {
+                return new KafkaNotificationService(
+                    x.GetRequiredService<IOptions<KafkaServiceConfig>>(),
+                    x.GetRequiredService<ProducerConfig>(),
+                    x.GetRequiredService<ILogger<KafkaNotificationService>>(),
+                    Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
+                                    ModalLayer.Modal.Environments.Development :
+                                    ModalLayer.Modal.Environments.Production
+                );
+            });
 
             services.AddScoped<IEMailManager, EMailManager>();
             services.AddSingleton<ITimezoneConverter, TimezoneConverter>();

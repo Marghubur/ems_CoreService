@@ -3,6 +3,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -98,7 +99,7 @@ namespace ServiceLayer.Code
 
             (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>("sp_employee_leave_request_GetById", new
             {
-                LeaveRequestNotificationId = requestDetail.LeaveRequestNotificationId
+                requestDetail.LeaveRequestNotificationId
             });
 
             if (leaveRequestDetail == null)
@@ -128,15 +129,25 @@ namespace ServiceLayer.Code
                 int approvedRequiredCount = reporterDetails.Count(x => x.IsRequired == true && x.Status == (int)ItemStatus.Approved);
                 int totalApprovalCount = reporterDetails.Count(x => x.Status == (int)ItemStatus.Approved);
 
-                if (requiredCounts == approvedRequiredCount && totalApprovalCount >= leaveRequestDetail.NoOfApprovalsRequired)
+                if (requiredCounts == 0)
                 {
                     leaveRequestDetail.RequestStatusId = (int)ItemStatus.Approved;
                     isSendEmailNotification = true;
                 }
                 else
-                    leaveRequestDetail.RequestStatusId = (int)ItemStatus.Pending;
+                {
+                    if (requiredCounts == approvedRequiredCount && totalApprovalCount >= leaveRequestDetail.NoOfApprovalsRequired)
+                    {
+                        leaveRequestDetail.RequestStatusId = (int)ItemStatus.Approved;
+                        isSendEmailNotification = true;
+                    }
+                    else
+                    {
+                        leaveRequestDetail.RequestStatusId = (int)ItemStatus.Pending;
+                    }
+                }
             }
-            string message = _db.Execute<LeaveRequestNotification>("sp_leave_notification_and_request_InsUpdate", new
+            string message = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Notification_And_Request_InsUpdate, new
             {
                 requestDetail.LeaveRequestNotificationId,
                 leaveRequestDetail.LeaveRequestId,
@@ -159,7 +170,7 @@ namespace ServiceLayer.Code
                 IsPending = false,
             }, true);
 
-            if (string.IsNullOrEmpty(message))
+            if (!ApplicationConstants.IsExecuted(message))
                 throw new HiringBellException("Unable to update leave status. Please contact to admin");
 
             if (isSendEmailNotification)
@@ -198,7 +209,7 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
                 _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
 
-                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>("sp_employee_leave_level_migration", new
+                var leaveRequestDetails = _db.GetList<LeaveRequestDetail>(Procedures.Employee_Leave_Level_Migration, new
                 {
                     Year = DateTime.UtcNow.Year,
                     setting.CompanyId
@@ -215,7 +226,7 @@ namespace ServiceLayer.Code
             if (leaveRequestNotification.ReportingManagerId == 0)
                 throw new HiringBellException("Reporting manager not found. Please contact to admin");
 
-            var result = _db.GetList<LeaveRequestNotification>("sp_leave_requests_by_filter", new
+            var result = _db.GetList<LeaveRequestNotification>(Procedures.Leave_Requests_By_Filter, new
             {
                 leaveRequestNotification.ReportingManagerId,
                 leaveRequestNotification.EmployeeId,
