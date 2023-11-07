@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
@@ -126,7 +127,7 @@ namespace ServiceLayer.Code
             RefreshTokenModal refreshTokenModal = default;
             if (UserId > 0 || !string.IsNullOrEmpty(Email) || !string.IsNullOrEmpty(Mobile))
             {
-                var ResultSet = await _db.GetDataSetAsync("SP_AuthenticationToken_VerifyAndGet", new
+                var ResultSet = await _db.GetDataSetAsync(Procedures.AuthenticationToken_VerifyAndGet, new
                 {
                     UserId,
                     Mobile,
@@ -153,7 +154,7 @@ namespace ServiceLayer.Code
 
         private void SaveRefreshToken(RefreshTokenModal refreshToken, long userId)
         {
-            _db.Execute<string>("sp_UpdateRefreshToken", new
+            _db.Execute<string>(Procedures.UpdateRefreshToken, new
             {
                 UserId = userId,
                 RefreshToken = refreshToken.RefreshToken,

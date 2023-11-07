@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
@@ -38,7 +39,7 @@ namespace ServiceLayer.Code
                 string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
                 CompanyDetailValidation(companyDetail);
                 Files fileDetail = UpdateCompanyFiles(files, fileCollection);
-                var result = _db.Execute<RegistrationForm>("sp_new_registration", new
+                var result = _db.Execute<RegistrationForm>(Procedures.New_Registration, new
                 {
                     companyDetail.OrganizationName,
                     companyDetail.CompanyName,

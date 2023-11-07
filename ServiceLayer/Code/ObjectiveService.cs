@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -22,7 +23,7 @@ namespace ServiceLayer.Code
         public dynamic ObjectiveInsertUpdateService(ObjectiveDetail objectiveDetail)
         {
             validateObjectiveDetail(objectiveDetail);
-            var objective = _db.Get<ObjectiveDetail>("sp_performance_objective_get_by_id", new { ObjectiveId = objectiveDetail.ObjectiveId });
+            var objective = _db.Get<ObjectiveDetail>(Procedures.Performance_Objective_Get_By_Id, new { ObjectiveId = objectiveDetail.ObjectiveId });
             if (objective == null)
                 objective = objectiveDetail;
             else
@@ -47,7 +48,7 @@ namespace ServiceLayer.Code
 
             objective.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-            var result = _db.Execute<ObjectiveDetail>("sp_performance_objective_insupd", objective, true);
+            var result = _db.Execute<ObjectiveDetail>(Procedures.Performance_Objective_Insupd, objective, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update objective deatils");
 
@@ -96,7 +97,7 @@ namespace ServiceLayer.Code
             if (filterModel.CompanyId > 0)
                 filterModel.SearchString += $" and CompanyId = {filterModel.CompanyId} ";
 
-            (List<ObjectiveDetail> objectiveDetails, List<EmployeeRole> empRoles) = _db.GetList<ObjectiveDetail, EmployeeRole>("sp_performance_objective_getby_filter", filterModel);
+            (List<ObjectiveDetail> objectiveDetails, List<EmployeeRole> empRoles) = _db.GetList<ObjectiveDetail, EmployeeRole>(Procedures.Performance_Objective_Getby_Filter, filterModel);
             objectiveDetails.ForEach(x =>
             {
                 if (!string.IsNullOrEmpty(x.Tag) && x.Tag != "[]")
@@ -117,7 +118,7 @@ namespace ServiceLayer.Code
             if (employeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee. Please login again");
 
-            (List<ObjectiveDetail> objectives, List<EmployeePerformance> empPerformance) = _db.GetList<ObjectiveDetail, EmployeePerformance>("sp_objective_getby_compid", new { CompanyId = companyId, EmployeeId = employeeId });
+            (List<ObjectiveDetail> objectives, List<EmployeePerformance> empPerformance) = _db.GetList<ObjectiveDetail, EmployeePerformance>(Procedures.Objective_Getby_Compid, new { CompanyId = companyId, EmployeeId = employeeId });
             if (objectives != null && objectives.Count > 0)
             {
                 objectives.ForEach(x =>
@@ -159,7 +160,7 @@ namespace ServiceLayer.Code
         {
             validateEmployeeObjective(employeePerformance);
             var performanceDetails = new List<PerformanceDetail>();
-            var existEmpPerformance = _db.Get<EmployeePerformance>("sp_employee_performance_getby_id", new { EmployeePerformanceId = employeePerformance.EmployeePerformanceId });
+            var existEmpPerformance = _db.Get<EmployeePerformance>(Procedures.Employee_Performance_Getby_Id, new { EmployeePerformanceId = employeePerformance.EmployeePerformanceId });
             if (existEmpPerformance == null)
             {
                 existEmpPerformance = employeePerformance;
@@ -192,7 +193,7 @@ namespace ServiceLayer.Code
             }
             existEmpPerformance.Admin = _currentSession.CurrentUserDetail.UserId;
 
-            var result = _db.Execute<EmployeePerformance>("sp_employee_performance_insupd", existEmpPerformance, true);
+            var result = _db.Execute<EmployeePerformance>(Procedures.Employee_Performance_Insupd, existEmpPerformance, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to update employee objective");
 

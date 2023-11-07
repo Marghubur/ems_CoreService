@@ -136,7 +136,7 @@ namespace ServiceLayer.Code
                 if (attendanceDetail.AttendenceDetailId <= 0)
                     throw new HiringBellException("Invalid attendance day selected");
 
-                var attendance = _db.Get<Attendance>("sp_attendance_get_byid", new
+                var attendance = _db.Get<Attendance>(Procedures.Attendance_Get_ById, new
                 {
                     attendanceDetail.AttendanceId
                 });

@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
+using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using ExcelDataReader;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -89,7 +89,7 @@ namespace ServiceLayer.Code
             filterModel.PageSize = 100;
             List<Employee> employees = GetEmployees(filterModel);
             employees = employees.FindAll(x => x.EmployeeUid != 1);
-            List<Organization> organizations = _db.GetList<Organization>("sp_company_get");
+            List<Organization> organizations = _db.GetList<Organization>(Procedures.Company_Get);
 
             if (employees.Count == 0 || organizations.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Unable to get employee and company detail. Please contact to admin.");
@@ -99,7 +99,7 @@ namespace ServiceLayer.Code
 
         private List<Employee> FilterActiveEmployees(FilterModel filterModel)
         {
-            List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
+            List<Employee> employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -113,7 +113,7 @@ namespace ServiceLayer.Code
         {
             List<Employee> employees = new List<Employee>();
 
-            List<EmployeeArchiveModal> employeeArchiveModal = _db.GetList<EmployeeArchiveModal>("SP_Employee_GetAllInActive", new
+            List<EmployeeArchiveModal> employeeArchiveModal = _db.GetList<EmployeeArchiveModal>(Procedures.Employee_GetAllInActive, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -192,7 +192,7 @@ namespace ServiceLayer.Code
             else
                 filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
 
-            List<AutoCompleteEmployees> employees = _db.GetList<AutoCompleteEmployees>("SP_Employee_GetAll", new
+            List<AutoCompleteEmployees> employees = _db.GetList<AutoCompleteEmployees>(Procedures.Employee_GetAll, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -208,7 +208,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetEmployeeLeaveDetailService(long EmployeeId)
         {
-            var result = _db.FetchDataSet("sp_leave_detail_getby_employeeId", new
+            var result = _db.FetchDataSet(Procedures.Leave_Detail_Getby_EmployeeId, new
             {
                 EmployeeId,
             });
@@ -226,7 +226,7 @@ namespace ServiceLayer.Code
 
         public DataSet LoadMappedClientService(long EmployeeId)
         {
-            var result = _db.FetchDataSet("sp_attandence_detail_by_employeeId", new
+            var result = _db.FetchDataSet(Procedures.Attandence_Detail_By_EmployeeId, new
             {
                 EmployeeId,
             });
@@ -243,7 +243,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
         {
-            var resultset = _db.GetDataSet("sp_manage_employee_detail_get", new
+            var resultset = _db.GetDataSet(Procedures.Manage_Employee_Detail_Get, new
             {
                 EmployeeId,
                 _currentSession.CurrentUserDetail.CompanyId,
@@ -270,7 +270,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetManageClientService(long EmployeeId)
         {
-            var resultset = _db.GetDataSet("SP_MappedClients_Get", new
+            var resultset = _db.GetDataSet(Procedures.MappedClients_Get, new
             {
                 employeeId = EmployeeId
             });
@@ -293,7 +293,7 @@ namespace ServiceLayer.Code
             if (employeeMappedClient.ClientUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid ClientId.", FieldName = nameof(employeeMappedClient.ClientUid), FieldValue = employeeMappedClient.ClientUid.ToString() };
 
-            var records = _db.GetList<EmployeeMappedClient>("sp_employees_mappedClient_get_by_employee_id", new
+            var records = _db.GetList<EmployeeMappedClient>(Procedures.Employees_MappedClient_Get_By_Employee_Id, new
             {
                 EmployeeId = employeeMappedClient.EmployeeUid
             });
@@ -318,7 +318,7 @@ namespace ServiceLayer.Code
             }
             this.ValidateEmployeeMapDetails(employeeMappedClient);
 
-            var resultset = _db.GetDataSet("sp_employees_addupdate_remote_client", new
+            var resultset = _db.GetDataSet(Procedures.Employees_Addupdate_Remote_Client, new
             {
                 employeeMappedClientsUid = first.EmployeeMappedClientsUid,
                 employeeUid = first.EmployeeUid,
@@ -343,13 +343,13 @@ namespace ServiceLayer.Code
 
         public Employee GetEmployeeByIdService(int EmployeeId, int IsActive)
         {
-            Employee employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = EmployeeId, IsActive = IsActive });
+            Employee employee = _db.Get<Employee>(Procedures.Employees_ById, new { EmployeeId = EmployeeId, IsActive = IsActive });
             return employee;
         }
 
         public EmployeeCompleteDetailModal GetEmployeeCompleteDetail(int EmployeeId)
         {
-            DataSet ds = _db.FetchDataSet("sp_Employee_GetCompleteDetail", new { EmployeeId = EmployeeId });
+            DataSet ds = _db.FetchDataSet(Procedures.Employee_GetCompleteDetail, new { EmployeeId = EmployeeId });
             if (ds.Tables.Count != 10)
                 throw HiringBellException.ThrowBadRequest("Unable to get employee completed detail");
 
@@ -372,7 +372,7 @@ namespace ServiceLayer.Code
 
         private EmployeeArchiveModal GetEmployeeArcheiveCompleteDetail(long EmployeeId)
         {
-            EmployeeArchiveModal employeeArcheiveDeatil = _db.Get<EmployeeArchiveModal>("sp_Employee_GetArcheiveCompleteDetail", new { EmployeeId = EmployeeId });
+            EmployeeArchiveModal employeeArcheiveDeatil = _db.Get<EmployeeArchiveModal>(Procedures.Employee_GetArcheiveCompleteDetail, new { EmployeeId = EmployeeId });
             return employeeArcheiveDeatil;
         }
 
@@ -380,7 +380,7 @@ namespace ServiceLayer.Code
         {
             EmployeeCompleteDetailModal employeeCompleteDetailModal = GetEmployeeCompleteDetail(EmployeeId);
             employeeCompleteDetailModal.EmployeeDetail.IsActive = false;
-            var result = _db.Execute<EmployeeArchiveModal>("sp_Employee_DeActivate", new
+            var result = _db.Execute<EmployeeArchiveModal>(Procedures.Employee_DeActivate, new
             {
                 EmployeeId,
                 FullName = string.Concat(employeeCompleteDetailModal.EmployeeDetail.FirstName, " ", employeeCompleteDetailModal.EmployeeDetail.LastName),
@@ -406,7 +406,7 @@ namespace ServiceLayer.Code
 
             string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
             EmployeeCompleteDetailModal employeeCompleteDetailModal = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(employeeArchiveDetail.EmployeeCompleteJsonData);
-            var result = _db.Execute<EmployeeCompleteDetailModal>("sp_Employee_Activate", new
+            var result = _db.Execute<EmployeeCompleteDetailModal>(Procedures.Employee_Activate, new
             {
                 EmployeeId = employeeArchiveDetail.EmployeeId,
                 FirstName = employeeCompleteDetailModal.EmployeeDetail.FirstName,
@@ -698,7 +698,7 @@ namespace ServiceLayer.Code
             employeeCalculation.CTC = employeeCalculation.employee.CTC;
             employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
             _logger.LogInformation("Loading data.");
-            DataSet resultSet = _db.FetchDataSet("sp_employee_getbyid_to_reg_or_upd", new
+            DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Getbyid_To_Reg_Or_Upd, new
             {
                 EmployeeId = employeeCalculation.employee.EmployeeUid,
                 employeeCalculation.employee.Mobile,
@@ -862,7 +862,7 @@ namespace ServiceLayer.Code
                 await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
-                var employeeId = _db.Execute<Employee>("sp_employees_ins_upd", new
+                var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
                 {
                     employee.EmployeeUid,
                     employee.OrganizationId,
@@ -953,7 +953,7 @@ namespace ServiceLayer.Code
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
 
-                    var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                    var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
                 }
 
                 // var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
@@ -964,7 +964,7 @@ namespace ServiceLayer.Code
             catch
             {
                 if (IsNewRegistration && eCal.employee.EmployeeId > 0)
-                    _db.Execute("sp_employee_delete_by_EmpId", new { EmployeeId = eCal.employee.EmployeeId }, false);
+                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { EmployeeId = eCal.employee.EmployeeId }, false);
 
                 throw;
             }
@@ -972,7 +972,7 @@ namespace ServiceLayer.Code
 
         private async Task CheckRunLeaveAccrualCycle(long EmployeeId)
         {
-            var result = _db.Get<Leave>("sp_employee_leave_request_by_empid", new { EmployeeId = EmployeeId });
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new { EmployeeId = EmployeeId });
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
 
@@ -992,7 +992,7 @@ namespace ServiceLayer.Code
 
         private async Task<long> RegisterNewEmployee(Employee employee, DateTime doj)
         {
-            var result = await _db.ExecuteAsync("sp_employees_create", new
+            var result = await _db.ExecuteAsync(Procedures.Employees_Create, new
             {
                 employee.FirstName,
                 employee.LastName,
@@ -1091,7 +1091,7 @@ namespace ServiceLayer.Code
                 if (employee.EmployeeUid == 0)
                 {
                     // create employee record
-                    var result = _db.Execute("sp_employee_lastId", new { IsActive = true }, true);
+                    var result = _db.Execute(Procedures.Employee_LastId, new { IsActive = true }, true);
                     if (string.IsNullOrEmpty(result.statusMessage))
                         throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
 
@@ -1109,7 +1109,7 @@ namespace ServiceLayer.Code
                 await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
-                var employeeId = _db.Execute<Employee>("sp_employees_ins_upd", new
+                var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
                 {
                     employee.EmployeeUid,
                     employee.OrganizationId,
@@ -1200,7 +1200,7 @@ namespace ServiceLayer.Code
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
 
-                    var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                    var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
                 }
             }
             catch
@@ -1320,7 +1320,7 @@ namespace ServiceLayer.Code
         {
             ValidateEmpOfferLetter(employeeOfferLetter);
 
-            var company = _db.Get<OrganizationDetail>("sp_company_getById", new { CompanyId = employeeOfferLetter.CompanyId });
+            var company = _db.Get<OrganizationDetail>(Procedures.Company_GetById, new { CompanyId = employeeOfferLetter.CompanyId });
             string employeeName = employeeOfferLetter.FirstName + "_" + employeeOfferLetter.LastName;
             var html = GetHtmlString(company, employeeOfferLetter);
             var folderPath = GeneratedPdfOfferLetter(html, employeeName);
@@ -1360,7 +1360,7 @@ namespace ServiceLayer.Code
         {
             string html = string.Empty;
             var LetterType = 1;
-            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId = 1, LetterType });
+            var result = _db.Get<AnnexureOfferLetter>(Procedures.Annexure_Offer_Letter_Getby_Lettertype, new { CompanyId = 1, LetterType });
             if (File.Exists(result.FilePath))
                 html = File.ReadAllText(result.FilePath);
             else
@@ -1562,7 +1562,7 @@ namespace ServiceLayer.Code
                 long employeeId = Convert.ToInt64(result);
 
                 List<EmployeeDeclaration> employeeDeclarations = new List<EmployeeDeclaration>();
-                Employee emp = _db.Get<Employee>("sp_employee_and_declaration_get_byid", new { EmployeeId = employeeId });
+                Employee emp = _db.Get<Employee>(Procedures.Employee_And_Declaration_Get_Byid, new { EmployeeId = employeeId });
 
                 foreach (var item in uploaded.Investments)
                 {
@@ -1620,7 +1620,7 @@ namespace ServiceLayer.Code
                 var emps = employeeData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
 
                 var ids = JsonConvert.SerializeObject(emps.Select(x => x.EmployeeId).ToList());
-                var employees = _db.GetList<Employee>("sp_active_employees_by_ids", new { EmployeeIds = ids });
+                var employees = _db.GetList<Employee>(Procedures.Active_Employees_By_Ids, new { EmployeeIds = ids });
 
                 foreach (Employee e in emps)
                 {
