@@ -2,6 +2,7 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using ems_CoreService.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -47,7 +48,7 @@ namespace ServiceLayer.Code
         }
         public UserDetail GetUserDetail(AuthUser authUser)
         {
-            UserDetail userDetail = this.db.Get<UserDetail>("sp_UserDetail_GetByMobileOrEmail", new
+            UserDetail userDetail = this.db.Get<UserDetail>(Procedures.UserDetail_GetByMobileOrEmail, new
             {
                 email = authUser.Email,
                 mobile = authUser.MobileNo,
@@ -296,7 +297,7 @@ namespace ServiceLayer.Code
                 );
                 registrationForm.Password = EncreptedPassword;
 
-                var status = this.db.Execute<string>("sp_new_registration", new
+                var status = this.db.Execute<string>(Procedures.New_Registration, new
                 {
                     registrationForm.OrganizationName,
                     registrationForm.CompanyName,

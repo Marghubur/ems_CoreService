@@ -3,6 +3,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -127,7 +128,7 @@ namespace ServiceLayer.Code
 
         public EmployeeDeclaration GetDeclarationWithComponents(long EmployeeDeclarationId)
         {
-            EmployeeDeclaration declaration = _db.Get<EmployeeDeclaration>("sp_employee_declaration_get_byId", new
+            EmployeeDeclaration declaration = _db.Get<EmployeeDeclaration>(Procedures.Employee_Declaration_Get_ById, new
             {
                 EmployeeDeclarationId = EmployeeDeclarationId
             });
@@ -192,7 +193,7 @@ namespace ServiceLayer.Code
             if (_currentSession.TimeZoneNow == null)
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
-            DataSet resultSet = _db.FetchDataSet("sp_employee_declaration_get_byEmployeeId", new
+            DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Declaration_Get_ByEmployeeId, new
             {
                 EmployeeId = EmployeeId,
                 UserTypeId = (int)UserType.Compnay
@@ -262,7 +263,7 @@ namespace ServiceLayer.Code
 
                     foreach (var n in files)
                     {
-                        Result = await _db.ExecuteAsync("sp_userfiledetail_Upload", new
+                        Result = await _db.ExecuteAsync(Procedures.Userfiledetail_Upload, new
                         {
                             FileId = n.FileUid,
                             FileOwnerId = declaration.EmployeeId,
@@ -283,7 +284,7 @@ namespace ServiceLayer.Code
                 salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
                 declaration.DeclarationDetail = GetDeclarationBasicFields(declaration.SalaryComponentItems);
 
-                Result = await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                Result = await _db.ExecuteAsync(Procedures.Employee_Declaration_Insupd, new
                 {
                     EmployeeDeclarationId = declaration.EmployeeDeclarationId,
                     EmployeeId = declaration.EmployeeId,
@@ -519,7 +520,7 @@ namespace ServiceLayer.Code
             if (empCal.employeeDeclaration.TotalAmount < 0)
                 empCal.employeeDeclaration.TotalAmount = 0;
 
-            var taxRegimeSlabs = _db.GetList<TaxRegime>("sp_tax_regime_by_id_age", new
+            var taxRegimeSlabs = _db.GetList<TaxRegime>(Procedures.Tax_Regime_By_Id_Age, new
             {
                 empCal.EmployeeId
             });
@@ -610,7 +611,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(salaryBreakup.NewSalaryDetail))
                 salaryBreakup.NewSalaryDetail = ApplicationConstants.EmptyJsonArray;
 
-            var result = await _db.ExecuteAsync("sp_employee_salary_detail_InsUpd", new
+            var result = await _db.ExecuteAsync(Procedures.Employee_Salary_Detail_InsUpd, new
             {
                 EmployeeId,
                 salaryBreakup.CTC,
@@ -986,7 +987,7 @@ namespace ServiceLayer.Code
 
         public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData, bool IsTaxCalculationRequired)
         {
-            var Result = await _db.ExecuteAsync("sp_employee_salary_detail_upd_on_payroll_run", new
+            var Result = await _db.ExecuteAsync(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
             {
                 EmployeeId = payrollEmployeeData.EmployeeId,
                 TaxDetail = payrollEmployeeData.TaxDetail,
@@ -1009,7 +1010,7 @@ namespace ServiceLayer.Code
             if (employeeDeclaration.EmployeeCurrentRegime == 0)
                 throw new HiringBellException("Please select a valid tx regime type");
 
-            var result = _db.Execute<EmployeeDeclaration>("sp_employee_taxregime_update",
+            var result = _db.Execute<EmployeeDeclaration>(Procedures.Employee_Taxregime_Update,
                 new { EmployeeId = employeeDeclaration.EmployeeId, EmployeeCurrentRegime = employeeDeclaration.EmployeeCurrentRegime }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to switch the tax regime");
@@ -1026,7 +1027,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(ComponentId))
                 throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
 
-            var resultset = _db.FetchDataSet("sp_employee_declaration_components_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            var resultset = _db.FetchDataSet(Procedures.Employee_Declaration_Components_Get_ById, new { EmployeeDeclarationId = DeclarationId });
             EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
             List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
             if (declaration == null || salaryComponent == null)
@@ -1046,7 +1047,7 @@ namespace ServiceLayer.Code
 
             string ComponentId = ComponentNames.HRA;
 
-            var resultset = _db.FetchDataSet("sp_employee_declaration_components_get_byId", new { EmployeeDeclarationId = DeclarationId });
+            var resultset = _db.FetchDataSet(Procedures.Employee_Declaration_Components_Get_ById, new { EmployeeDeclarationId = DeclarationId });
             EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
             List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
             if (declaration == null || salaryComponent == null)
@@ -1068,7 +1069,7 @@ namespace ServiceLayer.Code
             {
                 var allFileIds = JsonConvert.DeserializeObject<List<long>>(component.UploadedFileIds);
                 string searchString = component.UploadedFileIds.Replace("[", "").Replace("]", "");
-                List<Files> files = _db.GetList<Files>("sp_userfiledetail_get_files", new { searchString });
+                List<Files> files = _db.GetList<Files>(Procedures.Userfiledetail_Get_Files, new { searchString });
 
                 component.DeclaredValue = 0;
                 component.UploadedFileIds = "[]";
@@ -1080,13 +1081,13 @@ namespace ServiceLayer.Code
                 {
                     foreach (var file in allFileIds)
                     {
-                        Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId = file }, true);
+                        Result = await _db.ExecuteAsync(Procedures.Userdetail_Del_By_File_Id, new { FileId = file }, true);
                         if (!BotConstant.IsSuccess(Result))
                             throw new HiringBellException("Fail to delete file record, Please contact to admin.");
                     }
                 }
 
-                await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                await _db.ExecuteAsync(Procedures.Employee_Declaration_Insupd, new
                 {
                     declaration.EmployeeDeclarationId,
                     declaration.EmployeeId,
@@ -1139,10 +1140,10 @@ namespace ServiceLayer.Code
                 }
 
 
-                var Result = await _db.ExecuteAsync("sp_userdetail_del_by_file_id", new { FileId }, true);
+                var Result = await _db.ExecuteAsync(Procedures.Userdetail_Del_By_File_Id, new { FileId }, true);
                 if (ApplicationConstants.IsExecuted(Result.statusMessage))
                 {
-                    await _db.ExecuteAsync("sp_employee_declaration_insupd", new
+                    await _db.ExecuteAsync(Procedures.Employee_Declaration_Insupd, new
                     {
                         declaration.EmployeeDeclarationId,
                         declaration.EmployeeId,
@@ -1172,7 +1173,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var dataSet = await _db.GetDataSetAsync("sp_previous_employement_and_salary_details_by_empid", new { EmployeeId = EmployeeId });
+            var dataSet = await _db.GetDataSetAsync(Procedures.Previous_Employement_And_Salary_Details_By_Empid, new { EmployeeId = EmployeeId });
             if (dataSet.Tables.Count != 2)
                 throw HiringBellException.ThrowBadRequest("Fail to get employee previous employment and salary detail.");
 
@@ -1282,7 +1283,7 @@ namespace ServiceLayer.Code
             }
             else
             {
-                var state = _db.Execute("sp_employee_salary_detail_upd_salarydetail", new
+                var state = _db.Execute(Procedures.Employee_Salary_Detail_Upd_Salarydetail, new
                 {
                     salaryDetail.EmployeeId,
                     salaryDetail.CompleteSalaryDetail,
@@ -1304,7 +1305,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            DataSet ds = _db.FetchDataSet("sp_previous_employement_details_and_emp_by_empid", new { EmployeeId = EmployeeId });
+            DataSet ds = _db.FetchDataSet(Procedures.Previous_Employement_Details_And_Emp_By_Empid, new { EmployeeId = EmployeeId });
             if (ds != null && ds.Tables.Count > 0)
             {
                 employementDetails = Converter.ToList<PreviousEmployementDetail>(ds.Tables[0]);
@@ -1323,7 +1324,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var result = _db.FetchDataSet("sp_previous_employement_details_by_empid", new
+            var result = _db.FetchDataSet(Procedures.Previous_Employement_Details_By_Empid, new
             {
                 EmployeeId = EmployeeId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
@@ -1573,7 +1574,7 @@ namespace ServiceLayer.Code
             var filepath = string.Empty;
             var empIds = JsonConvert.SerializeObject(EmployeeIds);
             empIds = empIds.Replace("[", "").Replace("]", "");
-            var result = _db.GetList<EmployeeDeclaration>("sp_declaration_get_filter_by_empid", new { searchString = empIds });
+            var result = _db.GetList<EmployeeDeclaration>(Procedures.Declaration_Get_Filter_By_Empid, new { searchString = empIds });
             if (result.Count > 0)
             {
                 var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employees_Declaration_Excel");

@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -240,7 +241,7 @@ namespace CoreServiceLayer.Implementation
             DataSet Result = null;
             if (userId > 0)
             {
-                Result = _db.GetDataSet("sp_document_filedetail_get", new
+                Result = _db.GetDataSet(Procedures.Document_Filedetail_Get, new
                 {
                     OwnerId = userId,
                     UserTypeId = userTypeId,

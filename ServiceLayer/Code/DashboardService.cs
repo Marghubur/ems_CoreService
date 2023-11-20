@@ -1,9 +1,8 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
-using System;
 using System.Data;
-using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -18,7 +17,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetSystemDashboardService(AttendenceDetail userDetails)
         {
-            var Result = _db.GetDataSet("sp_dashboard_get", new
+            var Result = _db.GetDataSet(Procedures.Dashboard_Get, new
             {
                 userId = userDetails.UserId,
                 employeeUid = userDetails.EmployeeUid,

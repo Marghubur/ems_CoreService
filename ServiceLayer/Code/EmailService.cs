@@ -3,6 +3,7 @@ using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -155,7 +156,7 @@ namespace ServiceLayer.Code
 
         private void GetSettingDetail()
         {
-            _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            _emailSettingDetail = _db.Get<EmailSettingDetail>(Procedures.Email_Setting_Detail_Get, new { EmailSettingDetailId = 0 });
             if (_emailSettingDetail == null)
                 throw new HiringBellException("Fail to get emaill detail. Please contact to admin.");
         }
@@ -234,7 +235,7 @@ namespace ServiceLayer.Code
             if (CompanyId == 0)
                 throw new HiringBellException("Invalid company selected");
 
-            EmailSettingDetail emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_by_companyId", new { CompanyId = CompanyId });
+            EmailSettingDetail emailSettingDetail = _db.Get<EmailSettingDetail>(Procedures.Email_Setting_Detail_By_CompanyId, new { CompanyId = CompanyId });
             return emailSettingDetail;
         }
 
@@ -243,7 +244,7 @@ namespace ServiceLayer.Code
             EmailSettingDetail emailSetting = null;
             EmailSettingsValidation(emailSettingDetail);
 
-            emailSetting = _db.Get<EmailSettingDetail>("sp_email_setting_detail_by_companyId", new { CompanyId = emailSettingDetail.CompanyId });
+            emailSetting = _db.Get<EmailSettingDetail>(Procedures.Email_Setting_Detail_By_CompanyId, new { CompanyId = emailSettingDetail.CompanyId });
             if (emailSetting != null)
             {
                 emailSetting.EmailAddress = emailSettingDetail.EmailAddress;
@@ -265,7 +266,7 @@ namespace ServiceLayer.Code
                 emailSetting = emailSettingDetail;
                 emailSetting.UpdatedBy = _currentSession.CurrentUserDetail.UserId;
             }
-            var result = _db.Execute<EmailSettingDetail>("sp_email_setting_detail_insupd", emailSetting, true);
+            var result = _db.Execute<EmailSettingDetail>(Procedures.Email_Setting_Detail_Insupd, emailSetting, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
 
@@ -316,7 +317,7 @@ namespace ServiceLayer.Code
                 filepath = files[0].FilePath;
 
             }
-            var existingTemplate = _db.Get<EmailTemplate>("sp_email_template_get", new { emailTemplate.EmailTemplateId });
+            var existingTemplate = _db.Get<EmailTemplate>(Procedures.Email_Template_Get, new { emailTemplate.EmailTemplateId });
             if (existingTemplate == null)
             {
                 existingTemplate = emailTemplate;
@@ -338,7 +339,7 @@ namespace ServiceLayer.Code
                 existingTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
             }
             existingTemplate.FileId = emailTemplate.FileId;
-            var tempId = _db.Execute<EmailTemplate>("sp_email_template_insupd", existingTemplate, true);
+            var tempId = _db.Execute<EmailTemplate>(Procedures.Email_Template_Insupd, existingTemplate, true);
             if (string.IsNullOrEmpty(tempId))
                 throw new HiringBellException("Fail to insert or updfate");
 
@@ -371,7 +372,7 @@ namespace ServiceLayer.Code
 
         public List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel)
         {
-            var result = _db.GetList<EmailTemplate>("sp_email_template_getby_filter", new
+            var result = _db.GetList<EmailTemplate>(Procedures.Email_Template_Getby_Filter, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -387,7 +388,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid Email template selected");
 
             List<Files> companyFiles = await _companyService.GetCompanyFiles(CompanyId);
-            var template = _db.Get<EmailTemplate>("sp_email_template_get", new { EmailTemplateId });
+            var template = _db.Get<EmailTemplate>(Procedures.Email_Template_Get, new { EmailTemplateId });
             return new { EmailTemplate = template, Files = companyFiles };
         }
 
@@ -402,7 +403,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(emailMappedTemplate.EmailTemplateName))
                 throw new HiringBellException("Email template name is null or empty. Please select a valid template name");
 
-            var mappedTemplate = _db.Get<EmailMappedTemplate>("sp_email_mapped_template_getById", new { EmailTempMappingId = emailMappedTemplate.EmailTempMappingId });
+            var mappedTemplate = _db.Get<EmailMappedTemplate>(Procedures.Email_Mapped_Template_GetById, new { EmailTempMappingId = emailMappedTemplate.EmailTempMappingId });
             if (mappedTemplate == null)
                 mappedTemplate = emailMappedTemplate;
             else
@@ -412,7 +413,7 @@ namespace ServiceLayer.Code
                 mappedTemplate.EmailTemplateName = emailMappedTemplate.EmailTemplateName;
             }
             mappedTemplate.AdminId = _currentSession.CurrentUserDetail.UserId;
-            var result = _db.Execute<EmailMappedTemplate>("sp_email_mapped_template_insupd", mappedTemplate, true);
+            var result = _db.Execute<EmailMappedTemplate>(Procedures.Email_Mapped_Template_Insupd, mappedTemplate, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update Email mapped template");
 
@@ -426,7 +427,7 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> GetEmailTempMappingService(FilterModel filterModel)
         {
-            (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>("sp_email_mapped_template_by_comid", new
+            (List<EmailMappedTemplate> emailMappedTemplate, List<EmailTemplate> emailTemplate) = _db.GetList<EmailMappedTemplate, EmailTemplate>(Procedures.Email_Mapped_Template_By_Comid, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,

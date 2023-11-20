@@ -1,4 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -26,7 +27,7 @@ namespace ServiceLayer.Code
             //    new DbParam(userComments.Company, typeof(System.String), "@COMPANY"),
             //    new DbParam(userComments.COMMENTS, typeof(System.String), "@COMMENTS")
             //};
-            DataSet ResultSet = db.GetDataSet("SP_UserComments_INSUPD", null);
+            DataSet ResultSet = db.GetDataSet(Procedures.UserComments_INSUPD, null);
             if (ResultSet != null && ResultSet.Tables.Count > 0 && ResultSet.Tables[0].Rows.Count > 0)
                 Result = JsonConvert.SerializeObject(ResultSet);
             return Result;
@@ -41,7 +42,7 @@ namespace ServiceLayer.Code
             //{
             //    new DbParam(EmailId, typeof(System.String), "@EMAILID")
             //};
-            DataSet ResultSet = db.GetDataSet("SP_UserComments_Get");
+            DataSet ResultSet = db.GetDataSet(Procedures.UserComments_Get);
             if (ResultSet != null && ResultSet.Tables.Count > 0 && ResultSet.Tables[0].Rows.Count > 0)
             {
                 ResultSet.Tables[0].TableName = "Comments";

@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -46,7 +47,7 @@ namespace ServiceLayer.Code
             //    throw new HiringBellException { UserMessage = "Invalid ClientId", FieldName = nameof(ClientId), FieldValue = ClientId.ToString() };
 
             //Organization client = default;
-            var resultSet = _db.GetDataSet("SP_Client_ById", new
+            var resultSet = _db.GetDataSet(Procedures.Client_ById, new
             {
                 ClientId = ClientId,
                 IsActive = IsActive,
@@ -77,7 +78,7 @@ namespace ServiceLayer.Code
                 ClientValidation(client);
                 Organization organization = null;
 
-                organization = _db.Get<Organization>("SP_Client_IntUpd", new
+                organization = _db.Get<Organization>(Procedures.Client_IntUpd, new
                 {
                     ClientId = client.ClientId,
                     ClientName = client.ClientName,
@@ -138,7 +139,7 @@ namespace ServiceLayer.Code
                                     }).ToList();
 
 
-                    var batchResult = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                    var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
                 }
                 organization.GSTNo = client.GSTNo;
                 return organization;
@@ -172,7 +173,7 @@ namespace ServiceLayer.Code
             if (employee == null || employee.EmployeeUid <= 0)
                 throw new HiringBellException("Invalid client detail submitted.");
 
-            var resultSet = _db.FetchDataSet("sp_deactivateOrganization_delandgetall", new
+            var resultSet = _db.FetchDataSet(Procedures.DeactivateOrganization_Delandgetall, new
             {
                 ClientMappedId = employee.EmployeeMappedClientsUid,
                 UserId = employee.EmployeeUid

@@ -150,7 +150,7 @@ namespace ServiceLayer.Code
                 i++;
             }
 
-            var result = await _db.ExecuteAsync("sp_attendance_insupd", new
+            var result = await _db.ExecuteAsync(Procedures.Attendance_Insupd, new
             {
                 AttendanceId = 0,
                 AttendanceDetail = JsonConvert.SerializeObject(attendenceDetails),
@@ -246,7 +246,7 @@ namespace ServiceLayer.Code
                 i++;
             }
 
-            var result = await _db.ExecuteAsync("sp_attendance_insupd", new
+            var result = await _db.ExecuteAsync(Procedures.Attendance_Insupd, new
             {
                 AttendanceId = 0,
                 AttendanceDetail = JsonConvert.SerializeObject(attendenceDetails),
@@ -330,7 +330,7 @@ namespace ServiceLayer.Code
 
         public async Task GenerateAttendanceService()
         {
-            List<Employee> employees = _db.GetList<Employee>("SP_Employee_GetAll", new
+            List<Employee> employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
             {
                 SearchString = "1=1",
                 SortBy = string.Empty,
@@ -362,7 +362,7 @@ namespace ServiceLayer.Code
                         EmployeeId = employee.EmployeeUid
                     };
 
-                    var record = _db.Get<Attendance>("sp_attendance_get_by_empid", new
+                    var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
                     {
                         EmployeeId = employee.EmployeeUid,
                         ForYear = workingDate.Year,
@@ -422,7 +422,7 @@ namespace ServiceLayer.Code
                                 .ToList();
 
             //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
-            var leave = _db.GetList<LeaveRequestNotification>("sp_leave_request_notification_get_by_empid", new
+            var leave = _db.GetList<LeaveRequestNotification>(Procedures.Leave_Request_Notification_Get_By_Empid, new
             {
                 EmployeeId = attendance.EmployeeId,
                 RequestStatusId = (int)ItemStatus.Approved
@@ -469,6 +469,26 @@ namespace ServiceLayer.Code
                 }
             }
 
+            if (attendanceDetailBuildModal.calendars != null && attendanceDetailBuildModal.calendars.Count > 0)
+            {
+                foreach (var item in attendances)
+                {
+                    var holiday = attendanceDetailBuildModal.calendars.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.StartDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.EndDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    if (holiday != null)
+                    {
+                        item.IsHoliday = true;
+                        item.IsOpen = true;
+                        if (holiday.IsHalfDay)
+                        {
+                            item.IsHalfDay = true;
+                            item.LogOff = "04:00";
+                            item.LogOn = "04:00";
+                        }
+                    }
+                }
+            }
+
             return new AttendanceWithClientDetail
             {
                 EmployeeDetail = attendanceDetailBuildModal.employee,
@@ -490,7 +510,7 @@ namespace ServiceLayer.Code
             if (attendance.ForMonth <= 0)
                 throw new HiringBellException("Invalid month num. passed.", nameof(attendance.ForMonth), attendance.ForMonth.ToString());
 
-            var Result = _db.FetchDataSet("sp_attendance_get", new
+            var Result = _db.FetchDataSet(Procedures.Attendance_Get, new
             {
                 EmployeeId = attendance.EmployeeId,
                 StartDate = attendance.AttendanceDay,
@@ -540,7 +560,7 @@ namespace ServiceLayer.Code
             List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
             DateTime current = DateTime.UtcNow;
 
-            var currentAttendance = _db.Get<Attendance>("sp_attendance_detall_pending", new
+            var currentAttendance = _db.Get<Attendance>(Procedures.Attendance_Detall_Pending, new
             {
                 EmployeeId = employeeId,
                 UserTypeId = UserTypeId == 0 ? _currentSession.CurrentUserDetail.UserTypeId : UserTypeId,
@@ -578,11 +598,11 @@ namespace ServiceLayer.Code
             // check for leave, holiday and weekends
             await this.IsGivenDateAllowed(attendance.AttendanceDay);
 
-            var presentAttendance = _db.Get<Attendance>("sp_attendance_get_byid", new { AttendanceId = attendance.AttendanceId });
+            var presentAttendance = _db.Get<Attendance>(Procedures.Attendance_Get_ById, new { AttendanceId = attendance.AttendanceId });
             if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
 
-            var employee = _db.Get<Employee>("SP_Employees_ById", new { EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId, IsActive = 1 });
+            var employee = _db.Get<Employee>(Procedures.Employees_ById, new { EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId, IsActive = 1 });
             if (employee == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get manager detail");
 
@@ -602,7 +622,7 @@ namespace ServiceLayer.Code
             workingattendance.WorkTypeId = (int)attendance.WorkTypeId;
             attendance.PendingRequestCount = ++attendance.PendingRequestCount;
 
-            Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+            Result = _db.Execute<Attendance>(Procedures.Attendance_Insupd, new
             {
                 AttendanceId = presentAttendance.AttendanceId,
                 AttendanceDetail = JsonConvert.SerializeObject(attendanceList),
@@ -664,7 +684,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(filter.SearchString) || filter.EmployeeId > 0)
                 filter.SearchString = $"1=1 and RequestTypeId = {(int)RequestType.Attendance} and EmployeeId = {filter.EmployeeId}";
 
-            var result = _db.GetList<ComplaintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
+            var result = _db.GetList<ComplaintOrRequest>(Procedures.Complaint_Or_Request_Get_By_Employeeid, new
             {
                 filter.SearchString,
                 filter.SortBy,
@@ -682,7 +702,7 @@ namespace ServiceLayer.Code
             if (filter.EmployeeId > 0)
                 filter.SearchString += $" and EmployeeId = {filter.EmployeeId}";
 
-            var result = _db.GetList<ComplaintOrRequest>("sp_complaint_or_request_get_by_employeeid", new
+            var result = _db.GetList<ComplaintOrRequest>(Procedures.Complaint_Or_Request_Get_By_Employeeid, new
             {
                 filter.SearchString,
                 filter.SortBy,
@@ -699,7 +719,7 @@ namespace ServiceLayer.Code
             Employee managerDetail = null;
             List<ComplaintOrRequest> complaintOrRequests = new List<ComplaintOrRequest>();
 
-            var resultSet = _db.GetDataSet("sp_attendance_employee_detail_id", new
+            var resultSet = _db.GetDataSet(Procedures.Attendance_Employee_Detail_Id, new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.ReportingManagerId,
                 AttendanceId = attendanceId
@@ -771,7 +791,7 @@ namespace ServiceLayer.Code
                                ExecuterEmail = n.ExecuterEmail
                            }).ToList();
 
-            var result = await _db.BulkExecuteAsync("sp_complaint_or_request_InsUpdate", records, true);
+            var result = await _db.BulkExecuteAsync(Procedures.Complaint_Or_Request_InsUpdate, records, true);
             List<string> allAttendanceDates = new List<string>();
             compalintOrRequestWithEmail.CompalintOrRequestList.ForEach(x =>
             {
@@ -830,7 +850,7 @@ namespace ServiceLayer.Code
             }
 
 
-            var Result = _db.FetchDataSet("sp_attendance_get", new
+            var Result = _db.FetchDataSet(Procedures.Attendance_Get, new
             {
                 EmployeeId = attendenceDetail.EmployeeUid,
                 ClientId = attendenceDetail.ClientId,
@@ -846,7 +866,7 @@ namespace ServiceLayer.Code
         {
             if (attendanceDetail.EmployeeUid <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee. Please login again");
-            var result = _db.GetList<Attendance>("sp_employee_performance_get", new
+            var result = _db.GetList<Attendance>(Procedures.Employee_Performance_Get, new
             {
                 EmployeeId = attendanceDetail.EmployeeUid,
                 UserTypeId = attendanceDetail.UserTypeId,
@@ -876,7 +896,7 @@ namespace ServiceLayer.Code
 
         private async Task CheckHalfdayAndFullday(AttendanceJson workingAttendance, Attendance attendance, long employeeId)
         {
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_getby_empid", new { EmployeeId = employeeId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(Procedures.Work_Shifts_Getby_Empid, new { EmployeeId = employeeId });
             if (shiftDetail == null)
                 throw HiringBellException.ThrowBadRequest("Employee shift detail not found. Please contact to admin");
 
@@ -1150,7 +1170,7 @@ namespace ServiceLayer.Code
             // check for leave, holiday and weekends
             await this.IsGivenDateAllowed(attendance.AttendanceDay);
 
-            var presentAttendance = _db.Get<Attendance>("sp_attendance_get_byid", new { AttendanceId = attendance.AttendanceId });
+            var presentAttendance = _db.Get<Attendance>(Procedures.Attendance_Get_ById, new { AttendanceId = attendance.AttendanceId });
             if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
 
@@ -1165,7 +1185,7 @@ namespace ServiceLayer.Code
             presentAttendance.TotalHoursBurend = pendingDays * dailyWorkingHours;
             workingattendance.WorkTypeId = (int)WorkType.WORKFROMHOME;
 
-            string Result = _db.Execute<Attendance>("sp_attendance_insupd", new
+            string Result = _db.Execute<Attendance>(Procedures.Attendance_Insupd, new
             {
                 AttendanceId = presentAttendance.AttendanceId,
                 AttendanceDetail = JsonConvert.SerializeObject(attendanceList),
@@ -1211,7 +1231,7 @@ namespace ServiceLayer.Code
         public Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year)
         {
             List<LOPAdjustmentDetail> lOPAdjustmentDetails = new List<LOPAdjustmentDetail>();
-            var ds = _db.GetDataSet("sp_leave_and_lop_get", new
+            var ds = _db.GetDataSet(Procedures.Leave_And_Lop_Get, new
             {
                 Month = month,
                 Year = year,
@@ -1281,7 +1301,7 @@ namespace ServiceLayer.Code
         private async Task<Attendance> GetCurrentAttendanceRequestData(List<ComplaintOrRequest> complaintOrRequests, int itemStatus)
         {
             var first = complaintOrRequests.First();
-            var resultSet = _db.GetDataSet("sp_attendance_get_byid", new
+            var resultSet = _db.GetDataSet(Procedures.Attendance_Get_ById, new
             {
                 AttendanceId = first.TargetId
             });
@@ -1349,7 +1369,7 @@ namespace ServiceLayer.Code
                              UserId = _currentSession.CurrentUserDetail.UserId
                          }).ToList();
 
-            var result = await _db.BulkExecuteAsync("sp_complaint_or_request_update_status", items);
+            var result = await _db.BulkExecuteAsync(Procedures.Complaint_Or_Request_Update_Status, items);
 
 
             var filter = new FilterModel();

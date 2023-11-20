@@ -70,6 +70,7 @@ namespace ModalLayer.Modal
         public bool IsOpen { set; get; }
         public string Emails { set; get; }
         public int WorkTypeId { get; set; }
+        public bool IsHalfDay { get; set; } = false;
     }
 
     public class AttendanceDetailJson : UserMangerCommonDetail
