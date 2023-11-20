@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using OnlineDataBuilder.ContextHandler;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -40,7 +38,6 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
-
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -139,7 +136,6 @@ namespace OnlineDataBuilder.Controllers
             // await LeaveLevelMigration();
 
             // await _attendanceService.GenerateAttendanceService();
-
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

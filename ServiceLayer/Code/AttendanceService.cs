@@ -469,6 +469,26 @@ namespace ServiceLayer.Code
                 }
             }
 
+            if (attendanceDetailBuildModal.calendars != null && attendanceDetailBuildModal.calendars.Count > 0)
+            {
+                foreach (var item in attendances)
+                {
+                    var holiday = attendanceDetailBuildModal.calendars.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.StartDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.EndDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    if (holiday != null)
+                    {
+                        item.IsHoliday = true;
+                        item.IsOpen = true;
+                        if (holiday.IsHalfDay)
+                        {
+                            item.IsHalfDay = true;
+                            item.LogOff = "04:00";
+                            item.LogOn = "04:00";
+                        }
+                    }
+                }
+            }
+
             return new AttendanceWithClientDetail
             {
                 EmployeeDetail = attendanceDetailBuildModal.employee,

@@ -36,6 +36,7 @@ namespace ServiceLayer.Code
         {
             try
             {
+                _db.SetupConnectionString("server=tracker.io;port=3308;database=newtest;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;");
                 string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
                 CompanyDetailValidation(companyDetail);
                 Files fileDetail = UpdateCompanyFiles(files, fileCollection);
