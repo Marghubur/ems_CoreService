@@ -76,5 +76,8 @@ namespace ModalLayer.Modal
     public class AttendanceDetailJson : UserMangerCommonDetail
     {
         public long AttendanceId { get; set; }
+        public string FilePath { get; set; }
+        public string FileExtension { get; set; }
+        public string FileName { get; set; }
     }
 }

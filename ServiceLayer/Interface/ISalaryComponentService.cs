@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 using System.Data;
@@ -11,7 +12,7 @@ namespace ServiceLayer.Interface
         SalaryComponents GetSalaryComponentByIdService();
         List<SalaryComponents> GetSalaryComponentsDetailService();
         Task<List<SalaryComponents>> UpdateSalaryComponentService(List<SalaryComponents> salaryComponents);
-        Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents);
+        Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(IFormFileCollection file);
         List<SalaryGroup> GetSalaryGroupService(int CompanyId);
         dynamic GetCustomSalryPageDataService(int CompanyId);
         SalaryGroup GetSalaryGroupsByIdService(int SalaryGroupId);
