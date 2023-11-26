@@ -7,6 +7,11 @@
         public static string Attendance_Update_Request = "sp_attendance_update_request";
         public static string Attendance_Get_ById = "sp_attendance_get_byid";
 
+        /*------------- Leave Request service proceudures -------*/
+        public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";
+        public static string Employee_Leave_Level_Migration = "sp_employee_leave_level_migration";
+        public static string Leave_Requests_By_Filter = "sp_leave_requests_by_filter";
+
         /*-------------- Leave service proceudures ------------*/
         public static string Leave_Plans_Get = "sp_leave_plans_get";
         public static string Leave_Plan_Insupd = "sp_leave_plan_insupd";
@@ -272,32 +277,20 @@
         public static string Surcharge_Slab_Insupd = "sp_surcharge_slab_insupd";
         public static string Surcharge_Slab_Delete_Byid = "sp_surcharge_slab_delete_byid";
 
-        /*--------------  Tax Regime Service procedures ------------*/
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
-        //public static string Tax_Regime_Getall = "sp_tax_regime_getall";
+        /*--------------  Timesheet Request Service procedures ------------*/
+        public static string Employee_Timesheet_Getby_Timesheetid = "sp_employee_timesheet_getby_timesheetid";
+        public static string Timesheet_Upd_By_Id = "sp_timesheet_upd_by_id";
+        public static string Timesheet_Requests_By_Filter = "sp_timesheet_requests_by_filter";
 
+        /*--------------  Timesheet Service procedures ------------*/
+        public static string Employee_Timesheet_Get = "sp_employee_timesheet_get";
+        public static string Employee_Timesheet_Getby_Empid = "sp_employee_timesheet_getby_empid";
+        public static string EmployeeBillDetail_ById = "sp_EmployeeBillDetail_ById";
 
-
-
-
-
-
-
-
-
-        public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";
-        public static string Employee_Leave_Level_Migration = "sp_employee_leave_level_migration";
-        public static string Leave_Requests_By_Filter = "sp_leave_requests_by_filter";
-
+        /*--------------  User Service procedures ------------*/
+        public static string Professionaldetail_Insupd = "sp_professionaldetail_insupd";
+        public static string Professionaldetail_Get_Byid = "sp_professionaldetail_get_byid";
+        public static string Professionaldetail_Filter = "sp_professionaldetail_filter";
+        public static string Employee_And_All_Clients_Get = "sp_employee_and_all_clients_get";
     }
 }

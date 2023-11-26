@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -47,7 +48,7 @@ namespace ServiceLayer.Code
             long employeeId = 0;
             ProfileDetail profileDetail = new ProfileDetail();
             professionalUser.ProfessionalDetailJson = JsonConvert.SerializeObject(professionalUser);
-            var result = _db.Execute<ProfessionalUser>("sp_professionaldetail_insupd", new
+            var result = _db.Execute<ProfessionalUser>(Procedures.Professionaldetail_Insupd, new
             {
                 professionalUser.EmployeeId,
                 professionalUser.Mobile,
@@ -98,7 +99,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                int insertedCount = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                int insertedCount = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
             }
 
             var value = this.UpdateProfile(professionalUser, UserTypeId, IsProfileImageRequest);
@@ -136,7 +137,7 @@ namespace ServiceLayer.Code
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
-                var status = await _db.BulkExecuteAsync("sp_userfiledetail_Upload", fileInfo, true);
+                var status = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
                 file = files[0];
             }
 
@@ -183,7 +184,7 @@ namespace ServiceLayer.Code
             ProfileDetail profileDetail = new ProfileDetail();
             ProfessionalUser professionalUser = default(ProfessionalUser);
 
-            var result = _db.FetchDataSet("sp_professionaldetail_get_byid", new { EmployeeId });
+            var result = _db.FetchDataSet(Procedures.Professionaldetail_Get_Byid, new { EmployeeId });
             //(Employee employee, ProfessionalUser professionalUser, List<FileDetail> fileDetails) = _db.GetMulti<Employee, ProfessionalUser, List<FileDetail>>("sp_professionaldetail_get_byid", new { EmployeeId });
             if (result.Tables.Count == 3)
             {
@@ -211,7 +212,7 @@ namespace ServiceLayer.Code
             var value = string.Empty;
             ProfileDetail profileDetail = new ProfileDetail();
 
-            var Result = _db.GetDataSet("sp_professionaldetail_filter", new
+            var Result = _db.GetDataSet(Procedures.Professionaldetail_Filter, new
             {
                 UserId = userId,
                 Mobile = _currentSession.CurrentUserDetail.Mobile,
@@ -252,7 +253,7 @@ namespace ServiceLayer.Code
             FilterModel filterModel = new FilterModel();
             filterModel.PageSize = 1000;
 
-            ds = _db.FetchDataSet("sp_employee_and_all_clients_get", new
+            ds = _db.FetchDataSet(Procedures.Employee_And_All_Clients_Get, new
             {
                 SearchString = filterModel.SearchString,
                 SortBy = filterModel.SortBy,

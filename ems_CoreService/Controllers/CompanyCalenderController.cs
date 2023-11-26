@@ -1,8 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ModalLayer;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
+using System.Threading.Tasks;
+using System;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -11,10 +16,11 @@ namespace OnlineDataBuilder.Controllers
     public class CompanyCalenderController : BaseController
     {
         private readonly ICompanyCalendar _companyCalendar;
-
-        public CompanyCalenderController(ICompanyCalendar companyCalendar)
+        private readonly HttpContext _httpContext;
+        public CompanyCalenderController(ICompanyCalendar companyCalendar, IHttpContextAccessor httpContext)
         {
             _companyCalendar = companyCalendar;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost("GetAllHoliday")]
@@ -36,6 +42,22 @@ namespace OnlineDataBuilder.Controllers
         {
             var result = _companyCalendar.DeleteHolidayService(CompanyCalendarId);
             return BuildResponse(result);
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadHolidayExcel")]
+        public async Task<ApiResponse> UploadHolidayExcel()
+        {
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                var result = await _companyCalendar.ReadHolidayDataService(file);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

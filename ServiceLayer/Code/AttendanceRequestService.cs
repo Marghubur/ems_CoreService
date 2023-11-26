@@ -164,7 +164,7 @@ namespace ServiceLayer.Code
                     _currentSession.CurrentUserDetail.UserId
                 }, true);
 
-                if (ApplicationConstants.IsExecuted(Result))
+                if (string.IsNullOrEmpty(Result))
                     throw new HiringBellException("Unable to update attendance status");
 
                 AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
@@ -236,6 +236,9 @@ namespace ServiceLayer.Code
                     y.EmployeeId = x.EmployeeId;
                     y.AttendanceId = x.AttendanceId;
                     y.Index = index++;
+                    y.FileExtension = x.FileExtension;
+                    y.FileName = x.FileName;
+                    y.FilePath = x.FilePath;
                 });
                 attendanceRequest.AddRange(attendanceDetail);
                 if (autoCompleteEmployees.Find(i => i.value == x.EmployeeId) == null)

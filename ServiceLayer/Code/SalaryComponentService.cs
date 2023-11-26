@@ -2,15 +2,20 @@
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -120,101 +125,111 @@ namespace ServiceLayer.Code
             return salaryComponents;
         }
 
-        public async Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents)
+        public async Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(IFormFileCollection files)
         {
-            List<SalaryComponents> finalResult = new List<SalaryComponents>();
-            if (salaryComponents.Count > 0)
+            try
             {
-                List<SalaryComponents> result = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get, false);
+                var uploadedHolidayData = await _utilityService.ReadExcelData<SalaryComponents>(files);
+                var result = await UpdateHolidayData(uploadedHolidayData);
+                return result;
+            }
+            catch
+            {
+                throw;
+            }
+        }
 
-                foreach (SalaryComponents item in salaryComponents)
+        private async Task<List<SalaryComponents>> UpdateHolidayData(List<SalaryComponents> salaryComponentsData)
+        {
+            List<SalaryComponents> result = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get, false);
+            List<SalaryComponents> finalResult = new List<SalaryComponents>();
+            foreach (SalaryComponents item in salaryComponentsData)
+            {
+                if (string.IsNullOrEmpty(item.ComponentId) || string.IsNullOrEmpty(item.ComponentFullName))
+                    throw new HiringBellException("ComponentId or ComponentFullName is empty.");
+            }
+
+            var itemOfRows = (from n in salaryComponentsData
+                              select new
+                              {
+                                  n.ComponentId,
+                                  n.ComponentFullName,
+                                  n.ComponentDescription,
+                                  n.CalculateInPercentage,
+                                  n.TaxExempt,
+                                  n.ComponentTypeId,
+                                  n.ComponentCatagoryId,
+                                  n.PercentageValue,
+                                  n.MaxLimit,
+                                  n.DeclaredValue,
+                                  n.AcceptedAmount,
+                                  n.RejectedAmount,
+                                  n.UploadedFileIds,
+                                  n.Formula,
+                                  n.EmployeeContribution,
+                                  n.EmployerContribution,
+                                  n.IncludeInPayslip,
+                                  n.IsAdHoc,
+                                  n.AdHocId,
+                                  n.Section,
+                                  n.SectionMaxLimit,
+                                  n.IsAffectInGross,
+                                  n.RequireDocs,
+                                  n.IsOpted,
+                                  n.IsActive,
+                                  AdminId = _currentSession.CurrentUserDetail.UserId,
+                              }).ToList();
+
+            int count = await _db.BulkExecuteAsync(Procedures.Salary_Components_Insupd, itemOfRows, true);
+            if (count > 0)
+            {
+                if (result.Count > 0)
                 {
-                    if (string.IsNullOrEmpty(item.ComponentId) || string.IsNullOrEmpty(item.ComponentFullName))
-                        throw new HiringBellException("ComponentId or ComponentFullName is empty.");
-                }
-
-                var itemOfRows = (from n in salaryComponents
-                                  select new
-                                  {
-                                      n.ComponentId,
-                                      n.ComponentFullName,
-                                      n.ComponentDescription,
-                                      n.CalculateInPercentage,
-                                      n.TaxExempt,
-                                      n.ComponentTypeId,
-                                      n.ComponentCatagoryId,
-                                      n.PercentageValue,
-                                      n.MaxLimit,
-                                      n.DeclaredValue,
-                                      n.AcceptedAmount,
-                                      n.RejectedAmount,
-                                      n.UploadedFileIds,
-                                      n.Formula,
-                                      n.EmployeeContribution,
-                                      n.EmployerContribution,
-                                      n.IncludeInPayslip,
-                                      n.IsAdHoc,
-                                      n.AdHocId,
-                                      n.Section,
-                                      n.SectionMaxLimit,
-                                      n.IsAffectInGross,
-                                      n.RequireDocs,
-                                      n.IsOpted,
-                                      n.IsActive,
-                                      AdminId = _currentSession.CurrentUserDetail.UserId,
-                                  }).ToList();
-
-                int count = await _db.BulkExecuteAsync(Procedures.Salary_Components_Insupd, itemOfRows, true);
-                if (count > 0)
-                {
-                    if (result.Count > 0)
+                    finalResult = result;
+                    foreach (var newComponents in salaryComponentsData)
                     {
-                        finalResult = result;
-                        foreach (var newComponents in salaryComponents)
+                        var existing = finalResult.Find(x => x.ComponentId == newComponents.ComponentId);
+                        if (existing != null)
                         {
-                            var existing = finalResult.Find(x => x.ComponentId == newComponents.ComponentId);
-                            if (existing != null)
-                            {
-                                existing.ComponentFullName = newComponents.ComponentFullName;
-                                existing.AdHocId = newComponents.AdHocId;
-                                existing.AdminId = newComponents.AdminId;
-                                existing.ComponentId = newComponents.ComponentId;
-                                existing.ComponentDescription = newComponents.ComponentDescription;
-                                existing.CalculateInPercentage = newComponents.CalculateInPercentage;
-                                existing.TaxExempt = newComponents.TaxExempt;
-                                existing.ComponentTypeId = newComponents.ComponentTypeId;
-                                existing.ComponentCatagoryId = newComponents.ComponentCatagoryId;
-                                existing.PercentageValue = newComponents.PercentageValue;
-                                existing.MaxLimit = newComponents.MaxLimit;
-                                existing.DeclaredValue = newComponents.DeclaredValue;
-                                existing.Formula = newComponents.Formula;
-                                existing.EmployeeContribution = newComponents.EmployeeContribution;
-                                existing.EmployerContribution = newComponents.EmployerContribution;
-                                existing.IncludeInPayslip = newComponents.IncludeInPayslip;
-                                existing.IsAdHoc = newComponents.IsAdHoc;
-                                existing.Section = newComponents.Section;
-                                existing.SectionMaxLimit = newComponents.SectionMaxLimit;
-                                existing.IsAffectInGross = newComponents.IsAffectInGross;
-                                existing.RequireDocs = newComponents.RequireDocs;
-                                existing.IsOpted = newComponents.IsOpted;
-                                existing.IsActive = newComponents.IsActive;
-                            }
-                            else
-                                finalResult.Add(newComponents);
+                            existing.ComponentFullName = newComponents.ComponentFullName;
+                            existing.AdHocId = newComponents.AdHocId;
+                            existing.AdminId = newComponents.AdminId;
+                            existing.ComponentId = newComponents.ComponentId;
+                            existing.ComponentDescription = newComponents.ComponentDescription;
+                            existing.CalculateInPercentage = newComponents.CalculateInPercentage;
+                            existing.TaxExempt = newComponents.TaxExempt;
+                            existing.ComponentTypeId = newComponents.ComponentTypeId;
+                            existing.ComponentCatagoryId = newComponents.ComponentCatagoryId;
+                            existing.PercentageValue = newComponents.PercentageValue;
+                            existing.MaxLimit = newComponents.MaxLimit;
+                            existing.DeclaredValue = newComponents.DeclaredValue;
+                            existing.Formula = newComponents.Formula;
+                            existing.EmployeeContribution = newComponents.EmployeeContribution;
+                            existing.EmployerContribution = newComponents.EmployerContribution;
+                            existing.IncludeInPayslip = newComponents.IncludeInPayslip;
+                            existing.IsAdHoc = newComponents.IsAdHoc;
+                            existing.Section = newComponents.Section;
+                            existing.SectionMaxLimit = newComponents.SectionMaxLimit;
+                            existing.IsAffectInGross = newComponents.IsAffectInGross;
+                            existing.RequireDocs = newComponents.RequireDocs;
+                            existing.IsOpted = newComponents.IsOpted;
+                            existing.IsActive = newComponents.IsActive;
                         }
-                    }
-                    else
-                    {
-                        finalResult = salaryComponents;
+                        else
+                            finalResult.Add(newComponents);
                     }
                 }
                 else
                 {
-                    finalResult = result;
+                    finalResult = salaryComponentsData;
                 }
             }
+            else
+            {
+                finalResult = result;
+            }
 
-            return finalResult;
+            return await Task.FromResult(finalResult);
         }
 
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
@@ -403,34 +418,59 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(adhocComponent.ComponentName))
                 throw new HiringBellException("Invalid AdHoc component name.");
+
             if (adhocComponent.AdHocId <= 0)
                 throw new HiringBellException("Invalid AdHoc type component.");
+
             List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
             var value = adhocComp.Find(x => x.ComponentId == adhocComponent.ComponentName);
-            if (value == null)
-            {
-                value = new SalaryComponents();
-                value.ComponentId = adhocComponent.ComponentName;
-                value.ComponentFullName = adhocComponent.ComponentFullName;
-                value.ComponentDescription = adhocComponent.ComponentDescription;
-                value.MaxLimit = adhocComponent.MaxLimit;
-                value.DeclaredValue = adhocComponent.DeclaredValue;
-                value.AcceptedAmount = adhocComponent.AcceptedAmount;
-                value.RejectedAmount = adhocComponent.RejectedAmount;
-                value.UploadedFileIds = adhocComponent.UploadedFileIds;
-                value.TaxExempt = adhocComponent.TaxExempt;
-                value.Section = adhocComponent.Section;
-                value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
-                value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
-                value.IsAdHoc = adhocComponent.IsAdHoc;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
+            if (value != null)
                 throw new HiringBellException("Component already exist.");
 
-            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, value, true);
+            value = new SalaryComponents();
+            value.ComponentId = adhocComponent.ComponentName;
+            value.ComponentFullName = adhocComponent.ComponentFullName;
+            value.ComponentDescription = adhocComponent.ComponentDescription;
+            value.UploadedFileIds = "[]";
+            value.TaxExempt = adhocComponent.TaxExempt;
+            value.Section = adhocComponent.Section;
+            value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
+            value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
+            value.IsAdHoc = adhocComponent.IsAdHoc;
+            value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+
+            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, new
+            {
+                value.ComponentId,
+                value.ComponentFullName,
+                value.ComponentDescription,
+                value.CalculateInPercentage,
+                value.TaxExempt,
+                value.ComponentTypeId,
+                value.AcceptedAmount,
+                value.RejectedAmount,
+                value.UploadedFileIds,
+                value.ComponentCatagoryId,
+                value.PercentageValue,
+                value.MaxLimit,
+                value.DeclaredValue,
+                value.Formula,
+                value.EmployeeContribution,
+                value.EmployerContribution,
+                value.IncludeInPayslip,
+                value.IsAdHoc,
+                value.AdHocId,
+                value.Section,
+                value.SectionMaxLimit,
+                value.IsAffectInGross,
+                value.RequireDocs,
+                value.IsOpted,
+                value.IsActive,
+                value.AdminId,
+            }, true);
+
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
+                throw new HiringBellException("Fail to add adhoc component.");
 
             return this.GetSalaryComponentsDetailService();
         }
@@ -439,32 +479,59 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(deductionComponent.ComponentName))
                 throw new HiringBellException("Invalid AdHoc component name.");
+
             if (deductionComponent.AdHocId <= 0)
                 throw new HiringBellException("Invalid AdHoc type component.");
+
             List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
             var value = adhocComp.Find(x => x.ComponentId == deductionComponent.ComponentName);
-            if (value == null)
-            {
-                value = new SalaryComponents();
-                value.ComponentId = deductionComponent.ComponentName;
-                value.ComponentFullName = deductionComponent.ComponentFullName;
-                value.ComponentDescription = deductionComponent.ComponentDescription;
-                value.IsAffectInGross = deductionComponent.IsAffectInGross;
-                value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
-                value.MaxLimit = deductionComponent.MaxLimit;
-                value.DeclaredValue = deductionComponent.DeclaredValue;
-                value.AcceptedAmount = deductionComponent.AcceptedAmount;
-                value.RejectedAmount = deductionComponent.RejectedAmount;
-                value.UploadedFileIds = deductionComponent.UploadedFileIds;
-                value.IsAdHoc = deductionComponent.IsAdHoc;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
+            if (value != null)
                 throw new HiringBellException("Deduction Component already exist.");
 
-            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, value, true);
+            value = new SalaryComponents();
+            value.ComponentId = deductionComponent.ComponentName;
+            value.ComponentFullName = deductionComponent.ComponentFullName;
+            value.ComponentDescription = deductionComponent.ComponentDescription;
+            value.IsAffectInGross = deductionComponent.IsAffectInGross;
+            value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
+            value.DeclaredValue = deductionComponent.DeclaredValue;
+            value.UploadedFileIds = "[]";
+            value.IsAdHoc = true;
+            value.AdHocId = (int)AdhocType.Deduction;
+            value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+
+            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, new
+            {
+                value.ComponentId,
+                value.ComponentFullName,
+                value.ComponentDescription,
+                value.CalculateInPercentage,
+                value.TaxExempt,
+                value.ComponentTypeId,
+                value.AcceptedAmount,
+                value.RejectedAmount,
+                value.UploadedFileIds,
+                value.ComponentCatagoryId,
+                value.PercentageValue,
+                value.MaxLimit,
+                value.DeclaredValue,
+                value.Formula,
+                value.EmployeeContribution,
+                value.EmployerContribution,
+                value.IncludeInPayslip,
+                value.IsAdHoc,
+                value.AdHocId,
+                value.Section,
+                value.SectionMaxLimit,
+                value.IsAffectInGross,
+                value.RequireDocs,
+                value.IsOpted,
+                value.IsActive,
+                value.AdminId,
+            }, true);
+
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
+                throw new HiringBellException("Fail to add deduction component.");
 
             return this.GetSalaryComponentsDetailService();
         }
@@ -520,7 +587,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
+                throw new HiringBellException("Fail to add bonus component.");
 
             return this.GetSalaryComponentsDetailService();
         }

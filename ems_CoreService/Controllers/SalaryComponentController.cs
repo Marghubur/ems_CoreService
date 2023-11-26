@@ -6,7 +6,9 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -58,10 +60,18 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateSalaryComponentsByExcel")]
-        public async Task<ApiResponse> InsertUpdateSalaryComponentsByExcel(List<SalaryComponents> salaryComponents)
+        public async Task<ApiResponse> InsertUpdateSalaryComponentsByExcel()
         {
-            var result = await _salaryComponentService.InsertUpdateSalaryComponentsByExcelService(salaryComponents);
-            return BuildResponse(result);
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                var result = await _salaryComponentService.InsertUpdateSalaryComponentsByExcelService(file);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         [Authorize(Roles = Role.Admin)]

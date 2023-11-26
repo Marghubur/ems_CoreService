@@ -917,6 +917,9 @@ namespace ServiceLayer.Code
                     IsPending = false,
                     employee.NewSalaryDetail,
                     IsNewRegistration,
+                    employee.PFNumber,
+                    employee.PFJoinDate,
+                    employee.UniversalAccountNumber,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
@@ -1163,6 +1166,9 @@ namespace ServiceLayer.Code
                     employee.WorkShiftId,
                     IsPending = false,
                     employee.NewSalaryDetail,
+                     employee.PFNumber,
+                    employee.PFJoinDate,
+                    employee.UniversalAccountNumber,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
