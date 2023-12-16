@@ -637,7 +637,8 @@ namespace ServiceLayer.Code
                 Message = presentAttendance.UserComments,
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { employee.Email },
-                kafkaServiceName = KafkaServiceName.Attendance
+                kafkaServiceName = KafkaServiceName.Attendance,
+                LocalConnectionString = _currentSession.LocalConnectionString
             };
 
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
@@ -1201,7 +1202,8 @@ namespace ServiceLayer.Code
                 Message = presentAttendance.UserComments,
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { presentAttendance.Email },
-                kafkaServiceName = KafkaServiceName.Attendance
+                kafkaServiceName = KafkaServiceName.Attendance,
+                LocalConnectionString = _currentSession.LocalConnectionString
             };
 
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
