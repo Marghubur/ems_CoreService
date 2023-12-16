@@ -18,6 +18,7 @@ namespace ModalLayer.Modal
         public DateTime TimeZoneNow { set; get; }
         public string CompanyCode { set; get; }
         public Environments Environment { set; get; }
+        public string LocalConnectionString { set; get; }
     }
 
     public enum Environments

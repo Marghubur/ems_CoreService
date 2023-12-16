@@ -43,7 +43,6 @@ namespace ModalLayer.Modal
         public int SalaryGroupId { get; set; }
         public int NoticePeriodId { get; set; }
         public DateTime? NoticePeriodAppliedOn { get; set; }
-        public DateTime? UpdatedOn { get; set; }
         public string OldFileName { get; set; }
         public int AttendanceSubmissionLimit { get; set; }
         public int WorkShiftId { get; set; }

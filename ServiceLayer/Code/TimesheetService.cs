@@ -248,6 +248,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to insert/update record. Please contact to admin.");
 
             TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = await GetTemplate(timesheetDetail);
+            timesheetApprovalTemplateModel.LocalConnectionString = _currentSession.LocalConnectionString;
             await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
             //await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult(timesheetDetail);

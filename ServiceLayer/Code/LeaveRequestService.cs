@@ -118,6 +118,7 @@ namespace ServiceLayer.Code
             }
 
             int rejected = reporterDetails.Count(x => x.IsRequired == true && x.Status == (int)ItemStatus.Rejected);
+
             if (rejected > 0)
             {
                 leaveRequestDetail.RequestStatusId = (int)ItemStatus.Rejected;
@@ -147,6 +148,7 @@ namespace ServiceLayer.Code
                     }
                 }
             }
+
             string message = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Notification_And_Request_InsUpdate, new
             {
                 requestDetail.LeaveRequestNotificationId,

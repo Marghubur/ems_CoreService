@@ -20,7 +20,6 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly IConfiguration configuration;
         private readonly string TokenName = "Authorization";
         private readonly ITimezoneConverter _timezoneConverter;
-        private IDb _db;
 
         public RequestMiddleware(RequestDelegate next,
             IConfiguration configuration,
@@ -73,13 +72,13 @@ namespace SchoolInMindServer.MiddlewareServices
                         JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
                         ReadToken(securityToken, currentSession);
 
-                        var cs = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
-                        db.SetupConnectionString(cs);
+                        currentSession.LocalConnectionString = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
+                        db.SetupConnectionString(currentSession.LocalConnectionString);
                     }
                     else if (dbConfig != null)
                     {
-                        var cs = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
-                        db.SetupConnectionString(cs);
+                        currentSession.LocalConnectionString = @$"server={dbConfig.Server};port={dbConfig.Port};database={dbConfig.Database};User Id={dbConfig.UserId};password={dbConfig.Password};Connection Timeout={dbConfig.ConnectionTimeout};Connection Lifetime={dbConfig.ConnectionLifetime};Min Pool Size={dbConfig.MinPoolSize};Max Pool Size={dbConfig.MaxPoolSize};Pooling={dbConfig.Pooling};";
+                        db.SetupConnectionString(currentSession.LocalConnectionString);
                     }
                 }
 

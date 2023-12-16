@@ -178,7 +178,8 @@ namespace ServiceLayer.Code
                     Message = attendanceDetail.UserComments,
                     RequestType = attendanceDetail.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                     ToAddress = new List<string> { attendance.Email },
-                    kafkaServiceName = KafkaServiceName.Attendance
+                    kafkaServiceName = KafkaServiceName.Attendance,
+                    LocalConnectionString = _currentSession.LocalConnectionString
                 };
 
                 await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);

@@ -169,8 +169,7 @@ namespace OnlineDataBuilder
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
                     BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath),
-                    LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath),
-                    ConnectionString = Configuration.GetConnectionString("OnlinedatabuilderDb")
+                    LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath)
                 };
 
                 return locationDetail;
@@ -188,7 +187,8 @@ namespace OnlineDataBuilder
                     x.GetRequiredService<ILogger<KafkaNotificationService>>(),
                     Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
                                     ModalLayer.Modal.Environments.Development :
-                                    ModalLayer.Modal.Environments.Production
+                                    ModalLayer.Modal.Environments.Production,
+                    x.GetRequiredService<CurrentSession>()
                 );
             });
 

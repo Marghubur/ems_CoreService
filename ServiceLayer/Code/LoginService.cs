@@ -333,7 +333,8 @@ namespace ServiceLayer.Code
                     CompanyName = authUser.CompanyName,
                     NewPassword = password,
                     ToAddress = new List<string> { email },
-                    kafkaServiceName = KafkaServiceName.ForgotPassword
+                    kafkaServiceName = KafkaServiceName.ForgotPassword,
+                    LocalConnectionString = _currentSession.LocalConnectionString
                 };
                 await _kafkaNotificationService.SendEmailNotification(forgotPasswordTemplateModel);
                 Status = ApplicationConstants.Successfull;

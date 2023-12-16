@@ -10,12 +10,16 @@
 
   <ItemGroup>
     <Compile Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <Compile Remove="ExceptionFiles\**" />
     <Compile Remove="ServerLogs\**" />
     <Content Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <Content Remove="ExceptionFiles\**" />
     <Content Remove="ServerLogs\**" />
     <EmbeddedResource Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <EmbeddedResource Remove="ExceptionFiles\**" />
     <EmbeddedResource Remove="ServerLogs\**" />
     <None Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
+    <None Remove="ExceptionFiles\**" />
     <None Remove="ServerLogs\**" />
   </ItemGroup>
 
@@ -45,10 +49,6 @@
     <None Update="Documents\logos\stamp.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="ExceptionFiles\" />
   </ItemGroup>
 
   <ItemGroup>

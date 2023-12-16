@@ -814,6 +814,7 @@ namespace ServiceLayer.Code
 
             AttendanceRequestModal attendanceRequestModal = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
 
+            attendanceRequestModal.LocalConnectionString = _currentSession.LocalConnectionString;
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
             //await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
             return "Attendance raised successfully";
