@@ -1,8 +1,9 @@
-﻿using System;
+﻿using EMailService.Modal;
+using System;
 
 namespace ModalLayer.Modal.Accounts
 {
-    public class EmployeeSalaryDetail : ManagerDetail
+    public class EmployeeSalaryDetail : EmployeePFDetail
     {
         public long EmployeeId { set; get; }
         public decimal CTC { set; get; }

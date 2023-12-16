@@ -1,0 +1,54 @@
+[
+  {
+    "PlanName": "Foundation",
+    "Description": "Designed for businesses at the onset of their automation exploration.",
+    "Price": "6,999/month",
+    "EmployeeLimit": "upto 100 employees",
+    "AdditionalPriceDetail": "per additional employee",
+    "AdditionalPrice": "60/month",
+    "PlanSpecification": "Key automation capabilities necessary for optimized processes.",
+    "Features": [
+      {
+        "FeatureName": "Automation Capabilities",
+        "FeatureDetail": [
+          "CORE HR",
+          "Interactive Employee Profile",
+          "Advanced Role & Permission",
+          "Custom Notification",
+          "Asset Tracking",
+          "Document Storage"
+        ]
+      },
+      {
+        "FeatureName": "TIME TRACKING",
+        "FeatureDetail": [
+          "Advanced Leave Management",
+          "Advanced Attendance Management",
+          "Advanced Timesheet Management"
+        ]
+      },
+      {
+        "FeatureName": "PAYROLL",
+        "FeatureDetail": [
+          "Payroll Automation",
+          "Employee Tax Management"
+        ]
+      },
+      {
+        "FeatureName": "REMOTE EMPLOYEE ENGAGEMENT",
+        "FeatureDetail": [
+          "One-One Meeting",
+          "Continuous Feedback"
+        ]
+      },
+      {
+        "FeatureName": "PERFORMANCE",
+        "FeatureDetail": [
+          "360 Degree Performance",
+          "Performance Analytics",
+          "Goal Monitoring"
+        ]
+      }
+    ]
+  }
+]

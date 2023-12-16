@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -20,10 +21,10 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
 
-        public CompanyNotificationService(IDb db, 
-            CurrentSession currentSession, 
-            ICommonService commonService, 
-            FileLocationDetail fileLocationDetail, 
+        public CompanyNotificationService(IDb db,
+            CurrentSession currentSession,
+            ICommonService commonService,
+            FileLocationDetail fileLocationDetail,
             IFileService fileService)
         {
             _db = db;
@@ -35,13 +36,13 @@ namespace ServiceLayer.Code
 
         public DataSet GetDepartmentsAndRolesService()
         {
-            var result = _db.FetchDataSet("sp_department_and_roles_getall", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var result = _db.FetchDataSet(Procedures.Department_And_Roles_Getall, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             return result;
         }
 
         public List<CompanyNotification> GetNotificationRecordService(FilterModel filterModel)
         {
-            var result = _db.GetList<CompanyNotification>("SP_company_notification_getby_filter", new
+            var result = _db.GetList<CompanyNotification>(Procedures.Company_Notification_Getby_Filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -60,7 +61,7 @@ namespace ServiceLayer.Code
         public List<CompanyNotification> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
         {
             ValidateCompanyNotification(notification);
-            var oldNotification = _db.Get<CompanyNotification>("SP_company_notification_getby_id", new { NotificationId = notification.NotificationId });
+            var oldNotification = _db.Get<CompanyNotification>(Procedures.Company_Notification_Getby_Id, new { NotificationId = notification.NotificationId });
             if (oldNotification == null)
                 oldNotification = notification;
             else
@@ -101,7 +102,7 @@ namespace ServiceLayer.Code
 
                     foreach (var n in files)
                     {
-                        Result = _db.Execute<string>("sp_company_files_insupd", new
+                        Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
                         {
                             CompanyFileId = n.FileUid,
                             CompanyId = notification.CompanyId,
@@ -129,7 +130,7 @@ namespace ServiceLayer.Code
                     }
                 }
                 notification.FileIds = JsonConvert.SerializeObject(fileIds);
-                var result = _db.Execute<CompanyNotification>("sp_company_notification_insupd", notification, true);
+                var result = _db.Execute<CompanyNotification>(Procedures.Company_Notification_Insupd, notification, true);
                 if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update company notification");
             }

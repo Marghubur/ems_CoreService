@@ -236,6 +236,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IShiftService, ShiftService>();
             services.AddScoped<WorkFlowChain>();
             services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
+            services.AddScoped<IPriceService, PriceService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

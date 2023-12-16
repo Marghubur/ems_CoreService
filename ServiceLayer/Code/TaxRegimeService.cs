@@ -1,5 +1,6 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -27,7 +28,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Description is null or empty");
 
 
-            TaxRegimeDesc oldTaxRegimeDesc = _db.Get<TaxRegimeDesc>("sp_tax_regime_desc_getbyId", new { TaxRegimeDescId = taxRegimeDesc.TaxRegimeDescId });
+            TaxRegimeDesc oldTaxRegimeDesc = _db.Get<TaxRegimeDesc>(Procedures.Tax_Regime_Desc_GetbyId, new { TaxRegimeDescId = taxRegimeDesc.TaxRegimeDescId });
             if (oldTaxRegimeDesc != null)
             {
                 oldTaxRegimeDesc.Description = taxRegimeDesc.Description;
@@ -37,7 +38,7 @@ namespace ServiceLayer.Code
             {
                 oldTaxRegimeDesc = taxRegimeDesc;
             }
-            var result = _db.Execute<TaxRegimeDesc>("sp_tax_regime_desc_insupd", oldTaxRegimeDesc, true);
+            var result = _db.Execute<TaxRegimeDesc>(Procedures.Tax_Regime_Desc_Insupd, oldTaxRegimeDesc, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update tax regime description");
             taxRegimeDesc.TaxRegimeDescId = Convert.ToInt32(result);
@@ -45,7 +46,7 @@ namespace ServiceLayer.Code
         }
         public dynamic GetAllRegimeService()
         {
-            var resultSet = _db.FetchDataSet("sp_tax_regime_desc_getall");
+            var resultSet = _db.FetchDataSet(Procedures.Tax_Regime_Desc_Getall);
             if (resultSet != null && resultSet.Tables.Count > 3)
                 throw new HiringBellException("Fail to get tax regime");
 
@@ -76,7 +77,7 @@ namespace ServiceLayer.Code
             if (taxAgeGroup.StartAgeGroup >= taxAgeGroup.EndAgeGroup)
                 throw new HiringBellException("Please select a valid age group");
 
-            TaxAgeGroup oldAgeGroup = _db.Get<TaxAgeGroup>("sp_tax_age_group_getby_id", new { AgeGroupId = taxAgeGroup.AgeGroupId });
+            TaxAgeGroup oldAgeGroup = _db.Get<TaxAgeGroup>(Procedures.Tax_Age_Group_Getby_Id, new { AgeGroupId = taxAgeGroup.AgeGroupId });
             if (oldAgeGroup != null)
             {
                 oldAgeGroup.StartAgeGroup = taxAgeGroup.StartAgeGroup;
@@ -86,7 +87,7 @@ namespace ServiceLayer.Code
             {
                 oldAgeGroup = taxAgeGroup;
             }
-            var result = _db.Execute<TaxAgeGroup>("sp_tax_age_group_insupd", oldAgeGroup, true);
+            var result = _db.Execute<TaxAgeGroup>(Procedures.Tax_Age_Group_Insupd, oldAgeGroup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update tax age group");
             taxAgeGroup.AgeGroupId = Convert.ToInt32(result);
@@ -97,7 +98,7 @@ namespace ServiceLayer.Code
             try
             {
                 ValidateTaxRegime(taxRegimes);
-                List<TaxRegime> oldTaxRegimes = _db.GetList<TaxRegime>("sp_tax_regime_getall");
+                List<TaxRegime> oldTaxRegimes = _db.GetList<TaxRegime>(Procedures.Tax_Regime_Getall);
                 foreach (var taxRegime in taxRegimes)
                 {
                     if (taxRegime.TaxRegimeId > 0)
@@ -133,7 +134,7 @@ namespace ServiceLayer.Code
                                   n.TaxAmount
                               }).ToList();
 
-                var status = await _db.BulkExecuteAsync("sp_tax_regime_insupd", regime, true);
+                var status = await _db.BulkExecuteAsync(Procedures.Tax_Regime_Insupd, regime, true);
                 return this.GetAllRegimeService();
             }
             catch (Exception)
@@ -146,7 +147,7 @@ namespace ServiceLayer.Code
             if (TaxRegimeId <= 0)
                 throw new HiringBellException("Invalid tax regime selected");
 
-            var status = _db.Execute<long>("sp_tax_regime_delete_byid", new { TaxRegimeId }, true);
+            var status = _db.Execute<long>(Procedures.Tax_Regime_Delete_Byid, new { TaxRegimeId }, true);
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to delete tax regime");
 
@@ -173,8 +174,6 @@ namespace ServiceLayer.Code
                 {
                     if (taxRegimes[i].MinTaxSlab - taxRegimes[i - 1].MaxTaxSlab != 1)
                         throw new HiringBellException("Please enter a valid taxslab range");
-
-
                 }
                 if (taxRegimes[i].MinTaxSlab > 0)
                     minTaxSlab = taxRegimes[i].MinTaxSlab - 1;
@@ -195,7 +194,7 @@ namespace ServiceLayer.Code
                 ValidatePTaxSlab(pTaxSlabs);
                 int companyId = pTaxSlabs.FirstOrDefault().CompanyId;
 
-                List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new { CompanyId = companyId });
+                List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { CompanyId = companyId });
                 foreach (var slab in pTaxSlabs)
                 {
                     if (slab.PtaxSlabId > 0)
@@ -226,7 +225,7 @@ namespace ServiceLayer.Code
                                     n.Gender,
                                 }).ToList();
 
-                var status = await _db.BulkExecuteAsync("sp_ptax_slab_insupd", allSlabs, true);
+                var status = await _db.BulkExecuteAsync(Procedures.Ptax_Slab_Insupd, allSlabs, true);
                 return this.GetPTaxSlabByCompIdService(companyId);
             }
             catch (Exception)
@@ -239,7 +238,7 @@ namespace ServiceLayer.Code
             if (PtaxSlabId <= 0)
                 throw new HiringBellException("Invalid ptax slab selected");
 
-            var status = _db.Execute<long>("sp_ptax_slab_delete_byid", new { PtaxSlabId }, true);
+            var status = _db.Execute<long>(Procedures.Ptax_Slab_Delete_Byid, new { PtaxSlabId }, true);
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to delete ptax slab");
 
@@ -250,7 +249,7 @@ namespace ServiceLayer.Code
             if (CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please select a valid compny");
 
-            var result = _db.GetList<PTaxSlab>("sp_ptax_slab_getby_compId", new { CompanyId });
+            var result = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { CompanyId });
             return result;
         }
         private void ValidatePTaxSlab(List<PTaxSlab> pTaxSlabs)
@@ -279,7 +278,7 @@ namespace ServiceLayer.Code
             try
             {
                 ValidateSurchargeSlab(surChargeSlabs);
-                List<SurChargeSlab> oldsurcharge = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
+                List<SurChargeSlab> oldsurcharge = _db.GetList<SurChargeSlab>(Procedures.Surcharge_Slab_Getall);
                 foreach (var surchargeslab in surChargeSlabs)
                 {
                     if (surchargeslab.SurchargeSlabId > 0)
@@ -306,7 +305,7 @@ namespace ServiceLayer.Code
                                   n.SurchargeRatePercentage
                               }).ToList();
 
-                var status = await _db.BulkExecuteAsync("sp_surcharge_slab_insupd", slabs, true);
+                var status = await _db.BulkExecuteAsync(Procedures.Surcharge_Slab_Insupd, slabs, true);
                 return this.GetAllSurchargeService();
             }
             catch (Exception)
@@ -316,7 +315,7 @@ namespace ServiceLayer.Code
         } 
         public List<SurChargeSlab> GetAllSurchargeService()
         {
-            var result = _db.GetList<SurChargeSlab>("sp_surcharge_slab_getall");
+            var result = _db.GetList<SurChargeSlab>(Procedures.Surcharge_Slab_Getall);
             return result;
         }
 
@@ -325,7 +324,7 @@ namespace ServiceLayer.Code
             if (SurchargeSlabId <= 0)
                 throw new HiringBellException("Invalid surcharge slab selected");
 
-            var status = _db.Execute<long>("sp_surcharge_slab_delete_byid", new { SurchargeSlabId }, true);
+            var status = _db.Execute<long>(Procedures.Surcharge_Slab_Delete_Byid, new { SurchargeSlabId }, true);
             if (string.IsNullOrEmpty(status))
                 throw new HiringBellException("Fail to delete surcharge slab");
 

@@ -3,6 +3,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Asn1.Crmf;
@@ -299,7 +300,7 @@ namespace ServiceLayer.Code
             List<TimesheetDetail> timesheetDetail = new List<TimesheetDetail>();
             DateTime current = DateTime.UtcNow;
 
-            var currentTimesheetDetail = _db.Get<TimesheetDetail>("sp_employee_timesheet_get", new
+            var currentTimesheetDetail = _db.Get<TimesheetDetail>(Procedures.Employee_Timesheet_Get, new
             {
                 EmployeeId = employeeId,
                 ClientId = clientId,
@@ -318,7 +319,7 @@ namespace ServiceLayer.Code
             int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, timesheetDetail.ForMonth);
             var lastDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, daysInMonth);
             var firstDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, 1);
-            List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>("sp_employee_timesheet_getby_empid", new
+            List<TimesheetDetail> currentTimesheetDetail = _db.GetList<TimesheetDetail>(Procedures.Employee_Timesheet_Getby_Empid, new
             {
                 timesheetDetail.EmployeeId,
                 timesheetDetail.ForYear,
@@ -361,7 +362,7 @@ namespace ServiceLayer.Code
             var lastDate = new DateTime(fileDetail.ForYear, now.Month, daysInMonth);
             var firstDate = new DateTime(fileDetail.ForYear, now.Month, 1);
 
-            var Result = _db.FetchDataSet("sp_EmployeeBillDetail_ById", new
+            var Result = _db.FetchDataSet(Procedures.EmployeeBillDetail_ById, new
             {
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 EmployeeId = fileDetail.EmployeeId,
@@ -403,7 +404,7 @@ namespace ServiceLayer.Code
                 PageSize = 10
             };
 
-            var managerDetail = _db.Get<Employee>("SP_Employees_Get", filterModel);
+            var managerDetail = _db.Get<Employee>(Procedures.Employees_Get, filterModel);
             if (managerDetail == null)
                 throw new Exception("No manager record found. Please add manager first.");
 

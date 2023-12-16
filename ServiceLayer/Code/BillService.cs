@@ -7,6 +7,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -362,7 +363,7 @@ namespace ServiceLayer.Code
 
         private async Task<DataSet> PrepareRequestForBillGeneration(BillGenerationModal billGenerationModal)
         {
-            DataSet ds = this.db.FetchDataSet("sp_Billing_detail", new
+            DataSet ds = this.db.FetchDataSet(Procedures.Billing_Detail, new
             {
                 Sender = billGenerationModal.PdfModal.senderId,
                 Receiver = billGenerationModal.PdfModal.receiverCompanyId,
@@ -557,7 +558,7 @@ namespace ServiceLayer.Code
 
         private async Task SaveExecuteBill(BillGenerationModal billModal)
         {
-            var dbResult = await this.db.ExecuteAsync("sp_filedetail_insupd", new
+            var dbResult = await this.db.ExecuteAsync(Procedures.Filedetail_Insupd, new
             {
                 FileId = billModal.FileDetail.FileId,
                 ClientId = billModal.PdfModal.receiverCompanyId,
@@ -747,7 +748,7 @@ namespace ServiceLayer.Code
 
                 Organization sender = null;
                 Organization receiver = null;
-                DataSet ds = this.db.GetDataSet("sp_Billing_detail", new
+                DataSet ds = this.db.GetDataSet(Procedures.Billing_Detail, new
                 {
                     receiver = pdfModal.receiverCompanyId,
                     sender = pdfModal.senderId,
@@ -865,7 +866,7 @@ namespace ServiceLayer.Code
                         destinationFilePath = Path.Combine(fileDetail.DiskFilePath, fileDetail.FileName + $".{ApplicationConstants.Pdf}");
                         _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
-                        var dbResult = this.db.Execute("sp_filedetail_insupd", new
+                        var dbResult = this.db.Execute(Procedures.Filedetail_Insupd, new
                         {
                             FileId = fileDetail.FileId,
                             ClientId = pdfModal.receiverCompanyId,
@@ -1039,7 +1040,7 @@ namespace ServiceLayer.Code
                 }
             }
 
-            result = this.db.Execute<string>("sp_gstdetail_insupd", new
+            result = this.db.Execute<string>(Procedures.Gstdetail_Insupd, new
             {
                 gstId = createPageModel.GstId,
                 billno = createPageModel.Billno,
@@ -1267,8 +1268,8 @@ namespace ServiceLayer.Code
                 Replace("[[BankIFSC]]", payslipModal.Employee.IFSCCode).
                 Replace("[[Bank Account]]", payslipModal.Employee.AccountNumber).
                 Replace("[[PAN]]", payslipModal.Employee.PANNo).
-                Replace("[[UAN]]", payslipModal.Employee.AadharNo).
-                Replace("[[PFNumber]]", payslipModal.Employee.EmployeeUid.ToString()).
+                Replace("[[UAN]]", payslipModal.Employee.UniversalAccountNumber).
+                Replace("[[PFNumber]]", payslipModal.Employee.PFNumber.ToString()).
                 Replace("[[ActualPayableDays]]", ActualPayableDays.ToString()).
                 Replace("[[TotalWorkingDays]]", TotalWorkingDays.ToString()).
                 Replace("[[LossOfPayDays]]", LossOfPayDays.ToString()).
@@ -1338,7 +1339,7 @@ namespace ServiceLayer.Code
 
         private async Task PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
         {
-            DataSet ds = this.db.FetchDataSet("sp_payslip_detail", new
+            DataSet ds = this.db.FetchDataSet(Procedures.Payslip_Detail, new
             {
                 EmployeeId = payslipGenerationModal.EmployeeId,
                 ForMonth = payslipGenerationModal.Month,

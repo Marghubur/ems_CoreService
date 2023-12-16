@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
 
             if (leavePlan.LeavePlanId > 0)
             {
-                leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+                leavePlans = _db.GetList<LeavePlan>(Procedures.Leave_Plans_Get);
                 if (leavePlans.Count <= 0)
                     throw new HiringBellException("Invalid leave plan.");
 
@@ -80,11 +80,11 @@ namespace ServiceLayer.Code
                 leavePlan.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
                 leavePlan.AssociatedPlanTypes = "[]";
             }
-            var value = _db.Execute<LeavePlan>("sp_leave_plan_insupd", leavePlan, true);
+            var value = _db.Execute<LeavePlan>(Procedures.Leave_Plan_Insupd, leavePlan, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to add or update leave plan");
 
-            leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            leavePlans = _db.GetList<LeavePlan>(Procedures.Leave_Plans_Get);
             return leavePlans;
         }
 
@@ -94,7 +94,7 @@ namespace ServiceLayer.Code
             BuildConfigurationDetailObject(leavePlanType);
             LeavePlanTypeValidation(leavePlanType);
 
-            string result = _db.Execute<LeavePlanType>("sp_leave_plans_type_insupd", new
+            string result = _db.Execute<LeavePlanType>(Procedures.Leave_Plans_Type_Insupd, new
             {
                 leavePlanType.IsPaidLeave,
                 leavePlanType.MaxLeaveLimit,
@@ -115,14 +115,14 @@ namespace ServiceLayer.Code
             }, true);
 
             if (ApplicationConstants.IsExecuted(result))
-                leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get");
+                leavePlanTypes = _db.GetList<LeavePlanType>(Procedures.Leave_Plans_Type_Get);
 
             return leavePlanTypes;
         }
 
         public List<LeavePlan> GetLeavePlansService(FilterModel filterModel)
         {
-            List<LeavePlan> leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            List<LeavePlan> leavePlans = _db.GetList<LeavePlan>(Procedures.Leave_Plans_Get);
             if (leavePlans == null)
                 throw new HiringBellException("Leave plans not found.");
 
@@ -182,7 +182,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Leave plan type id not found. Please add one plan first.");
 
             LeavePlanTypeValidation(leavePlanType);
-            LeavePlanType record = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            LeavePlanType record = _db.Get<LeavePlanType>(Procedures.Leave_Plans_Type_GetbyId, new { LeavePlanTypeId = leavePlanTypeId });
 
             if (record == null || record.LeavePlanTypeId != leavePlanTypeId)
                 throw new HiringBellException("Trying to udpate invalid leave plan type");
@@ -238,13 +238,13 @@ namespace ServiceLayer.Code
 
         public string AddUpdateLeaveQuotaService(LeaveDetail leaveDetail)
         {
-            string result = _db.Execute<LeaveDetail>("sp_leave_detail_InsUpdate", leaveDetail, true);
+            string result = _db.Execute<LeaveDetail>(Procedures.Leave_Detail_InsUpdate, leaveDetail, true);
             return result;
         }
 
         public LeavePlanConfiguration GetLeaveTypeDetailByIdService(int leavePlanTypeId)
         {
-            LeavePlanType leavePlanType = _db.Get<LeavePlanType>("sp_leave_plans_type_getbyId", new { LeavePlanTypeId = leavePlanTypeId });
+            LeavePlanType leavePlanType = _db.Get<LeavePlanType>(Procedures.Leave_Plans_Type_GetbyId, new { LeavePlanTypeId = leavePlanTypeId });
             if (leavePlanType == null)
                 throw new HiringBellException("Invalid plan id supplied");
 
@@ -257,7 +257,7 @@ namespace ServiceLayer.Code
 
         public List<LeavePlanType> GetLeaveTypeFilterService()
         {
-            List<LeavePlanType> leavePlanTypes = _db.GetList<LeavePlanType>("sp_leave_plans_type_get");
+            List<LeavePlanType> leavePlanTypes = _db.GetList<LeavePlanType>(Procedures.Leave_Plans_Type_Get);
             return leavePlanTypes;
         }
 
@@ -275,7 +275,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Invalid leave plan type selected");
             });
 
-            (List<LeavePlanTypeBrief> leavePlanTypes, List<LeavePlan> leavePlans) = _db.GetList<LeavePlanTypeBrief, LeavePlan>("sp_leave_plan_andtype_get_by_ids_json", new
+            (List<LeavePlanTypeBrief> leavePlanTypes, List<LeavePlan> leavePlans) = _db.GetList<LeavePlanTypeBrief, LeavePlan>(Procedures.Leave_Plan_And_Type_Get_By_Ids_Json, new
             {
                 LeavePlanId = leavePlanId,
                 LeavePlanTypeId = JsonConvert.SerializeObject(LeavePlanTypeId)
@@ -292,7 +292,7 @@ namespace ServiceLayer.Code
 
             leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
 
-            var result = await _db.ExecuteAsync("sp_leave_plan_insupd", leavePlan, true);
+            var result = await _db.ExecuteAsync(Procedures.Leave_Plan_Insupd, leavePlan, true);
             if (result.rowsEffected != 1 || string.IsNullOrEmpty(result.statusMessage))
                 throw new HiringBellException("Unable to add leave type. Please contact to admin.");
             return leavePlan;
@@ -304,7 +304,7 @@ namespace ServiceLayer.Code
             if (leavePlan.LeavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan selected.");
 
-            var value = _db.Execute<LeavePlan>("sp_leave_plan_set_default", new
+            var value = _db.Execute<LeavePlan>(Procedures.Leave_Plan_Insupd, new
             {
                 leavePlan.LeavePlanId,
                 leavePlan.IsDefaultPlan
@@ -312,14 +312,14 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to add or update leave plan");
 
-            leavePlans = _db.GetList<LeavePlan>("sp_leave_plans_get");
+            leavePlans = _db.GetList<LeavePlan>(Procedures.Leave_Plans_Get);
             return leavePlans;
         }
 
         public string LeaveRquestManagerActionService(LeaveRequestNotification notification, ItemStatus status)
         {
             string message = string.Empty;
-            var requestNotification = _db.Get<LeaveRequestNotification>("sp_leave_request_notification_get_byId", new
+            var requestNotification = _db.Get<LeaveRequestNotification>(Procedures.Leave_Request_Notification_Get_ById, new
             {
                 notification.LeaveRequestNotificationId
             });
@@ -375,7 +375,7 @@ namespace ServiceLayer.Code
                 {
                     requestNotification.LastReactedOn = DateTime.UtcNow;
                     requestNotification.RequestStatusId = notification.RequestStatusId;
-                    message = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
+                    message = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Request_Notification_InsUpdate, new
                     {
                         requestNotification.LeaveRequestNotificationId,
                         requestNotification.LeaveRequestId,
@@ -409,6 +409,8 @@ namespace ServiceLayer.Code
             if (leaveRequestModal.LeaveFromDay == null || leaveRequestModal.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
+            if (DateTime.UtcNow.Subtract(leaveRequestModal.LeaveFromDay).TotalDays > 0)
+                throw new HiringBellException("You don't take any action on past date leave");
         }
 
         public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
@@ -457,12 +459,39 @@ namespace ServiceLayer.Code
 
             _logger.LogInformation($"Call to kafka: {leaveCalculationModal.ReporterEmail.ToString()}");
             await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var monthlyLeaveData = new Dictionary<string, decimal>();
+            for (int i = 1; i <= 12; i++)
+            {
+                var leaveCurrentMonth = leaveCalculationModal.lastAppliedLeave.FindAll(x => x.FromDate.Month == i && x.ToDate.Month == i);
+                var leaveCurrentAndNextMonth = leaveCalculationModal.lastAppliedLeave.Find(x => x.FromDate.Month == i && x.ToDate.Month == i + 1);
+                var leavePrevAndCurrentMonth = leaveCalculationModal.lastAppliedLeave.Find(x => x.FromDate.Month == i - 1 && x.ToDate.Month == i);
+
+                string monthName = new DateTime(2023, i, 1).ToString("MMM");
+                decimal totalDays = 0M;
+                if (leaveCurrentMonth != null && leaveCurrentMonth.Count > 0)
+                    totalDays += leaveCurrentMonth.Sum(x => x.NumOfDays);
+
+                if (leaveCurrentAndNextMonth != null)
+                {
+                    var lastDateOfMonth = new DateTime(2023, i, 1).AddMonths(1).AddDays(-1);
+                    totalDays += (decimal)lastDateOfMonth.Subtract(leaveCurrentAndNextMonth.FromDate).TotalDays + 1;
+                }
+
+                if (leavePrevAndCurrentMonth != null)
+                    totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
+
+                monthlyLeaveData.Add(monthName, totalDays);
+
+            }
+
             return new
             {
                 LeaveTypeBriefs = leaveCalculationModal.leaveTypeBriefs,
                 EmployeeLeaveDetail = leaveCalculationModal.leaveRequestDetail,
                 Employee = leaveCalculationModal.employee,
-                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave
+                LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave,
+                MonthlyLeaveData = monthlyLeaveData
             };
         }
 
@@ -485,12 +514,14 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> GetEmployeeLeaveDetail(LeaveRequestModal leaveRequestModal)
         {
-            this.ValidateRequestModal(leaveRequestModal);
+            if (leaveRequestModal.EmployeeId <= 0)
+                throw new HiringBellException("Invalid Employee Id submitted.");
+
             var leaveCalculationModal = await GetLatestLeaveDetail(leaveRequestModal.EmployeeId);
 
             //if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             //    this.UpdateLeavePlanDetail(leaveCalculationModal);
-            var companyHoliday = _db.GetList<Calendar>("sp_company_calendar_get_by_company", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             var monthlyLeaveData = new Dictionary<string, decimal>();
             for (int i = 1; i <= 12; i++)
             {
@@ -532,7 +563,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(FileIds) || FileIds == "[]")
                 throw HiringBellException.ThrowBadRequest("File ids are null or empty");
 
-            var result = _db.FetchDataSet("sp_user_files_get_byids_json", new { UserFileId = FileIds });
+            var result = _db.FetchDataSet(Procedures.User_Files_Get_Byids_Json, new { UserFileId = FileIds });
             return result;
         }
 
@@ -541,7 +572,7 @@ namespace ServiceLayer.Code
             if (leaveRequestNotification.LeaveRequestNotificationId < 0)
                 throw HiringBellException.ThrowBadRequest("Invalid leave request selected");
 
-            (LeaveRequestDetail leaveRequestDetail, LeavePlanType leavePlanType) = _db.GetMulti<LeaveRequestDetail, LeavePlanType>("sp_employee_leave_request_GetById", new { LeaveRequestNotificationId = leaveRequestNotification.LeaveRequestNotificationId });
+            (LeaveRequestDetail leaveRequestDetail, LeavePlanType leavePlanType) = _db.GetMulti<LeaveRequestDetail, LeavePlanType>(Procedures.Employee_Leave_Request_GetById, new { LeaveRequestNotificationId = leaveRequestNotification.LeaveRequestNotificationId });
             var completeLeave = JsonConvert.DeserializeObject<List<CompleteLeaveDetail>>(leaveRequestDetail.LeaveDetail);
             var slectedleave = completeLeave.Find(x => x.RecordId == leaveRequestNotification.RecordId);
             if (slectedleave != null && !string.IsNullOrEmpty(slectedleave.FileIds) && slectedleave.FileIds != "[]")
@@ -557,7 +588,7 @@ namespace ServiceLayer.Code
             if (employeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected");
 
-            var result = _db.Get<Leave>("sp_employee_leave_request_by_empid", new { EmployeeId = employeeId });
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new { EmployeeId = employeeId });
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
 
@@ -585,7 +616,7 @@ namespace ServiceLayer.Code
 
             lOPAdjustmentDetail.BlockedDates.ForEach(x =>
             {
-                result = _db.Execute<LeaveRequestNotification>("sp_leave_request_notification_InsUpdate", new
+                result = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Request_Notification_InsUpdate, new
                 {
                     LeaveRequestNotificationId = 0,
                     LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
@@ -634,7 +665,7 @@ namespace ServiceLayer.Code
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - lOPAdjustmentDetail.BlockedDates.Count;
             leaveCalculationModal.leaveTypeBriefs = leaveTypeBriefs;
 
-            result = _db.Execute<LeaveRequestDetail>("sp_employee_leave_request_InsUpdate", new
+            result = _db.Execute<LeaveRequestDetail>(Procedures.Employee_Leave_Request_InsUpdate, new
             {
                 leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
                 lOPAdjustmentDetail.EmployeeId,
@@ -678,7 +709,7 @@ namespace ServiceLayer.Code
         private LeaveCalculationModal LoadCalculationData(long EmployeeId)
         {
             LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal();
-            var ds = _db.FetchDataSet("sp_leave_plan_calculation_get", new
+            var ds = _db.FetchDataSet(Procedures.Leave_Plan_Calculation_Get, new
             {
                 EmployeeId,
                 _currentSession.CurrentUserDetail.ReportingManagerId,

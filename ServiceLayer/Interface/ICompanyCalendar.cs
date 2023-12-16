@@ -1,4 +1,5 @@
-﻿using ModalLayer;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer;
 using ModalLayer.Modal;
 using System;
 using System.Collections.Generic;
@@ -21,5 +22,6 @@ namespace ServiceLayer.Interface
         List<Calendar> DeleteHolidayService(long CompanyCalendarId);
         Task<int> CountWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate, ShiftDetail shiftDetail);
         Task<decimal> GetHolidayCountInMonth(int month, int year);
+        Task<List<Calendar>> ReadHolidayDataService(IFormFileCollection files);
     }
 }

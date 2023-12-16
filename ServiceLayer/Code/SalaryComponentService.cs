@@ -1,15 +1,21 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using EMailService.Modal;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -46,13 +52,13 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryComponentsDetailService()
         {
-            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
+            List<SalaryComponents> salaryComponents = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get, false);
             return salaryComponents;
         }
 
         public List<SalaryGroup> GetSalaryGroupService(int CompanyId)
         {
-            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>("sp_salary_group_getbyCompanyId", new { CompanyId }, false);
+            List<SalaryGroup> salaryComponents = _db.GetList<SalaryGroup>(Procedures.Salary_Group_GetbyCompanyId, new { CompanyId }, false);
             return salaryComponents;
         }
 
@@ -67,7 +73,7 @@ namespace ServiceLayer.Code
         {
             if (SalaryGroupId <= 0)
                 throw new HiringBellException("Invalid SalaryGroupId");
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { SalaryGroupId });
             return salaryGroup;
         }
 
@@ -75,7 +81,7 @@ namespace ServiceLayer.Code
         {
             if (salaryComponents.Count > 0)
             {
-                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
+                List<SalaryComponents> result = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get, false);
                 Parallel.ForEach(result, x =>
                 {
                     var item = salaryComponents.Find(i => i.ComponentId == x.ComponentId);
@@ -113,114 +119,124 @@ namespace ServiceLayer.Code
                                       Admin = n.CreatedBy,
                                   }).ToList();
 
-                await _db.BulkExecuteAsync("sp_salary_components_insupd", itemOfRows, true);
+                await _db.BulkExecuteAsync(Procedures.Salary_Components_Insupd, itemOfRows, true);
             }
 
             return salaryComponents;
         }
 
-        public async Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(List<SalaryComponents> salaryComponents)
+        public async Task<List<SalaryComponents>> InsertUpdateSalaryComponentsByExcelService(IFormFileCollection files)
         {
-            List<SalaryComponents> finalResult = new List<SalaryComponents>();
-            if (salaryComponents.Count > 0)
+            try
             {
-                List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get", false);
+                var uploadedHolidayData = await _utilityService.ReadExcelData<SalaryComponents>(files);
+                var result = await UpdateHolidayData(uploadedHolidayData);
+                return result;
+            }
+            catch
+            {
+                throw;
+            }
+        }
 
-                foreach (SalaryComponents item in salaryComponents)
+        private async Task<List<SalaryComponents>> UpdateHolidayData(List<SalaryComponents> salaryComponentsData)
+        {
+            List<SalaryComponents> result = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get, false);
+            List<SalaryComponents> finalResult = new List<SalaryComponents>();
+            foreach (SalaryComponents item in salaryComponentsData)
+            {
+                if (string.IsNullOrEmpty(item.ComponentId) || string.IsNullOrEmpty(item.ComponentFullName))
+                    throw new HiringBellException("ComponentId or ComponentFullName is empty.");
+            }
+
+            var itemOfRows = (from n in salaryComponentsData
+                              select new
+                              {
+                                  n.ComponentId,
+                                  n.ComponentFullName,
+                                  n.ComponentDescription,
+                                  n.CalculateInPercentage,
+                                  n.TaxExempt,
+                                  n.ComponentTypeId,
+                                  n.ComponentCatagoryId,
+                                  n.PercentageValue,
+                                  n.MaxLimit,
+                                  n.DeclaredValue,
+                                  n.AcceptedAmount,
+                                  n.RejectedAmount,
+                                  n.UploadedFileIds,
+                                  n.Formula,
+                                  n.EmployeeContribution,
+                                  n.EmployerContribution,
+                                  n.IncludeInPayslip,
+                                  n.IsAdHoc,
+                                  n.AdHocId,
+                                  n.Section,
+                                  n.SectionMaxLimit,
+                                  n.IsAffectInGross,
+                                  n.RequireDocs,
+                                  n.IsOpted,
+                                  n.IsActive,
+                                  AdminId = _currentSession.CurrentUserDetail.UserId,
+                              }).ToList();
+
+            int count = await _db.BulkExecuteAsync(Procedures.Salary_Components_Insupd, itemOfRows, true);
+            if (count > 0)
+            {
+                if (result.Count > 0)
                 {
-                    if (string.IsNullOrEmpty(item.ComponentId) || string.IsNullOrEmpty(item.ComponentFullName))
-                        throw new HiringBellException("ComponentId or ComponentFullName is empty.");
-                }
-
-                var itemOfRows = (from n in salaryComponents
-                                  select new
-                                  {
-                                      n.ComponentId,
-                                      n.ComponentFullName,
-                                      n.ComponentDescription,
-                                      n.CalculateInPercentage,
-                                      n.TaxExempt,
-                                      n.ComponentTypeId,
-                                      n.ComponentCatagoryId,
-                                      n.PercentageValue,
-                                      n.MaxLimit,
-                                      n.DeclaredValue,
-                                      n.AcceptedAmount,
-                                      n.RejectedAmount,
-                                      n.UploadedFileIds,
-                                      n.Formula,
-                                      n.EmployeeContribution,
-                                      n.EmployerContribution,
-                                      n.IncludeInPayslip,
-                                      n.IsAdHoc,
-                                      n.AdHocId,
-                                      n.Section,
-                                      n.SectionMaxLimit,
-                                      n.IsAffectInGross,
-                                      n.RequireDocs,
-                                      n.IsOpted,
-                                      n.IsActive,
-                                      AdminId = _currentSession.CurrentUserDetail.UserId,
-                                  }).ToList();
-
-                int count = await _db.BulkExecuteAsync("sp_salary_components_insupd", itemOfRows, true);
-                if (count > 0)
-                {
-                    if (result.Count > 0)
+                    finalResult = result;
+                    foreach (var newComponents in salaryComponentsData)
                     {
-                        finalResult = result;
-                        foreach (var newComponents in salaryComponents)
+                        var existing = finalResult.Find(x => x.ComponentId == newComponents.ComponentId);
+                        if (existing != null)
                         {
-                            var existing = finalResult.Find(x => x.ComponentId == newComponents.ComponentId);
-                            if (existing != null)
-                            {
-                                existing.ComponentFullName = newComponents.ComponentFullName;
-                                existing.AdHocId = newComponents.AdHocId;
-                                existing.AdminId = newComponents.AdminId;
-                                existing.ComponentId = newComponents.ComponentId;
-                                existing.ComponentDescription = newComponents.ComponentDescription;
-                                existing.CalculateInPercentage = newComponents.CalculateInPercentage;
-                                existing.TaxExempt = newComponents.TaxExempt;
-                                existing.ComponentTypeId = newComponents.ComponentTypeId;
-                                existing.ComponentCatagoryId = newComponents.ComponentCatagoryId;
-                                existing.PercentageValue = newComponents.PercentageValue;
-                                existing.MaxLimit = newComponents.MaxLimit;
-                                existing.DeclaredValue = newComponents.DeclaredValue;
-                                existing.Formula = newComponents.Formula;
-                                existing.EmployeeContribution = newComponents.EmployeeContribution;
-                                existing.EmployerContribution = newComponents.EmployerContribution;
-                                existing.IncludeInPayslip = newComponents.IncludeInPayslip;
-                                existing.IsAdHoc = newComponents.IsAdHoc;
-                                existing.Section = newComponents.Section;
-                                existing.SectionMaxLimit = newComponents.SectionMaxLimit;
-                                existing.IsAffectInGross = newComponents.IsAffectInGross;
-                                existing.RequireDocs = newComponents.RequireDocs;
-                                existing.IsOpted = newComponents.IsOpted;
-                                existing.IsActive = newComponents.IsActive;
-                            }
-                            else
-                                finalResult.Add(newComponents);
+                            existing.ComponentFullName = newComponents.ComponentFullName;
+                            existing.AdHocId = newComponents.AdHocId;
+                            existing.AdminId = newComponents.AdminId;
+                            existing.ComponentId = newComponents.ComponentId;
+                            existing.ComponentDescription = newComponents.ComponentDescription;
+                            existing.CalculateInPercentage = newComponents.CalculateInPercentage;
+                            existing.TaxExempt = newComponents.TaxExempt;
+                            existing.ComponentTypeId = newComponents.ComponentTypeId;
+                            existing.ComponentCatagoryId = newComponents.ComponentCatagoryId;
+                            existing.PercentageValue = newComponents.PercentageValue;
+                            existing.MaxLimit = newComponents.MaxLimit;
+                            existing.DeclaredValue = newComponents.DeclaredValue;
+                            existing.Formula = newComponents.Formula;
+                            existing.EmployeeContribution = newComponents.EmployeeContribution;
+                            existing.EmployerContribution = newComponents.EmployerContribution;
+                            existing.IncludeInPayslip = newComponents.IncludeInPayslip;
+                            existing.IsAdHoc = newComponents.IsAdHoc;
+                            existing.Section = newComponents.Section;
+                            existing.SectionMaxLimit = newComponents.SectionMaxLimit;
+                            existing.IsAffectInGross = newComponents.IsAffectInGross;
+                            existing.RequireDocs = newComponents.RequireDocs;
+                            existing.IsOpted = newComponents.IsOpted;
+                            existing.IsActive = newComponents.IsActive;
                         }
-                    }
-                    else
-                    {
-                        finalResult = salaryComponents;
+                        else
+                            finalResult.Add(newComponents);
                     }
                 }
                 else
                 {
-                    finalResult = result;
+                    finalResult = salaryComponentsData;
                 }
             }
+            else
+            {
+                finalResult = result;
+            }
 
-            return finalResult;
+            return await Task.FromResult(finalResult);
         }
 
         public List<SalaryGroup> AddSalaryGroup(SalaryGroup salaryGroup)
         {
             ValidateSalaryGroup(salaryGroup);
 
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_get_if_exists", new
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_If_Exists, new
             {
                 salaryGroup.CompanyId,
                 salaryGroup.MinAmount,
@@ -230,7 +246,7 @@ namespace ServiceLayer.Code
             if (salaryGrp != null)
                 throw new HiringBellException("Salary group limit already exist");
 
-            List<SalaryComponents> initialSalaryComponents = _db.GetList<SalaryComponents>("sp_salary_group_get_initial_components");
+            List<SalaryComponents> initialSalaryComponents = _db.GetList<SalaryComponents>(Procedures.Salary_Group_Get_Initial_Components);
 
             if (salaryGrp == null)
             {
@@ -242,7 +258,7 @@ namespace ServiceLayer.Code
             else
                 throw new HiringBellException("Salary Group already exist.");
 
-            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", new
+            var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, new
             {
                 salaryGrp.SalaryGroupId,
                 salaryGrp.CompanyId,
@@ -289,7 +305,7 @@ namespace ServiceLayer.Code
             if (recurringComponent.ComponentCatagoryId <= 0)
                 throw new HiringBellException("Invalid component type.");
 
-            List<SalaryComponents> components = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> components = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
             var value = components.Find(x => x.ComponentId == recurringComponent.ComponentName);
             if (value == null)
                 value = new SalaryComponents();
@@ -312,7 +328,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value.UploadedFileIds))
                 value.UploadedFileIds = "[]";
 
-            var result = await _db.ExecuteAsync("sp_salary_components_insupd", new
+            var result = await _db.ExecuteAsync(Procedures.Salary_Components_Insupd, new
             {
                 value.ComponentId,
                 value.ComponentFullName,
@@ -353,7 +369,7 @@ namespace ServiceLayer.Code
 
         private async Task updateSalaryGroupByUdatingComponent(SalaryComponents recurringComponent)
         {
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>(Procedures.Salary_Group_GetAll, false);
             if (salaryGroups.Count > 0)
             {
                 foreach (var item in salaryGroups)
@@ -377,7 +393,7 @@ namespace ServiceLayer.Code
                     }
 
                     item.SalaryComponents = JsonConvert.SerializeObject(salaryComponents);
-                    var result = await _db.ExecuteAsync("sp_salary_group_insupd", new
+                    var result = await _db.ExecuteAsync(Procedures.Salary_Group_Insupd, new
                     {
                         item.SalaryGroupId,
                         item.CompanyId,
@@ -402,93 +418,28 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(adhocComponent.ComponentName))
                 throw new HiringBellException("Invalid AdHoc component name.");
+
             if (adhocComponent.AdHocId <= 0)
                 throw new HiringBellException("Invalid AdHoc type component.");
-            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>("sp_salary_components_get");
+
+            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
             var value = adhocComp.Find(x => x.ComponentId == adhocComponent.ComponentName);
-            if (value == null)
-            {
-                value = new SalaryComponents();
-                value.ComponentId = adhocComponent.ComponentName;
-                value.ComponentFullName = adhocComponent.ComponentFullName;
-                value.ComponentDescription = adhocComponent.ComponentDescription;
-                value.MaxLimit = adhocComponent.MaxLimit;
-                value.DeclaredValue = adhocComponent.DeclaredValue;
-                value.AcceptedAmount = adhocComponent.AcceptedAmount;
-                value.RejectedAmount = adhocComponent.RejectedAmount;
-                value.UploadedFileIds = adhocComponent.UploadedFileIds;
-                value.TaxExempt = adhocComponent.TaxExempt;
-                value.Section = adhocComponent.Section;
-                value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
-                value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
-                value.IsAdHoc = adhocComponent.IsAdHoc;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
+            if (value != null)
                 throw new HiringBellException("Component already exist.");
 
-            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
-
-            return this.GetSalaryComponentsDetailService();
-        }
-
-        public List<SalaryComponents> AddDeductionComponents(SalaryStructure deductionComponent)
-        {
-            if (string.IsNullOrEmpty(deductionComponent.ComponentName))
-                throw new HiringBellException("Invalid AdHoc component name.");
-            if (deductionComponent.AdHocId <= 0)
-                throw new HiringBellException("Invalid AdHoc type component.");
-            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>("sp_salary_components_get");
-            var value = adhocComp.Find(x => x.ComponentId == deductionComponent.ComponentName);
-            if (value == null)
-            {
-                value = new SalaryComponents();
-                value.ComponentId = deductionComponent.ComponentName;
-                value.ComponentFullName = deductionComponent.ComponentFullName;
-                value.ComponentDescription = deductionComponent.ComponentDescription;
-                value.IsAffectInGross = deductionComponent.IsAffectInGross;
-                value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
-                value.MaxLimit = deductionComponent.MaxLimit;
-                value.DeclaredValue = deductionComponent.DeclaredValue;
-                value.AcceptedAmount = deductionComponent.AcceptedAmount;
-                value.RejectedAmount = deductionComponent.RejectedAmount;
-                value.UploadedFileIds = deductionComponent.UploadedFileIds;
-                value.IsAdHoc = deductionComponent.IsAdHoc;
-                value.AdminId = _currentSession.CurrentUserDetail.AdminId;
-            }
-            else
-                throw new HiringBellException("Deduction Component already exist.");
-
-            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", value, true);
-            if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
-
-            return this.GetSalaryComponentsDetailService();
-        }
-
-        public List<SalaryComponents> AddBonusComponents(SalaryComponents bonusComponent)
-        {
-            if (string.IsNullOrEmpty(bonusComponent.ComponentId))
-                throw new HiringBellException("Invalid component name.");
-
-            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>("sp_adhoc_detail_get");
-            var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentId);
-            if (value != null)
-                throw new HiringBellException("Bonus Component already exist.");
-
             value = new SalaryComponents();
-            value.ComponentId = bonusComponent.ComponentId;
-            value.ComponentFullName = bonusComponent.ComponentFullName;
-            value.ComponentDescription = bonusComponent.ComponentDescription;
-            value.DeclaredValue = bonusComponent.DeclaredValue;
+            value.ComponentId = adhocComponent.ComponentName;
+            value.ComponentFullName = adhocComponent.ComponentFullName;
+            value.ComponentDescription = adhocComponent.ComponentDescription;
             value.UploadedFileIds = "[]";
-            value.IsAdHoc = true;
-            value.AdHocId = (int)AdhocType.Bonus;
+            value.TaxExempt = adhocComponent.TaxExempt;
+            value.Section = adhocComponent.Section;
+            value.AdHocId = Convert.ToInt32(adhocComponent.AdHocId);
+            value.SectionMaxLimit = adhocComponent.SectionMaxLimit;
+            value.IsAdHoc = adhocComponent.IsAdHoc;
             value.AdminId = _currentSession.CurrentUserDetail.AdminId;
 
-            var result = _db.Execute<SalaryComponents>("sp_salary_components_insupd", new
+            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, new
             {
                 value.ComponentId,
                 value.ComponentFullName,
@@ -519,21 +470,138 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result))
-                throw new HiringBellException("Fail insert salary component.");
+                throw new HiringBellException("Fail to add adhoc component.");
+
+            return this.GetSalaryComponentsDetailService();
+        }
+
+        public List<SalaryComponents> AddDeductionComponents(SalaryStructure deductionComponent)
+        {
+            if (string.IsNullOrEmpty(deductionComponent.ComponentName))
+                throw new HiringBellException("Invalid AdHoc component name.");
+
+            if (deductionComponent.AdHocId <= 0)
+                throw new HiringBellException("Invalid AdHoc type component.");
+
+            List<SalaryComponents> adhocComp = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
+            var value = adhocComp.Find(x => x.ComponentId == deductionComponent.ComponentName);
+            if (value != null)
+                throw new HiringBellException("Deduction Component already exist.");
+
+            value = new SalaryComponents();
+            value.ComponentId = deductionComponent.ComponentName;
+            value.ComponentFullName = deductionComponent.ComponentFullName;
+            value.ComponentDescription = deductionComponent.ComponentDescription;
+            value.IsAffectInGross = deductionComponent.IsAffectInGross;
+            value.AdHocId = Convert.ToInt32(deductionComponent.AdHocId);
+            value.DeclaredValue = deductionComponent.DeclaredValue;
+            value.UploadedFileIds = "[]";
+            value.IsAdHoc = true;
+            value.AdHocId = (int)AdhocType.Deduction;
+            value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+
+            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, new
+            {
+                value.ComponentId,
+                value.ComponentFullName,
+                value.ComponentDescription,
+                value.CalculateInPercentage,
+                value.TaxExempt,
+                value.ComponentTypeId,
+                value.AcceptedAmount,
+                value.RejectedAmount,
+                value.UploadedFileIds,
+                value.ComponentCatagoryId,
+                value.PercentageValue,
+                value.MaxLimit,
+                value.DeclaredValue,
+                value.Formula,
+                value.EmployeeContribution,
+                value.EmployerContribution,
+                value.IncludeInPayslip,
+                value.IsAdHoc,
+                value.AdHocId,
+                value.Section,
+                value.SectionMaxLimit,
+                value.IsAffectInGross,
+                value.RequireDocs,
+                value.IsOpted,
+                value.IsActive,
+                value.AdminId,
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to add deduction component.");
+
+            return this.GetSalaryComponentsDetailService();
+        }
+
+        public List<SalaryComponents> AddBonusComponents(SalaryComponents bonusComponent)
+        {
+            if (string.IsNullOrEmpty(bonusComponent.ComponentId))
+                throw new HiringBellException("Invalid component name.");
+
+            List<SalaryComponents> bonuses = _db.GetList<SalaryComponents>(Procedures.Adhoc_Detail_Get);
+            var value = bonuses.Find(x => x.ComponentId == bonusComponent.ComponentId);
+            if (value != null)
+                throw new HiringBellException("Bonus Component already exist.");
+
+            value = new SalaryComponents();
+            value.ComponentId = bonusComponent.ComponentId;
+            value.ComponentFullName = bonusComponent.ComponentFullName;
+            value.ComponentDescription = bonusComponent.ComponentDescription;
+            value.DeclaredValue = bonusComponent.DeclaredValue;
+            value.UploadedFileIds = "[]";
+            value.IsAdHoc = true;
+            value.AdHocId = (int)AdhocType.Bonus;
+            value.AdminId = _currentSession.CurrentUserDetail.AdminId;
+
+            var result = _db.Execute<SalaryComponents>(Procedures.Salary_Components_Insupd, new
+            {
+                value.ComponentId,
+                value.ComponentFullName,
+                value.ComponentDescription,
+                value.CalculateInPercentage,
+                value.TaxExempt,
+                value.ComponentTypeId,
+                value.AcceptedAmount,
+                value.RejectedAmount,
+                value.UploadedFileIds,
+                value.ComponentCatagoryId,
+                value.PercentageValue,
+                value.MaxLimit,
+                value.DeclaredValue,
+                value.Formula,
+                value.EmployeeContribution,
+                value.EmployerContribution,
+                value.IncludeInPayslip,
+                value.IsAdHoc,
+                value.AdHocId,
+                value.Section,
+                value.SectionMaxLimit,
+                value.IsAffectInGross,
+                value.RequireDocs,
+                value.IsOpted,
+                value.IsActive,
+                value.AdminId,
+            }, true);
+
+            if (string.IsNullOrEmpty(result))
+                throw new HiringBellException("Fail to add bonus component.");
 
             return this.GetSalaryComponentsDetailService();
         }
 
         public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
         {
-            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>("sp_salary_group_getAll", false);
+            List<SalaryGroup> salaryGroups = _db.GetList<SalaryGroup>(Procedures.Salary_Group_GetAll, false);
             salaryGroups = salaryGroups.Where(x => x.SalaryGroupId != salaryGroup.SalaryGroupId && x.CompanyId == _currentSession.CurrentUserDetail.CompanyId).ToList();
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
                 if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
                     throw new HiringBellException("Salary group limit already exist");
             }
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { salaryGroup.SalaryGroupId });
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group already exist.");
             else
@@ -548,7 +616,7 @@ namespace ServiceLayer.Code
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
-            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
@@ -557,7 +625,7 @@ namespace ServiceLayer.Code
 
         public SalaryGroup RemoveAndUpdateSalaryGroupService(string componentId, int groupId)
         {
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = groupId });
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { SalaryGroupId = groupId });
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group already exist.");
 
@@ -571,7 +639,7 @@ namespace ServiceLayer.Code
                 if (components.Remove(component))
                 {
                     salaryGrp.SalaryComponents = JsonConvert.SerializeObject(components);
-                    var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+                    var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
                     if (string.IsNullOrEmpty(result))
                         throw new HiringBellException("Fail to insert or update.");
                 }
@@ -584,7 +652,7 @@ namespace ServiceLayer.Code
             {
                 components = components.Where(x => x.ComponentId != null && x.ComponentId != "").ToList();
                 salaryGrp.SalaryComponents = JsonConvert.SerializeObject(components);
-                var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+                var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
                 if (string.IsNullOrEmpty(result))
                     throw new HiringBellException("Fail to insert or update.");
             }
@@ -594,7 +662,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> UpdateSalaryGroupComponentService(SalaryGroup salaryGroup)
         {
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { salaryGroup.SalaryGroupId });
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group already exist.");
             else
@@ -607,7 +675,7 @@ namespace ServiceLayer.Code
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
-            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
             List<SalaryComponents> value = this.GetSalaryGroupComponents(salaryGroup.SalaryGroupId, Convert.ToDecimal(salaryGroup.CTC));
@@ -616,7 +684,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_id_or_ctc",
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_By_Id_Or_Ctc,
                 new { SalaryGroupId = salaryGroupId, CTC, CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             if (salaryGroup == null)
             {
@@ -630,7 +698,7 @@ namespace ServiceLayer.Code
 
         private SalaryGroup GetDefaultSalaryGroup()
         {
-            var result = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
+            var result = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { SalaryGroupId = 1 });
             if (result == null)
                 throw new HiringBellException("Default salry group not found");
 
@@ -639,7 +707,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetSalaryGroupComponentsByCTC(long EmployeeId, decimal CTC)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { EmployeeId, CTC });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_By_Ctc, new { EmployeeId, CTC });
             if (salaryGroup == null)
             {
                 salaryGroup = new SalaryGroup
@@ -700,7 +768,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
-            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId = EmployeeId });
+            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId = EmployeeId });
             if (employeeSalaryDetail == null)
                 throw new HiringBellException("Fail to get salary detail. Please contact to admin.");
 
@@ -722,7 +790,7 @@ namespace ServiceLayer.Code
                 TaxDetail = employeeSalaryDetail.TaxDetail,
                 NewSalaryDetail = employeeSalaryDetail.NewSalaryDetail
             };
-            var result = _db.Execute<EmployeeSalaryDetail>("sp_employee_salary_detail_InsUpd", salaryBreakup, true);
+            var result = _db.Execute<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_InsUpd, salaryBreakup, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
             else
@@ -1144,7 +1212,7 @@ namespace ServiceLayer.Code
                         }
                         else
                         {
-                            
+
                             item.IncludeInPayslip = false;
                         }
                     }
@@ -1244,7 +1312,7 @@ namespace ServiceLayer.Code
 
             bool currentYearMonthFlag = false;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
-            eCal.pfEsiSetting = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            eCal.pfEsiSetting = _db.Get<PfEsiSetting>(Procedures.Pf_Esi_Setting_Get, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             if (eCal.pfEsiSetting == null)
                 throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
 
@@ -1386,7 +1454,7 @@ namespace ServiceLayer.Code
 
         public SalaryGroup GetSalaryGroupByCTC(decimal CTC, long EmployeeId)
         {
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC, EmployeeId });
+            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_By_Ctc, new { CTC, EmployeeId });
             if (salaryGroup == null)
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
             return salaryGroup;
@@ -1504,7 +1572,7 @@ namespace ServiceLayer.Code
 
         public List<SalaryComponents> GetBonusComponentsService()
         {
-            List<SalaryComponents> result = _db.GetList<SalaryComponents>("sp_salary_components_get");
+            List<SalaryComponents> result = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
             result = result.FindAll(x => x.IsAdHoc == true && x.AdHocId == (int)AdhocType.Bonus);
             return result;
         }
@@ -1516,7 +1584,7 @@ namespace ServiceLayer.Code
             else
                 filterModel.SearchString += $" and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
             filterModel.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
-            var result = _db.FetchDataSet("sp_employee_salary_detail_getbyFilter", filterModel);
+            var result = _db.FetchDataSet(Procedures.Employee_Salary_Detail_GetbyFilter, filterModel);
             result.Tables[0].TableName = "SalaryDetail";
             if (result.Tables[1].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin.");
@@ -1532,7 +1600,7 @@ namespace ServiceLayer.Code
 
             ValidateSalaryGroup(salaryGroup);
 
-            SalaryGroup salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_get_if_exists", new
+            SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_If_Exists, new
             {
                 salaryGroup.CompanyId,
                 salaryGroup.MinAmount,
@@ -1542,7 +1610,7 @@ namespace ServiceLayer.Code
             if (salaryGrp != null)
                 throw new HiringBellException("Salary group limit already exist");
 
-            salaryGrp = _db.Get<SalaryGroup>("sp_salary_group_getById", new { salaryGroup.SalaryGroupId });
+            salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { salaryGroup.SalaryGroupId });
             if (salaryGrp == null)
                 throw new HiringBellException("Salary Group not exist.");
             else
@@ -1558,7 +1626,7 @@ namespace ServiceLayer.Code
                 salaryGrp.AdminId = _currentSession.CurrentUserDetail.AdminId;
             }
 
-            var result = _db.Execute<SalaryGroup>("sp_salary_group_insupd", salaryGrp, true);
+            var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update.");
 
@@ -1568,7 +1636,7 @@ namespace ServiceLayer.Code
 
         public async Task GetEmployeeSalaryDetail(EmployeeCalculation employeeCalculation)
         {
-            var ResultSet = _db.FetchDataSet("sp_salary_components_group_by_employeeid",
+            var ResultSet = _db.FetchDataSet(Procedures.Salary_Components_Group_By_Employeeid,
                 new { employeeCalculation.EmployeeId });
             if (ResultSet == null || ResultSet.Tables.Count != 7)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");

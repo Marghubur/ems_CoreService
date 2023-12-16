@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -45,7 +46,7 @@ namespace ServiceLayer.Code
             if (timesheetId <= 0)
                 throw new HiringBellException("Invalid attendance day selected");
 
-            TimesheetDetail timesheet = _db.Get<TimesheetDetail>("sp_employee_timesheet_getby_timesheetid", new
+            TimesheetDetail timesheet = _db.Get<TimesheetDetail>(Procedures.Employee_Timesheet_Getby_Timesheetid, new
             {
                 TimesheetId = timesheetId
             });
@@ -54,7 +55,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid timesheet found. Please contact admin.");
 
             // this call is used for only upadate AttendanceDetail json object
-            var Result = _db.Execute<TimesheetDetail>("sp_timesheet_upd_by_id", new
+            var Result = _db.Execute<TimesheetDetail>(Procedures.Timesheet_Upd_By_Id, new
             {
                 timesheet.TimesheetId,
                 TimesheetStatus = (int)itemStatus,
@@ -100,7 +101,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ForYear == 0)
                 throw new HiringBellException("Year is invalid");
 
-            var result = _db.GetList<TimesheetDetail>("sp_timesheet_requests_by_filter", new
+            var result = _db.GetList<TimesheetDetail>(Procedures.Timesheet_Requests_By_Filter, new
             {
                 timesheetDetail.ReportingManagerId,
                 timesheetDetail.ForYear,

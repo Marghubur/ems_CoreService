@@ -97,7 +97,7 @@ namespace ServiceLayer.Code
             if (requestDetail.LeaveRequestNotificationId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid request. Please check your detail first.");
 
-            (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>("sp_employee_leave_request_GetById", new
+            (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>(Procedures.Employee_Leave_Request_GetById, new
             {
                 requestDetail.LeaveRequestNotificationId
             });
@@ -360,7 +360,7 @@ namespace ServiceLayer.Code
         private async Task UpdateLeaveNotification(LeaveRequestDetail leaveRequestDetail, string RecordId, RequestChainModal chain)
         {
             // update employee_leave_request table and update leave_request_notification to next manager
-            var result = _db.Execute<string>("sp_leave_request_and_notification_update_level", new
+            var result = _db.Execute<string>(Procedures.Leave_Request_And_Notification_Update_Level, new
             {
                 leaveRequestDetail.LeaveRequestId,
                 leaveRequestDetail.LeaveDetail,

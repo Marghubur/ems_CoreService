@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -22,7 +23,7 @@ namespace ServiceLayer.Code
         public List<Employee> LoadEmployeeData()
         {
             FilterModel filterModel = new FilterModel();
-            List<Employee> employeeTable = _db.GetList<Employee>("SP_Employees_Get", new
+            List<Employee> employeeTable = _db.GetList<Employee>(Procedures.Employees_Get, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
@@ -36,7 +37,7 @@ namespace ServiceLayer.Code
         public EmailTemplate GetTemplate(int EmailTemplateId)
         {
             (EmailTemplate emailTemplate, EmailSettingDetail emailSetting) =
-                _db.GetMulti<EmailTemplate, EmailSettingDetail>("sp_email_template_by_id", new { EmailTemplateId });
+                _db.GetMulti<EmailTemplate, EmailSettingDetail>(Procedures.Email_Template_By_Id, new { EmailTemplateId });
 
             if (emailSetting == null)
                 throw new HiringBellException("Email setting detail not found. Please contact to admin.");

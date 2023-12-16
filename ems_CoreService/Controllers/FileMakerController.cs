@@ -87,7 +87,6 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(Result, System.Net.HttpStatusCode.OK);
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpPost]
         [Route("CreateFolder")]
         public IResponse<ApiResponse> CreateFolder(Files file)
