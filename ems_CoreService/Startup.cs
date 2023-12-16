@@ -187,8 +187,7 @@ namespace OnlineDataBuilder
                     x.GetRequiredService<ILogger<KafkaNotificationService>>(),
                     Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
                                     ModalLayer.Modal.Environments.Development :
-                                    ModalLayer.Modal.Environments.Production,
-                    x.GetRequiredService<CurrentSession>()
+                                    ModalLayer.Modal.Environments.Production
                 );
             });
 
