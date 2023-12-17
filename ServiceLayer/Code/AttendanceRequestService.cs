@@ -150,22 +150,25 @@ namespace ServiceLayer.Code
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
                 if (currentAttendance == null)
-                    throw new HiringBellException("Unable to update present request. Please contact to admin.");
+                    throw HiringBellException.ThrowBadRequest("Unable to update present request. Please contact to admin.");
 
                 _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
 
                 currentAttendance.PresentDayStatus = (int)status;
-                //ChnageSessionType(currentAttendance);
-                var Result = _db.Execute<Attendance>(Procedures.Attendance_Update_Request, new
+                var attrDetailJson = JsonConvert.SerializeObject(allAttendance);
+
+                var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
                 {
                     attendanceDetail.AttendanceId,
-                    AttendanceDetail = JsonConvert.SerializeObject(allAttendance),
+                    AttendanceDetail = attrDetailJson,
                     attendance.PendingRequestCount,
                     _currentSession.CurrentUserDetail.UserId
                 }, true);
 
-                if (string.IsNullOrEmpty(Result))
-                    throw new HiringBellException("Unable to update attendance status");
+                if (string.IsNullOrEmpty(Result.statusMessage))
+                {
+                    throw HiringBellException.ThrowBadRequest("Unable to update attendance status");
+                }
 
                 AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
                 {
