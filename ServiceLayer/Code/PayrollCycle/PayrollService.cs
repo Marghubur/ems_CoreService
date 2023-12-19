@@ -245,7 +245,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 ToAddress = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
                 kafkaServiceName = KafkaServiceName.Payroll,
                 Body = BuildPayrollTemplateBody(missingDetail),
-                LocalConnectionString = _currentSession.LocalConnectionString
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));

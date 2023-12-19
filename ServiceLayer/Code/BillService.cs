@@ -1098,7 +1098,8 @@ namespace ServiceLayer.Code
                     kafkaServiceName = KafkaServiceName.Billing,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     Role = "Developer",
-                    LocalConnectionString = _currentSession.LocalConnectionString
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
                 await _kafkaNotificationService.SendEmailNotification(billingTemplateModel);

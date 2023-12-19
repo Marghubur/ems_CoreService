@@ -79,8 +79,9 @@ namespace ServiceLayer.Code
                 ToDate = timesheet.TimesheetEndDate,
                 ManagerName = _currentSession.CurrentUserDetail.FullName,
                 ToAddress = new List<string> { timesheet.Email },
-                LocalConnectionString = _currentSession.LocalConnectionString
-                //kafkaServiceName = KafkaServiceName.Timesheet
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                kafkaServiceName = KafkaServiceName.Timesheet,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
             await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
