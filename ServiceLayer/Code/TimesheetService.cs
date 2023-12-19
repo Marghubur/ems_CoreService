@@ -421,7 +421,9 @@ namespace ServiceLayer.Code
                 ManagerName = managerDetail.ManagerName,
                 Message = string.IsNullOrEmpty(timesheetDetail.UserComments)? "NA" : timesheetDetail.UserComments,
                 ToAddress = new List<string> { managerDetail.Email },
-                kafkaServiceName = KafkaServiceName.Timesheet
+                kafkaServiceName = KafkaServiceName.Timesheet,
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
             return await Task.FromResult(timesheetApprovalTemplateModel);
