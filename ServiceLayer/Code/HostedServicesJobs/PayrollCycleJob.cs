@@ -3,7 +3,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Threading.Tasks;
 
-namespace OnlineDataBuilder.HostedService.Services
+namespace ServiceLayer.Code.HostedServiceJobs
 {
     public class PayrollCycleJob
     {

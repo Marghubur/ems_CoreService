@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace OnlineDataBuilder.HostedService.Services
+namespace ServiceLayer.Code.HostedServiceJobs
 {
     public class AttendanceApprovalLevelJob
     {

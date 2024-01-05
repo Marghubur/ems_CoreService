@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using NCrontab;
-using OnlineDataBuilder.HostedService.Services;
+using ServiceLayer.Interface;
 using System;
 using System.IO;
 using System.Threading;
@@ -20,16 +20,18 @@ namespace OnlineDataBuilder.HostedService
         private readonly IServiceProvider _serviceProvider;
         private readonly ApplicationConfiguration _applicationConfiguration;
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly IAutoTriggerService _autoTriggerService;
 
         private int counter = 3;
         private int index = 1;
         DateTime _nextCron;
 
-        public DailyStartHourJob(ILogger<DailyStartHourJob> logger, 
-            IConfiguration configuration, 
+        public DailyStartHourJob(ILogger<DailyStartHourJob> logger,
+            IConfiguration configuration,
             IServiceProvider serviceProvider,
             ApplicationConfiguration applicationConfiguration,
-            FileLocationDetail fileLocationDetail)
+            FileLocationDetail fileLocationDetail,
+            IAutoTriggerService autoTriggerService)
         {
             _logger = logger;
             _configuration = configuration;
@@ -42,6 +44,7 @@ namespace OnlineDataBuilder.HostedService
             _cron = CrontabSchedule.Parse(configuration.GetSection("DailyEarlyHourJob").Value,
                 new CrontabSchedule.ParseOptions { IncludingSeconds = true });
             _nextCron = _cron.GetNextOccurrence(DateTime.UtcNow);
+            _autoTriggerService = autoTriggerService;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -66,25 +69,7 @@ namespace OnlineDataBuilder.HostedService
 
         private async Task RunJobAsync()
         {
-            _logger.LogInformation("Leave Accrual cron job started.");
-            var companySettings = await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
-            _logger.LogInformation("Leave Accrual cron job ran successfully.");
-
-            _logger.LogInformation("Timesheet creation cron job started.");
-            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
-            _logger.LogInformation("Timesheet creation cron job ran successfully.");
-
-            _logger.LogInformation("Send Email notification cron job started.");
-            await NotificationEmailJob.SendNotificationEmail(_serviceProvider);
-            _logger.LogInformation("Send Email notification cron job ran successfully.");
-
-            _logger.LogInformation("Update request cron job started.");
-            await AttendanceApprovalLevelJob.UpgradeRequestLevel(_serviceProvider, companySettings);
-            _logger.LogInformation("Update request cron job ran successfully.");
-
-            _logger.LogInformation("Payroll cron job started.");
-            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, counter++);
-            _logger.LogInformation("Payroll cron job ran successfully.");
+            await _autoTriggerService.RunJobAsync();
         }
 
         private void EnableLoggin()
