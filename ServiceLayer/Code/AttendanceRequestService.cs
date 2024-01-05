@@ -183,7 +183,8 @@ namespace ServiceLayer.Code
                     RequestType = attendanceDetail.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                     ToAddress = new List<string> { attendance.Email },
                     kafkaServiceName = KafkaServiceName.Attendance,
-                    LocalConnectionString = _currentSession.LocalConnectionString
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
                 await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);

@@ -447,7 +447,8 @@ namespace ServiceLayer.Code
                     daysLimit--;
                 }
 
-            } else
+            }
+            else
             {
                 attendances.ForEach(x =>
                 {
@@ -459,7 +460,7 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in attendances)
                 {
-                    var leaveDetail = leave.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0 
+                    var leaveDetail = leave.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0
                                                     && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
                     {
@@ -658,7 +659,8 @@ namespace ServiceLayer.Code
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { employee.Email },
                 kafkaServiceName = KafkaServiceName.Attendance,
-                LocalConnectionString = _currentSession.LocalConnectionString
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
@@ -811,6 +813,8 @@ namespace ServiceLayer.Code
                 kafkaServiceName = KafkaServiceName.BlockAttendance,
                 Body = String.Join(", ", allAttendanceDates),
                 Note = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeMessage,
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
             return attendanceRequestModal;
         }
@@ -835,7 +839,6 @@ namespace ServiceLayer.Code
 
             AttendanceRequestModal attendanceRequestModal = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
 
-            attendanceRequestModal.LocalConnectionString = _currentSession.LocalConnectionString;
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
             //await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
             return "Attendance raised successfully";
@@ -1223,7 +1226,8 @@ namespace ServiceLayer.Code
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { presentAttendance.Email },
                 kafkaServiceName = KafkaServiceName.Attendance,
-                LocalConnectionString = _currentSession.LocalConnectionString
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
             await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);

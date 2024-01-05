@@ -433,6 +433,8 @@ namespace ServiceLayer.Code
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
             }
 
@@ -449,6 +451,8 @@ namespace ServiceLayer.Code
                     DeveloperName = _currentSession.CurrentUserDetail.FullName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
             }
             leaveTemplateModel.ToAddress = new List<string>();
@@ -656,7 +660,9 @@ namespace ServiceLayer.Code
                     DeveloperName = leaveCalculationModal.employee.FirstName + " " + leaveCalculationModal.employee.LastName,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = 1,
-                    ToAddress = new List<string> { leaveCalculationModal.employee.Email }
+                    ToAddress = new List<string> { leaveCalculationModal.employee.Email },
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
                 _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(leaveTemplateModel));

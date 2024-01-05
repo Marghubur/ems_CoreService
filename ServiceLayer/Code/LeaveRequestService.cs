@@ -190,7 +190,8 @@ namespace ServiceLayer.Code
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = (int)leaveRequestDetail.LeaveToDay.Subtract(leaveRequestDetail.LeaveFromDay).TotalDays + 1,
                     ToAddress = new List<string> { leaveRequestDetail.Email },
-                    LocalConnectionString = _currentSession.LocalConnectionString
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
                 await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
