@@ -138,12 +138,14 @@ namespace ServiceLayer.Code
 
         public List<Project> GetAllProjectDeatilService(FilterModel filterModel)
         {
-            var result = _db.GetList<Project>(Procedures.Project_Detail_Getall, new
+            var result = _db.GetList<Project>(Procedures.Project_Detail_Filter, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
                 filterModel.PageIndex,
-                filterModel.PageSize
+                filterModel.PageSize,
+                EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             });
             if (result == null)
                 throw new HiringBellException("Unable to load projext list data.");
