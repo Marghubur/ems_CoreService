@@ -17,7 +17,6 @@ namespace OnlineDataBuilder
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
-            // ConfigureServices(x => x.AddHostedService<DailyStartHourJob>());
+                }).ConfigureServices(x => x.AddHostedService<DailyStartHourJob>());
     }
 }

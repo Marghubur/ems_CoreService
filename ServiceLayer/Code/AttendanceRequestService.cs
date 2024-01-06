@@ -149,6 +149,7 @@ namespace ServiceLayer.Code
 
                 var allAttendance = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendance.AttendanceDetail);
                 var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
+                
                 if (currentAttendance == null)
                     throw HiringBellException.ThrowBadRequest("Unable to update present request. Please contact to admin.");
 
