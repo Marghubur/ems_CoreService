@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface ITimesheetService
     {
-        Task<TimesheetDetail> GetWeekTimesheetDataService(TimesheetDetail timesheetDetail);
+        Task<TimesheetDetail> GetWeekTimesheetDataService(long TimesheetId);
         Task<TimesheetDetail> SubmitTimesheetService(TimesheetDetail timesheetDetail);
         Task<TimesheetDetail> SaveTimesheetService(TimesheetDetail timesheetDetail);
         Task<string> ExecuteActionOnTimesheetService(TimesheetDetail timesheetDetail);

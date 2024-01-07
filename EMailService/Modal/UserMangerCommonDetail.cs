@@ -1,5 +1,4 @@
-﻿using ModalLayer;
-using ModalLayer.Modal;
+﻿using ModalLayer.Modal;
 using System;
 
 namespace CoreBottomHalf.Modal

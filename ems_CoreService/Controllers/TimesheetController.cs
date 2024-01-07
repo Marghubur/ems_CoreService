@@ -28,10 +28,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [HttpPost("GetWeekTimesheetData")]
-        public async Task<ApiResponse> GetWeekTimesheetData(TimesheetDetail attendenceDetail)
+        [HttpGet("GetWeekTimesheetData/{TimesheetId}")]
+        public async Task<ApiResponse> GetWeekTimesheetData(long TimesheetId)
         {
-            var result = await _timesheetService.GetWeekTimesheetDataService(attendenceDetail);
+            var result = await _timesheetService.GetWeekTimesheetDataService(TimesheetId);
             return BuildResponse(result, HttpStatusCode.OK);
         }
 

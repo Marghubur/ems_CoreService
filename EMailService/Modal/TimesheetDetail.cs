@@ -1,4 +1,5 @@
 ﻿using CoreBottomHalf.Modal;
+using EMailService.Modal;
 using System;
 using System.Collections.Generic;
 
@@ -14,7 +15,6 @@ namespace ModalLayer.Modal
         public int TimesheetStatus { get; set; }
         public DateTime TimesheetStartDate { get; set; }
         public DateTime TimesheetEndDate { get; set; }
-        public string UserComments { set; get; }
         public int ForYear { get; set; }
         public int ForMonth { get; set; }
         public DateTime SubmittedOn { get; set; }
@@ -22,7 +22,7 @@ namespace ModalLayer.Modal
         public long ExecutedBy { get; set; }
         public bool IsSaved { get; set; }
         public bool IsSubmitted { get; set; }
-        public List<WeeklyTimesheetDetail> TimesheetWeeklyData { get; set; }
+        public List<TimesheetRequestModel> TimesheetWeeklyData { get; set; }
         public string ClientName { get; set; }
     }
 

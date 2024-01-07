@@ -105,13 +105,13 @@ namespace ServiceLayer.Code
 
         private async Task CreateTimesheetWeekDays(TimesheetDetail timesheetDetail, ShiftDetail shiftDetail)
         {
-            List<WeeklyTimesheetDetail> weeklyTimesheetDetails = new List<WeeklyTimesheetDetail>();
+            List<TimesheetRequestModel> weeklyTimesheetDetails = new List<TimesheetRequestModel>();
             DateTime startDate = _timezoneConverter.ToTimeZoneDateTime(timesheetDetail.TimesheetStartDate, _currentSession.TimeZone);
             DateTime endDate = _timezoneConverter.ToTimeZoneDateTime(timesheetDetail.TimesheetEndDate, _currentSession.TimeZone);
 
             while (startDate.Date.Subtract(endDate.Date).TotalDays <= 0)
             {
-                var item = timesheetDetail.TimesheetWeeklyData.Find(x => x.WeekDay == startDate.DayOfWeek);
+                var item = timesheetDetail.TimesheetWeeklyData.Find(x => x.WeekDay == (int)startDate.DayOfWeek);
                 if (item == null)
                 {
                     var isweekened = false;
@@ -140,9 +140,9 @@ namespace ServiceLayer.Code
                             break;
                     }
 
-                    weeklyTimesheetDetails.Add(new WeeklyTimesheetDetail
+                    weeklyTimesheetDetails.Add(new TimesheetRequestModel
                     {
-                        WeekDay = startDate.DayOfWeek,
+                        WeekDay = (int)startDate.DayOfWeek,
                         PresentDate = startDate,
                         ActualBurnedMinutes = isweekened ? 0 : shiftDetail.Duration,
                         IsHoliday = false,
@@ -163,14 +163,14 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        public async Task<TimesheetDetail> GetWeekTimesheetDataService(TimesheetDetail timesheetDetail)
+        public async Task<TimesheetDetail> GetWeekTimesheetDataService(long TimesheetId)
         {
-            if (timesheetDetail.TimesheetId <= 0)
+            if (TimesheetId <= 0)
                 throw new HiringBellException("Invalid Timesheet id passed.");
 
-            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_getby_id", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_shift_getby_empid", new
             {
-                TimesheetId = timesheetDetail.TimesheetId
+                TimesheetId = TimesheetId
             });
 
             if (shiftDetail == null)
@@ -178,17 +178,20 @@ namespace ServiceLayer.Code
 
             if (timesheet == null)
             {
-                timesheet = timesheetDetail;
-                timesheet.TimesheetWeeklyData = new List<WeeklyTimesheetDetail>();
-                timesheet.TimesheetStartDate = _timezoneConverter.ToTimeZoneDateTime(timesheetDetail.TimesheetStartDate, _currentSession.TimeZone);
-                timesheet.TimesheetEndDate = timesheet.TimesheetStartDate.AddDays(6);
+                throw HiringBellException.ThrowBadRequest("Timesheet not found. Please contact to admin.");
             }
             else
             {
                 if (!string.IsNullOrEmpty(timesheet.TimesheetWeeklyJson))
-                    timesheet.TimesheetWeeklyData = JsonConvert.DeserializeObject<List<WeeklyTimesheetDetail>>(timesheet.TimesheetWeeklyJson);
+                {
+                    timesheet.TimesheetWeeklyData = JsonConvert.DeserializeObject<List<TimesheetRequestModel>>(timesheet.TimesheetWeeklyJson);
+                    timesheet.TimesheetWeeklyData.ForEach(x =>
+                    {
+                        x.PresentDate = _timezoneConverter.ToTimeZoneDateTime(x.PresentDate, _currentSession.TimeZone);
+                    });
+                }
                 else
-                    timesheet.TimesheetWeeklyData = new List<WeeklyTimesheetDetail>();
+                    throw HiringBellException.ThrowBadRequest("Timesheet not found. Please contact to admin.");
 
             }
 
