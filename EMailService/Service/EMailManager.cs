@@ -233,7 +233,7 @@ namespace EMailService.Service
 
         private AlternateView CreateHtmlMessage(string message, string logoPath)
         {
-            string path = @"E:\WorkSpace\OnlineDataBuilderServer\OnlineDataBuilder\Documents\logos\info_bottomhalf_in\signwithoutStamp.jpeg";
+            string path = @"E:\WorkSpace\OnlineDataBuilderServer\OnlineDataBuilder\ApplicationFiles\logos\info_bottomhalf_in\signwithoutStamp.jpeg";
             LinkedResource Img = new LinkedResource(path, MediaTypeNames.Image.Jpeg);
             Img.ContentId = "MyImage";
             string str = message;

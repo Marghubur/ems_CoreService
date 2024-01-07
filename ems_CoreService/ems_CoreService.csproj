@@ -41,22 +41,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Documents\htmltemplates\billing\staffingBillPdfFormat.html">
+    <None Update="ApplicationFiles\htmltemplates\billing\staffingBillPdfFormat.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Documents\htmltemplates\billing\staffingBill.html">
+    <None Update="ApplicationFiles\htmltemplates\billing\staffingBill.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Documents\logos\logo.png">
+    <None Update="ApplicationFiles\logos\logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Documents\logos\stamp.png">
+    <None Update="ApplicationFiles\logos\stamp.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Documents\SampleExcel\" />
   </ItemGroup>
 
   <ItemGroup>

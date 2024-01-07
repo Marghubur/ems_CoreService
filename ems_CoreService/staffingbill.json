@@ -1,6 +1,6 @@
 {
   "BillingFolders": {
-    "Location": "Documents",
+    "Location": "ApplicationFiles",
     "User": "User",
     "HtmlTemplatePath": "htmltemplates/billing",
     "LogoPath": "logos",
