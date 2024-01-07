@@ -29,10 +29,12 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (HiringBellException exception)
             {
-                if (applicationConfiguration.IsLoggingEnabled)
-                    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
-                else
-                    await HandleHiringBellExceptionMessageAsync(context, exception);
+                //if (applicationConfiguration.IsLoggingEnabled)
+                //    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
+                //else
+                //    await HandleHiringBellExceptionMessageAsync(context, exception);
+
+                await HandleHiringBellExceptionMessageAsync(context, exception);
             }
             catch (Exception ex)
             {
