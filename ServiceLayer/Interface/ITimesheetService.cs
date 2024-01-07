@@ -14,7 +14,7 @@ namespace ServiceLayer.Interface
         List<TimesheetDetail> GetPendingTimesheetByIdService(long employeeId, long clientId);
         List<DailyTimesheetDetail> GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail);
         BillingDetail EditEmployeeBillDetailService(GenerateBillFileDetail fileDetail);
-        Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate);
+        Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate, DateTime? TimesheetEndDate);
         List<TimesheetDetail> GetTimesheetByFilterService(TimesheetDetail timesheetDetail);
     }
 }

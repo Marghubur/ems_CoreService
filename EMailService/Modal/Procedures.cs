@@ -219,6 +219,7 @@
         public static string Wiki_Detail_Upd = "sp_wiki_detail_upd";
         public static string Project_Detail_Insupd = "sp_project_detail_insupd";
         public static string Project_Detail_Getall = "sp_project_detail_getall";
+        public static string Project_Detail_Filter = "sp_project_detail_filter";
         public static string Project_Get_Page_Data = "sp_project_get_page_data";
         public static string Project_Member_Getby_Projectid = "sp_project_member_getby_projectid";
         public static string Team_Member_Upd = "sp_team_member_upd";

@@ -23,7 +23,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Leave Accrual cron job started.");
             await RunLeaveAccrualJobAsync();
 
-            await RunTimesheetJobAsync();
+            await RunTimesheetJobAsync(DateTime.UtcNow, null, true);
             _logger.LogInformation("Timesheet creation cron job started.");
 
             _logger.LogInformation("Payroll cron job started.");
@@ -36,9 +36,9 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Leave Accrual cron job ran successfully.");
         }
 
-        public async Task RunTimesheetJobAsync()
+        public async Task RunTimesheetJobAsync(DateTime startDate, DateTime? endDate, bool isCronJob)
         {
-            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider);
+            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider, startDate, endDate, isCronJob);
             _logger.LogInformation("Timesheet creation cron job ran successfully.");
         }
 

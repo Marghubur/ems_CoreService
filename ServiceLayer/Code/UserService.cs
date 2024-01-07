@@ -251,7 +251,7 @@ namespace ServiceLayer.Code
         {
             DataSet ds = new DataSet();
             FilterModel filterModel = new FilterModel();
-            filterModel.PageSize = 1000;
+            filterModel.PageSize = 10000;
 
             ds = _db.FetchDataSet(Procedures.Employee_And_All_Clients_Get, new
             {

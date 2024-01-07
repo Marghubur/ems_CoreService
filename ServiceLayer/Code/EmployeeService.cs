@@ -337,7 +337,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Please contact to admin.");
 
             var weekFirstDay = _timezoneConverter.FirstDayOfWeekUTC(DateTime.UtcNow);
-            _timesheetService.RunWeeklyTimesheetCreation(weekFirstDay.AddDays(1));
+            _timesheetService.RunWeeklyTimesheetCreation(weekFirstDay.AddDays(1), null);
             return resultset;
         }
 

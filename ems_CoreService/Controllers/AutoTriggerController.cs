@@ -27,10 +27,10 @@ namespace ems_CoreService.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpGet("triggerWeeklyTimesheet/{weekFirstDate}")]
-        public async Task WeeklyTimesheetTrigger(DateTime weekFirstDate)
+        [HttpPost("triggerWeeklyTimesheet")]
+        public async Task WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
         {
-            await _autoTriggerService.RunTimesheetJobAsync();
+            await _autoTriggerService.RunTimesheetJobAsync(timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
         }
 
         [Authorize(Roles = Role.Admin)]

@@ -1,4 +1,5 @@
 ﻿using ServiceLayer.Code.HostedServiceJobs;
+using System;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
@@ -7,7 +8,7 @@ namespace ServiceLayer.Interface
     {
         Task RunJobAsync();
         Task RunLeaveAccrualJobAsync();
-        Task RunTimesheetJobAsync();
+        Task RunTimesheetJobAsync(DateTime startDate, DateTime? endDate, bool isCronJob);
         Task RunPayrollJobAsync();
     }
 }
