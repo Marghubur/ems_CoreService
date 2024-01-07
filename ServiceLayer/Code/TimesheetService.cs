@@ -159,7 +159,7 @@ namespace ServiceLayer.Code
                 startDate = startDate.AddDays(1);
             }
 
-            timesheetDetail.TimesheetWeeklyData = weeklyTimesheetDetails;
+            timesheetDetail.TimesheetWeeklyData = weeklyTimesheetDetails.OrderBy(x => x.PresentDate).ToList();
             await Task.CompletedTask;
         }
 
@@ -351,7 +351,6 @@ namespace ServiceLayer.Code
                 {
                     i.TimesheetStatus = x.TimesheetStatus;
                 });
-
                 monthlyTimesheet.AddRange(dailyTimesheet);
             });
 
