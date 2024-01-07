@@ -105,7 +105,7 @@ namespace OnlineDataBuilder
             services.Configure<KafkaServiceConfig>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
 
             string connectionString = Configuration.GetConnectionString("EmsMasterCS");
-            services.AddScoped<IDb, Db>();
+            services.AddSingleton<IDb, Db>();
             services.AddSingleton<ICacheManager, CacheManager>(x =>
             {
                 return CacheManager.GetInstance(connectionString);

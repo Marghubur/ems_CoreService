@@ -40,7 +40,7 @@ namespace ServiceLayer.Code
 
         #region NEW CODE
 
-        public async Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate)
+        public async Task RunWeeklyTimesheetCreation(DateTime TimesheetStartDate, DateTime? TimesheetEndDate)
         {
             try
             {
@@ -53,7 +53,8 @@ namespace ServiceLayer.Code
                 {
                     var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
                     {
-                        TimesheetStartDate = TimesheetStartDate
+                        TimesheetStartDate = TimesheetStartDate,
+                        TimesheetEndDate = TimesheetEndDate
                     }, true);
                 }
             }

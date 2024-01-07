@@ -199,7 +199,7 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunDailyTimesheetCreationJob()
         {
-            await _timesheetService.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(-3));
+            await _timesheetService.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(-3), null);
         }
 
         private async Task BatchInsertPerformanceTest()
