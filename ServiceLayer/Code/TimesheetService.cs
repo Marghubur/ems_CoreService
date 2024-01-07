@@ -168,7 +168,7 @@ namespace ServiceLayer.Code
             if (TimesheetId <= 0)
                 throw new HiringBellException("Invalid Timesheet id passed.");
 
-            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_shift_getby_empid", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_shift_getby_timesheetId", new
             {
                 TimesheetId = TimesheetId
             });
