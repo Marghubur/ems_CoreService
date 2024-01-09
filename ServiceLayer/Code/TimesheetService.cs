@@ -349,7 +349,14 @@ namespace ServiceLayer.Code
                 var dailyTimesheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(x.TimesheetWeeklyJson);
                 dailyTimesheet.ForEach(i =>
                 {
-                    i.TimesheetStatus = x.TimesheetStatus;
+                    if (!i.IsHoliday && !i.IsWeekEnd && i.ActualBurnedMinutes == 0)
+                        i.TimesheetStatus = (int)ItemStatus.Absent;
+                    else
+                        i.TimesheetStatus = x.TimesheetStatus;
+
+                    i.TimesheetId = x.TimesheetId;
+                    i.ClientId = x.ClientId;
+                    i.EmployeeId = x.EmployeeId;
                 });
                 monthlyTimesheet.AddRange(dailyTimesheet);
             });

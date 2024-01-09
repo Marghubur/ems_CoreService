@@ -52,5 +52,6 @@ namespace ModalLayer.Modal
         public string Mobile { set; get; }
         public long ReportingManagerId { set; get; }
         public string ManagerName { set; get; }
+        public int ActualBurnedMinutes { get; set; }
     }
 }
