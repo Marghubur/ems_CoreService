@@ -369,8 +369,8 @@ namespace ServiceLayer.Code
             BillingDetail billingDetail = default(BillingDetail);
             var now = DateTime.UtcNow;
             int daysInMonth = DateTime.DaysInMonth(fileDetail.ForYear, now.Month);
-            var lastDate = new DateTime(fileDetail.ForYear, now.Month, daysInMonth);
-            var firstDate = new DateTime(fileDetail.ForYear, now.Month, 1);
+            var lastDate = new DateTime(fileDetail.ForYear, fileDetail.ForMonth, daysInMonth);
+            var firstDate = new DateTime(fileDetail.ForYear, fileDetail.ForMonth, 1);
 
             var Result = _db.FetchDataSet(Procedures.EmployeeBillDetail_ById, new
             {

@@ -20,6 +20,6 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> UpdateSalaryComponentDetailService(string componentId, SalaryComponents component);
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
         List<SalaryComponents> FetchActiveComponentService();
-        Task<UserLayoutConfiguration> LayoutConfigurationSettingService(UserLayoutConfiguration userLayoutConfiguration);
+        Task<UserLayoutConfigurationJSON> LayoutConfigurationSettingService(UserLayoutConfigurationJSON userLayoutConfiguration);
     }
 }

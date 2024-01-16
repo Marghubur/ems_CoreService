@@ -121,9 +121,9 @@ namespace OnlineDataBuilder.Controllers
 
         [AllowAnonymous]
         [HttpPost("LayoutConfigurationSetting")]
-        public IResponse<ApiResponse> LayoutConfigurationSetting([FromBody] UserLayoutConfiguration userLayoutConfiguration)
+        public async Task<ApiResponse> LayoutConfigurationSetting([FromBody] UserLayoutConfigurationJSON userLayoutConfiguration)
         {
-            var result = _settingService.LayoutConfigurationSettingService(userLayoutConfiguration);
+            var result = await _settingService.LayoutConfigurationSettingService(userLayoutConfiguration);
             return BuildResponse(result);
         }
     }
