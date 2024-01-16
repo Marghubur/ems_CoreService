@@ -179,7 +179,7 @@ namespace ServiceLayer.Code
                     if (ds.Tables[6].Rows.Count > 0 && ds.Tables[6].Rows[0][1] != DBNull.Value)
                     {
                         loginResponse.UserLayoutConfiguration =
-                            JsonConvert.DeserializeObject<UserLayoutConfiguration>(ds.Tables[6].Rows[0][1].ToString());
+                            JsonConvert.DeserializeObject<UserLayoutConfigurationJSON>(ds.Tables[6].Rows[0][1].ToString());
                     }
 
                     loginResponse.Companies = companies.FindAll(x => x.OrganizationId == loginDetail.OrganizationId);

@@ -577,15 +577,30 @@ namespace ServiceLayer.Code
             return salaryComponent;
         }
 
-        public async Task<UserLayoutConfiguration> LayoutConfigurationSettingService(UserLayoutConfiguration userLayoutConfiguration)
+        public async Task<UserLayoutConfigurationJSON> LayoutConfigurationSettingService(UserLayoutConfigurationJSON userLayoutConfiguration)
         {
+            var existingLayoutConfig = _db.Get<UserLayoutConfiguration>("sp_user_layout_configuration_get_by_empid", new
+            {
+                EmployeeId = _currentSession.CurrentUserDetail.UserId
+            });
+            var userLayoutConfig = new UserLayoutConfigurationJSON();
+            if (existingLayoutConfig != null)
+                userLayoutConfig = JsonConvert.DeserializeObject<UserLayoutConfigurationJSON>(existingLayoutConfig.SettingsJson);
+
+            if (!string.IsNullOrEmpty(userLayoutConfiguration.NavbarColor))
+                userLayoutConfig.NavbarColor = userLayoutConfiguration.NavbarColor;
+            else
+                userLayoutConfig.NavbarColor = "#ffffff";
+
+            userLayoutConfig.IsMenuExpanded = userLayoutConfiguration.IsMenuExpanded;
+
             await _db.ExecuteAsync(Procedures.User_Layout_Configuration_Ins_Upt, new
             {
                 EmployeeId = _currentSession.CurrentUserDetail.UserId,
-                UserLayoutConfiguration = JsonConvert.SerializeObject(userLayoutConfiguration)
+                UserLayoutConfiguration = JsonConvert.SerializeObject(userLayoutConfig)
             });
 
-            return userLayoutConfiguration;
+            return userLayoutConfig;
         }
 
         public List<SalaryComponents> FetchActiveComponentService()

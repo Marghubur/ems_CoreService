@@ -2,6 +2,7 @@
 {
     public class UserLayoutConfiguration
     {
-        public bool IsMenuExpanded { set; get; }
+        public long EmployeeId { get; set; }
+        public string SettingsJson { get; set; }
     }
 }

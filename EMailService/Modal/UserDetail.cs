@@ -57,7 +57,7 @@ namespace ModalLayer.Modal
         public DataTable Department { set; get; }
         public DataTable Roles { set; get; }
         public List<AutoCompleteEmployees> EmployeeList { set; get; }
-        public UserLayoutConfiguration UserLayoutConfiguration { set; get; }
+        public UserLayoutConfigurationJSON UserLayoutConfiguration { set; get; }
     }
 
     public class AutoCompleteEmployees
