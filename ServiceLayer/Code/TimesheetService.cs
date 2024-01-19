@@ -44,23 +44,11 @@ namespace ServiceLayer.Code
         {
             try
             {
-                var timesheets = _db.GetList<TimesheetDetail>("sp_employee_timesheet_get_bydate", new
+                var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
                 {
-                    TimesheetEndDate = TimesheetStartDate
-                });
-
-                if (timesheets.Count == 0)
-                {
-                    var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
-                    {
-                        TimesheetStartDate = TimesheetStartDate,
-                        TimesheetEndDate = TimesheetEndDate
-                    }, true);
-                }
-                else
-                {
-                    throw new Exception("Already generated");
-                }
+                    TimesheetStartDate = TimesheetStartDate,
+                    TimesheetEndDate = TimesheetEndDate
+                }, true);
             }
             catch (Exception ex)
             {
@@ -392,7 +380,7 @@ namespace ServiceLayer.Code
             billingDetail = new BillingDetail();
             billingDetail.FileDetail = Result.Tables[0];
             billingDetail.Employees = Result.Tables[1];
-            
+
             List<TimesheetDetail> currentTimesheetDetail = Converter.ToList<TimesheetDetail>(Result.Tables[2]);
             billingDetail.TimesheetDetails = BuildFinalTimesheet(currentTimesheetDetail);
             billingDetail.Organizations = Result.Tables[3];
@@ -432,7 +420,7 @@ namespace ServiceLayer.Code
                 FromDate = fromDate,
                 ToDate = toDate,
                 ManagerName = managerDetail.ManagerName,
-                Message = string.IsNullOrEmpty(timesheetDetail.UserComments)? "NA" : timesheetDetail.UserComments,
+                Message = string.IsNullOrEmpty(timesheetDetail.UserComments) ? "NA" : timesheetDetail.UserComments,
                 ToAddress = new List<string> { managerDetail.Email },
                 kafkaServiceName = KafkaServiceName.Timesheet,
                 LocalConnectionString = _currentSession.LocalConnectionString,
