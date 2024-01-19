@@ -10,7 +10,6 @@ namespace ServiceLayer.Code
     {
         private readonly ILogger<AutoTriggerService> _logger;
         private readonly IServiceProvider _serviceProvider;
-
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             IServiceProvider serviceProvider)
         {
@@ -38,6 +37,12 @@ namespace ServiceLayer.Code
 
         public async Task RunTimesheetJobAsync(DateTime startDate, DateTime? endDate, bool isCronJob)
         {
+            if (startDate.DayOfWeek != DayOfWeek.Sunday)
+                throw new Exception("Invalid start date selected. Start date must be monday");
+
+            if (endDate != null && endDate?.DayOfWeek != DayOfWeek.Saturday)
+                throw new Exception("Invalid end date selected. End date must be sunday");
+
             await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider, startDate, endDate, isCronJob);
             _logger.LogInformation("Timesheet creation cron job ran successfully.");
         }
