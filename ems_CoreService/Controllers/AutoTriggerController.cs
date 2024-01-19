@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
+using OnlineDataBuilder.ContextHandler;
 using OnlineDataBuilder.Controllers;
 using ServiceLayer.Interface;
 using System;
@@ -28,9 +29,10 @@ namespace ems_CoreService.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("triggerWeeklyTimesheet")]
-        public async Task WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
+        public async Task<ApiResponse> WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
         {
             await _autoTriggerService.RunTimesheetJobAsync(timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
+            return BuildResponse("Timesheet generated successfully", System.Net.HttpStatusCode.OK);
         }
 
         [Authorize(Roles = Role.Admin)]
