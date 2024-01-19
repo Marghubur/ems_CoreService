@@ -57,6 +57,10 @@ namespace ServiceLayer.Code
                         TimesheetEndDate = TimesheetEndDate
                     }, true);
                 }
+                else
+                {
+                    throw new Exception("Already generated");
+                }
             }
             catch (Exception ex)
             {
@@ -319,7 +323,6 @@ namespace ServiceLayer.Code
 
         public List<DailyTimesheetDetail> GetEmployeeTimeSheetService(TimesheetDetail timesheetDetail)
         {
-            var now = DateTime.UtcNow;
             int daysInMonth = DateTime.DaysInMonth(timesheetDetail.ForYear, timesheetDetail.ForMonth);
             var lastDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, daysInMonth);
             var firstDate = new DateTime(timesheetDetail.ForYear, timesheetDetail.ForMonth, 1);
@@ -368,7 +371,7 @@ namespace ServiceLayer.Code
         {
             BillingDetail billingDetail = default(BillingDetail);
             var now = DateTime.UtcNow;
-            int daysInMonth = DateTime.DaysInMonth(fileDetail.ForYear, now.Month);
+            int daysInMonth = DateTime.DaysInMonth(fileDetail.ForYear, fileDetail.ForMonth);
             var lastDate = new DateTime(fileDetail.ForYear, fileDetail.ForMonth, daysInMonth);
             var firstDate = new DateTime(fileDetail.ForYear, fileDetail.ForMonth, 1);
 
