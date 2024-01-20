@@ -20,8 +20,10 @@ namespace ModalLayer.Modal.Leaves
         public bool ResetBalanceToZero { set; get; }
         public bool CarryForwardToNextYear { set; get; }
         public int LeavePlanId { get; set; }
-        public List<FixedPayNCarryForward> FixedPayNCarryForward { set; get; }
-        public List<PercentagePayNCarryForward> PercentagePayNCarryForward { get; set; }
+        public string FixedPayNCarryForward { set; get; }
+        public string PercentagePayNCarryForward { set; get; }
+        public List<FixedPayNCarryForward> AllFixedPayNCarryForward { set; get; }
+        public List<PercentagePayNCarryForward> AllPercentagePayNCarryForward { get; set; }
     }
 
     public class FixedPayNCarryForward

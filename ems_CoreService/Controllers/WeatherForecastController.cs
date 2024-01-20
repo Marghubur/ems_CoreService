@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
+        private readonly YearEndCalculation _yearEndCalculation;
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -47,7 +49,8 @@ namespace OnlineDataBuilder.Controllers
             CurrentSession currentSession,
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
-            FileLocationDetail fileLocationDetail)
+            FileLocationDetail fileLocationDetail,
+            YearEndCalculation yearEndCalculation)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -59,6 +62,7 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
+            _yearEndCalculation = yearEndCalculation;
         }
 
         [HttpGet]
@@ -136,6 +140,10 @@ namespace OnlineDataBuilder.Controllers
             // await LeaveLevelMigration();
 
             // await _attendanceService.GenerateAttendanceService();
+
+            CompanySetting companySetting = new CompanySetting();
+            await _yearEndCalculation.RunAccrualCycle(companySetting);
+
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
