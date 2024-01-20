@@ -967,7 +967,7 @@ namespace ServiceLayer.Code
             catch
             {
                 if (IsNewRegistration && eCal.employee.EmployeeId > 0)
-                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { EmployeeId = eCal.employee.EmployeeId }, false);
+                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { eCal.employee.EmployeeId }, false);
 
                 throw;
             }
@@ -975,7 +975,13 @@ namespace ServiceLayer.Code
 
         private async Task CheckRunLeaveAccrualCycle(long EmployeeId)
         {
-            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new { EmployeeId = EmployeeId });
+            var PresentDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new 
+            { 
+                EmployeeId,
+                PresentDate.Year
+            });
+
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
 
@@ -1166,7 +1172,7 @@ namespace ServiceLayer.Code
                     employee.WorkShiftId,
                     IsPending = false,
                     employee.NewSalaryDetail,
-                     employee.PFNumber,
+                    employee.PFNumber,
                     employee.PFJoinDate,
                     employee.UniversalAccountNumber,
                     AdminId = _currentSession.CurrentUserDetail.UserId

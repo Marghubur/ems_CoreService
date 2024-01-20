@@ -592,7 +592,12 @@ namespace ServiceLayer.Code
             if (employeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected");
 
-            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new { EmployeeId = employeeId });
+            var PresentDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new 
+            { 
+                EmployeeId = employeeId,
+                PresentDate.Year
+            });
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Leave detail not found. Please contact to admin");
 
