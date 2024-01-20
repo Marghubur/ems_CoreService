@@ -21,7 +21,7 @@ namespace ServiceLayer.Code
 
         private void CreateDocument(HtmlNodeDetail parentNode)
         {
-            string destinationFolder = @"E:\projects\OnlineDataBuilderServer\OnlineDataBuilder\Documents\test.docx";
+            string destinationFolder = @"E:\projects\OnlineDataBuilderServer\OnlineDataBuilder\ApplicationFiles\test.docx";
             if (File.Exists(destinationFolder)) File.Delete(destinationFolder);
             using (MemoryStream mem = new MemoryStream())
             {
