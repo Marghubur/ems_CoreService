@@ -220,7 +220,10 @@ namespace ServiceLayer.Code.Leaves
         private async Task AllLeaveConvertedToPaid()
         {
             // convert all leave as paid amount and reset to 0
-
+            // 1. find number of days leave available
+            // 2. find salary detail based on employeeid
+            // 3. calculate basic * availabe leave
+            // 4. add in HikeBonusSalsryAdhoc IsForSpecificPeriod, Start, End
 
             await Task.CompletedTask;
         }
