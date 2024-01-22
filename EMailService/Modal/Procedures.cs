@@ -28,6 +28,7 @@
         public static string Employee_Leave_Request_By_Empid = "sp_employee_leave_request_by_empid";
         public static string Employee_Leave_Request_InsUpdate = "sp_employee_leave_request_InsUpdate";
         public static string Leave_Plan_Calculation_Get = "sp_leave_plan_calculation_get";
+        public static string EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR = "sp_employee_salary_detail_by_empid_year";
 
         /*-------------- Leave Calculation proceudures ------------*/
         public static string Leave_Type_Detail_Get_By_EmployeeId = "sp_leave_type_detail_get_by_employeeId";
@@ -241,7 +242,7 @@
         public static string Pf_Esi_Setting_Get = "sp_pf_esi_setting_get";
         public static string Employee_Salary_Detail_GetbyFilter = "sp_employee_salary_detail_getbyFilter";
         public static string Salary_Components_Group_By_Employeeid = "sp_salary_components_group_by_employeeid";
-
+        public static string HIKE_BONUS_SALARY_ADHOC_INS_UPDATE = "sp_hike_bonus_salary_adhoc_ins_update";
         /*--------------  Service Request Service procedures ------------*/
         public static string Service_Request_Filter = "sp_service_request_filter";
         public static string Service_Request_Sel_By_Id = "sp_service_request_sel_by_id";
