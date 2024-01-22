@@ -3,6 +3,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
+using EMailService.Modal.CronJobs;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -29,12 +30,17 @@ namespace ServiceLayer.Code.Leaves
             _timeZoneConverter = timeZoneConverter;
         }
 
-        public async Task RunAccrualCycle(CompanySetting companySetting)
+        public async Task RunAccrualCycle(LeaveYearEnd leaveYearEnd)
         {
-            _db.SetupConnectionString("server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;");
-            LeavePlan leavePlan = default;
-            List<LeavePlanType> leavePlanTypes = default;
-            _currentSession.TimeZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            leaveYearEnd = new LeaveYearEnd
+            {
+                TimezoneName = "India Standard Time",
+                EmployeeId = 3,
+                Timezone = TimeZoneInfo.FindSystemTimeZoneById(leaveYearEnd.TimezoneName),
+                ConnectionString = "server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;",
+            };
+
+            _db.SetupConnectionString(leaveYearEnd.ConnectionString);
             List<LeaveEndYearProcessing> leaveEndYearProcessingData = await LoadLeaveYearEndProcessingData();
 
             var offsetindex = 0;
@@ -69,7 +75,7 @@ namespace ServiceLayer.Code.Leaves
                             }
                             else if (i.AllConvertedToPaid)
                             {
-                                totalConvertedAmtToPaid += await AllLeaveConvertedToPaid(completeLeaveTypeBrief, i.LeavePlanTypeId, emp.EmployeeUid, i);
+                                totalConvertedAmtToPaid += await AllLeaveConvertedToPaid(completeLeaveTypeBrief, leaveYearEnd, i);
                             }
                             else if (i.AllLeavesCarryForwardToNextYear)
                             {
@@ -140,6 +146,7 @@ namespace ServiceLayer.Code.Leaves
                 balance = 0;
                 leaveQuota.TotalLeaveQuota = leaveQuota.AvailableLeaves;
             }
+
             return await Task.FromResult(balance);
         }
 
@@ -231,13 +238,18 @@ namespace ServiceLayer.Code.Leaves
         {
             // reset all leave 0 i.e. initial setup
             var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
-            leaveQuto.AvailableLeaves = 0;
+            if (leaveQuto != null)
+            {
+                leaveQuto.AvailableLeaves = 0;
+            }
+
             await Task.CompletedTask;
         }
 
-        private async Task<decimal> AllLeaveConvertedToPaid(List<LeaveTypeBrief> leaveQuotaDetail, int leavePlanTypeId,
-                                                            long employeeId, LeaveEndYearProcessing leaveEndYearProcessing)
+        private async Task<decimal> AllLeaveConvertedToPaid(List<LeaveTypeBrief> leaveQuotaDetail,
+                                                            LeaveYearEnd leaveYearEnd, LeaveEndYearProcessing leaveEndYearProcessing)
         {
+            int leavePlanTypeId = leaveEndYearProcessing.LeavePlanTypeId;
             // convert all leave as paid amount and reset to 0
             // 1. find number of days leave available
             // 2. find salary detail based on employeeid
@@ -245,14 +257,20 @@ namespace ServiceLayer.Code.Leaves
             // 4. add in HikeBonusSalsryAdhoc IsForSpecificPeriod, Start, End
 
             var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
+            if (leaveQuto == null)
+            {
+                return 0;
+            }
+
             decimal availableLeaveBalance = leaveQuto.AvailableLeaves;
             if (leaveQuto.AvailableLeaves < 0)
                 availableLeaveBalance = await VerifyForNegetiveBalance(leaveEndYearProcessing, leaveQuto);
             else
                 leaveQuto.AvailableLeaves = 0;
 
-            var basicSalary = await GetEmployeeBasicSalary(employeeId);
+            var basicSalary = await GetEmployeeBasicSalary(leaveYearEnd);
             var totalAmountToPaid = (basicSalary * availableLeaveBalance);
+
             return await Task.FromResult(totalAmountToPaid);
         }
 
@@ -341,15 +359,17 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(leaveEndYearProcessing);
         }
 
-        private async Task<decimal> GetEmployeeBasicSalary(long employeeId)
+        private async Task<decimal> GetEmployeeBasicSalary(LeaveYearEnd leaveYearEnd)
         {
-            var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            // Get month day to be consider for calculation e.g. Weekdays = 22/23 or Month days = 30/31
+            var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(leaveYearEnd.Timezone);
+
             EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR, new
             {
-                EmployeeId = employeeId,
-                Year = 2023
-                //Year = presentDate.Year
+                EmployeeId = leaveYearEnd.EmployeeId,
+                Year = leaveYearEnd.ProcessingDateTime.Year
             });
+
             if (employeeSalaryDetail == null)
                 throw new Exception("Employee salary detail not found");
 
