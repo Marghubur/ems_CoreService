@@ -1,5 +1,4 @@
-﻿using Bottomhalf.SpringNetModel;
-using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
@@ -35,14 +34,18 @@ namespace ServiceLayer.Code.Leaves
             leaveYearEnd = new LeaveYearEnd
             {
                 TimezoneName = "India Standard Time",
-                EmployeeId = 3,
                 Timezone = TimeZoneInfo.FindSystemTimeZoneById(leaveYearEnd.TimezoneName),
                 ConnectionString = "server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;",
             };
 
+            if (string.IsNullOrEmpty(leaveYearEnd.ConnectionString))
+                throw new Exception("Connection string is null");
+
+            if (leaveYearEnd.Timezone == null)
+                throw new Exception("Timezone is invalid");
+
             _db.SetupConnectionString(leaveYearEnd.ConnectionString);
             List<LeaveEndYearProcessing> leaveEndYearProcessingData = await LoadLeaveYearEndProcessingData();
-
             var offsetindex = 0;
             while (true)
             {
@@ -64,7 +67,8 @@ namespace ServiceLayer.Code.Leaves
 
                     foreach (EmployeeAccrualData emp in employeeAccrualData)
                     {
-                        var completeLeaveTypeBrief = await GetEmployeeLeaveQuotaDetail(emp.EmployeeUid);
+                        leaveYearEnd.EmployeeId = emp.EmployeeUid;
+                        var completeLeaveTypeBrief = await GetEmployeeLeaveQuotaDetail(leaveYearEnd);
                         var liveProcessingData = leaveEndYearProcessingData.Where(x => x.LeavePlanId == emp.LeavePlanId).ToList();
                         decimal totalConvertedAmtToPaid = 0;
                         liveProcessingData.ForEach(async i =>
@@ -85,19 +89,19 @@ namespace ServiceLayer.Code.Leaves
                             {
                                 if (i.PayFirstNCarryForwordRemaning)
                                 {
-                                    totalConvertedAmtToPaid += await PayFirstThenCarrayForward(i, completeLeaveTypeBrief, emp.EmployeeUid);
+                                    totalConvertedAmtToPaid += await PayFirstThenCarrayForward(i, completeLeaveTypeBrief, leaveYearEnd);
                                 }
                                 else if (i.CarryForwordFirstNPayRemaning)
                                 {
-                                    totalConvertedAmtToPaid += await CarrayForwardThenPayFirst(i, completeLeaveTypeBrief, emp.EmployeeUid);
+                                    totalConvertedAmtToPaid += await CarrayForwardThenPayFirst(i, completeLeaveTypeBrief, leaveYearEnd);
                                 }
                             }
                         });
 
                         if (totalConvertedAmtToPaid != 0)
-                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, emp.EmployeeUid);
+                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, leaveYearEnd.EmployeeId);
 
-                        await addEmployeeLeaveDetail(completeLeaveTypeBrief, emp.EmployeeUid);
+                        await addEmployeeLeaveDetail(completeLeaveTypeBrief, leaveYearEnd);
                     }
 
                     offsetindex += 500;
@@ -111,14 +115,12 @@ namespace ServiceLayer.Code.Leaves
             await Task.CompletedTask;
         }
 
-        private async Task<List<LeaveTypeBrief>> GetEmployeeLeaveQuotaDetail(long employeeId)
+        private async Task<List<LeaveTypeBrief>> GetEmployeeLeaveQuotaDetail(LeaveYearEnd leaveYearEnd)
         {
-            var PresentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
             Leave existingLeave = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new
             {
-                EmployeeId = employeeId,
-                Year = 2023
-                //PresentDate.Year
+                EmployeeId = leaveYearEnd.EmployeeId,
+                Year = leaveYearEnd.ProcessingDateTime.Year
             });
 
             if (string.IsNullOrEmpty(existingLeave.LeaveQuotaDetail) || existingLeave.LeaveQuotaDetail == "[]")
@@ -150,7 +152,7 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(balance);
         }
 
-        private async Task<decimal> PayFirstThenCarrayForward(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, long EmployeeId)
+        private async Task<decimal> PayFirstThenCarrayForward(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
         {
             decimal payableAmount = 0;
             if (!string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) && leaveEndYearProcessing.FixedPayNCarryForward != "[]")
@@ -169,12 +171,15 @@ namespace ServiceLayer.Code.Leaves
                 throw new Exception("Invalid pay and carry forward type selected");
 
             var currentLeaveType = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
+            if (currentLeaveType == null)
+                return payableAmount;
+
             if (currentLeaveType.AvailableLeaves > 0)
             {
                 if (leaveEndYearProcessing.PayNCarryForwardDefineType.ToString() == "fixed")
-                    payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, EmployeeId);
+                    payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, leaveYearEnd);
                 else
-                    payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, EmployeeId);
+                    payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, leaveYearEnd);
             }
             else
             {
@@ -192,7 +197,7 @@ namespace ServiceLayer.Code.Leaves
             return payableAmount;
         }
 
-        private async Task<decimal> CarrayForwardThenPayFirst(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, long EmployeeId)
+        private async Task<decimal> CarrayForwardThenPayFirst(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
         {
             decimal payableAmount = 0;
             if (!string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) && leaveEndYearProcessing.FixedPayNCarryForward != "[]")
@@ -211,12 +216,15 @@ namespace ServiceLayer.Code.Leaves
                 throw new Exception("Invalid pay and carry forward type selected");
 
             var currentLeaveType = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
+            if (currentLeaveType == null)
+                return payableAmount;
+
             if (currentLeaveType.AvailableLeaves > 0)
             {
                 if (leaveEndYearProcessing.PayNCarryForwardDefineType.ToString() == "fixed")
-                    payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, EmployeeId);
+                    payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, leaveYearEnd);
                 else
-                    payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, EmployeeId);
+                    payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, leaveYearEnd);
             }
             else
             {
@@ -249,13 +257,13 @@ namespace ServiceLayer.Code.Leaves
         private async Task<decimal> AllLeaveConvertedToPaid(List<LeaveTypeBrief> leaveQuotaDetail,
                                                             LeaveYearEnd leaveYearEnd, LeaveEndYearProcessing leaveEndYearProcessing)
         {
-            int leavePlanTypeId = leaveEndYearProcessing.LeavePlanTypeId;
             // convert all leave as paid amount and reset to 0
             // 1. find number of days leave available
             // 2. find salary detail based on employeeid
             // 3. calculate basic * availabe leave
             // 4. add in HikeBonusSalsryAdhoc IsForSpecificPeriod, Start, End
 
+            int leavePlanTypeId = leaveEndYearProcessing.LeavePlanTypeId;
             var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
             if (leaveQuto == null)
             {
@@ -278,19 +286,23 @@ namespace ServiceLayer.Code.Leaves
         {
             // all leaves are carry forward to next year
             var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
-            leaveQuto.TotalLeaveQuota = leaveQuto.TotalLeaveQuota + leaveQuto.AvailableLeaves;
-            if (leaveEndYearProcessing.DoestCarryForwardExpired)
+            if (leaveQuto != null)
             {
-                await CarryForwardLeaveExpired();
-            }
-            else if (leaveEndYearProcessing.DoesExpiryLeaveRemainUnchange)
-            {
+                leaveQuto.TotalLeaveQuota = leaveQuto.TotalLeaveQuota + leaveQuto.AvailableLeaves;
+                if (leaveEndYearProcessing.DoestCarryForwardExpired)
+                {
+                    await CarryForwardLeaveExpired();
+                }
+                else if (leaveEndYearProcessing.DoesExpiryLeaveRemainUnchange)
+                {
 
+                }
             }
+
             await Task.CompletedTask;
         }
 
-        private async Task<decimal> FixedPayNCarryForward(List<FixedPayNCarryForward> fixedPayNCarryForwards, LeaveTypeBrief currentLeaveType, long employeeId)
+        private async Task<decimal> FixedPayNCarryForward(List<FixedPayNCarryForward> fixedPayNCarryForwards, LeaveTypeBrief currentLeaveType, LeaveYearEnd leaveYearEnd)
         {
             // according to fixed number of days.
             decimal payableAmount = 0;
@@ -300,7 +312,7 @@ namespace ServiceLayer.Code.Leaves
             {
                 if (currentLeaveType.AvailableLeaves > fixedPayNCarryForwards[i].PayNCarryForwardRuleInDays)
                 {
-                    decimal basicAmount = await GetEmployeeBasicSalary(employeeId);
+                    decimal basicAmount = await GetEmployeeBasicSalary(leaveYearEnd);
                     payableAmount = (fixedPayNCarryForwards[i].PaybleForDays * basicAmount);
                     var remianingLeave = currentLeaveType.AvailableLeaves - fixedPayNCarryForwards[i].PaybleForDays;
                     if (remianingLeave > fixedPayNCarryForwards[i].CarryForwardForDays)
@@ -316,7 +328,7 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(payableAmount);
         }
 
-        private async Task<decimal> PercentagePayNCarryForward(List<PercentagePayNCarryForward> percentagePayNCarryForwards, LeaveTypeBrief currentLeaveType, long employeeId)
+        private async Task<decimal> PercentagePayNCarryForward(List<PercentagePayNCarryForward> percentagePayNCarryForwards, LeaveTypeBrief currentLeaveType, LeaveYearEnd leaveYearEnd)
         {
             // according to percentage of remianing leave.
             decimal payableAmount = 0;
@@ -327,7 +339,7 @@ namespace ServiceLayer.Code.Leaves
                 if (currentLeaveType.AvailableLeaves > percentagePayNCarryForwards[i].PayNCarryForwardRuleInPercent)
                 {
                     var payableLeaveCount = (percentagePayNCarryForwards[i].PayPercent * currentLeaveType.AvailableLeaves) / 100;
-                    decimal basicAmount = await GetEmployeeBasicSalary(employeeId);
+                    decimal basicAmount = await GetEmployeeBasicSalary(leaveYearEnd);
                     payableAmount = (payableLeaveCount * basicAmount);
                     var carryForwardLeaveCount = (percentagePayNCarryForwards[i].CarryForwardPercent * currentLeaveType.AvailableLeaves) / 100;
                     currentLeaveType.AvailableLeaves = carryForwardLeaveCount;
@@ -362,8 +374,6 @@ namespace ServiceLayer.Code.Leaves
         private async Task<decimal> GetEmployeeBasicSalary(LeaveYearEnd leaveYearEnd)
         {
             // Get month day to be consider for calculation e.g. Weekdays = 22/23 or Month days = 30/31
-            var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(leaveYearEnd.Timezone);
-
             EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR, new
             {
                 EmployeeId = leaveYearEnd.EmployeeId,
@@ -381,7 +391,7 @@ namespace ServiceLayer.Code.Leaves
 
             var curretMonthSalary = annualSalaryBreakup.OrderByDescending(x => x.MonthNumber).ToList().FirstOrDefault();
             var basicSalary = curretMonthSalary.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.Basic);
-            var perDayBasicSalary = (basicSalary.FinalAmount / presentDate.Day);
+            var perDayBasicSalary = (basicSalary.FinalAmount / leaveYearEnd.ProcessingDateTime.Day);
             return await Task.FromResult(perDayBasicSalary);
         }
 
@@ -415,19 +425,19 @@ namespace ServiceLayer.Code.Leaves
             await Task.CompletedTask;
         }
 
-        private async Task addEmployeeLeaveDetail(List<LeaveTypeBrief> completeLeaveTypeBrief, long employeeId)
+        private async Task addEmployeeLeaveDetail(List<LeaveTypeBrief> completeLeaveTypeBrief, LeaveYearEnd leaveYearEnd)
         {
             decimal totalLeaveQuota = completeLeaveTypeBrief.Sum(x => x.TotalLeaveQuota);
             var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
             var result = _db.Execute<LeaveRequestDetail>(Procedures.Employee_Leave_Request_InsUpdate, new
             {
                 LeaveRequestId = 0,
-                EmployeeId = employeeId,
+                EmployeeId = leaveYearEnd.EmployeeId,
                 LeaveDetail = "[]",
                 AvailableLeaves = 0,
                 TotalLeaveApplied = 0,
                 TotalApprovedLeave = 0,
-                Year = presentDate.Year + 1,
+                Year = leaveYearEnd.ProcessingDateTime.Year + 1,
                 IsPending = false,
                 TotalLeaveQuota = totalLeaveQuota,
                 LeaveQuotaDetail = JsonConvert.SerializeObject(completeLeaveTypeBrief)

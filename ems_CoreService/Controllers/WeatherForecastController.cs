@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal.CronJobs;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -141,8 +142,8 @@ namespace OnlineDataBuilder.Controllers
 
             // await _attendanceService.GenerateAttendanceService();
 
-            CompanySetting companySetting = new CompanySetting();
-            await _yearEndCalculation.RunAccrualCycle(companySetting);
+            LeaveYearEnd leaveYearEnd = new LeaveYearEnd();
+            //await _yearEndCalculation.RunAccrualCycle(leaveYearEnd);
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
