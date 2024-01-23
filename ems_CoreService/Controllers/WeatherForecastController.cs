@@ -129,7 +129,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            // await RunLeaveAccrualAsync();
+            //await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
 
@@ -143,7 +143,7 @@ namespace OnlineDataBuilder.Controllers
             // await _attendanceService.GenerateAttendanceService();
 
             LeaveYearEnd leaveYearEnd = new LeaveYearEnd();
-            //await _yearEndCalculation.RunAccrualCycle(leaveYearEnd);
+            //await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -195,12 +195,12 @@ namespace OnlineDataBuilder.Controllers
         private async Task RunLeaveAccrualAsync()
         {
             _logger.LogInformation($"CS: {_fileLocationDetail.ConnectionString}"); ;
-            _db.SetupConnectionString(_fileLocationDetail.ConnectionString);
+            _db.SetupConnectionString("server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;");
             RunAccrualModel runAccrualModel = new RunAccrualModel
             {
-                RunTillMonthOfPresnetYear = true,
-                EmployeeId = 0,
-                IsSingleRun = false
+                RunTillMonthOfPresnetYear = false,
+                EmployeeId = 2,
+                IsSingleRun = true
             };
 
             await _leaveCalculation.StartAccrualCycle(runAccrualModel);

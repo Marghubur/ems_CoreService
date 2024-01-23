@@ -550,10 +550,10 @@ namespace ServiceLayer.Code
                 leaveEndYearProcessing.ExpiredAfter = 0;
 
             if (leaveEndYearProcessing.PayNCarryForwardDefineType == "fixed" || (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false))
-                leaveEndYearProcessing.AllPercentagePayNCarryForward = new List<PercentagePayNCarryForward>();
+                leaveEndYearProcessing.PercentagePayNCarryForward = new List<PercentagePayNCarryForward>();
 
             if (leaveEndYearProcessing.PayNCarryForwardDefineType == "percentage" || (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false))
-                leaveEndYearProcessing.AllFixedPayNCarryForward = new List<FixedPayNCarryForward>();
+                leaveEndYearProcessing.FixedPayNCarryForward = new List<FixedPayNCarryForward>();
 
             if (leaveEndYearProcessing.PayFirstNCarryForwordRemaning == false && leaveEndYearProcessing.CarryForwordFirstNPayRemaning == false)
                 leaveEndYearProcessing.PayNCarryForwardDefineType = "";
@@ -569,8 +569,8 @@ namespace ServiceLayer.Code
                 leaveEndYearProcessing.CarryForwordFirstNPayRemaning,
                 leaveEndYearProcessing.PayNCarryForwardForPercent,
                 leaveEndYearProcessing.PayNCarryForwardDefineType,
-                FixedPayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.AllFixedPayNCarryForward),
-                PercentagePayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.AllPercentagePayNCarryForward),
+                FixedPayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.FixedPayNCarryForward),
+                PercentagePayNCarryForward = JsonConvert.SerializeObject(leaveEndYearProcessing.PercentagePayNCarryForward),
                 leaveEndYearProcessing.DoestCarryForwardExpired,
                 leaveEndYearProcessing.ExpiredAfter,
                 leaveEndYearProcessing.DoesExpiryLeaveRemainUnchange,

@@ -105,7 +105,10 @@ namespace ServiceLayer.Code
 
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
         {
-            var result = _db.FetchDataSet(Procedures.Leave_Type_Detail_Get_By_EmployeeId, new { EmployeeId });
+            var result = _db.FetchDataSet(Procedures.Leave_Type_Detail_Get_By_EmployeeId, new { 
+                EmployeeId ,
+                Year = DateTime.UtcNow.Year
+            });
             if (!ApplicationConstants.IsValidDataSet(result, 4))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
@@ -176,7 +179,8 @@ namespace ServiceLayer.Code
                     {
                         EmployeeId = runAccrualModel.EmployeeId,
                         OffsetIndex = offsetindex,
-                        PageSize = 500
+                        PageSize = 500,
+                        Year = DateTime.UtcNow.Year
                     }, false);
 
                     if (runAccrualModel.IsSingleRun && employeeAccrualData.Count > 1)
@@ -369,7 +373,6 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
             }
             _logger.LogInformation("Method: UpdateEmployeesRecord end");
-
         }
 
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
