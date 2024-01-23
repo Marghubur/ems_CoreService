@@ -2,7 +2,7 @@
 
 namespace ModalLayer.Modal.Leaves
 {
-    public class LeaveEndYearProcessing
+    public class LeaveEndYearModal
     {
         public int LeaveEndYearProcessingId { set; get; }
         public int LeavePlanTypeId { set; get; }
@@ -20,25 +20,9 @@ namespace ModalLayer.Modal.Leaves
         public bool ResetBalanceToZero { set; get; }
         public bool CarryForwardToNextYear { set; get; }
         public int LeavePlanId { get; set; }
-        public List<FixedPayNCarryForward> FixedPayNCarryForward { set; get; }
-        public List<PercentagePayNCarryForward> PercentagePayNCarryForward { set; get; }
-    }
-
-    public class FixedPayNCarryForward
-    {
-        public decimal PayNCarryForwardRuleInDays { set; get; }
-        public decimal PaybleForDays { set; get; }
-        public decimal CarryForwardForDays { set; get; }
-    }
-
-    public class PercentagePayNCarryForward
-    {
-        public decimal PayNCarryForwardRuleInPercent { set; get; }
-        public decimal PayPercent { set; get; }
-        public decimal CarryForwardPercent { set; get; }
-        public bool IsMaximumPayableRequired { set; get; }
-        public decimal MaximumPayableDays { set; get; }
-        public bool IsMaximumCarryForwardRequired { set; get; }
-        public decimal MaximumCarryForwardDays { set; get; }
+        public string FixedPayNCarryForward { set; get; }
+        public string PercentagePayNCarryForward { set; get; }
+        public List<FixedPayNCarryForward> AllFixedPayNCarryForward { set; get; }
+        public List<PercentagePayNCarryForward> AllPercentagePayNCarryForward { set; get; }
     }
 }

@@ -29,12 +29,13 @@ namespace ServiceLayer.Code.Leaves
             _timeZoneConverter = timeZoneConverter;
         }
 
-        public async Task RunAccrualCycle(LeaveYearEnd leaveYearEnd)
+        public async Task RunLeaveYearEndCycle(LeaveYearEnd leaveYearEnd)
         {
             leaveYearEnd = new LeaveYearEnd
             {
                 TimezoneName = "India Standard Time",
-                Timezone = TimeZoneInfo.FindSystemTimeZoneById(leaveYearEnd.TimezoneName),
+                ProcessingDateTime = DateTime.UtcNow.AddMonths(-1),
+                Timezone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"),
                 ConnectionString = "server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;",
             };
 
@@ -45,8 +46,9 @@ namespace ServiceLayer.Code.Leaves
                 throw new Exception("Timezone is invalid");
 
             _db.SetupConnectionString(leaveYearEnd.ConnectionString);
-            List<LeaveEndYearProcessing> leaveEndYearProcessingData = await LoadLeaveYearEndProcessingData();
+            List<LeaveEndYearModal> leaveEndYearProcessingData = await LoadLeaveYearEndProcessingData();
             var offsetindex = 0;
+            int index = 0;
             while (true)
             {
                 try
@@ -56,7 +58,8 @@ namespace ServiceLayer.Code.Leaves
                     {
                         EmployeeId = 0,
                         OffsetIndex = offsetindex,
-                        PageSize = 500
+                        PageSize = 500,
+                        Year = leaveYearEnd.ProcessingDateTime.Year
                     }, false);
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
@@ -64,10 +67,11 @@ namespace ServiceLayer.Code.Leaves
                         _logger.LogInformation("EmployeeAccrualData is null or count is 0");
                         break;
                     }
-
+                    
                     foreach (EmployeeAccrualData emp in employeeAccrualData)
                     {
                         leaveYearEnd.EmployeeId = emp.EmployeeUid;
+                        leaveYearEnd.CompanyId = emp.CompanyId;
                         var completeLeaveTypeBrief = await GetEmployeeLeaveQuotaDetail(leaveYearEnd);
                         var liveProcessingData = leaveEndYearProcessingData.Where(x => x.LeavePlanId == emp.LeavePlanId).ToList();
                         decimal totalConvertedAmtToPaid = 0;
@@ -99,15 +103,18 @@ namespace ServiceLayer.Code.Leaves
                         });
 
                         if (totalConvertedAmtToPaid != 0)
-                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, leaveYearEnd.EmployeeId);
+                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, leaveYearEnd.EmployeeId, leaveYearEnd.CompanyId);
 
                         await addEmployeeLeaveDetail(completeLeaveTypeBrief, leaveYearEnd);
+                        index++;
+                        Console.WriteLine($"Success: {index}");
                     }
 
                     offsetindex += 500;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex.Message);
                     break;
                 }
             }
@@ -130,43 +137,36 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(employeeLeaveQuto);
         }
 
-        private async Task<decimal> VerifyForNegetiveBalance(LeaveEndYearProcessing leaveEndYearProcessing, LeaveTypeBrief leaveQuota)
+        private async Task<decimal> VerifyForNegetiveBalance(LeaveEndYearModal leaveEndYearProcessing, LeaveTypeBrief leaveQuota)
         {
             decimal balance = 0;
             if (leaveEndYearProcessing.DeductFromSalaryOnYearChange)
             {
                 balance = leaveQuota.AvailableLeaves;
                 leaveQuota.AvailableLeaves = 0;
+                leaveQuota.TotalLeaveQuota = 0;
+                leaveQuota.AccruedSoFar = 0;
             }
             else if (leaveEndYearProcessing.ResetBalanceToZero)
             {
                 balance = 0;
                 leaveQuota.AvailableLeaves = 0;
+                leaveQuota.TotalLeaveQuota = 0;
+                leaveQuota.AccruedSoFar = 0;
             }
             else if (leaveEndYearProcessing.CarryForwardToNextYear)
             {
                 balance = 0;
                 leaveQuota.TotalLeaveQuota = leaveQuota.AvailableLeaves;
+                leaveQuota.AccruedSoFar = leaveQuota.AvailableLeaves;
             }
 
             return await Task.FromResult(balance);
         }
 
-        private async Task<decimal> PayFirstThenCarrayForward(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
+        private async Task<decimal> PayFirstThenCarrayForward(LeaveEndYearModal leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
         {
             decimal payableAmount = 0;
-            if (!string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) && leaveEndYearProcessing.FixedPayNCarryForward != "[]")
-            {
-                leaveEndYearProcessing.AllFixedPayNCarryForward =
-                    JsonConvert.DeserializeObject<List<FixedPayNCarryForward>>(leaveEndYearProcessing.FixedPayNCarryForward);
-            }
-
-            if (!string.IsNullOrEmpty(leaveEndYearProcessing.PercentagePayNCarryForward) && leaveEndYearProcessing.PercentagePayNCarryForward != "[]")
-            {
-                leaveEndYearProcessing.AllPercentagePayNCarryForward =
-                    JsonConvert.DeserializeObject<List<PercentagePayNCarryForward>>(leaveEndYearProcessing.PercentagePayNCarryForward);
-            }
-
             if (string.IsNullOrEmpty(leaveEndYearProcessing.PayNCarryForwardDefineType))
                 throw new Exception("Invalid pay and carry forward type selected");
 
@@ -177,9 +177,23 @@ namespace ServiceLayer.Code.Leaves
             if (currentLeaveType.AvailableLeaves > 0)
             {
                 if (leaveEndYearProcessing.PayNCarryForwardDefineType.ToString() == "fixed")
+                {
+                    if (string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) || leaveEndYearProcessing.FixedPayNCarryForward == "[]")
+                        throw new Exception("Fixed pay and carry forward detail not found");
+                    else
+                        leaveEndYearProcessing.AllFixedPayNCarryForward = JsonConvert.DeserializeObject<List<FixedPayNCarryForward>>(leaveEndYearProcessing.FixedPayNCarryForward);
+                    
                     payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, leaveYearEnd);
+                }
                 else
+                {
+                    if (string.IsNullOrEmpty(leaveEndYearProcessing.PercentagePayNCarryForward) || leaveEndYearProcessing.PercentagePayNCarryForward == "[]")
+                        throw new Exception("Percentage pay and carry forward detail not found");
+                    else
+                        leaveEndYearProcessing.AllPercentagePayNCarryForward = JsonConvert.DeserializeObject<List<PercentagePayNCarryForward>>(leaveEndYearProcessing.PercentagePayNCarryForward);
+
                     payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, leaveYearEnd);
+                }
             }
             else
             {
@@ -197,21 +211,9 @@ namespace ServiceLayer.Code.Leaves
             return payableAmount;
         }
 
-        private async Task<decimal> CarrayForwardThenPayFirst(LeaveEndYearProcessing leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
+        private async Task<decimal> CarrayForwardThenPayFirst(LeaveEndYearModal leaveEndYearProcessing, List<LeaveTypeBrief> leaveTypeBriefs, LeaveYearEnd leaveYearEnd)
         {
             decimal payableAmount = 0;
-            if (!string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) && leaveEndYearProcessing.FixedPayNCarryForward != "[]")
-            {
-                leaveEndYearProcessing.AllFixedPayNCarryForward =
-                    JsonConvert.DeserializeObject<List<FixedPayNCarryForward>>(leaveEndYearProcessing.FixedPayNCarryForward);
-            }
-
-            if (!string.IsNullOrEmpty(leaveEndYearProcessing.PercentagePayNCarryForward) && leaveEndYearProcessing.PercentagePayNCarryForward != "[]")
-            {
-                leaveEndYearProcessing.AllPercentagePayNCarryForward =
-                    JsonConvert.DeserializeObject<List<PercentagePayNCarryForward>>(leaveEndYearProcessing.PercentagePayNCarryForward);
-            }
-
             if (string.IsNullOrEmpty(leaveEndYearProcessing.PayNCarryForwardDefineType))
                 throw new Exception("Invalid pay and carry forward type selected");
 
@@ -222,9 +224,23 @@ namespace ServiceLayer.Code.Leaves
             if (currentLeaveType.AvailableLeaves > 0)
             {
                 if (leaveEndYearProcessing.PayNCarryForwardDefineType.ToString() == "fixed")
+                {
+                    if (string.IsNullOrEmpty(leaveEndYearProcessing.FixedPayNCarryForward) || leaveEndYearProcessing.FixedPayNCarryForward == "[]")
+                        throw new Exception("Fixed pay and carry forward detail not found");
+                    else
+                        leaveEndYearProcessing.AllFixedPayNCarryForward = JsonConvert.DeserializeObject<List<FixedPayNCarryForward>>(leaveEndYearProcessing.FixedPayNCarryForward);
+
                     payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, leaveYearEnd);
+                }
                 else
+                {
+                    if (string.IsNullOrEmpty(leaveEndYearProcessing.PercentagePayNCarryForward) || leaveEndYearProcessing.PercentagePayNCarryForward == "[]")
+                        throw new Exception("Percentage pay and carry forward detail not found");
+                    else
+                        leaveEndYearProcessing.AllPercentagePayNCarryForward = JsonConvert.DeserializeObject<List<PercentagePayNCarryForward>>(leaveEndYearProcessing.PercentagePayNCarryForward);
+
                     payableAmount += await PercentagePayNCarryForward(leaveEndYearProcessing.AllPercentagePayNCarryForward, currentLeaveType, leaveYearEnd);
+                }
             }
             else
             {
@@ -245,36 +261,33 @@ namespace ServiceLayer.Code.Leaves
         private async Task LeaveBalanceExpiredOnEndOfYear(List<LeaveTypeBrief> leaveQuotaDetail, int leavePlanTypeId)
         {
             // reset all leave 0 i.e. initial setup
-            var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
-            if (leaveQuto != null)
+            var leaveQuota = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
+            if (leaveQuota != null)
             {
-                leaveQuto.AvailableLeaves = 0;
+                leaveQuota.AccruedSoFar = 0;
+                leaveQuota.AvailableLeaves = 0;
+                leaveQuota.TotalLeaveQuota = 0;
             }
 
             await Task.CompletedTask;
         }
 
         private async Task<decimal> AllLeaveConvertedToPaid(List<LeaveTypeBrief> leaveQuotaDetail,
-                                                            LeaveYearEnd leaveYearEnd, LeaveEndYearProcessing leaveEndYearProcessing)
+                                                            LeaveYearEnd leaveYearEnd, LeaveEndYearModal leaveEndYearProcessing)
         {
             // convert all leave as paid amount and reset to 0
-            // 1. find number of days leave available
-            // 2. find salary detail based on employeeid
-            // 3. calculate basic * availabe leave
-            // 4. add in HikeBonusSalsryAdhoc IsForSpecificPeriod, Start, End
-
             int leavePlanTypeId = leaveEndYearProcessing.LeavePlanTypeId;
-            var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
-            if (leaveQuto == null)
+            var leaveQuota = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leavePlanTypeId);
+            if (leaveQuota == null)
             {
                 return 0;
             }
 
-            decimal availableLeaveBalance = leaveQuto.AvailableLeaves;
-            if (leaveQuto.AvailableLeaves < 0)
-                availableLeaveBalance = await VerifyForNegetiveBalance(leaveEndYearProcessing, leaveQuto);
+            decimal availableLeaveBalance = leaveQuota.AvailableLeaves;
+            if (leaveQuota.AvailableLeaves < 0)
+                availableLeaveBalance = await VerifyForNegetiveBalance(leaveEndYearProcessing, leaveQuota);
             else
-                leaveQuto.AvailableLeaves = 0;
+                leaveQuota.AvailableLeaves = 0;
 
             var basicSalary = await GetEmployeeBasicSalary(leaveYearEnd);
             var totalAmountToPaid = (basicSalary * availableLeaveBalance);
@@ -282,13 +295,14 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(totalAmountToPaid);
         }
 
-        private async Task AllLeavesCarryForwardToNextYear(List<LeaveTypeBrief> leaveQuotaDetail, LeaveEndYearProcessing leaveEndYearProcessing)
+        private async Task AllLeavesCarryForwardToNextYear(List<LeaveTypeBrief> leaveQuotaDetail, LeaveEndYearModal leaveEndYearProcessing)
         {
             // all leaves are carry forward to next year
-            var leaveQuto = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
-            if (leaveQuto != null)
+            var leaveQuota = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
+            if (leaveQuota != null)
             {
-                leaveQuto.TotalLeaveQuota = leaveQuto.TotalLeaveQuota + leaveQuto.AvailableLeaves;
+                leaveQuota.TotalLeaveQuota = leaveQuota.AvailableLeaves;
+                leaveQuota.AccruedSoFar = leaveQuota.AvailableLeaves;
                 if (leaveEndYearProcessing.DoestCarryForwardExpired)
                 {
                     await CarryForwardLeaveExpired();
@@ -320,7 +334,8 @@ namespace ServiceLayer.Code.Leaves
                     else
                         currentLeaveType.AvailableLeaves = remianingLeave;
 
-                    currentLeaveType.TotalLeaveQuota = currentLeaveType.AvailableLeaves + currentLeaveType.TotalLeaveQuota;
+                    currentLeaveType.TotalLeaveQuota = currentLeaveType.AvailableLeaves;
+                    currentLeaveType.AccruedSoFar = currentLeaveType.AvailableLeaves;
                     break;
                 }
                 i++;
@@ -343,7 +358,8 @@ namespace ServiceLayer.Code.Leaves
                     payableAmount = (payableLeaveCount * basicAmount);
                     var carryForwardLeaveCount = (percentagePayNCarryForwards[i].CarryForwardPercent * currentLeaveType.AvailableLeaves) / 100;
                     currentLeaveType.AvailableLeaves = carryForwardLeaveCount;
-                    currentLeaveType.TotalLeaveQuota = currentLeaveType.AvailableLeaves + currentLeaveType.TotalLeaveQuota;
+                    currentLeaveType.TotalLeaveQuota = currentLeaveType.AvailableLeaves;
+                    currentLeaveType.AccruedSoFar = currentLeaveType.AvailableLeaves;
                     break;
                 }
                 i++;
@@ -358,10 +374,10 @@ namespace ServiceLayer.Code.Leaves
             await Task.CompletedTask;
         }
 
-        private async Task<List<LeaveEndYearProcessing>> LoadLeaveYearEndProcessingData()
+        private async Task<List<LeaveEndYearModal>> LoadLeaveYearEndProcessingData()
         {
             _logger.LogInformation("Calling : SP_LEAVE_YEAREND_PROCESSING_ALL");
-            var leaveEndYearProcessing = _db.GetList<LeaveEndYearProcessing>(Procedures.SP_LEAVE_YEAREND_PROCESSING_ALL);
+            var leaveEndYearProcessing = _db.GetList<LeaveEndYearModal>(Procedures.SP_LEAVE_YEAREND_PROCESSING_ALL);
             if (leaveEndYearProcessing == null || leaveEndYearProcessing.Count == 0)
             {
                 _logger.LogError("Employee does not exist. Please contact to admin.");
@@ -374,14 +390,37 @@ namespace ServiceLayer.Code.Leaves
         private async Task<decimal> GetEmployeeBasicSalary(LeaveYearEnd leaveYearEnd)
         {
             // Get month day to be consider for calculation e.g. Weekdays = 22/23 or Month days = 30/31
-            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR, new
+            var ds = _db.GetDataSet(Procedures.EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR, new
             {
                 EmployeeId = leaveYearEnd.EmployeeId,
-                Year = leaveYearEnd.ProcessingDateTime.Year
+                Year = leaveYearEnd.ProcessingDateTime.Year,
+                CompanyId = leaveYearEnd.CompanyId
             });
+            if (ds == null || ds.Tables.Count != 3)
+                throw new Exception("Fail to get employee salary, payroll and workshift detial");
 
-            if (employeeSalaryDetail == null)
-                throw new Exception("Employee salary detail not found");
+            if (ds.Tables[1].Rows.Count == 0)
+                throw new HiringBellException("Fail to get employee salary details. Please contact to admin.");
+
+            if (ds.Tables[1].Rows.Count == 0)
+                throw new HiringBellException("Fail to get payroll details. Please contact to admin.");
+
+            if (ds.Tables[1].Rows.Count == 0)
+                throw new HiringBellException("Fail to get workshift details. Please contact to admin.");
+
+            EmployeeSalaryDetail employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ds.Tables[0]);
+            Payroll payroll = Converter.ToType<Payroll>(ds.Tables[1]);
+            ShiftDetail shiftDetail = Converter.ToType<ShiftDetail>(ds.Tables[2]);
+            int calculationDaysInCurrentMonth = 0;
+            if (payroll.PayCalculationId == 1)  //PayCalculationId = 1 => Actual days in month, PayCalculationId = 2 => Weekday only
+            {
+                calculationDaysInCurrentMonth = DateTime.DaysInMonth(leaveYearEnd.ProcessingDateTime.Year, leaveYearEnd.ProcessingDateTime.Month);
+            } else
+            {
+                var firstDayOfMonth = new DateTime(leaveYearEnd.ProcessingDateTime.Year, leaveYearEnd.ProcessingDateTime.Month, 1);
+                var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                calculationDaysInCurrentMonth = await GetWeekDaysBetweenTwoDate(firstDayOfMonth, lastDayOfMonth, shiftDetail);
+            }
 
             List<AnnualSalaryBreakup> annualSalaryBreakup = null;
             if (!string.IsNullOrEmpty(employeeSalaryDetail.CompleteSalaryDetail) && employeeSalaryDetail.CompleteSalaryDetail != "[]")
@@ -391,11 +430,11 @@ namespace ServiceLayer.Code.Leaves
 
             var curretMonthSalary = annualSalaryBreakup.OrderByDescending(x => x.MonthNumber).ToList().FirstOrDefault();
             var basicSalary = curretMonthSalary.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.Basic);
-            var perDayBasicSalary = (basicSalary.FinalAmount / leaveYearEnd.ProcessingDateTime.Day);
+            var perDayBasicSalary = (basicSalary.FinalAmount / calculationDaysInCurrentMonth);
             return await Task.FromResult(perDayBasicSalary);
         }
 
-        private async Task addConvertedAmountAsBonus(decimal totalConvertedAmtToPaid, long employeeId)
+        private async Task addConvertedAmountAsBonus(decimal totalConvertedAmtToPaid, long employeeId, int companyId)
         {
             var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
             HikeBonusSalaryAdhoc hikeBonusSalaryAdhoc = new HikeBonusSalaryAdhoc
@@ -403,7 +442,7 @@ namespace ServiceLayer.Code.Leaves
                 SalaryAdhocId = 0,
                 EmployeeId = employeeId,
                 OrganizationId = 1,
-                CompanyId = 1,
+                CompanyId = companyId,
                 IsPaidByCompany = true,
                 IsFine = totalConvertedAmtToPaid > 0 ? false : true,
                 IsHikeInSalary = false,
@@ -428,7 +467,6 @@ namespace ServiceLayer.Code.Leaves
         private async Task addEmployeeLeaveDetail(List<LeaveTypeBrief> completeLeaveTypeBrief, LeaveYearEnd leaveYearEnd)
         {
             decimal totalLeaveQuota = completeLeaveTypeBrief.Sum(x => x.TotalLeaveQuota);
-            var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
             var result = _db.Execute<LeaveRequestDetail>(Procedures.Employee_Leave_Request_InsUpdate, new
             {
                 LeaveRequestId = 0,
@@ -446,6 +484,47 @@ namespace ServiceLayer.Code.Leaves
                 throw new Exception("Fail to insert employee leave detail");
 
             await Task.CompletedTask;
+        }
+
+        private async Task<int> GetWeekDaysBetweenTwoDate(DateTime fromDate, DateTime toDate, ShiftDetail shiftDetail)
+        {
+            int count = 0;
+            while (fromDate.Date <= toDate.Date)
+            {
+                switch (fromDate.DayOfWeek)
+                {
+                    case DayOfWeek.Sunday:
+                        if (shiftDetail.IsSun)
+                            count++;
+                        break;
+                    case DayOfWeek.Monday:
+                        if (shiftDetail.IsMon)
+                            count++;
+                        break;
+                    case DayOfWeek.Tuesday:
+                        if (shiftDetail.IsTue)
+                            count++;
+                        break;
+                    case DayOfWeek.Wednesday:
+                        if (shiftDetail.IsWed)
+                            count++;
+                        break;
+                    case DayOfWeek.Thursday:
+                        if (shiftDetail.IsThu)
+                            count++;
+                        break;
+                    case DayOfWeek.Friday:
+                        if (shiftDetail.IsFri)
+                            count++;
+                        break;
+                    case DayOfWeek.Saturday:
+                        if (shiftDetail.IsSat)
+                            count++;
+                        break;
+                }
+                fromDate = fromDate.AddDays(1);
+            }
+            return await Task.FromResult(count);
         }
     }
 }

@@ -61,6 +61,7 @@ namespace ModalLayer.Modal
         public int LeavePlanId { set; get; }
         public DateTime CreatedOn { set; get; }
         public string LeaveQuotaDetail { set; get; }
+        public int CompanyId { get; set; }
         public List<LeaveTypeBrief> LeaveTypeBrief { set; get; }
     }
 
