@@ -301,6 +301,7 @@ namespace ServiceLayer.Code
                 else
                 {
                     planBrief.AvailableLeaves += availableLeaves;
+                    planBrief.AccruedSoFar += availableLeaves;
                 }
             }
         }
