@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
+﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
+using ServiceLayer.Code;
 using System;
 using System.IO;
 using System.Net;
@@ -15,13 +17,12 @@ namespace SchoolInMindServer.MiddlewareServices
         private readonly RequestDelegate _next;
         public static bool LoggingFlag = false;
         public static string FileLocation;
-
         public ExceptionHandlerMiddleware(RequestDelegate next)
         {
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context, ApplicationConfiguration applicationConfiguration)
+        public async Task Invoke(HttpContext context, ApplicationConfiguration applicationConfiguration, KafkaNotificationService kafkaNotificationService, CurrentSession currentSession)
         {
             try
             {
@@ -33,11 +34,16 @@ namespace SchoolInMindServer.MiddlewareServices
                 //    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
                 //else
                 //    await HandleHiringBellExceptionMessageAsync(context, exception);
+                if (currentSession.Environment == Environments.Production)
+                    await SendExceptionEmailService(exception.UserMessage, currentSession, kafkaNotificationService);
 
                 await HandleHiringBellExceptionMessageAsync(context, exception);
             }
             catch (Exception ex)
             {
+                if (currentSession.Environment == Environments.Production)
+                    await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+
                 if (applicationConfiguration.IsLoggingEnabled)
                     await HandleExceptionWriteToFile(context, ex, applicationConfiguration);
                 else
@@ -124,6 +130,18 @@ namespace SchoolInMindServer.MiddlewareServices
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
             return context.Response.WriteAsync(result);
+        }
+
+        private async Task SendExceptionEmailService(string message, CurrentSession currentSession, KafkaNotificationService kafkaNotificationService)
+        {
+            CommonFields commonFields = new CommonFields
+            {
+                Body = message,
+                LocalConnectionString = currentSession.LocalConnectionString,
+                kafkaServiceName = KafkaServiceName.Common,
+            };
+            await kafkaNotificationService.SendEmailNotification(commonFields);
+            await Task.CompletedTask;
         }
     }
 }

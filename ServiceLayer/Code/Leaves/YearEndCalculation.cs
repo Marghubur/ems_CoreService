@@ -136,17 +136,18 @@ namespace ServiceLayer.Code.Leaves
             {
                 balance = leaveQuota.AvailableLeaves;
                 leaveQuota.AvailableLeaves = 0;
+                leaveQuota.AccruedSoFar = 0;
             }
             else if (leaveEndYearProcessing.ResetBalanceToZero)
             {
                 balance = 0;
                 leaveQuota.AvailableLeaves = 0;
+                leaveQuota.AccruedSoFar = 0;
             }
             else if (leaveEndYearProcessing.CarryForwardToNextYear)
             {
                 balance = 0;
-                leaveQuota.TotalLeaveQuota = leaveQuota.TotalLeaveQuota + leaveQuota.AvailableLeaves;
-                leaveQuota.AccruedSoFar = leaveQuota.TotalLeaveQuota + leaveQuota.AvailableLeaves;
+                leaveQuota.AccruedSoFar = 0;
             }
 
             return await Task.FromResult(balance);
@@ -253,6 +254,7 @@ namespace ServiceLayer.Code.Leaves
             if (leaveQuota != null)
             {
                 leaveQuota.AvailableLeaves = 0;
+                leaveQuota.AccruedSoFar = 0;
             }
 
             await Task.CompletedTask;
@@ -275,6 +277,7 @@ namespace ServiceLayer.Code.Leaves
             else
                 leaveQuota.AvailableLeaves = 0;
 
+            leaveQuota.AccruedSoFar = 0;
             var basicSalary = await GetEmployeeBasicSalary(leaveYearEnd);
             var totalAmountToPaid = (basicSalary * availableLeaveBalance);
 
@@ -287,8 +290,6 @@ namespace ServiceLayer.Code.Leaves
             var leaveQuota = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
             if (leaveQuota != null)
             {
-                leaveQuota.TotalLeaveQuota = leaveQuota.TotalLeaveQuota + leaveQuota.AvailableLeaves;
-                leaveQuota.AccruedSoFar = leaveQuota.TotalLeaveQuota + leaveQuota.AvailableLeaves;
                 if (leaveEndYearProcessing.DoestCarryForwardExpired)
                 {
                     await CarryForwardLeaveExpired();
@@ -320,8 +321,7 @@ namespace ServiceLayer.Code.Leaves
                     else
                         currentLeaveType.AvailableLeaves = remianingLeave;
 
-                    currentLeaveType.TotalLeaveQuota = currentLeaveType.TotalLeaveQuota + currentLeaveType.AvailableLeaves;
-                    currentLeaveType.AccruedSoFar = currentLeaveType.TotalLeaveQuota + currentLeaveType.AvailableLeaves;
+                    currentLeaveType.AccruedSoFar = 0;
                     break;
                 }
                 i++;
@@ -344,8 +344,7 @@ namespace ServiceLayer.Code.Leaves
                     payableAmount = (payableLeaveCount * basicAmount);
                     var carryForwardLeaveCount = (percentagePayNCarryForwards[i].CarryForwardPercent * currentLeaveType.AvailableLeaves) / 100;
                     currentLeaveType.AvailableLeaves = carryForwardLeaveCount;
-                    currentLeaveType.TotalLeaveQuota = currentLeaveType.TotalLeaveQuota + currentLeaveType.AvailableLeaves;
-                    currentLeaveType.AccruedSoFar = currentLeaveType.TotalLeaveQuota + currentLeaveType.AvailableLeaves;
+                    currentLeaveType.AccruedSoFar = 0;
                     break;
                 }
                 i++;

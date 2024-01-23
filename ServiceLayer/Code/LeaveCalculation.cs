@@ -291,7 +291,8 @@ namespace ServiceLayer.Code
                     // Execute only when carryforward happened
                     if (planBrief.AccruedSoFar < availableLeaves && planBrief.AccruedSoFar != 0)
                     {
-                        planBrief.AccruedSoFar += availableLeaves;
+                        planBrief.AccruedSoFar = availableLeaves;
+                        planBrief.AvailableLeaves += availableLeaves;
                     }
                     else if (planBrief.AccruedSoFar == 0)
                     {
