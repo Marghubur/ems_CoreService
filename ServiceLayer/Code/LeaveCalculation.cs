@@ -105,8 +105,9 @@ namespace ServiceLayer.Code
 
         public async Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId)
         {
-            var result = _db.FetchDataSet(Procedures.Leave_Type_Detail_Get_By_EmployeeId, new { 
-                EmployeeId ,
+            var result = _db.FetchDataSet(Procedures.Leave_Type_Detail_Get_By_EmployeeId, new
+            {
+                EmployeeId,
                 Year = DateTime.UtcNow.Year
             });
             if (!ApplicationConstants.IsValidDataSet(result, 4))
@@ -286,9 +287,21 @@ namespace ServiceLayer.Code
             else
             {
                 if (leaveCalculationModal.IsAllLeaveAvailable)
-                    planBrief.AccruedSoFar = availableLeaves;
+                {
+                    // Execute only when carryforward happened
+                    if (planBrief.AccruedSoFar < availableLeaves && planBrief.AccruedSoFar != 0)
+                    {
+                        planBrief.AccruedSoFar += availableLeaves;
+                    }
+                    else if (planBrief.AccruedSoFar == 0)
+                    {
+                        planBrief.AccruedSoFar = availableLeaves;
+                    }
+                }
                 else
+                {
                     planBrief.AvailableLeaves += availableLeaves;
+                }
             }
         }
 
