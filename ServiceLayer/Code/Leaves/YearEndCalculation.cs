@@ -31,14 +31,6 @@ namespace ServiceLayer.Code.Leaves
 
         public async Task RunLeaveYearEndCycle(LeaveYearEnd leaveYearEnd)
         {
-            leaveYearEnd = new LeaveYearEnd
-            {
-                TimezoneName = "India Standard Time",
-                ProcessingDateTime = DateTime.UtcNow.AddMonths(-1),
-                Timezone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"),
-                ConnectionString = "server=tracker.io;port=3308;database=bottomhalf;User Id=root;password=live@Bottomhalf_001;Connection Timeout=30;Connection Lifetime=0;Min Pool Size=0;Max Pool Size=100;Pooling=true;",
-            };
-
             if (string.IsNullOrEmpty(leaveYearEnd.ConnectionString))
                 throw new Exception("Connection string is null");
 
@@ -59,7 +51,7 @@ namespace ServiceLayer.Code.Leaves
                         EmployeeId = 0,
                         OffsetIndex = offsetindex,
                         PageSize = 500,
-                        Year = leaveYearEnd.ProcessingDateTime.Year
+                        leaveYearEnd.ProcessingDateTime.Year
                     }, false);
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
