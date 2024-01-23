@@ -95,7 +95,7 @@ namespace ServiceLayer.Code
             {
                 Subject = new System.Security.Claims.ClaimsIdentity(new Claim[] {
                     new Claim(JwtRegisteredClaimNames.Sid, userDetail.UserId.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, userDetail.Email),
+                    new Claim(JwtRegisteredClaimNames.Email, userDetail.EmailId),
                     new Claim(ClaimTypes.Role, role),
                     new Claim(JwtRegisteredClaimNames.Aud, num.ToString()),
                     new Claim(ClaimTypes.Version, "1.0.0"),

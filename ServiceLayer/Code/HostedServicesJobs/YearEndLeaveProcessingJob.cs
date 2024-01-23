@@ -1,13 +1,14 @@
 ﻿
 using EMailService.Modal.CronJobs;
 using ServiceLayer.Code.Leaves;
+using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.HostedServicesJobs
 {
-    public class YearEndLeaveProcessingJob
+    public class YearEndLeaveProcessingJob: IYearEndLeaveProcessingJob
     {
         private readonly YearEndCalculation _yearEndCalculation;
 

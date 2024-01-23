@@ -289,18 +289,20 @@ namespace ServiceLayer.Code
                 if (leaveCalculationModal.IsAllLeaveAvailable)
                 {
                     // Execute only when carryforward happened
-                    if (planBrief.AccruedSoFar < availableLeaves && planBrief.AccruedSoFar != 0)
-                    {
-                        planBrief.AccruedSoFar += availableLeaves;
-                    }
-                    else if (planBrief.AccruedSoFar == 0)
+                    if (planBrief.AccruedSoFar == 0)
                     {
                         planBrief.AccruedSoFar = availableLeaves;
+                        planBrief.AvailableLeaves += availableLeaves;
                     }
+                    else
+                    {
+                        planBrief.AccruedSoFar = availableLeaves;
+                    } 
                 }
                 else
                 {
                     planBrief.AvailableLeaves += availableLeaves;
+                    planBrief.AccruedSoFar += availableLeaves;
                 }
             }
         }
