@@ -296,7 +296,7 @@ namespace ServiceLayer.Code
                     else if (planBrief.AccruedSoFar == 0)
                     {
                         planBrief.AccruedSoFar = availableLeaves;
-                    }
+                    } 
                 }
                 else
                 {

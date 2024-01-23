@@ -40,7 +40,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly YearEndCalculation _yearEndCalculation;
+        private readonly IYearEndLeaveProcessingJob _yearEndLeaveProcessingJob;
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -51,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
             FileLocationDetail fileLocationDetail,
-            YearEndCalculation yearEndCalculation)
+            IYearEndLeaveProcessingJob yearEndLeaveProcessingJob)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -63,7 +63,7 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
-            _yearEndCalculation = yearEndCalculation;
+            _yearEndLeaveProcessingJob = yearEndLeaveProcessingJob;
         }
 
         [HttpGet]
@@ -142,8 +142,7 @@ namespace OnlineDataBuilder.Controllers
 
             // await _attendanceService.GenerateAttendanceService();
 
-            LeaveYearEnd leaveYearEnd = new LeaveYearEnd();
-            //await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
+            //await _yearEndLeaveProcessingJob.LoadDbConfiguration();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

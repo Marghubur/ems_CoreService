@@ -29,6 +29,7 @@ using ServiceLayer;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
+using ServiceLayer.Code.HostedServicesJobs;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.PayrollCycle;
 using ServiceLayer.Code.PayrollCycle.Code;
@@ -237,7 +238,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
             services.AddSingleton<IAutoTriggerService, AutoTriggerService>();
-
+            services.AddScoped<IYearEndLeaveProcessingJob, YearEndLeaveProcessingJob>();
 
             services.AddCors(options =>
             {
