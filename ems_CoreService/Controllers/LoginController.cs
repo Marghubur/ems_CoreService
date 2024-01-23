@@ -77,7 +77,7 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public async Task<ApiResponse> ForgotPassword([FromBody] UserDetail user)
         {
-            var result = await this.loginService.ForgotPasswordService(user.Email);
+            var result = await this.loginService.ForgotPasswordService(user.EmailId);
             return BuildResponse(result, HttpStatusCode.OK);
         }
     }

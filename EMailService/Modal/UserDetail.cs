@@ -31,8 +31,8 @@ namespace ModalLayer.Modal
         public string FullName { set; get; }
         public string ManagerName { set; get; }
         public string Mobile { set; get; }
+        public string ManagerEmailId { set; get; }
         public string EmailId { set; get; }
-        public string Email { set; get; }
         public string Address { set; get; }
         public string CompanyName { set; get; }
         public int RoleId { set; get; }
