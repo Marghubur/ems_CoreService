@@ -216,7 +216,7 @@ namespace ServiceLayer.Code
             {
                 UserId = userId,
                 Mobile = _currentSession.CurrentUserDetail.Mobile,
-                Email = _currentSession.CurrentUserDetail.Email,
+                Email = _currentSession.CurrentUserDetail.EmailId,
             });
 
             if (Result.Tables.Count == 0)
