@@ -62,6 +62,7 @@ namespace ModalLayer.Modal
         public DateTime CreatedOn { set; get; }
         public string LeaveQuotaDetail { set; get; }
         public int CompanyId { get; set; }
+        public string TimezoneName { get; set; }
         public List<LeaveTypeBrief> LeaveTypeBrief { set; get; }
     }
 

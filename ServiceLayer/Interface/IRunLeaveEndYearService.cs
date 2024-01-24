@@ -2,7 +2,7 @@
 
 namespace ServiceLayer.Interface
 {
-    public interface IYearEndLeaveProcessingJob
+    public interface IRunLeaveEndYearService
     {
         Task LoadDbConfiguration();
     }

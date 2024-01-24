@@ -1,6 +1,5 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
 using EMailService.Modal.CronJobs;
 using Microsoft.Extensions.Logging;
@@ -19,14 +18,10 @@ namespace ServiceLayer.Code.Leaves
     {
         private readonly ILogger<YearEndCalculation> _logger;
         private readonly IDb _db;
-        private readonly CurrentSession _currentSession;
-        private readonly ITimezoneConverter _timeZoneConverter;
-        public YearEndCalculation(ILogger<YearEndCalculation> logger, IDb db, CurrentSession currentSession, ITimezoneConverter timeZoneConverter)
+        public YearEndCalculation(ILogger<YearEndCalculation> logger, IDb db)
         {
             _logger = logger;
             _db = db;
-            _currentSession = currentSession;
-            _timeZoneConverter = timeZoneConverter;
         }
 
         public async Task RunLeaveYearEndCycle(LeaveYearEnd leaveYearEnd)
@@ -59,11 +54,14 @@ namespace ServiceLayer.Code.Leaves
                         _logger.LogInformation("EmployeeAccrualData is null or count is 0");
                         break;
                     }
-                    
+
                     foreach (EmployeeAccrualData emp in employeeAccrualData)
                     {
                         leaveYearEnd.EmployeeId = emp.EmployeeUid;
                         leaveYearEnd.CompanyId = emp.CompanyId;
+                        leaveYearEnd.TimezoneName = emp.TimezoneName;
+                        leaveYearEnd.Timezone = TimeZoneInfo.FindSystemTimeZoneById(emp.TimezoneName);
+
                         var completeLeaveTypeBrief = await GetEmployeeLeaveQuotaDetail(leaveYearEnd);
                         var liveProcessingData = leaveEndYearProcessingData.Where(x => x.LeavePlanId == emp.LeavePlanId).ToList();
                         decimal totalConvertedAmtToPaid = 0;
@@ -95,7 +93,7 @@ namespace ServiceLayer.Code.Leaves
                         });
 
                         if (totalConvertedAmtToPaid != 0)
-                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, leaveYearEnd.EmployeeId, leaveYearEnd.CompanyId);
+                            await addConvertedAmountAsBonus(totalConvertedAmtToPaid, leaveYearEnd);
 
                         await addEmployeeLeaveDetail(completeLeaveTypeBrief, leaveYearEnd);
                         index++;
@@ -171,7 +169,7 @@ namespace ServiceLayer.Code.Leaves
                         throw new Exception("Fixed pay and carry forward detail not found");
                     else
                         leaveEndYearProcessing.AllFixedPayNCarryForward = JsonConvert.DeserializeObject<List<FixedPayNCarryForward>>(leaveEndYearProcessing.FixedPayNCarryForward);
-                    
+
                     payableAmount += await FixedPayNCarryForward(leaveEndYearProcessing.AllFixedPayNCarryForward, currentLeaveType, leaveYearEnd);
                 }
                 else
@@ -290,6 +288,7 @@ namespace ServiceLayer.Code.Leaves
             var leaveQuota = leaveQuotaDetail.FirstOrDefault(x => x.LeavePlanTypeId == leaveEndYearProcessing.LeavePlanTypeId);
             if (leaveQuota != null)
             {
+                leaveQuota.AccruedSoFar = 0;
                 if (leaveEndYearProcessing.DoestCarryForwardExpired)
                 {
                     await CarryForwardLeaveExpired();
@@ -400,7 +399,8 @@ namespace ServiceLayer.Code.Leaves
             if (payroll.PayCalculationId == 1)  //PayCalculationId = 1 => Actual days in month, PayCalculationId = 2 => Weekday only
             {
                 calculationDaysInCurrentMonth = DateTime.DaysInMonth(leaveYearEnd.ProcessingDateTime.Year, leaveYearEnd.ProcessingDateTime.Month);
-            } else
+            }
+            else
             {
                 var firstDayOfMonth = new DateTime(leaveYearEnd.ProcessingDateTime.Year, leaveYearEnd.ProcessingDateTime.Month, 1);
                 var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
@@ -419,15 +419,15 @@ namespace ServiceLayer.Code.Leaves
             return await Task.FromResult(perDayBasicSalary);
         }
 
-        private async Task addConvertedAmountAsBonus(decimal totalConvertedAmtToPaid, long employeeId, int companyId)
+        private async Task addConvertedAmountAsBonus(decimal totalConvertedAmtToPaid, LeaveYearEnd leaveYearEnd)
         {
-            var presentDate = _timeZoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            var implementDate = new DateTime(leaveYearEnd.ProcessingDateTime.Year, leaveYearEnd.ProcessingDateTime.AddMonths(1).Month, 1);
             HikeBonusSalaryAdhoc hikeBonusSalaryAdhoc = new HikeBonusSalaryAdhoc
             {
                 SalaryAdhocId = 0,
-                EmployeeId = employeeId,
+                EmployeeId = leaveYearEnd.EmployeeId,
                 OrganizationId = 1,
-                CompanyId = companyId,
+                CompanyId = leaveYearEnd.CompanyId,
                 IsPaidByCompany = true,
                 IsFine = totalConvertedAmtToPaid > 0 ? false : true,
                 IsHikeInSalary = false,
@@ -439,8 +439,8 @@ namespace ServiceLayer.Code.Leaves
                 SequencePeriodOrder = 0,
                 IsActive = true,
                 Description = "Leave converted into " + (totalConvertedAmtToPaid > 0 ? "bonus" : "fine"),
-                StartDate = presentDate.AddDays(1),
-                EndDate = presentDate.AddDays(1),
+                StartDate = implementDate,
+                EndDate = implementDate,
             };
             var result = _db.Execute<HikeBonusSalaryAdhoc>(Procedures.HIKE_BONUS_SALARY_ADHOC_INS_UPDATE, hikeBonusSalaryAdhoc, true);
             if (string.IsNullOrEmpty(result))
