@@ -104,6 +104,7 @@ namespace OnlineDataBuilder
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
             services.Configure<KafkaServiceConfig>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
+            services.Configure<MasterDatabase>(x => Configuration.GetSection(nameof(MasterDatabase)).Bind(x));
 
             string connectionString = Configuration.GetConnectionString("EmsMasterCS");
             services.AddSingleton<IDb, Db>();
@@ -238,8 +239,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
             services.AddSingleton<IAutoTriggerService, AutoTriggerService>();
-            services.AddScoped<IYearEndLeaveProcessingJob, YearEndLeaveProcessingJob>();
-
+            services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>

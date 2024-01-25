@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using ServiceLayer.Code.HostedServiceJobs;
+using ServiceLayer.Code.HostedServicesJobs;
 using ServiceLayer.Interface;
 using System;
 using System.Threading.Tasks;
@@ -27,6 +28,9 @@ namespace ServiceLayer.Code
 
             _logger.LogInformation("Payroll cron job started.");
             await RunPayrollJobAsync();
+
+            _logger.LogInformation("Leave year end cron job started.");
+            await RunLeaveYearEndJobAsync();
         }
 
         public async Task RunLeaveAccrualJobAsync()
@@ -51,6 +55,12 @@ namespace ServiceLayer.Code
         {
             await PayrollCycleJob.RunPayrollAsync(_serviceProvider, 0);
             _logger.LogInformation("Payroll cron job ran successfully.");
+        }
+
+        public async Task RunLeaveYearEndJobAsync()
+        {
+            await YearEndLeaveProcessingJob.RunLeaveEndYearAsync(_serviceProvider);
+            _logger.LogInformation("Leave year end  cron job ran successfully.");
         }
     }
 }

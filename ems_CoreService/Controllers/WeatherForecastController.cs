@@ -40,7 +40,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IYearEndLeaveProcessingJob _yearEndLeaveProcessingJob;
+        private readonly IRunLeaveEndYearService _runLeaveEndYearService;
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -51,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
             FileLocationDetail fileLocationDetail,
-            IYearEndLeaveProcessingJob yearEndLeaveProcessingJob)
+            IRunLeaveEndYearService runLeaveEndYearService)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -63,7 +63,7 @@ namespace OnlineDataBuilder.Controllers
             _currentSession = currentSession;
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
-            _yearEndLeaveProcessingJob = yearEndLeaveProcessingJob;
+            _runLeaveEndYearService = runLeaveEndYearService;
         }
 
         [HttpGet]
@@ -129,7 +129,7 @@ namespace OnlineDataBuilder.Controllers
             //_currentSession.CurrentUserDetail.CompanyId = 1;
             //_leaveCalculation.RunAccrualCycle(true);
 
-            //await RunLeaveAccrualAsync();
+            // await RunLeaveAccrualAsync();
 
             // await BatchInsertPerformanceTest();
 
@@ -142,7 +142,7 @@ namespace OnlineDataBuilder.Controllers
 
             // await _attendanceService.GenerateAttendanceService();
 
-            //await _yearEndLeaveProcessingJob.LoadDbConfiguration();
+            // await _runLeaveEndYearService.LoadDbConfiguration();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
