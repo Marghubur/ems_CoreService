@@ -1,4 +1,5 @@
-﻿using EMailService.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

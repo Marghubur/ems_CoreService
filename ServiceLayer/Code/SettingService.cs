@@ -1,4 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
 using ems_CoreService.Model;

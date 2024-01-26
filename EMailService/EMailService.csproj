@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BottomHalf.Utilities" Version="1.0.14" />
+    <PackageReference Include="BottomHalf.Utilities" Version="1.0.18" />
     <PackageReference Include="EAGetMail" Version="5.2.5" />
     <PackageReference Include="MailKit" Version="3.4.3" />
   </ItemGroup>

@@ -1,4 +1,6 @@
-﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -30,18 +32,11 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (HiringBellException exception)
             {
-                //if (applicationConfiguration.IsLoggingEnabled)
-                //    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
-                //else
-                //    await HandleHiringBellExceptionMessageAsync(context, exception);
-                if (currentSession.Environment == Environments.Production)
-                    await SendExceptionEmailService(exception.UserMessage, currentSession, kafkaNotificationService);
-
                 await HandleHiringBellExceptionMessageAsync(context, exception);
             }
             catch (Exception ex)
             {
-                if (currentSession.Environment == Environments.Production)
+                if (currentSession.Environment == DefinedEnvironments.Production)
                     await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
 
                 if (applicationConfiguration.IsLoggingEnabled)

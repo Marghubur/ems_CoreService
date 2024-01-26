@@ -1,4 +1,5 @@
 using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
 using BottomhalfCore.Services.Code;
@@ -117,10 +118,8 @@ namespace OnlineDataBuilder
             // services.AddSingleton<AppUtilityService>();
             services.AddSingleton<IUtilityService, UtilityService>();
 
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
             services.AddScoped<IEmailService, EmailService>();
-            services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IRolesAndMenuService, RolesAndMenuService>();
             services.AddScoped<IOnlineDocumentService, OnlineDocumentService>();
             services.AddScoped<IFileService, FileService>();
@@ -132,9 +131,9 @@ namespace OnlineDataBuilder
             {
                 return new CurrentSession
                 {
-                    Environment = Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
-                                    ModalLayer.Modal.Environments.Development :
-                                    ModalLayer.Modal.Environments.Production
+                    Environment = Env.EnvironmentName == nameof(DefinedEnvironments.Development) ?
+                                    DefinedEnvironments.Development :
+                                    DefinedEnvironments.Production
                 };
             });
             services.AddScoped<IFileMaker, CreatePDFFile>();
@@ -187,9 +186,9 @@ namespace OnlineDataBuilder
                     x.GetRequiredService<IOptions<KafkaServiceConfig>>(),
                     x.GetRequiredService<ProducerConfig>(),
                     x.GetRequiredService<ILogger<KafkaNotificationService>>(),
-                    Env.EnvironmentName == nameof(ModalLayer.Modal.Environments.Development) ?
-                                    ModalLayer.Modal.Environments.Development :
-                                    ModalLayer.Modal.Environments.Production
+                    Env.EnvironmentName == nameof(DefinedEnvironments.Development) ?
+                                    DefinedEnvironments.Development :
+                                    DefinedEnvironments.Production
                 );
             });
 

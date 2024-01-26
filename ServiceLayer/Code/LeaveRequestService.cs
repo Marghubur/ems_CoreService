@@ -1,4 +1,5 @@
-﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;

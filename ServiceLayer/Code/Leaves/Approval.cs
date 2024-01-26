@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using ModalLayer.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal.Leaves;
 using System.Threading.Tasks;
 

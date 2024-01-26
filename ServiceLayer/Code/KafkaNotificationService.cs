@@ -1,9 +1,8 @@
-﻿using Confluent.Kafka;
-using Microsoft.Extensions.Configuration;
+﻿using Bot.CoreBottomHalf.CommonModal.Enums;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
-using ModalLayer.Modal;
 using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
@@ -15,12 +14,12 @@ namespace ServiceLayer.Code
         private readonly KafkaServiceConfig _kafkaServiceConfig;
         private readonly ProducerConfig _producerConfig;
         private readonly ILogger<KafkaNotificationService> _logger;
-        public readonly Environments _environment;
+        public readonly DefinedEnvironments _environment;
 
         public KafkaNotificationService(IOptions<KafkaServiceConfig> options,
             ProducerConfig producerConfig,
             ILogger<KafkaNotificationService> logger,
-            Environments environment)
+            DefinedEnvironments environment)
         {
             _kafkaServiceConfig = options.Value;
             _producerConfig = producerConfig;
@@ -30,7 +29,7 @@ namespace ServiceLayer.Code
 
         public async Task SendEmailNotification(dynamic attendanceRequestModal)
         {
-            if (_environment == Environments.Production)
+            if (_environment == DefinedEnvironments.Production)
             {
                 var result = JsonConvert.SerializeObject(attendanceRequestModal);
 

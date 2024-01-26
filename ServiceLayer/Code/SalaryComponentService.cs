@@ -1,21 +1,18 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
-using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code

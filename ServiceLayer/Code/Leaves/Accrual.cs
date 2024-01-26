@@ -1,6 +1,6 @@
-﻿using BottomhalfCore.Services.Interface;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.Services.Interface;
 using Microsoft.Extensions.Logging;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Linq;

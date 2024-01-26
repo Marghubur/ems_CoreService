@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using DocMaker.ExcelMaker;
@@ -25,7 +26,6 @@ namespace ServiceLayer.Code
         private readonly IDb db;
         private readonly IFileService _fileService;
         private readonly CommonFilterService _commonFilterService;
-        private readonly IAuthenticationService _authenticationService;
         private readonly ITimesheetService _timesheetService;
         private readonly IFileMaker _iFileMaker;
         private readonly CurrentSession _currentSession;
@@ -39,7 +39,6 @@ namespace ServiceLayer.Code
             ExcelWriter excelWriter,
             ILogger<OnlineDocumentService> logger,
             CommonFilterService commonFilterService,
-            IAuthenticationService authenticationService,
             ITimesheetService timesheetService,
             CurrentSession currentSession,
             FileLocationDetail fileLocationDetail,
@@ -51,7 +50,6 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
-            _authenticationService = authenticationService;
             _iFileMaker = iFileMaker;
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
