@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 
 namespace OnlineDataBuilder.Controllers
@@ -20,7 +20,7 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> ObjectiveInsertUpdate([FromBody] ObjectiveDetail objectiveDetail)
         {
             var result = _objectiveService.ObjectiveInsertUpdateService(objectiveDetail);
-            return BuildResponse(result);   
+            return BuildResponse(result);
         }
 
         [HttpPost("GetPerformanceObjective")]

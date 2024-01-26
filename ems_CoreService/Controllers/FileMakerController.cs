@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.API;
 using DocMaker.HtmlToDocx;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -73,7 +73,7 @@ namespace OnlineDataBuilder.Controllers
             billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
             billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
             billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
-            
+
             var fileDetail = await _billService.UpdateGeneratedBillService(billModal);
             return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
         }
