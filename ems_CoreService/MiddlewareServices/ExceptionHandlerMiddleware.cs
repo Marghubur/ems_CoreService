@@ -30,13 +30,6 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (HiringBellException exception)
             {
-                //if (applicationConfiguration.IsLoggingEnabled)
-                //    await HandleExceptionWriteToFile(context, exception, applicationConfiguration);
-                //else
-                //    await HandleHiringBellExceptionMessageAsync(context, exception);
-                if (currentSession.Environment == Environments.Production)
-                    await SendExceptionEmailService(exception.UserMessage, currentSession, kafkaNotificationService);
-
                 await HandleHiringBellExceptionMessageAsync(context, exception);
             }
             catch (Exception ex)
