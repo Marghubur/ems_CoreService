@@ -41,9 +41,6 @@ namespace ServiceLayer.Code
 
         public async Task RunTimesheetJobAsync(DateTime startDate, DateTime? endDate, bool isCronJob)
         {
-            if (startDate.DayOfWeek != DayOfWeek.Sunday)
-                throw new Exception("Invalid start date selected. Start date must be monday");
-
             if (endDate != null && endDate?.DayOfWeek != DayOfWeek.Saturday)
                 throw new Exception("Invalid end date selected. End date must be sunday");
 
