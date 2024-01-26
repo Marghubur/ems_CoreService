@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Http;

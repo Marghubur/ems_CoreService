@@ -1,4 +1,5 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;

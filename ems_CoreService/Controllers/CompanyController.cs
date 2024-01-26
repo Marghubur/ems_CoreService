@@ -1,4 +1,4 @@
-﻿using CoreServiceLayer.Implementation;
+﻿using Bot.CoreBottomHalf.CommonModal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,8 +8,8 @@ using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
-using System.Net;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers

@@ -1,4 +1,5 @@
-﻿using DocMaker.HtmlToDocx;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using DocMaker.HtmlToDocx;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,6 @@ using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers

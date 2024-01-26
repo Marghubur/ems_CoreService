@@ -1,4 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
+using BottomHalf.Utilities.UtilService;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
@@ -37,8 +39,6 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
-        private readonly IAuthenticationService _authenticationService;
-        private readonly ILoginService _loginService;
         private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
         private ILogger<EmployeeService> _logger;
@@ -53,9 +53,7 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             IFileService fileService,
             IConfiguration configuration,
-            ILoginService loginService,
             IDeclarationService declarationService,
-            IAuthenticationService authenticationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
             FileLocationDetail fileLocationDetail,
@@ -68,8 +66,6 @@ namespace ServiceLayer.Code
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
-            _loginService = loginService;
-            _authenticationService = authenticationService;
             _configuration = configuration;
             _currentSession = currentSession;
             _fileService = fileService;
@@ -404,7 +400,7 @@ namespace ServiceLayer.Code
             if (employeeArchiveDetail == null)
                 throw HiringBellException.ThrowBadRequest("No record found");
 
-            string newEncryptedPassword = _authenticationService.Encrypt(_configuration.GetSection("DefaultNewEmployeePassword").Value, _configuration.GetSection("EncryptSecret").Value);
+            string newEncryptedPassword = "welcome@$Bot_001";
             EmployeeCompleteDetailModal employeeCompleteDetailModal = JsonConvert.DeserializeObject<EmployeeCompleteDetailModal>(employeeArchiveDetail.EmployeeCompleteJsonData);
             var result = _db.Execute<EmployeeCompleteDetailModal>(Procedures.Employee_Activate, new
             {
@@ -832,7 +828,7 @@ namespace ServiceLayer.Code
                 employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
 
-                string EncreptedPassword = _authenticationService.Encrypt(
+                string EncreptedPassword = UtilService.Encrypt(
                     _configuration.GetSection("DefaultNewEmployeePassword").Value,
                     _configuration.GetSection("EncryptSecret").Value
                 );
@@ -1085,7 +1081,7 @@ namespace ServiceLayer.Code
                 employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
 
-                string EncreptedPassword = _authenticationService.Encrypt(
+                string EncreptedPassword = UtilService.Encrypt(
                     _configuration.GetSection("DefaultNewEmployeePassword").Value,
                     _configuration.GetSection("EncryptSecret").Value
                 );

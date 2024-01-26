@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using OnlineDataBuilder.ContextHandler;

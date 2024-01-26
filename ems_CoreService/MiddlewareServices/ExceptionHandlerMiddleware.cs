@@ -1,4 +1,6 @@
-﻿using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -34,7 +36,7 @@ namespace SchoolInMindServer.MiddlewareServices
             }
             catch (Exception ex)
             {
-                if (currentSession.Environment == Environments.Production)
+                if (currentSession.Environment == DefinedEnvironments.Production)
                     await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
 
                 if (applicationConfiguration.IsLoggingEnabled)
