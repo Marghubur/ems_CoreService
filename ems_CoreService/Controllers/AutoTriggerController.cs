@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using OnlineDataBuilder.ContextHandler;
@@ -31,6 +32,9 @@ namespace ems_CoreService.Controllers
         [HttpPost("triggerWeeklyTimesheet")]
         public async Task<ApiResponse> WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
         {
+            if (timesheetDetail.TimesheetStartDate.DayOfWeek != DayOfWeek.Sunday)
+                throw new Exception("Invalid start date selected. Start date must be monday");
+
             await _autoTriggerService.RunTimesheetJobAsync(timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
             return BuildResponse("Timesheet generated successfully", System.Net.HttpStatusCode.OK);
         }

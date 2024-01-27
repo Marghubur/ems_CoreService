@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using System;
 using System.Threading.Tasks;
@@ -23,7 +22,7 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("UploadPayrollExcel")]
-        public async Task<ApiResponse> UploadPayrollExcel()
+        public async Task<Bot.CoreBottomHalf.CommonModal.API.ApiResponse> UploadPayrollExcel()
         {
             try
             {

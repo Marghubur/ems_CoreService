@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ namespace OnlineDataBuilder.Controllers
         public IResponse<ApiResponse> AddWiki(WikiDetail project)
         {
             var result = _projectService.AddWikiService(project);
-            return BuildResponse(result);  
+            return BuildResponse(result);
         }
         [HttpGet("GetAllWiki/{ProjectId}")]
         public IResponse<ApiResponse> GetAllWikiById(long ProjectId)
@@ -52,12 +51,12 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
-        [Authorize(Roles= Role.Admin)]
+        [Authorize(Roles = Role.Admin)]
         [HttpDelete("DeleteTeamMember/{ProjectMemberDetailId}/{ProjectId}")]
         public IResponse<ApiResponse> DeleteTeamMember([FromRoute] int ProjectMemberDetailId, [FromRoute] int ProjectId)
         {
             var result = _projectService.DeleteTeamMemberService(ProjectMemberDetailId, ProjectId);
-            return BuildResponse(result);  
+            return BuildResponse(result);
         }
 
 

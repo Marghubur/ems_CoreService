@@ -1,4 +1,5 @@
-﻿using Confluent.Kafka;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Confluent.Kafka;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
