@@ -18,34 +18,60 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
         }
 
-        public Task<CronJobSettingJson> GetCronJobSettingService()
+        public async Task<CronJobSettingJson> GetCronJobSettingService()
         {
-            CronJobSettingJson cronJobSettingJson = null;
-            var result = _db.Get<CronJobSetting>("", new
-            {
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId
-            });
+            CronJobSettingJson cronJobSettingJson = new CronJobSettingJson();
+            int companyId = _currentSession.CurrentUserDetail.CompanyId;
+            var result = await GetCronJobSeetinByCompId(companyId);
             if (result != null)
                 cronJobSettingJson = JsonConvert.DeserializeObject<CronJobSettingJson>(result.CronJobDetail);
 
-            return Task.FromResult(cronJobSettingJson);
+            return cronJobSettingJson;
         }
 
-        public async Task<string> ManageCronJobSettingService(CronJobSettingJson cronJobSetting)
+        private async Task<CronJobSetting> GetCronJobSeetinByCompId(int CompanyId)
+        {
+            var result = _db.Get<CronJobSetting>(Procedures.CRONJOB_SETTING_GET_BY_COMPID, new
+            {
+                CompanyId
+            });
+            return await Task.FromResult(result);
+        }
+
+        public async Task<CronJobSettingJson> ManageCronJobSettingService(CronJobSettingJson cronJobSetting)
         {
             await ValidateCronJobSeting(cronJobSetting);
-            var cronJObSetting = new CronJobSetting
+            int companyId = _currentSession.CurrentUserDetail.CompanyId;
+            var existingCronJobSetting = await GetCronJobSeetinByCompId(companyId);
+            if (existingCronJobSetting != null)
             {
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
-                OrganizationId = _currentSession.CurrentUserDetail.OrganizationId,
-                CronJobDetail = JsonConvert.SerializeObject(cronJobSetting)
-            };
+                var cronJobDetail = JsonConvert.DeserializeObject<CronJobSettingJson>(existingCronJobSetting.CronJobDetail);
+                cronJobDetail.TimesheetCronType = cronJobSetting.TimesheetCronType;
+                cronJobDetail.TimesheetCronDay = cronJobSetting.TimesheetCronDay;
+                cronJobDetail.TimesheetCronTime = cronJobSetting.TimesheetCronTime;
+                cronJobDetail.LeaveAccrualCronTime = cronJobSetting.LeaveAccrualCronTime;
+                cronJobDetail.LeaveAccrualCronDay = cronJobSetting.LeaveAccrualCronDay;
+                cronJobDetail.LeaveAccrualCronType = cronJobSetting.LeaveAccrualCronType;
+                cronJobDetail.LeaveYearEndCronDay = cronJobSetting.LeaveYearEndCronDay;
+                cronJobDetail.LeaveYearEndCronTime = cronJobSetting.LeaveYearEndCronTime;
+                cronJobDetail.LeaveYearEndCronType = cronJobSetting.LeaveYearEndCronType;
+                existingCronJobSetting.CronJobDetail = JsonConvert.SerializeObject(cronJobDetail);
+            }
+            else
+            {
+                existingCronJobSetting = new CronJobSetting
+                {
+                    CompanyId = companyId,
+                    OrganizationId = _currentSession.CurrentUserDetail.OrganizationId,
+                    CronJobDetail = JsonConvert.SerializeObject(cronJobSetting)
+                };
+            }
 
-            var result = _db.Execute<CronJobSettingJson>("", cronJObSetting, true);
+            var result = _db.Execute<CronJobSetting>(Procedures.CRONJOB_SETTING_INSUPD, existingCronJobSetting, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update cron job detail");
 
-            return await Task.FromResult("");
+            return cronJobSetting;
         }
 
         private async Task ValidateCronJobSeting(CronJobSettingJson cronJobSetting)
