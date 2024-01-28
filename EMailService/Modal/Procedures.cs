@@ -297,7 +297,7 @@
         public static string Employee_And_All_Clients_Get = "sp_employee_and_all_clients_get";
 
         /*--------------  CronJobSetting Service procedures ------------*/
-        public static string CRONJOB_SETTING_INSUPD = "sp_cronjob_setting_insupd";
-        public static string CRONJOB_SETTING_GET_BY_COMPID = "sp_cronjob_setting_get_by_compid";
+        public static string APPLICATION_SETTING_INSUPD = "sp_application_setting_insupd";
+        public static string APPLICATION_SETTING_GET_BY_COMPID = "sp_application_setting_get_by_compid";
     }
 }
