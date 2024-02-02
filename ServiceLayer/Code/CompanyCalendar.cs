@@ -3,7 +3,6 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
-using ModalLayer;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -262,7 +261,6 @@ namespace ServiceLayer
             }
             return await Task.FromResult(count);
         }
-
 
         public List<Calendar> GetAllHolidayService(FilterModel filterModel)
         {
