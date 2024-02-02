@@ -7,26 +7,28 @@ namespace ServiceLayer.Code.HostedServiceJobs
 {
     public class WeeklyTimesheetCreationJob
     {
-        public async static Task RunDailyTimesheetCreationJob(IServiceProvider _serviceProvider, DateTime startDate, DateTime? endDate, bool isCronJob)
+        private readonly ITimesheetService _timesheetService;
+
+        public WeeklyTimesheetCreationJob(ITimesheetService timesheetService)
+        {
+            _timesheetService = timesheetService;
+        }
+
+        public async Task RunDailyTimesheetCreationJob(DateTime startDate, DateTime? endDate, bool isCronJob)
         {
             if (isCronJob)
             {
                 if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday)
                 {
-                    using (IServiceScope scope = _serviceProvider.CreateScope())
-                    {
-                        var service = scope.ServiceProvider.GetRequiredService<ITimesheetService>();
-                        await service.RunWeeklyTimesheetCreation(DateTime.UtcNow.AddDays(2), null);
-                    }
+                    await _timesheetService.RunWeeklyTimesheetCreation(startDate.AddDays(2), null);
                 }
             }
             else
             {
-                using (IServiceScope scope = _serviceProvider.CreateScope())
-                {
-                    var service = scope.ServiceProvider.GetRequiredService<ITimesheetService>();
-                    await service.RunWeeklyTimesheetCreation(startDate, endDate);
-                }
+                if (endDate != null && endDate?.DayOfWeek != DayOfWeek.Saturday)
+                    throw new Exception("Invalid end date selected. End date must be sunday");
+
+                await _timesheetService.RunWeeklyTimesheetCreation(startDate, endDate);
             }
 
             await Task.CompletedTask;

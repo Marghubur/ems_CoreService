@@ -30,18 +30,21 @@ namespace ServiceLayer.Code
         private readonly MasterDatabase _masterDatabase;
         private readonly KafkaServiceConfigExtend _kafkaServiceConfig;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly WeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             IServiceProvider serviceProvider,
             IOptions<MasterDatabase> options,
             IOptions<KafkaServiceConfigExtend> kafkaOptions,
-            ITimezoneConverter timezoneConverter)
+            ITimezoneConverter timezoneConverter,
+            WeeklyTimesheetCreationJob weeklyTimesheetCreationJob)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
             _masterDatabase = options.Value;
             _kafkaServiceConfig = kafkaOptions.Value;
             _timezoneConverter = timezoneConverter;
+            _weeklyTimesheetCreationJob = weeklyTimesheetCreationJob;
         }
 
         public async Task ScheduledJobManager()
@@ -218,18 +221,18 @@ namespace ServiceLayer.Code
 
         public async Task RunTimesheetJobAsync(CompanySetting companySetting, DateTime startDate, DateTime? endDate, bool isCronJob)
         {
-            var TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
-            DateTime presentUtcDate = _timezoneConverter.ToSpecificTimezoneDateTime(TimeZone);
+            if (isCronJob)
+            {
+                var TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
+                DateTime presentUtcDate = _timezoneConverter.ToSpecificTimezoneDateTime(TimeZone);
 
-            if (startDate.DayOfWeek != DayOfWeek.Sunday)
-                throw new Exception("Invalid start date selected. Start date must be monday");
+                startDate = presentUtcDate;
+            }
 
-            if (endDate != null && endDate?.DayOfWeek != DayOfWeek.Saturday)
-                throw new Exception("Invalid end date selected. End date must be sunday");
-
-            await WeeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(_serviceProvider, startDate, endDate, isCronJob);
+            await _weeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(startDate, endDate, isCronJob);
             _logger.LogInformation("Timesheet creation cron job ran successfully.");
         }
+
         public async Task RunPayrollJobAsync()
         {
             await PayrollCycleJob.RunPayrollAsync(_serviceProvider, 0);
