@@ -33,4 +33,12 @@
         TeamLead = 19,
         Other = 20
     }
+
+    public enum CronJobType
+    {
+        Daily = 1,
+        Weekly = 2,
+        Monthly = 3,
+        Year = 4
+    }
 }

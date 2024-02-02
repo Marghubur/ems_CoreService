@@ -242,6 +242,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
             services.AddSingleton<IAutoTriggerService, AutoTriggerService>();
+            services.AddScoped<ICronJobSettingService, CronJobSettingService>();
             services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();
             services.AddCors(options =>
             {

@@ -295,5 +295,9 @@
         public static string Professionaldetail_Get_Byid = "sp_professionaldetail_get_byid";
         public static string Professionaldetail_Filter = "sp_professionaldetail_filter";
         public static string Employee_And_All_Clients_Get = "sp_employee_and_all_clients_get";
+
+        /*--------------  CronJobSetting Service procedures ------------*/
+        public static string APPLICATION_SETTING_INSUPD = "sp_application_setting_insupd";
+        public static string APPLICATION_SETTING_GET_BY_COMPID = "sp_application_setting_get_by_compid";
     }
 }

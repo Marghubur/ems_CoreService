@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System.Net;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ namespace OnlineDataBuilder.Controllers
             _attendanceService = attendanceService;
             _rolesAndMenuService = rolesAndMenuService;
         }
-        
+
 
         [HttpPost("AddUpdatePermission")]
         public async Task<ApiResponse> AddUpdatePermission(RolesAndMenu rolesAndMenus)

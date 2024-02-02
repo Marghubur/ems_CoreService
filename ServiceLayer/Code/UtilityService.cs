@@ -7,6 +7,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -92,11 +93,12 @@ namespace ServiceLayer.Code
                 {
                     int i = 0;
                     DataRow dr = null;
+                    string[] formats = { "dd-MM-yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "yyyy/MM/dd", "dd.MM.yyyy", "yyyyMMdd" };
                     while (i < table.Rows.Count)
                     {
                         dr = table.Rows[i];
 
-                        T t =(T) Activator.CreateInstance(typeof (T));
+                        T t = (T)Activator.CreateInstance(typeof(T));
                         fieldNames.ForEach(n =>
                         {
                             var x = props.Find(i => i.Name == n);
@@ -129,9 +131,12 @@ namespace ServiceLayer.Code
                                         case nameof(DateTime):
                                             if (dr[x.Name].ToString() != null)
                                             {
-                                                date = Convert.ToDateTime(dr[x.Name].ToString());
-                                                date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
-                                                x.SetValue(t, date);
+                                                DateTime result;
+                                                if (DateTime.TryParseExact(dr[x.Name].ToString(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+                                                {
+                                                    date = DateTime.SpecifyKind(result, DateTimeKind.Utc);
+                                                    x.SetValue(t, date);
+                                                }
                                             }
                                             else
                                             {
