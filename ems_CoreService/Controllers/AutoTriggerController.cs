@@ -31,7 +31,7 @@ namespace ems_CoreService.Controllers
         [HttpPost("triggerWeeklyTimesheet")]
         public async Task<ApiResponse> WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
         {
-            await _autoTriggerService.RunTimesheetJobAsync(timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
+            await _autoTriggerService.RunTimesheetJobAsync(null, timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
             return BuildResponse("Timesheet generated successfully", System.Net.HttpStatusCode.OK);
         }
 

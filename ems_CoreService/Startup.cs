@@ -9,6 +9,7 @@ using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using EMailService.Modal.Jobs;
 using EMailService.Service;
 using HtmlService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -104,11 +105,14 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
+            
             services.Configure<KafkaServiceConfig>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
+            services.Configure<KafkaServiceConfigExtend>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
+            
             services.Configure<MasterDatabase>(x => Configuration.GetSection(nameof(MasterDatabase)).Bind(x));
 
             string connectionString = Configuration.GetConnectionString("EmsMasterCS");
-            services.AddSingleton<IDb, Db>();
+            services.AddScoped<IDb, Db>();
             services.AddSingleton<ICacheManager, CacheManager>(x =>
             {
                 return CacheManager.GetInstance(connectionString);

@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using ModalLayer.Modal.Accounts;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface IRunLeaveEndYearService
     {
-        Task LoadDbConfiguration();
+        Task RunYearEndLeaveProcessingAsync(CompanySetting companySetting);
     }
 }

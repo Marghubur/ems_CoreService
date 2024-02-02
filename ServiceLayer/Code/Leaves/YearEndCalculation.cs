@@ -26,13 +26,9 @@ namespace ServiceLayer.Code.Leaves
 
         public async Task RunLeaveYearEndCycle(LeaveYearEnd leaveYearEnd)
         {
-            if (string.IsNullOrEmpty(leaveYearEnd.ConnectionString))
-                throw new Exception("Connection string is null");
-
             if (leaveYearEnd.Timezone == null)
                 throw new Exception("Timezone is invalid");
 
-            _db.SetupConnectionString(leaveYearEnd.ConnectionString);
             List<LeaveEndYearModal> leaveEndYearProcessingData = await LoadLeaveYearEndProcessingData();
             var offsetindex = 0;
             int index = 0;
