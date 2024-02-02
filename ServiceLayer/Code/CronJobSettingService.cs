@@ -24,16 +24,17 @@ namespace ServiceLayer.Code
             int companyId = _currentSession.CurrentUserDetail.CompanyId;
             var result = await GetCronJobSeetinByCompId(companyId);
             if (result != null)
-                cronJobSettingJson = JsonConvert.DeserializeObject<CronJobSettingJson>(result.CronJobDetail);
+                cronJobSettingJson = JsonConvert.DeserializeObject<CronJobSettingJson>(result.SettingDetails);
 
             return cronJobSettingJson;
         }
 
-        private async Task<CronJobSetting> GetCronJobSeetinByCompId(int CompanyId)
+        private async Task<ApplicationSetting> GetCronJobSeetinByCompId(int CompanyId)
         {
-            var result = _db.Get<CronJobSetting>(Procedures.CRONJOB_SETTING_GET_BY_COMPID, new
+            var result = _db.Get<ApplicationSetting>(Procedures.APPLICATION_SETTING_GET_BY_COMPID, new
             {
-                CompanyId
+                CompanyId,
+                SettingsCatagoryId = 1
             });
             return await Task.FromResult(result);
         }
@@ -45,7 +46,7 @@ namespace ServiceLayer.Code
             var existingCronJobSetting = await GetCronJobSeetinByCompId(companyId);
             if (existingCronJobSetting != null)
             {
-                var cronJobDetail = JsonConvert.DeserializeObject<CronJobSettingJson>(existingCronJobSetting.CronJobDetail);
+                var cronJobDetail = JsonConvert.DeserializeObject<CronJobSettingJson>(existingCronJobSetting.SettingDetails);
                 cronJobDetail.TimesheetCronType = cronJobSetting.TimesheetCronType;
                 cronJobDetail.TimesheetCronDay = cronJobSetting.TimesheetCronDay;
                 cronJobDetail.TimesheetCronTime = cronJobSetting.TimesheetCronTime;
@@ -55,19 +56,21 @@ namespace ServiceLayer.Code
                 cronJobDetail.LeaveYearEndCronDay = cronJobSetting.LeaveYearEndCronDay;
                 cronJobDetail.LeaveYearEndCronTime = cronJobSetting.LeaveYearEndCronTime;
                 cronJobDetail.LeaveYearEndCronType = cronJobSetting.LeaveYearEndCronType;
-                existingCronJobSetting.CronJobDetail = JsonConvert.SerializeObject(cronJobDetail);
+                existingCronJobSetting.SettingDetails = JsonConvert.SerializeObject(cronJobDetail);
             }
             else
             {
-                existingCronJobSetting = new CronJobSetting
+                existingCronJobSetting = new ApplicationSetting
                 {
                     CompanyId = companyId,
                     OrganizationId = _currentSession.CurrentUserDetail.OrganizationId,
-                    CronJobDetail = JsonConvert.SerializeObject(cronJobSetting)
+                    SettingDetails = JsonConvert.SerializeObject(cronJobSetting),
+                    SettingsCatagoryId = 1,
+                    ApplicationSettingId = 0
                 };
             }
 
-            var result = _db.Execute<CronJobSetting>(Procedures.CRONJOB_SETTING_INSUPD, existingCronJobSetting, true);
+            var result = _db.Execute<ApplicationSetting>(Procedures.APPLICATION_SETTING_INSUPD, existingCronJobSetting, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update cron job detail");
 

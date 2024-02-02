@@ -3,14 +3,15 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
-using ModalLayer;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Calendar = ModalLayer.Calendar;
 
 namespace ServiceLayer
 {
@@ -261,7 +262,6 @@ namespace ServiceLayer
             return await Task.FromResult(count);
         }
 
-
         public List<Calendar> GetAllHolidayService(FilterModel filterModel)
         {
             var result = _db.GetList<Calendar>(Procedures.Company_Calender_Getby_Filter, new
@@ -369,18 +369,24 @@ namespace ServiceLayer
             int i = 0;
             int skipIndex = 0;
             int chunkSize = 2;
-            int companyId = uploadedHolidayData[0].CompanyId;
+            var companyId = _currentSession.CurrentUserDetail.CompanyId;
+            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
             while (i < uploadedHolidayData.Count)
             {
                 var holiday = uploadedHolidayData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
+                var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = companyId });
                 foreach (Calendar calendar in holiday)
                 {
                     var existCalendar = new Calendar();
+                    calendar.CompanyId = companyId;
+                    calendar.EventName = calendar.EventName.ToUpper();
+                    calendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
+                    calendar.Country = textInfo.ToTitleCase(calendar.Country);
                     ValidateCalender(calendar);
-                    var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = companyId });
                     if (result.Count > 0)
                     {
-                        existCalendar = result.Find(x => x.CompanyCalendarId == calendar.CompanyCalendarId);
+                        existCalendar = result.Find(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.StartDate)
+                        .Subtract(_timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, calendar.StartDate)).TotalDays == 0);
                         if (existCalendar != null)
                         {
                             existCalendar.CompanyId = calendar.CompanyId;
@@ -399,9 +405,9 @@ namespace ServiceLayer
                     }
                     existCalendar = calendar;
                     existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-                    var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
-                    if (string.IsNullOrEmpty(value))
-                        throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
+                    //var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
+                    //if (string.IsNullOrEmpty(value))
+                    //    throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
                 }
 
                 i++;
