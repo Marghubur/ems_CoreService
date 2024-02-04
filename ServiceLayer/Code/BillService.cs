@@ -1242,7 +1242,7 @@ namespace ServiceLayer.Code
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
-            var netSalary = totalEarning - (employerPFAmount + totalDeduction);
+            var netSalary = totalEarning > 0 ? totalEarning - (employerPFAmount + totalDeduction) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
@@ -1331,10 +1331,15 @@ namespace ServiceLayer.Code
 
         private decimal GetWorkingDays(Attendance AttendanceDetail)
         {
+            decimal totalDays = 0;
             List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(AttendanceDetail.AttendanceDetail);
-            attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
-            decimal totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
-            totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
+            var submittedAttendance = attendanceDetailJsons.FindAll(x => x.PresentDayStatus == (int)ItemStatus.Approved);
+            if (submittedAttendance != null || submittedAttendance.Count > 0)
+            {
+                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
+                totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
+                totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
+            }
             return totalDays;
         }
 

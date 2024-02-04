@@ -14,7 +14,7 @@ namespace ServiceLayer.Interface
     {
         Task<LeaveCalculationModal> GetBalancedLeave(long EmployeeId, DateTime FromDate, DateTime ToDate);
         Task RunAccrualCycle(RunAccrualModel runAccrualModel);
-        Task<List<CompanySetting>> StartAccrualCycle(RunAccrualModel runAccrualModel);
+        Task StartAccrualCycle(RunAccrualModel runAccrualModel, CompanySetting companySetting);
         Task<LeaveCalculationModal> CheckAndApplyForLeave(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail);
         Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId);
         Task RunAccrualCycleByEmployee(long EmployeeId);

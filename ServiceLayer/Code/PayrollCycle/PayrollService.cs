@@ -256,7 +256,10 @@ namespace ServiceLayer.Code.PayrollCycle
         private async Task<Tuple<decimal, decimal>> GetMonthlyActualandExpectedMinute(PayrollCalculationModal payrollCalculationModal)
         {
             List<AttendanceJson> attendance = GetTotalAttendance(payrollCalculationModal.employeeId, payrollCalculationModal.payrollEmployeeDatas);
-            decimal actualMinutesWorked = attendance.Select(x => x.TotalMinutes).Aggregate((x, y) => x + y);
+            decimal actualMinutesWorked = 0;
+            if (attendance.Count > 0)
+                actualMinutesWorked = attendance.Select(x => x.TotalMinutes).Aggregate((x, y) => x + y);
+            
             int weekOff = CalculateWeekOffs(attendance, payrollCalculationModal.shiftDetail);
 
             decimal holidays = await _companyCalendar.GetHolidayCountInMonth(payrollCalculationModal.payrollDate.Month, payrollCalculationModal.payrollDate.Year);

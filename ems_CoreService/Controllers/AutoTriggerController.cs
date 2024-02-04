@@ -21,11 +21,12 @@ namespace ems_CoreService.Controllers
             _autoTriggerService = autoTriggerService;
         }
 
+        [AllowAnonymous]
         [HttpGet("triggerLeaveAccrual")]
-        [Authorize(Roles = Role.Admin)]
+        // [Authorize(Roles = Role.Admin)]
         public async Task LeaveAccrualTriggerLeave()
         {
-            await _autoTriggerService.RunLeaveAccrualJobAsync();
+            await _autoTriggerService.ExecuteLeaveAccrualJobAsync(null, null);
         }
 
         [Authorize(Roles = Role.Admin)]

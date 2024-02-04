@@ -1,11 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using ServiceLayer.Interface;
+﻿using ServiceLayer.Interface;
 using System;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.HostedServiceJobs
 {
-    public class WeeklyTimesheetCreationJob
+    public class WeeklyTimesheetCreationJob: IWeeklyTimesheetCreationJob
     {
         private readonly ITimesheetService _timesheetService;
 
@@ -20,7 +19,7 @@ namespace ServiceLayer.Code.HostedServiceJobs
             {
                 if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday)
                 {
-                    await _timesheetService.RunWeeklyTimesheetCreation(startDate.AddDays(2), null);
+                    await _timesheetService.RunWeeklyTimesheetCreation(startDate.AddDays(1), null);
                 }
             }
             else

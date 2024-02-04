@@ -202,7 +202,7 @@ namespace OnlineDataBuilder.Controllers
                 IsSingleRun = true
             };
 
-            await _leaveCalculation.StartAccrualCycle(runAccrualModel);
+            await _leaveCalculation.StartAccrualCycle(runAccrualModel, null);
         }
 
         private async Task RunDailyTimesheetCreationJob()

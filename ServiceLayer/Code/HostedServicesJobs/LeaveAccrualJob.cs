@@ -1,32 +1,35 @@
-﻿using EMailService.Modal.Leaves;
-using Microsoft.Extensions.DependencyInjection;
+﻿using EMailService.Modal.Jobs;
+using EMailService.Modal.Leaves;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.HostedServiceJobs
 {
-    public class LeaveAccrualJob
+    public class LeaveAccrualJob : ILeaveAccrualJob
     {
-        public async static Task<List<CompanySetting>> LeaveAccrualAsync(IServiceProvider _serviceProvider)
-        {
-            List<CompanySetting> CompanySettingList = null;
-            using (IServiceScope scope = _serviceProvider.CreateScope())
-            {
-                ILeaveCalculation _leaveCalculation = scope.ServiceProvider.GetRequiredService<ILeaveCalculation>();
-                RunAccrualModel runAccrualModel = new RunAccrualModel
-                {
-                    RunTillMonthOfPresnetYear = true,
-                    EmployeeId = 0,
-                    IsSingleRun = false
-                };
+        private readonly ILeaveCalculation _leaveCalculation;
 
-                CompanySettingList = await _leaveCalculation.StartAccrualCycle(runAccrualModel);
+        public LeaveAccrualJob(ILeaveCalculation leaveCalculation)
+        {
+            _leaveCalculation = leaveCalculation;
+        }
+
+        public async Task LeaveAccrualAsync(CompanySetting companySetting, LeaveAccrualKafkaModel leaveAccrualKafkaModel)
+        {
+            RunAccrualModel runAccrualModel = new RunAccrualModel
+            {
+                RunTillMonthOfPresnetYear = false,
+                EmployeeId = 0,
+                IsSingleRun = false
+            };
+
+            if (!leaveAccrualKafkaModel.GenerateLeaveAccrualTillMonth)
+            {
+                runAccrualModel.RunTillMonthOfPresnetYear = leaveAccrualKafkaModel.GenerateLeaveAccrualTillMonth;
             }
 
-            return CompanySettingList;
+            await _leaveCalculation.StartAccrualCycle(runAccrualModel, companySetting);
         }
     }
 }

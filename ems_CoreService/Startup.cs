@@ -31,7 +31,7 @@ using ServiceLayer;
 using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
-using ServiceLayer.Code.HostedServicesJobs;
+using ServiceLayer.Code.HostedServiceJobs;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.PayrollCycle;
 using ServiceLayer.Code.PayrollCycle.Code;
@@ -42,6 +42,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder
 {
@@ -63,9 +64,9 @@ namespace OnlineDataBuilder
                 this.Env = env;
 
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -105,10 +106,10 @@ namespace OnlineDataBuilder
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
             services.Configure<Dictionary<string, List<string>>>(o => Configuration.GetSection("TaxSection").Bind(o));
-            
+
             services.Configure<KafkaServiceConfig>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
             services.Configure<KafkaServiceConfigExtend>(x => Configuration.GetSection(nameof(KafkaServiceConfig)).Bind(x));
-            
+
             services.Configure<MasterDatabase>(x => Configuration.GetSection(nameof(MasterDatabase)).Bind(x));
 
             string connectionString = Configuration.GetConnectionString("EmsMasterCS");
@@ -129,7 +130,6 @@ namespace OnlineDataBuilder
             services.AddScoped<IFileService, FileService>();
             services.AddScoped<ILiveUrlService, LiveUrlService>();
             services.AddScoped<IUserService, UserService>();
-
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentSession>(x =>
             {
@@ -241,9 +241,12 @@ namespace OnlineDataBuilder
             services.AddScoped<WorkFlowChain>();
             services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
-            services.AddSingleton<IAutoTriggerService, AutoTriggerService>();
+            services.AddScoped<IAutoTriggerService, AutoTriggerService>();
             services.AddScoped<ICronJobSettingService, CronJobSettingService>();
             services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();
+            services.AddScoped<IWeeklyTimesheetCreationJob, WeeklyTimesheetCreationJob>();
+            services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
+            services.AddScoped<IPayrollCycleJob, PayrollCycleJob>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>
@@ -263,7 +266,7 @@ namespace OnlineDataBuilder
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime, IAutoTriggerService autoTriggerService)
         {
             app.UseStaticFiles(new StaticFileOptions
             {
@@ -276,6 +279,12 @@ namespace OnlineDataBuilder
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            lifetime.ApplicationStarted.Register(() =>
+            {
+                Task.Run(() => autoTriggerService.ScheduledJobManager());
+            });
+
             app.UseMiddleware<ExceptionHandlerMiddleware>();
 
             app.UseRouting();

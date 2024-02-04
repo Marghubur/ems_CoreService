@@ -1,19 +1,17 @@
-﻿using Bot.CoreBottomHalf.CommonModal;
-using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Confluent.Kafka;
 using EMailService.Modal;
+using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using ServiceLayer.Code.HostedServiceJobs;
-using ServiceLayer.Code.HostedServicesJobs;
+using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -26,25 +24,34 @@ namespace ServiceLayer.Code
     public class AutoTriggerService : IAutoTriggerService
     {
         private readonly ILogger<AutoTriggerService> _logger;
-        private readonly IServiceProvider _serviceProvider;
         private readonly MasterDatabase _masterDatabase;
         private readonly KafkaServiceConfigExtend _kafkaServiceConfig;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly WeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
+        private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
+        private readonly ILeaveAccrualJob _leaveAccrualJob;
+        private readonly IPayrollCycleJob _payrollCycleJob;
+        private readonly YearEndCalculation _yearEndCalculation;
+        private readonly IDb _db;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
-            IServiceProvider serviceProvider,
             IOptions<MasterDatabase> options,
             IOptions<KafkaServiceConfigExtend> kafkaOptions,
             ITimezoneConverter timezoneConverter,
-            WeeklyTimesheetCreationJob weeklyTimesheetCreationJob)
+            IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
+            ILeaveAccrualJob leaveAccrualJob,
+            IDb db,
+            IPayrollCycleJob payrollCycleJob,
+            YearEndCalculation yearEndCalculation)
         {
             _logger = logger;
-            _serviceProvider = serviceProvider;
             _masterDatabase = options.Value;
             _kafkaServiceConfig = kafkaOptions.Value;
             _timezoneConverter = timezoneConverter;
             _weeklyTimesheetCreationJob = weeklyTimesheetCreationJob;
+            _db = db;
+            _leaveAccrualJob = leaveAccrualJob;
+            _payrollCycleJob = payrollCycleJob;
+            _yearEndCalculation = yearEndCalculation;
         }
 
         public async Task ScheduledJobManager()
@@ -66,15 +73,11 @@ namespace ServiceLayer.Code
                         _logger.LogInformation($"[Kafka] Waiting on topic: {_kafkaServiceConfig.HourlyJobTopic}");
                         var message = consumer.Consume();
 
-                        if (message != null)
+                        if (message != null && !string.IsNullOrEmpty(message.Message.Value))
                         {
                             _logger.LogInformation(message.Message.Value);
-                            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(message.Message.Value);
+                            await RunJobAsync(message.Message.Value);
 
-                            if (kafkaPayload != null)
-                            {
-                                await RunJobAsync(kafkaPayload);
-                            }
                         }
                     }
                     catch (Exception ex)
@@ -87,8 +90,10 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task RunJobAsync(KafkaPayload kafkaPayload)
+        public async Task RunJobAsync(string payload)
         {
+            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(payload);
+
             // Load all database configuration from master database
             List<DbConfigModal> dbConfig = await LoadDatabaseConfiguration();
 
@@ -107,8 +112,9 @@ namespace ServiceLayer.Code
                     case nameof(ScheduledJobServiceName.MONTHLY): // monthly job
                         companySettings.ForEach(async i =>
                         {
-                            await ExecuteLeaveAccrualJobAsync(i);
-                            await ExecutePayrollJobsAsync(i);
+                            LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
+                            await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
+                            await RunPayrollJobAsync();
                         });
                         break;
                     case nameof(ScheduledJobServiceName.YEARLY): // yearly job
@@ -141,22 +147,16 @@ namespace ServiceLayer.Code
             });
         }
 
-        private async Task ExecuteLeaveAccrualJobAsync(CompanySetting companySetting)
+        public async Task ExecuteLeaveAccrualJobAsync(CompanySetting companySetting, LeaveAccrualKafkaModel leaveAccrualKafkaModel)
         {
             _logger.LogInformation("Leave Accrual cron job started.");
-            await RunLeaveAccrualJobAsync();
+            await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
         }
 
         private async Task ExecuteTimesheetJobAsync(CompanySetting companySetting)
         {
             await RunTimesheetJobAsync(companySetting, DateTime.UtcNow, null, true);
             _logger.LogInformation("Timesheet creation cron job started.");
-        }
-
-        private async Task ExecutePayrollJobsAsync(CompanySetting companySetting)
-        {
-            _logger.LogInformation("Payroll cron job started.");
-            await RunPayrollJobAsync();
         }
 
         private async Task ExecuteYearEndLeaveProcessingJobsAsync(CompanySetting companySetting)
@@ -167,14 +167,8 @@ namespace ServiceLayer.Code
 
         private async Task<List<CompanySetting>> LoadCompanySettings(DbConfigModal x)
         {
-            List<CompanySetting> companySettings = new List<CompanySetting>();
-
-            using (IServiceScope scope = _serviceProvider.CreateScope())
-            {
-                IDb db = scope.ServiceProvider.GetRequiredService<IDb>();
-                db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};");
-                companySettings = db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
-            }
+            _db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};");
+            List<CompanySetting> companySettings = _db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
 
             return await Task.FromResult(companySettings);
         }
@@ -213,12 +207,6 @@ namespace ServiceLayer.Code
             return await Task.FromResult(databaseConfiguration);
         }
 
-        public async Task RunLeaveAccrualJobAsync()
-        {
-            await LeaveAccrualJob.LeaveAccrualAsync(_serviceProvider);
-            _logger.LogInformation("Leave Accrual cron job ran successfully.");
-        }
-
         public async Task RunTimesheetJobAsync(CompanySetting companySetting, DateTime startDate, DateTime? endDate, bool isCronJob)
         {
             if (isCronJob)
@@ -235,13 +223,22 @@ namespace ServiceLayer.Code
 
         public async Task RunPayrollJobAsync()
         {
-            await PayrollCycleJob.RunPayrollAsync(_serviceProvider, 0);
+            await _payrollCycleJob.RunPayrollAsync(0);
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 
         public async Task RunLeaveYearEndJobAsync(CompanySetting companySetting)
         {
-            await YearEndLeaveProcessingJob.RunLeaveEndYearAsync(_serviceProvider, companySetting);
+            var TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
+            DateTime presentUtcDate = _timezoneConverter.ToSpecificTimezoneDateTime(TimeZone);
+
+            LeaveYearEnd leaveYearEnd = new LeaveYearEnd
+            {
+                Timezone = TimeZone,
+                ProcessingDateTime = presentUtcDate.AddMonths(-2)
+            };
+
+            await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
             _logger.LogInformation("Leave year end  cron job ran successfully.");
         }
     }

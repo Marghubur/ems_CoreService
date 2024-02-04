@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OnlineDataBuilder.HostedService;
 
 namespace OnlineDataBuilder
 {
@@ -17,6 +15,7 @@ namespace OnlineDataBuilder
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                }).ConfigureServices(x => x.AddHostedService<DailyStartHourJob>());
+                });
+        //.ConfigureServices(x => x.AddHostedService<DailyStartHourJob>());
     }
 }

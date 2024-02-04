@@ -1,19 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using ServiceLayer.Interface;
-using System;
+﻿using ServiceLayer.Interface;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.HostedServiceJobs
 {
-    public class PayrollCycleJob
+    public class PayrollCycleJob: IPayrollCycleJob
     {
-        public async static Task RunPayrollAsync(IServiceProvider _serviceProvider, int i)
+        private readonly IPayrollService _payrollService;
+
+        public PayrollCycleJob(IPayrollService payrollService)
         {
-            using (IServiceScope scope = _serviceProvider.CreateScope())
-            {
-                IPayrollService _payrollService = scope.ServiceProvider.GetRequiredService<IPayrollService>();
-                await _payrollService.RunPayrollCycle(i);
-            }
+            _payrollService = payrollService;
+        }
+
+        public async Task RunPayrollAsync(int i)
+        {
+            await _payrollService.RunPayrollCycle(i);
         }
     }
 }

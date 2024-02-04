@@ -147,21 +147,18 @@ namespace ServiceLayer.Code
             return await Task.FromResult(leaveCalculationModal);
         }
 
-        public async Task<List<CompanySetting>> StartAccrualCycle(RunAccrualModel runAccrualModel)
+        public async Task StartAccrualCycle(RunAccrualModel runAccrualModel, CompanySetting companySetting)
         {
             _logger.LogInformation("Start Accrual Cycle");
-            var CompanySettings = _db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
-            foreach (var setting in CompanySettings)
+            //var CompanySettings = _db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
+            if (companySetting.LeaveAccrualRunCronDayOfMonth == DateTime.Now.Day)
             {
-                if (setting.LeaveAccrualRunCronDayOfMonth == DateTime.Now.Day)
-                {
-                    _currentSession.CurrentUserDetail.CompanyId = setting.CompanyId;
-                    _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(setting.TimezoneName);
-                    await RunAccrualCycle(runAccrualModel);
-                }
+                _currentSession.CurrentUserDetail.CompanyId = companySetting.CompanyId;
+                _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
+                await RunAccrualCycle(runAccrualModel);
             }
             _logger.LogInformation("End Accrual Cycle");
-            return CompanySettings;
+            await Task.CompletedTask;
         }
 
         public async Task RunAccrualCycle(RunAccrualModel runAccrualModel)
@@ -179,10 +176,10 @@ namespace ServiceLayer.Code
                     _logger.LogInformation("Calling: sp_leave_accrual_cycle_data_by_employee");
                     List<EmployeeAccrualData> employeeAccrualData = _db.GetList<EmployeeAccrualData>(Procedures.Leave_Accrual_Cycle_Data_By_Employee, new
                     {
-                        EmployeeId = runAccrualModel.EmployeeId,
+                        runAccrualModel.EmployeeId,
                         OffsetIndex = offsetindex,
                         PageSize = 500,
-                        Year = DateTime.UtcNow.Year
+                        DateTime.UtcNow.Year
                     }, false);
 
                     if (runAccrualModel.IsSingleRun && employeeAccrualData.Count > 1)
@@ -298,7 +295,7 @@ namespace ServiceLayer.Code
                     else
                     {
                         planBrief.AccruedSoFar = availableLeaves;
-                    } 
+                    }
                 }
                 else
                 {
