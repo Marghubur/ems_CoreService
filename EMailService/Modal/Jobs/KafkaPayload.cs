@@ -10,20 +10,9 @@ namespace EMailService.Modal.Jobs
 
     public enum ScheduledJobServiceName
     {
-        DAILY,
-        WEEKLY,
-        MONTHLY,
-        YEARLY,
-        DAILYWEEKLY,
-        DAILYMONTHLY,
-        DAILYYEARLY,
-        WEEKLYMONTHLY,
-        WEEKLYYEARLY,
-        MONTHLYYEARLY,
-        YEARLYMONTHLY,
-        DAILYWEEKLYMONTHLY,
-        DAILYWEEKLYYEARLY,        
-        WEEKLYMONTHLYYEARLY,
-        DAILYWEEKLYMONTHLYYEARLY,
+        MONTHLYLEAVEACCRUAL,
+        WEEKLYTIMESHEET,
+        YEARENDLEAVEPROCESSING,
+        MONTHLYPAYROLL
     }
 }

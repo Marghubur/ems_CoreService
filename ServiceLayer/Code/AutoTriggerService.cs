@@ -104,44 +104,25 @@ namespace ServiceLayer.Code
                 // execute jobs
                 switch (kafkaPayload.ServiceName)
                 {
-                    case nameof(ScheduledJobServiceName.DAILY): //daily job
-                        break;
-                    case nameof(ScheduledJobServiceName.WEEKLY): // weekly job
-                        companySettings.ForEach(async i => await ExecuteTimesheetJobAsync(i));
-                        break;
-                    case nameof(ScheduledJobServiceName.MONTHLY): // monthly job
+                    case nameof(ScheduledJobServiceName.MONTHLYLEAVEACCRUAL):
                         companySettings.ForEach(async i =>
                         {
                             LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
                             await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
-                            await RunPayrollJobAsync();
                         });
                         break;
-                    case nameof(ScheduledJobServiceName.YEARLY): // yearly job
-                        companySettings.ForEach(async i => await ExecuteYearEndLeaveProcessingJobsAsync(i));
+                    case nameof(ScheduledJobServiceName.WEEKLYTIMESHEET):
+                        companySettings.ForEach(async i => await ExecuteTimesheetJobAsync(i));
                         break;
-
-                    case nameof(ScheduledJobServiceName.DAILYWEEKLY):
+                    case nameof(ScheduledJobServiceName.MONTHLYPAYROLL):
+                        companySettings.ForEach(async i => await RunPayrollJobAsync());
                         break;
-                    case nameof(ScheduledJobServiceName.DAILYMONTHLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.DAILYYEARLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.WEEKLYMONTHLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.WEEKLYYEARLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.MONTHLYYEARLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.YEARLYMONTHLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.DAILYWEEKLYMONTHLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.DAILYWEEKLYYEARLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.WEEKLYMONTHLYYEARLY):
-                        break;
-                    case nameof(ScheduledJobServiceName.DAILYWEEKLYMONTHLYYEARLY):
+                    case nameof(ScheduledJobServiceName.YEARENDLEAVEPROCESSING):
+                        companySettings.ForEach(async i =>
+                        {
+                            LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
+                            await RunLeaveYearEndJobAsync(i, data);
+                        });
                         break;
                 }
             });
@@ -157,12 +138,6 @@ namespace ServiceLayer.Code
         {
             await RunTimesheetJobAsync(companySetting, DateTime.UtcNow, null, true);
             _logger.LogInformation("Timesheet creation cron job started.");
-        }
-
-        private async Task ExecuteYearEndLeaveProcessingJobsAsync(CompanySetting companySetting)
-        {
-            _logger.LogInformation("Leave year end cron job started.");
-            await RunLeaveYearEndJobAsync(companySetting);
         }
 
         private async Task<List<CompanySetting>> LoadCompanySettings(DbConfigModal x)
@@ -227,7 +202,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 
-        public async Task RunLeaveYearEndJobAsync(CompanySetting companySetting)
+        public async Task RunLeaveYearEndJobAsync(CompanySetting companySetting, LeaveYearEndCalculationKafkaModel data)
         {
             var TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
             DateTime presentUtcDate = _timezoneConverter.ToSpecificTimezoneDateTime(TimeZone);
@@ -235,7 +210,7 @@ namespace ServiceLayer.Code
             LeaveYearEnd leaveYearEnd = new LeaveYearEnd
             {
                 Timezone = TimeZone,
-                ProcessingDateTime = presentUtcDate.AddMonths(-2)
+                ProcessingDateTime = data?.RunDate == null ? presentUtcDate : data.RunDate
             };
 
             await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
