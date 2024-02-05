@@ -186,7 +186,7 @@ namespace OnlineDataBuilder
             services.AddSingleton<KafkaNotificationService>(x =>
             {
                 return new KafkaNotificationService(
-                    x.GetRequiredService<IOptions<KafkaServiceConfig>>(),
+                    x.GetRequiredService<IOptions<List<KafkaServiceConfig>>>(),
                     x.GetRequiredService<ProducerConfig>(),
                     x.GetRequiredService<ILogger<KafkaNotificationService>>(),
                     Env.EnvironmentName == nameof(DefinedEnvironments.Development) ?
