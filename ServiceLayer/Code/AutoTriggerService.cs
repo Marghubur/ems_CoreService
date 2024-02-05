@@ -108,35 +108,42 @@ namespace ServiceLayer.Code
             // Load all database configuration from master database
             List<DbConfigModal> dbConfig = await LoadDatabaseConfiguration();
 
-            dbConfig.ForEach(async x =>
+            foreach (var x in dbConfig)
             {
-                List<CompanySetting> companySettings = await LoadCompanySettings(x);
-
-                // execute jobs
-                switch (kafkaPayload.ServiceName)
+                try
                 {
-                    case nameof(ScheduledJobServiceName.MONTHLYLEAVEACCRUAL):
-                        companySettings.ForEach(async i =>
-                        {
-                            LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
-                            await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
-                        });
-                        break;
-                    case nameof(ScheduledJobServiceName.WEEKLYTIMESHEET):
-                        companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
-                        break;
-                    case nameof(ScheduledJobServiceName.MONTHLYPAYROLL):
-                        companySettings.ForEach(async i => await RunPayrollJobAsync());
-                        break;
-                    case nameof(ScheduledJobServiceName.YEARENDLEAVEPROCESSING):
-                        companySettings.ForEach(async i =>
-                        {
-                            LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
-                            await RunLeaveYearEndJobAsync(i, data);
-                        });
-                        break;
+                    List<CompanySetting> companySettings = await LoadCompanySettings(x);
+
+                    // execute jobs
+                    switch (kafkaPayload.ServiceName)
+                    {
+                        case nameof(ScheduledJobServiceName.MONTHLYLEAVEACCRUAL):
+                            companySettings.ForEach(async i =>
+                            {
+                                LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
+                                await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
+                            });
+                            break;
+                        case nameof(ScheduledJobServiceName.WEEKLYTIMESHEET):
+                            companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
+                            break;
+                        case nameof(ScheduledJobServiceName.MONTHLYPAYROLL):
+                            companySettings.ForEach(async i => await RunPayrollJobAsync());
+                            break;
+                        case nameof(ScheduledJobServiceName.YEARENDLEAVEPROCESSING):
+                            companySettings.ForEach(async i =>
+                            {
+                                LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
+                                await RunLeaveYearEndJobAsync(i, data);
+                            });
+                            break;
+                    }
                 }
-            });
+                catch (Exception ex)
+                {
+                    _logger.LogError($"[DAIALY JOB ERROR]: Got error: {ex.Message}");
+                }
+            }
         }
 
         public async Task ExecuteLeaveAccrualJobAsync(CompanySetting companySetting, LeaveAccrualKafkaModel leaveAccrualKafkaModel)
