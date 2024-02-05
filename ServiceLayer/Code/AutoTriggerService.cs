@@ -29,8 +29,8 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
         private readonly ILeaveAccrualJob _leaveAccrualJob;
-        private readonly IPayrollCycleJob _payrollCycleJob;
         private readonly YearEndCalculation _yearEndCalculation;
+        private readonly IPayrollService _payrollService;
         private readonly IDb _db;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
@@ -40,8 +40,8 @@ namespace ServiceLayer.Code
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
-            IPayrollCycleJob payrollCycleJob,
-            YearEndCalculation yearEndCalculation)
+            YearEndCalculation yearEndCalculation,
+            IPayrollService payrollService)
         {
             _logger = logger;
             _masterDatabase = options.Value;
@@ -50,8 +50,8 @@ namespace ServiceLayer.Code
             _weeklyTimesheetCreationJob = weeklyTimesheetCreationJob;
             _db = db;
             _leaveAccrualJob = leaveAccrualJob;
-            _payrollCycleJob = payrollCycleJob;
             _yearEndCalculation = yearEndCalculation;
+            _payrollService = payrollService;
         }
 
         public async Task ScheduledJobManager()
@@ -112,7 +112,7 @@ namespace ServiceLayer.Code
                         });
                         break;
                     case nameof(ScheduledJobServiceName.WEEKLYTIMESHEET):
-                        companySettings.ForEach(async i => await ExecuteTimesheetJobAsync(i));
+                        companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
                         break;
                     case nameof(ScheduledJobServiceName.MONTHLYPAYROLL):
                         companySettings.ForEach(async i => await RunPayrollJobAsync());
@@ -132,12 +132,6 @@ namespace ServiceLayer.Code
         {
             _logger.LogInformation("Leave Accrual cron job started.");
             await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
-        }
-
-        private async Task ExecuteTimesheetJobAsync(CompanySetting companySetting)
-        {
-            await RunTimesheetJobAsync(companySetting, DateTime.UtcNow, null, true);
-            _logger.LogInformation("Timesheet creation cron job started.");
         }
 
         private async Task<List<CompanySetting>> LoadCompanySettings(DbConfigModal x)
@@ -198,7 +192,7 @@ namespace ServiceLayer.Code
 
         public async Task RunPayrollJobAsync()
         {
-            await _payrollCycleJob.RunPayrollAsync(0);
+            await _payrollService.RunPayrollCycle(0);
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 

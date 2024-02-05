@@ -27,8 +27,8 @@ namespace SchoolInMindServer.MiddlewareServices
                     _serviceProvider.GetRequiredService<IWeeklyTimesheetCreationJob>(),
                     _serviceProvider.GetRequiredService<ILeaveAccrualJob>(),
                     _serviceProvider.GetRequiredService<IDb>(),
-                    _serviceProvider.GetRequiredService<IPayrollCycleJob>(),
-                    _serviceProvider.GetRequiredService<YearEndCalculation>()
+                    _serviceProvider.GetRequiredService<YearEndCalculation>(),
+                    _serviceProvider.GetRequiredService<IPayrollService>()
                 );
 
                 await autoTriggerService.ScheduledJobManager();
