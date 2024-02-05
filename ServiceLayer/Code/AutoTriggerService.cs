@@ -83,6 +83,7 @@ namespace ServiceLayer.Code
                         _logger.LogInformation($"[Kafka] Waiting on topic: {kafkaConfig.Topic}");
                         var message = consumer.Consume();
 
+                        _logger.LogInformation($"[Kafka] Message recieved: {message}");
                         if (message != null && !string.IsNullOrEmpty(message.Message.Value))
                         {
                             _logger.LogInformation(message.Message.Value);
