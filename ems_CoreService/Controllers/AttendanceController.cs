@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Confluent.Kafka;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,6 @@ using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -25,12 +25,12 @@ namespace OnlineDataBuilder.Controllers
     {
         private readonly IAttendanceService _attendanceService;
         private readonly ProducerConfig _producerConfig;
-        private readonly KafkaServiceConfig _kafkaServiceConfig;
+        private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly ILogger<AttendanceController> _logger;
 
         public AttendanceController(IAttendanceService attendanceService,
             ProducerConfig producerConfig,
-            IOptions<KafkaServiceConfig> options,
+            IOptions<List<KafkaServiceConfig>> options,
             ILogger<AttendanceController> logger)
         {
             _attendanceService = attendanceService;
@@ -50,12 +50,18 @@ namespace OnlineDataBuilder.Controllers
         [AllowAnonymous]
         public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
         {
+            var config = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.SendEmail);
+            if(config == null)
+            {
+                throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.SendEmail, HttpStatusCode.InternalServerError);
+            }
+
             var result = JsonConvert.SerializeObject(attendanceTemplateModel);
-            _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");
+            _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {config.Topic}, Service: {config.ServiceName}");
             using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
             {
                 _logger.LogInformation($"[Kafka] Sending mesage: {result}");
-                await producer.ProduceAsync(_kafkaServiceConfig.AttendanceEmailTopic, new Message<Null, string>
+                await producer.ProduceAsync(config.Topic, new Message<Null, string>
                 {
                     Value = result
                 });

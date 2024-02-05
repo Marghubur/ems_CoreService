@@ -1,6 +1,6 @@
 ﻿namespace EMailService.Modal.Jobs
 {
-    public class LeaveAccrualKafkaModel : KafkaPayload
+    public class LeaveAccrualKafkaModel
     {
         public bool GenerateLeaveAccrualTillMonth { set; get; }
     }

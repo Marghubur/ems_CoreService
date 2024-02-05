@@ -33,11 +33,11 @@ namespace ServiceLayer.Code
             {
                 var result = JsonConvert.SerializeObject(attendanceRequestModal);
 
-                _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.AttendanceEmailTopic}, Service: {_kafkaServiceConfig.ServiceName}");
+                _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {_kafkaServiceConfig.Topic}, Service: {_kafkaServiceConfig.ServiceName}");
                 using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
                 {
                     _logger.LogInformation($"[Kafka] Sending mesage: {result}");
-                    await producer.ProduceAsync(_kafkaServiceConfig.AttendanceEmailTopic, new Message<Null, string>
+                    await producer.ProduceAsync(_kafkaServiceConfig.Topic, new Message<Null, string>
                     {
                         Value = result
                     });

@@ -2,7 +2,7 @@
 
 namespace EMailService.Modal.Jobs
 {
-    public class LeaveYearEndCalculationKafkaModel : KafkaPayload
+    public class LeaveYearEndCalculationKafkaModel
     {
         public DateTime RunDate { get; set; }
     }

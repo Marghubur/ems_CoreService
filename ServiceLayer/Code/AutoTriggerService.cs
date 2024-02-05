@@ -1,4 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.Enums;
+using Bot.CoreBottomHalf.CommonModal.Kafka;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Confluent.Kafka;
@@ -7,6 +9,7 @@ using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
@@ -16,6 +19,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Net;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -25,7 +29,7 @@ namespace ServiceLayer.Code
     {
         private readonly ILogger<AutoTriggerService> _logger;
         private readonly MasterDatabase _masterDatabase;
-        private readonly KafkaServiceConfigExtend _kafkaServiceConfig;
+        private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
         private readonly ILeaveAccrualJob _leaveAccrualJob;
@@ -35,7 +39,7 @@ namespace ServiceLayer.Code
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             IOptions<MasterDatabase> options,
-            IOptions<KafkaServiceConfigExtend> kafkaOptions,
+            IOptions<List<KafkaServiceConfig>> kafkaOptions,
             ITimezoneConverter timezoneConverter,
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
             ILeaveAccrualJob leaveAccrualJob,
@@ -56,21 +60,27 @@ namespace ServiceLayer.Code
 
         public async Task ScheduledJobManager()
         {
+            var kafkaConfig = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.DailyJobsManager);
+            if (kafkaConfig == null)
+            {
+                throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.DailyJobsManager, HttpStatusCode.InternalServerError);
+            }
+
             var config = new ConsumerConfig
             {
-                GroupId = _kafkaServiceConfig.GroupId,
-                BootstrapServers = $"{_kafkaServiceConfig.ServiceName}:{_kafkaServiceConfig.Port}"
+                GroupId = kafkaConfig.GroupId,
+                BootstrapServers = $"{kafkaConfig.ServiceName}:{kafkaConfig.Port}"
             };
 
-            _logger.LogInformation($"[Kafka] Start listning kafka topic: {_kafkaServiceConfig.HourlyJobTopic}");
+            _logger.LogInformation($"[Kafka] Start listning kafka topic: {kafkaConfig.Topic}");
             using (var consumer = new ConsumerBuilder<Null, string>(config).Build())
             {
-                consumer.Subscribe(_kafkaServiceConfig.HourlyJobTopic);
+                consumer.Subscribe(kafkaConfig.Topic);
                 while (true)
                 {
                     try
                     {
-                        _logger.LogInformation($"[Kafka] Waiting on topic: {_kafkaServiceConfig.HourlyJobTopic}");
+                        _logger.LogInformation($"[Kafka] Waiting on topic: {kafkaConfig.Topic}");
                         var message = consumer.Consume();
 
                         if (message != null && !string.IsNullOrEmpty(message.Message.Value))
