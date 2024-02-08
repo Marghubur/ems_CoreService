@@ -364,6 +364,8 @@ namespace ServiceLayer.Code
 
         private async Task<DataSet> PrepareRequestForBillGeneration(BillGenerationModal billGenerationModal)
         {
+            billGenerationModal.TimesheetDetail.TimesheetStartDate = new DateTime(billGenerationModal.PdfModal.billYear, billGenerationModal.PdfModal.billingMonth.Month, 1);
+            billGenerationModal.TimesheetDetail.TimesheetEndDate = billGenerationModal.TimesheetDetail.TimesheetStartDate.AddMonths(1).AddDays(-1);
             DataSet ds = this.db.FetchDataSet(Procedures.Billing_Detail, new
             {
                 Sender = billGenerationModal.PdfModal.senderId,
@@ -371,8 +373,8 @@ namespace ServiceLayer.Code
                 BillNo = billGenerationModal.PdfModal.billNo,
                 billGenerationModal.PdfModal.EmployeeId,
                 UserTypeId = (int)UserType.Employee,
-                ForMonth = billGenerationModal.PdfModal.billingMonth.Month,
-                ForYear = billGenerationModal.PdfModal.billYear,
+                StartDate = billGenerationModal.TimesheetDetail.TimesheetStartDate,
+                EndDate = billGenerationModal.TimesheetDetail.TimesheetEndDate,
                 BillTypeUid = 1,
                 CompanyId = 1
             });
@@ -475,11 +477,19 @@ namespace ServiceLayer.Code
         private async Task GenerateUpdateTimesheet(BillGenerationModal billModal)
         {
 
-            List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
+            List<DailyTimesheetDetail> currentMonthTimesheet = new List<DailyTimesheetDetail>();
             if (billModal.ResultSet.Tables[3].Rows.Count > 0)
             {
-                var currentAttendance = Converter.ToType<Attendance>(billModal.ResultSet.Tables[3]);
-                attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+                var timesheetDetail = Converter.ToList<TimesheetDetail>(billModal.ResultSet.Tables[3]);
+                timesheetDetail.ForEach(x =>
+                {
+                    currentMonthTimesheet.AddRange(JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(x.TimesheetWeeklyJson));
+                });
+                var startDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, billModal.TimesheetDetail.TimesheetStartDate);
+                var endDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, billModal.TimesheetDetail.TimesheetEndDate);
+
+                currentMonthTimesheet = currentMonthTimesheet.Where(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) >= startDate
+                                                                  && _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) <= endDate).ToList();
             }
 
             string FolderLocation = Path.Combine(
@@ -501,11 +511,11 @@ namespace ServiceLayer.Code
             if (File.Exists(destinationFilePath))
                 File.Delete(destinationFilePath);
 
-            var timesheetData = (from n in attendanceSet
-                                 orderby n.AttendanceDay ascending
+            var timesheetData = (from n in currentMonthTimesheet
+                                 orderby n.PresentDate ascending
                                  select new TimesheetModel
                                  {
-                                     Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                     Date = n.PresentDate.ToString("dd MMM yyyy"),
                                      ResourceName = billModal.PdfModal.developerName,
                                      StartTime = "10:00 AM",
                                      EndTime = "06:00 PM",

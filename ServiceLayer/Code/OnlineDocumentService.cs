@@ -2,8 +2,12 @@
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -33,7 +37,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<OnlineDocumentService> _logger;
         private readonly ExcelWriter _excelWriter;
-
+        private readonly ITimezoneConverter _timezoneConverter;
         public OnlineDocumentService(IDb db, IFileService fileService,
             IFileMaker iFileMaker,
             ExcelWriter excelWriter,
@@ -42,7 +46,7 @@ namespace ServiceLayer.Code
             ITimesheetService timesheetService,
             CurrentSession currentSession,
             FileLocationDetail fileLocationDetail,
-            IBillService billService)
+            IBillService billService, ITimezoneConverter timezoneConverter)
         {
             this.db = db;
             _excelWriter = excelWriter;
@@ -54,6 +58,7 @@ namespace ServiceLayer.Code
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
             _timesheetService = timesheetService;
+            _timezoneConverter = timezoneConverter;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -223,15 +228,24 @@ namespace ServiceLayer.Code
                 Organization receiverOrganization = null;
                 Organization organization = null;
                 BankDetail senderBankDetail = null;
-                List<AttendenceDetail> attendanceSet = new List<AttendenceDetail>();
+                List<DailyTimesheetDetail> currentMonthTimesheet = new List<DailyTimesheetDetail>();
 
+                int monthNumber = 0;
+                if (DateTime.TryParseExact(generateBillFileDetail.MonthName, "MMMM", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
+                    monthNumber = parsedDate.Month;
+
+                DateTime firstDateOfMonth = new DateTime(generateBillFileDetail.ForYear, monthNumber, 1);
+                DateTime lastDateOfMonth = firstDateOfMonth.AddMonths(1).AddDays(-1);
+                
                 var Result = this.db.GetDataSet(Procedures.ExistingBill_GetById, new
                 {
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                     EmployeeId = fileDetail.EmployeeId,
                     ClientId = fileDetail.ClientId,
                     FileId = fileDetail.FileId,
-                    UserTypeId = UserType.Employee,
+                    UserTypeId = (int)UserType.Employee,
+                    StartDate = firstDateOfMonth,
+                    EndDate = lastDateOfMonth
                 });
 
                 if (Result.Tables.Count == 6)
@@ -243,8 +257,16 @@ namespace ServiceLayer.Code
                     senderBankDetail = Converter.ToType<BankDetail>(Result.Tables[5]);
                     if (Result.Tables[4].Rows.Count > 0)
                     {
-                        var currentAttendance = Converter.ToType<Attendance>(Result.Tables[4]);
-                        attendanceSet = JsonConvert.DeserializeObject<List<AttendenceDetail>>(currentAttendance.AttendanceDetail);
+                        var timesheetDetail = Converter.ToList<TimesheetDetail>(Result.Tables[4]);
+                        timesheetDetail.ForEach(x =>
+                        {
+                            currentMonthTimesheet.AddRange(JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(x.TimesheetWeeklyJson));
+                        });
+                        var startDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, firstDateOfMonth);
+                        var endDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, lastDateOfMonth);
+
+                        currentMonthTimesheet = currentMonthTimesheet.Where(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) >= startDate 
+                                                                          && _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) <= endDate).ToList();
                     }
                 }
                 else
@@ -331,11 +353,11 @@ namespace ServiceLayer.Code
                     if (File.Exists(destinationFilePath))
                         File.Delete(destinationFilePath);
 
-                    var timesheetData = (from n in attendanceSet
-                                         orderby n.AttendanceDay ascending
+                    var timesheetData = (from n in currentMonthTimesheet
+                                         orderby n.PresentDate ascending
                                          select new TimesheetModel
                                          {
-                                             Date = n.AttendanceDay.ToString("dd MMM yyyy"),
+                                             Date = n.PresentDate.ToString("dd MMM yyyy"),
                                              ResourceName = pdfModal.developerName,
                                              StartTime = "10:00 AM",
                                              EndTime = "06:00 PM",
@@ -346,8 +368,8 @@ namespace ServiceLayer.Code
                     ).ToList<TimesheetModel>();
 
                     var timeSheetDataSet = Converter.ToDataSet<TimesheetModel>(timesheetData);
-                    _excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
-
+                    //_excelWriter.ToExcel(timeSheetDataSet.Tables[0], destinationFilePath, pdfModal.billingMonth.ToString("MMM_yyyy"));
+                    generateExce(timeSheetDataSet, destinationFilePath);
                     BillGenerationModal billModal = new BillGenerationModal
                     {
                         PdfModal = pdfModal,
@@ -365,6 +387,140 @@ namespace ServiceLayer.Code
                 _logger.LogError(ex.Message);
                 throw;
             }
+        }
+
+        private void generateExce(DataSet dataSet, string filePath)
+        {
+            // Create a new Excel document
+            using (SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook))
+            {
+                // Add a WorkbookPart to the document
+                WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
+                workbookPart.Workbook = new Workbook();
+
+                // Add a WorksheetPart to the WorkbookPart
+                WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                worksheetPart.Worksheet = new Worksheet(new SheetData());
+
+                // Add Sheets to the Workbook
+                Sheets sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
+                Sheet sheet = new Sheet() { Id = spreadsheetDocument.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "EmployeeTimesheet" };
+                sheets.Append(sheet);
+
+                // Get the sheetData
+                SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
+
+                // Add column headers
+                AddColumnHeaders(dataSet.Tables[0], sheetData);
+
+                // Add data rows
+                AddDataRows(dataSet.Tables[0], sheetData);
+
+                // Save the changes to the spreadsheet document
+                worksheetPart.Worksheet.Save();
+            }
+        }
+
+        private void AddColumnHeaders(DataTable dataTable, SheetData sheetData)
+        {
+            Row headerRow = new Row();
+
+            foreach (DataColumn column in dataTable.Columns)
+            {
+                headerRow.AppendChild(CreateCell(column.ColumnName));
+            }
+
+            sheetData.AppendChild(headerRow);
+        }
+
+        private void AddDataRows(DataTable dataTable, SheetData sheetData)
+        {
+            foreach (DataRow row in dataTable.Rows)
+            {
+                Row dataRow = new Row() { RowIndex = (uint)(sheetData.Elements<Row>().Count() + 1) }; // Set the row index manually
+
+                foreach (var item in row.ItemArray)
+                {
+                    dataRow.AppendChild(CreateCell(item.ToString()));
+                }
+
+                // Check if the current row is a weekend or holiday
+                if (IsWeekend(row) || IsHoliday(row))
+                {
+                    // Merge cells for Status, Description, Hours, and Minute columns
+                    MergeCells(sheetData, row.Table.Columns.Count, dataRow.RowIndex);
+
+                    // Add "Weekend" or "Holiday" text to the merged cell
+                    Cell cell = CreateCell(IsWeekend(row) ? "Weekend" : "Holiday");
+                    cell.CellReference = $"A{dataRow.RowIndex}";
+                    dataRow.InsertAt(cell, 0);
+                }
+
+                sheetData.AppendChild(dataRow);
+            }
+        }
+
+        private bool IsWeekend(DataRow row)
+        {
+            if (row.Table.Columns.Contains("Date"))
+            {
+                DateTime date;
+                if (DateTime.TryParse(row["Date"].ToString(), out date))
+                {
+                    return date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                }
+            }
+            // If the "Date" column does not exist or cannot be parsed, assume it's not a weekend
+            return false;
+        }
+
+        private bool IsHoliday(DataRow row)
+        {
+            // Add logic to check if the date is a holiday
+            // For demonstration, we'll assume there are no holidays in this example
+            return false;
+        }
+
+        private string GetColumnName(int columnIndex)
+        {
+            int dividend = columnIndex;
+            string columnName = String.Empty;
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
+        }
+
+        private void MergeCells(SheetData sheetData, int columnCount, uint rowIndex)
+        {
+            if (columnCount > 1)
+            {
+                MergeCells mergeCells = sheetData.Elements<MergeCells>().FirstOrDefault();
+                if (mergeCells == null)
+                {
+                    mergeCells = new MergeCells();
+                    sheetData.InsertAfter(mergeCells, sheetData.Elements<SheetData>().First());
+                }
+
+                // Merge cells for all columns in the row
+                string startCell = GetColumnName(1) + rowIndex;
+                string endCell = GetColumnName(columnCount) + rowIndex;
+                MergeCell mergeCell = new MergeCell() { Reference = new StringValue(startCell + ":" + endCell) };
+                mergeCells.Append(mergeCell);
+            }
+        }
+
+        private Cell CreateCell(string text)
+        {
+            Cell cell = new Cell(new InlineString(new Text(text)));
+            cell.DataType = CellValues.InlineString;
+            return cell;
         }
 
         public string DeleteDataService(string Uid)
