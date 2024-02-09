@@ -36,6 +36,12 @@ namespace ServiceLayer.Code
             return await this.GetTimesheetRequestDataService(timesheetDetail);
         }
 
+        public async Task<List<TimesheetDetail>> ReOpenTimesheetRequestService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
+        {
+            await UpdateTimesheetRequest(timesheetId, ItemStatus.Pending);
+            return await this.GetTimesheetRequestDataService(timesheetDetail);
+        }
+
         public async Task<List<TimesheetDetail>> ApprovalTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
         {
             await UpdateTimesheetRequest(timesheetId, ItemStatus.Approved);
@@ -72,7 +78,7 @@ namespace ServiceLayer.Code
             var numOfDays = timesheet.TimesheetStartDate.Date.Subtract(timesheet.TimesheetEndDate.Date).TotalDays + 1;
             TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = new TimesheetApprovalTemplateModel
             {
-                ActionType = itemStatus == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                ActionType = BotConstant.GetActionTypeName(itemStatus),
                 CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                 DayCount = Convert.ToInt32(numOfDays),
                 DeveloperName = timesheet.FirstName + " " + timesheet.LastName,

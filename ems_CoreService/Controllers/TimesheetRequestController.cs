@@ -55,6 +55,13 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result);
         }
 
+        [HttpPut("ReOpenTimesheetRequest/{TimesheetId}/{filterId}")]
+        public async Task<ApiResponse> ReOpenTimesheetRequest([FromRoute] int timesheetId, [FromRoute] int filterId, [FromBody] TimesheetDetail timesheetDetail)
+        {
+            var result = await _requestService.ReOpenTimesheetRequestService(timesheetId, timesheetDetail, filterId);
+            return BuildResponse(result);
+        }
+
         [Authorize(Roles = Role.Admin)]
         [HttpPut("ReAssigneTimesheetRequest/{filterId}")]
         public IResponse<ApiResponse> ReAssigneTimesheetRequest([FromRoute] int filterId, [FromBody] List<DailyTimesheetDetail> dailyTimesheetDetails)
