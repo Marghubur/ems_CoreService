@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.Enums;
+using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
@@ -115,22 +116,22 @@ namespace ServiceLayer.Code
                     List<CompanySetting> companySettings = await LoadCompanySettings(x);
 
                     // execute jobs
-                    switch (kafkaPayload.ServiceName)
+                    switch (kafkaPayload.kafkaServiceName)
                     {
-                        case nameof(ScheduledJobServiceName.MONTHLYLEAVEACCRUAL):
+                        case KafkaServiceName.MonthlyLeaveAccrualJob:
                             companySettings.ForEach(async i =>
                             {
                                 LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
                                 await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
                             });
                             break;
-                        case nameof(ScheduledJobServiceName.WEEKLYTIMESHEET):
+                        case KafkaServiceName.WeeklyTimesheetJob:
                             companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
                             break;
-                        case nameof(ScheduledJobServiceName.MONTHLYPAYROLL):
+                        case KafkaServiceName.MonthlyPayrollJob:
                             companySettings.ForEach(async i => await RunPayrollJobAsync());
                             break;
-                        case nameof(ScheduledJobServiceName.YEARENDLEAVEPROCESSING):
+                        case KafkaServiceName.YearEndLeaveProcessingJob:
                             companySettings.ForEach(async i =>
                             {
                                 LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
@@ -154,7 +155,7 @@ namespace ServiceLayer.Code
 
         private async Task<List<CompanySetting>> LoadCompanySettings(DbConfigModal x)
         {
-            _db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};");
+            _db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};");
             List<CompanySetting> companySettings = _db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
 
             return await Task.FromResult(companySettings);
