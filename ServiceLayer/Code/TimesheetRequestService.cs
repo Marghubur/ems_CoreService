@@ -115,7 +115,9 @@ namespace ServiceLayer.Code
                 timesheetDetail.ForYear,
                 timesheetDetail.TimesheetStatus,
                 timesheetDetail.EmployeeId,
-                timesheetDetail.PageIndex
+                timesheetDetail.PageIndex,
+                StartDate = timesheetDetail.TimesheetStartDate,
+                EndDate = timesheetDetail.TimesheetEndDate
             });
 
             return await Task.FromResult(result);
