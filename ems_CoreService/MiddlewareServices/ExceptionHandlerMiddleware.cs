@@ -2,6 +2,7 @@
 using Bot.CoreBottomHalf.CommonModal.API;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using Bot.CoreBottomHalf.CommonModal.Kafka;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -129,13 +130,13 @@ namespace SchoolInMindServer.MiddlewareServices
 
         private async Task SendExceptionEmailService(string message, CurrentSession currentSession, KafkaNotificationService kafkaNotificationService)
         {
-            CommonFields commonFields = new CommonFields
+            KafkaPayload kafkaPayload = new KafkaPayload
             {
                 Body = message,
                 LocalConnectionString = currentSession.LocalConnectionString,
                 kafkaServiceName = KafkaServiceName.Common,
             };
-            await kafkaNotificationService.SendEmailNotification(commonFields);
+            await kafkaNotificationService.SendEmailNotification(kafkaPayload);
             await Task.CompletedTask;
         }
     }
