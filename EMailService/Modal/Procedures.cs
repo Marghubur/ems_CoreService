@@ -153,6 +153,9 @@
         public static string Annexure_Offer_Letter_Getby_Lettertype = "sp_annexure_offer_letter_getby_lettertype";
         public static string Employee_And_Declaration_Get_Byid = "sp_employee_and_declaration_get_byid";
         public static string Active_Employees_By_Ids = "sp_active_employees_by_ids";
+        public static string EMPLOYEE_NOTICE_PERIOD_GETBY_EMPID = "sp_employee_notice_period_getby_empid";
+        public static string EMPLOYEE_NOTICE_PERIOD_INSUPD = "sp_employee_notice_period_insupd";
+        public static string EMPLOYEE_NOTICE_PERIOD_GETBY_ID = "sp_employee_notice_period_getby_id";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";

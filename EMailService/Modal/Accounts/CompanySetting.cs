@@ -37,5 +37,6 @@ namespace ModalLayer.Modal.Accounts
         public int LeaveAccrualRunCronDayOfMonth { set; get; }
         public string TimezoneName { set; get; }
         public bool IsJoiningBarrierDayPassed { set; get; }
+        public int NoticePeriodInProbation { get; set; }
     }
 }

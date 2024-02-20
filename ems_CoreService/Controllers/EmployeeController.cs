@@ -187,5 +187,26 @@ namespace OnlineDataBuilder.Controllers
                 throw ex;
             }
         }
+
+        [HttpGet("GetEmployeeResignationById/{EmployeeId}")]
+        public async Task<ApiResponse> GetEmployeeResignationById(long EmployeeId)
+        {
+            var Result = await _employeeService.GetEmployeeResignationByIdService(EmployeeId);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("SubmitResignation")]
+        public async Task<ApiResponse> SubmitResignation([FromBody] EmployeeNoticePeriod employeeNoticePeriod)
+        {
+            var Result = await _employeeService.SubmitResignationService(employeeNoticePeriod);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
+
+        [HttpPost("ManageInitiateExist")]
+        public async Task<ApiResponse> ManageInitiateExist([FromBody] EmployeeNoticePeriod employeeNoticePeriod)
+        {
+            var Result = await _employeeService.ManageInitiateExistService(employeeNoticePeriod);
+            return BuildResponse(Result, HttpStatusCode.OK);
+        }
     }
 }
