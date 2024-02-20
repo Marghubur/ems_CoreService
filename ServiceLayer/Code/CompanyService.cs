@@ -441,6 +441,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.LeaveAccrualRunCronDayOfMonth = companySetting.LeaveAccrualRunCronDayOfMonth;
                 companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
                 companySettingDetail.IsJoiningBarrierDayPassed = companySetting.IsJoiningBarrierDayPassed;
+                companySettingDetail.NoticePeriodInProbation = companySetting.NoticePeriodInProbation;
             }
 
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
@@ -458,6 +459,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.EveryMonthLastDayOfDeclaration,
                 companySettingDetail.TimezoneName,
                 companySetting.IsJoiningBarrierDayPassed,
+                companySettingDetail.NoticePeriodInProbation,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
