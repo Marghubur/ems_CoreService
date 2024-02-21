@@ -156,10 +156,10 @@ namespace OnlineDataBuilder.Controllers
             return BuildResponse(result, HttpStatusCode.OK);
         }
 
-        [HttpGet]
-        public async Task<ApiResponse> GenerateAttendance()
+        [HttpPost("GenerateAttendance")]
+        public async Task<ApiResponse> GenerateAttendance(AttendenceDetail attendenceDetail)
         {
-            await _attendanceService.GenerateAttendanceService();
+            await _attendanceService.GenerateAttendanceService(attendenceDetail);
             return BuildResponse(ApplicationConstants.Successfull, HttpStatusCode.OK);
         }
     }

@@ -1,6 +1,5 @@
 ﻿using EMailService.Modal;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,7 +17,7 @@ namespace ServiceLayer.Interface
         dynamic GetEmployeePerformanceService(AttendenceDetail attendanceDetails);
         Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
-        Task GenerateAttendanceService();
+        Task GenerateAttendanceService(AttendenceDetail attendenceDetail);
         Task<List<AttendanceJson>> AdjustAttendanceService(Attendance attendance);
         Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
     }
