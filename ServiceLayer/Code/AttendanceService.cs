@@ -339,17 +339,18 @@ namespace ServiceLayer.Code
                     if (employees == null)
                         break;
 
-                    //foreach (var employee in employees)
-                    //{
-                    //    await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, employee.EmployeeUid, attendenceDetail.AttendenceStatus);
-                    //}
+                    foreach (var employee in employees)
+                    {
+                        await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, employee.EmployeeUid, attendenceDetail.AttendenceStatus);
+                    }
                     pageNumber++;
                 }
             }
             else
             {
-                //await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, attendenceDetail.EmployeeId, attendenceDetail.AttendenceStatus);
+                await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, attendenceDetail.EmployeeId, attendenceDetail.AttendenceStatus);
             }
+
             await Task.CompletedTask;
         }
 
