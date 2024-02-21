@@ -77,7 +77,7 @@ namespace ServiceLayer.Code
             return todayDate;
         }
 
-        private async Task<List<AttendanceJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining)
+        private async Task<List<AttendanceJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining, int status)
         {
             List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
             var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
@@ -116,17 +116,7 @@ namespace ServiceLayer.Code
                     presentDayStatus = (int)DayStatus.Weekend;
                 else
                 {
-                    if (workingDate.Month == dateOfJoining.Month && workingDate.Year == dateOfJoining.Year)
-                    {
-                        if (workingDate.Day >= dateOfJoining.Day)
-                            presentDayStatus = (int)ItemStatus.Approved;
-                        else
-                            presentDayStatus = (int)ItemStatus.NotSubmitted;
-                    }
-                    else
-                    {
-                        presentDayStatus = (int)ItemStatus.Approved;
-                    }
+                    presentDayStatus = status;
                 }
 
                 attendenceDetails.Add(new AttendanceJson
@@ -329,67 +319,74 @@ namespace ServiceLayer.Code
             return flag;
         }
 
-        public async Task GenerateAttendanceService()
+        public async Task GenerateAttendanceService(AttendenceDetail attendenceDetail)
         {
-            List<Employee> employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
+            var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
+            var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
+            if (attendenceDetail.EmployeeId == 0)
             {
-                SearchString = "1=1",
-                SortBy = string.Empty,
-                PageIndex = 1,
-                PageSize = 500
-            });
-
-            _currentSession.TimeZone = TZConvert.GetTimeZoneInfo("India Standard Time");
-            _currentSession.CurrentUserDetail.CompanyId = 1;
-            DateTime workingDate = DateTime.UtcNow;
-            foreach (var employee in employees)
-            {
-                workingDate = employee.CreatedOn;
-
-                if (workingDate.Day != 1)
-                    workingDate = workingDate.AddDays(-1 * workingDate.Day + 1);
-
-                var presentMonth = DateTime.UtcNow.AddMonths(1);
-                if (presentMonth.Day != 1)
-                    presentMonth = presentMonth.AddDays(-1 * presentMonth.Day + 1);
-
-                while (workingDate.Date.Subtract(presentMonth.Date).TotalDays < 0)
+                const int chunkSize = 500;
+                int pageNumber = 1;
+                while (true)
                 {
-                    Attendance attendance = new Attendance
+                    var employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
                     {
-                        AttendanceDay = workingDate,
-                        ForMonth = workingDate.Month,
-                        ForYear = workingDate.Year,
-                        EmployeeId = employee.EmployeeUid
-                    };
-
-                    var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
-                    {
-                        EmployeeId = employee.EmployeeUid,
-                        ForYear = workingDate.Year,
-                        ForMonth = workingDate.Month
+                        SearchString = "1=1",
+                        SortBy = string.Empty,
+                        PageIndex = pageNumber,
+                        PageSize = chunkSize
                     });
-
-                    if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
-                    {
-                        List<AttendanceJson> attendenceDetails;
-                        var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
-
-                        attendanceModal.attendanceSubmissionLimit = 2;
-                        await BuildApprovedAttendance(attendanceModal, employee.CreatedOn);
-
-                        workingDate = workingDate.AddMonths(1);
-
-                        if (workingDate.Day != 1)
-                            workingDate = workingDate.AddDays(-1 * workingDate.Day + 1);
-                    }
-                    else
-                    {
+                    if (employees == null)
                         break;
-                    }
+
+                    //foreach (var employee in employees)
+                    //{
+                    //    await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, employee.EmployeeUid, attendenceDetail.AttendenceStatus);
+                    //}
+                    pageNumber++;
                 }
             }
+            else
+            {
+                //await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, attendenceDetail.EmployeeId, attendenceDetail.AttendenceStatus);
+            }
+            await Task.CompletedTask;
+        }
 
+        private async Task GenerateAttendanceForEachEmployee(DateTime attendanceStartDate, DateTime attendanceEndDate, long employeeId, int status)
+        {
+            while (attendanceStartDate.Subtract(attendanceEndDate).TotalDays < 0)
+            {
+                Attendance attendance = new Attendance
+                {
+                    AttendanceDay = attendanceStartDate,
+                    ForMonth = attendanceStartDate.Month,
+                    ForYear = attendanceStartDate.Year,
+                    EmployeeId = employeeId
+                };
+
+                var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
+                {
+                    EmployeeId = employeeId,
+                    ForYear = attendanceStartDate.Year,
+                    ForMonth = attendanceStartDate.Month
+                });
+
+                if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
+                {
+                    List<AttendanceJson> attendenceDetails;
+                    var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
+
+                    attendanceModal.attendanceSubmissionLimit = 2;
+                    await BuildApprovedAttendance(attendanceModal, attendanceStartDate, status);
+
+                    attendanceStartDate = attendanceStartDate.AddMonths(1);
+                }
+                else
+                {
+                    break;
+                }
+            }
             await Task.CompletedTask;
         }
 
