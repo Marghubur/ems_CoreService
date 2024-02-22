@@ -1251,7 +1251,7 @@ namespace ServiceLayer.Code
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
-            var totalDeduction = payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
+            var totalDeduction = payslipModal.TaxDetail.TaxDeducted;
             var netSalary = totalEarning > 0 ? totalEarning - (employerPFAmount + totalDeduction) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
@@ -1360,7 +1360,8 @@ namespace ServiceLayer.Code
                 EmployeeId = payslipGenerationModal.EmployeeId,
                 ForMonth = payslipGenerationModal.Month,
                 ForYear = payslipGenerationModal.Year,
-                FileRole = ApplicationConstants.CompanyPrimaryLogo
+                FileRole = ApplicationConstants.CompanyPrimaryLogo,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             });
 
             if (ds == null || ds.Tables.Count != 7)
