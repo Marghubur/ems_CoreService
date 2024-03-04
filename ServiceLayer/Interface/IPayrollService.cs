@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface IPayrollService
     {
-        Task RunPayrollCycle(int i, bool reRunFlag = false);
+        Task RunPayrollCycle(DateTime runDate, bool reRunFlag = false);
     }
 }

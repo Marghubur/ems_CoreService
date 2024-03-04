@@ -35,6 +35,15 @@
       },
       "applicationUrl": "http://localhost:5001"
     },
+    "emstum-stag": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "api/weatherforecast",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      },
+      "applicationUrl": "http://localhost:5001"
+    },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,

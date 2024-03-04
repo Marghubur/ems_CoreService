@@ -986,13 +986,13 @@ namespace ServiceLayer.Code
             return await Task.FromResult("Done");
         }
 
-        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, PayrollCommonData payrollCommonData, bool IsTaxCalculationRequired)
+        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, bool IsTaxCalculationRequired)
         {
             var Result = await _db.ExecuteAsync(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
             {
-                EmployeeId = payrollEmployeeData.EmployeeId,
-                TaxDetail = payrollEmployeeData.TaxDetail,
-                CompleteSalaryDetail = payrollEmployeeData.CompleteSalaryDetail
+                payrollEmployeeData.EmployeeId,
+                payrollEmployeeData.TaxDetail,
+                payrollEmployeeData.CompleteSalaryDetail
             }, true);
 
             if (ApplicationConstants.IsExecuted(Result.statusMessage) && IsTaxCalculationRequired)

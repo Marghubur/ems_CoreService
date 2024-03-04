@@ -38,10 +38,10 @@ namespace ems_CoreService.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpGet("triggerMonthlyPayroll/{forYear}/{forMonth}")]
-        public async Task MonthlyPayrollTrigger(int forYear, int forMonth)
+        [HttpGet("triggerMonthlyPayroll/{forYear}/{forMonth}/{dom}")]
+        public async Task MonthlyPayrollTrigger(int forYear, int forMonth, int dom)
         {
-            await _autoTriggerService.RunPayrollJobAsync();
+            await _autoTriggerService.RunPayrollJobAsync(new DateTime(forYear, forMonth, dom));
         }
     }
 }

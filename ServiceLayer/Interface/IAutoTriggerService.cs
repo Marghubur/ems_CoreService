@@ -9,7 +9,7 @@ namespace ServiceLayer.Interface
     {
         Task ExecuteLeaveAccrualJobAsync(CompanySetting companySetting, LeaveAccrualKafkaModel leaveAccrualKafkaModel);
         Task RunTimesheetJobAsync(CompanySetting companySetting, DateTime startDate, DateTime? endDate, bool isCronJob);
-        Task RunPayrollJobAsync();
+        Task RunPayrollJobAsync(DateTime? runDate);
         Task ScheduledJobManager();
     }
 }

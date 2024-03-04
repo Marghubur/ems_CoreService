@@ -8,6 +8,7 @@ using Confluent.Kafka;
 using EMailService.Modal;
 using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
+using EMailService.Modal.Payroll;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
@@ -89,7 +90,6 @@ namespace ServiceLayer.Code
                         {
                             _logger.LogInformation(message.Message.Value);
                             await RunJobAsync(message.Message.Value);
-
                         }
                     }
                     catch (Exception ex)
@@ -129,7 +129,8 @@ namespace ServiceLayer.Code
                             companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
                             break;
                         case KafkaServiceName.MonthlyPayrollJob:
-                            companySettings.ForEach(async i => await RunPayrollJobAsync());
+                            PayrollMonthlyDetail payrollMonthlyDetail = JsonConvert.DeserializeObject<PayrollMonthlyDetail>(kafkaPayload.Message);
+                            companySettings.ForEach(async i => await RunPayrollJobAsync(payrollMonthlyDetail.PaymentRunDate));
                             break;
                         case KafkaServiceName.YearEndLeaveProcessingJob:
                             companySettings.ForEach(async i =>
@@ -209,9 +210,14 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Timesheet creation cron job ran successfully.");
         }
 
-        public async Task RunPayrollJobAsync()
+        public async Task RunPayrollJobAsync(DateTime? runDate)
         {
-            await _payrollService.RunPayrollCycle(0);
+            if(runDate == null)
+            {
+                throw HiringBellException.ThrowBadRequest("Invalid run date passed. Please check run date.");
+            }
+
+            await _payrollService.RunPayrollCycle(runDate.Value);
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 
