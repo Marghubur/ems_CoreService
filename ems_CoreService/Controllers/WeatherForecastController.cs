@@ -66,9 +66,8 @@ namespace OnlineDataBuilder.Controllers
             _runLeaveEndYearService = runLeaveEndYearService;
         }
 
-        [HttpPost]
+        [HttpPost("testError")]
         [AllowAnonymous]
-        [Route("/api/testError")]
         public async Task<List<WeatherForecast>> TestError([FromBody] UserDetail userDetail)
         {
             IEnumerable<WeatherForecast> weatherForecast = new List<WeatherForecast>();
