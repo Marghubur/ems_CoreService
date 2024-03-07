@@ -144,7 +144,7 @@ namespace SchoolInMindServer.MiddlewareServices
                 LocalConnectionString = string.Empty, // currentSession.LocalConnectionString,
                 kafkaServiceName = KafkaServiceName.UnhandledException,
                 UtcTimestamp = DateTime.Now,
-                ToAddress = new List<string> { "marghub12@gmail.com", "istiyaq.mi9@gmail.com" }
+                ToAddress = new List<string> { "marghub12@gmail.com", "istiyaq.mi9@gmail.com", "kumarvivek1502@gmail.com" }
             };
             await kafkaNotificationService.SendEmailNotification(kafkaPayload);
             await Task.CompletedTask;
