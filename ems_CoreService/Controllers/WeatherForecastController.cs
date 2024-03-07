@@ -23,7 +23,7 @@ namespace OnlineDataBuilder.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     [Route("api/[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WeatherForecastController : BaseController
     {
         private static readonly string[] Summaries = new[]
         {
@@ -66,25 +66,37 @@ namespace OnlineDataBuilder.Controllers
             _runLeaveEndYearService = runLeaveEndYearService;
         }
 
-        [HttpGet]
+        [HttpPost]
         [AllowAnonymous]
-        [Route("/api/test")]
-        public async Task<IEnumerable<WeatherForecast>> GetTest()
+        [Route("/api/testError")]
+        public async Task<List<WeatherForecast>> TestError([FromBody] UserDetail userDetail)
         {
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            IEnumerable<WeatherForecast> weatherForecast = new List<WeatherForecast>();
+
+            try
             {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
+                var rng = new Random();
+                weatherForecast = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+                {
+                    Date = DateTime.Now.AddDays(index),
+                    TemperatureC = rng.Next(-20, 55),
+                    Summary = Summaries[rng.Next(Summaries.Length)]
+                })
+                .ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, userDetail);
+            }
+
+            return await Task.FromResult(weatherForecast.ToList());
         }
 
         [HttpGet]
         [AllowAnonymous]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
+
             var scheme = Request.Scheme; // will get http, https, etc.
             var host = Request.Host; // will get www.mywebsite.com
             var Port = host.Port;

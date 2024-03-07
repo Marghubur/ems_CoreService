@@ -7,8 +7,10 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Utilities.Net;
 using ServiceLayer.Code;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,32 +33,54 @@ namespace SchoolInMindServer.MiddlewareServices
             {
                 await _next.Invoke(context);
             }
-            catch (HiringBellException exception)
+            catch (HiringBellException ex)
             {
-                await HandleHiringBellExceptionMessageAsync(context, exception);
+                if (currentSession.Environment == DefinedEnvironments.Production)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+                    });
+                }
+
+                await HandleHiringBellExceptionMessageAsync(context, ex.Message, ex.InnerException, ex.StackTrace);
             }
             catch (Exception ex)
             {
                 if (currentSession.Environment == DefinedEnvironments.Production)
-                    await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+                    });
+                }
 
                 if (applicationConfiguration.IsLoggingEnabled)
                     await HandleExceptionWriteToFile(context, ex, applicationConfiguration);
                 else
-                    await HandleExceptionMessageAsync(context, ex);
+                    await HandleHiringBellExceptionMessageAsync(context, ex.Message, ex.InnerException, ex.StackTrace, HttpStatusCode.InternalServerError);
             }
         }
 
-        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context, HiringBellException e)
+        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context,
+            string message, Exception innerException, string stackTrace, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
         {
             context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            int statusCode = (int)e.HttpStatusCode;
+            int statusCode = (int)httpStatusCode;
+
+            string innerMessage = string.Empty;
+            if (innerException != null)
+            {
+                innerMessage = innerException!.Message;
+                stackTrace = innerException.StackTrace;
+            }
+
             var result = JsonConvert.SerializeObject(new ApiResponse
             {
                 AuthenticationToken = string.Empty,
-                HttpStatusCode = e.HttpStatusCode,
-                HttpStatusMessage = e.UserMessage,
-                ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message, e.StackTraceDetail }
+                HttpStatusCode = httpStatusCode,
+                HttpStatusMessage = message,
+                ResponseBody = new { message, InnerMessage = innerMessage, stackTrace }
             });
 
             context.Response.ContentType = ApplicationConstants.ApplicationJson;
@@ -112,29 +136,15 @@ namespace SchoolInMindServer.MiddlewareServices
             return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
         }
 
-        private static Task HandleExceptionMessageAsync(HttpContext context, Exception e)
-        {
-            context.Response.ContentType = "application/json";
-            int statusCode = (int)HttpStatusCode.InternalServerError;
-            var result = JsonConvert.SerializeObject(new ApiResponse
-            {
-                AuthenticationToken = string.Empty,
-                HttpStatusCode = HttpStatusCode.BadRequest,
-                HttpStatusMessage = e.Message,
-                ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message }
-            });
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = statusCode;
-            return context.Response.WriteAsync(result);
-        }
-
         private async Task SendExceptionEmailService(string message, CurrentSession currentSession, KafkaNotificationService kafkaNotificationService)
         {
             KafkaPayload kafkaPayload = new KafkaPayload
             {
                 Body = message,
-                LocalConnectionString = currentSession.LocalConnectionString,
-                kafkaServiceName = KafkaServiceName.Common,
+                LocalConnectionString = string.Empty, // currentSession.LocalConnectionString,
+                kafkaServiceName = KafkaServiceName.UnhandledException,
+                UtcTimestamp = DateTime.Now,
+                ToAddress = new List<string> { "marghub12@gmail.com", "istiyaq.mi9@gmail.com" }
             };
             await kafkaNotificationService.SendEmailNotification(kafkaPayload);
             await Task.CompletedTask;
