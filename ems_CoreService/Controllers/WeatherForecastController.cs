@@ -75,6 +75,8 @@ namespace OnlineDataBuilder.Controllers
 
             try
             {
+                userDetail.State = userDetail.State.ToString();
+
                 var rng = new Random();
                 weatherForecast = Enumerable.Range(1, 5).Select(index => new WeatherForecast
                 {
