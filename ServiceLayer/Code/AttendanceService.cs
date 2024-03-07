@@ -336,8 +336,10 @@ namespace ServiceLayer.Code
                         PageIndex = pageNumber,
                         PageSize = chunkSize
                     });
-                    if (employees == null)
+                    if (employees == null || employees.Count == 0)
+                    {
                         break;
+                    }
 
                     foreach (var employee in employees)
                     {
