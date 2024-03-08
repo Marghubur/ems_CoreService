@@ -1,8 +1,11 @@
-﻿using Bot.CoreBottomHalf.CommonModal.API;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.API;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -21,15 +24,29 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("GetApprovalChain")]
         public async Task<ApiResponse> GetApprovalChain(FilterModel filterModel)
         {
-            var result = await _approvalChainService.GetApprovalChainService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _approvalChainService.GetApprovalChainService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPost("InsertApprovalChain")]
         public async Task<ApiResponse> InsertApprovalChain(ApprovalWorkFlowChain approvalWorkFlowModal)
         {
-            var result = await _approvalChainService.InsertApprovalChainService(approvalWorkFlowModal);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _approvalChainService.InsertApprovalChainService(approvalWorkFlowModal);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, approvalWorkFlowModal);
+            }
         }
 
         [HttpPost("GetPageDate")]

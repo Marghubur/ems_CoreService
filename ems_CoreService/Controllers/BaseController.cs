@@ -21,15 +21,19 @@ namespace OnlineDataBuilder.Controllers
         [NonAction]
         public HiringBellException Throw(Exception ex, dynamic request = null)
         {
-            string msg = JsonConvert.SerializeObject(new
+            try
             {
-                ex.Message,
-                RequestObject = request
-            });
+                HiringBellException exception = (HiringBellException)ex;
+                return new HiringBellException(exception.UserMessage, JsonConvert.SerializeObject(request), ex);
+            }
+            catch
+            {
+                Console.WriteLine("This is not a HiringBellException");           
+            }
 
-            return new HiringBellException(msg, ex);
+            return new HiringBellException(ex.Message, JsonConvert.SerializeObject(request), ex);
         }
-        
+
         public ApiResponse BuildResponse(dynamic Data, HttpStatusCode httpStatusCode = HttpStatusCode.OK, string Resion = null, string Token = null)
         {
             apiResponse.AuthenticationToken = Token;

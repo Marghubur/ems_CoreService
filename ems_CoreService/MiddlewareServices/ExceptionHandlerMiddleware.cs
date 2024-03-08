@@ -39,11 +39,11 @@ namespace SchoolInMindServer.MiddlewareServices
                 {
                     _ = Task.Run(async () =>
                     {
-                        await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+                        await SendExceptionEmailService(ex.UserMessage, ex.RequestBody, ex, kafkaNotificationService);
                     });
                 }
 
-                await HandleHiringBellExceptionMessageAsync(context, ex.Message, ex.InnerException, ex.StackTrace);
+                await HandleHiringBellExceptionMessageAsync(context, ex.UserMessage, ex);
             }
             catch (Exception ex)
             {
@@ -51,36 +51,28 @@ namespace SchoolInMindServer.MiddlewareServices
                 {
                     _ = Task.Run(async () =>
                     {
-                        await SendExceptionEmailService(ex.Message, currentSession, kafkaNotificationService);
+                        await SendExceptionEmailService(string.Empty, string.Empty, ex, kafkaNotificationService);
                     });
                 }
 
                 if (applicationConfiguration.IsLoggingEnabled)
                     await HandleExceptionWriteToFile(context, ex, applicationConfiguration);
                 else
-                    await HandleHiringBellExceptionMessageAsync(context, ex.Message, ex.InnerException, ex.StackTrace, HttpStatusCode.InternalServerError);
+                    await HandleHiringBellExceptionMessageAsync(context, string.Empty, ex);
             }
         }
 
-        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context,
-            string message, Exception innerException, string stackTrace, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
+        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context, string userMessage, Exception ex)
         {
             context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            int statusCode = (int)httpStatusCode;
-
-            string innerMessage = string.Empty;
-            if (innerException != null)
-            {
-                innerMessage = innerException!.Message;
-                stackTrace = innerException.StackTrace;
-            }
+            int statusCode = (int)HttpStatusCode.BadRequest;
 
             var result = JsonConvert.SerializeObject(new ApiResponse
             {
                 AuthenticationToken = string.Empty,
-                HttpStatusCode = httpStatusCode,
-                HttpStatusMessage = message,
-                ResponseBody = new { message, InnerMessage = innerMessage, stackTrace }
+                HttpStatusCode = HttpStatusCode.BadRequest,
+                HttpStatusMessage = ex.Message,
+                ResponseBody = userMessage
             });
 
             context.Response.ContentType = ApplicationConstants.ApplicationJson;
@@ -136,11 +128,20 @@ namespace SchoolInMindServer.MiddlewareServices
             return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
         }
 
-        private async Task SendExceptionEmailService(string message, CurrentSession currentSession, KafkaNotificationService kafkaNotificationService)
+        private async Task SendExceptionEmailService(string userMessage,
+            string requestPayload,
+            Exception ex,
+            KafkaNotificationService kafkaNotificationService)
         {
             KafkaPayload kafkaPayload = new KafkaPayload
             {
-                Body = message,
+                exceptionPayloadetail = new ExceptionPayloadetail
+                {
+                    UserMessage = userMessage,
+                    RequestPayload = requestPayload,
+                    StackTrace = ex.StackTrace,
+                    SystemMessage = ex.Message
+                },
                 LocalConnectionString = string.Empty, // currentSession.LocalConnectionString,
                 kafkaServiceName = KafkaServiceName.UnhandledException,
                 UtcTimestamp = DateTime.Now,

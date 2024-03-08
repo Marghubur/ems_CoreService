@@ -52,76 +52,148 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetLeavePlans")]
         public IResponse<ApiResponse> GetLeavePlans(FilterModel filterModel)
         {
-            var result = _leaveService.GetLeavePlansService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeavePlansService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPost("AddLeavePlanType")]
         public IResponse<ApiResponse> AddLeavePlanType(LeavePlanType leavePlanType)
         {
-            var result = _leaveService.AddLeavePlanTypeService(leavePlanType);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.AddLeavePlanTypeService(leavePlanType);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leavePlanType);
+            }
         }
 
         [HttpPost("AddLeavePlan")]
         public IResponse<ApiResponse> AddLeavePlans(LeavePlan leavePlan)
         {
-            var result = _leaveService.AddLeavePlansService(leavePlan);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.AddLeavePlansService(leavePlan);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leavePlan);
+            }
         }
 
         [HttpPost("LeavePlanUpdateTypes/{leavePlanId}")]
         public async Task<ApiResponse> LeavePlanUpdateTypes([FromRoute] int leavePlanId, [FromBody] List<int> LeavePlanTypeId)
         {
-            var result = await _leaveService.LeavePlanUpdateTypes(leavePlanId, LeavePlanTypeId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _leaveService.LeavePlanUpdateTypes(leavePlanId, LeavePlanTypeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { LeavePlanId = leavePlanId, LeavePlanTypeId = LeavePlanTypeId });
+            }
         }
 
         [HttpPut("UpdateLeavePlanType/{leavePlanTypeId}")]
         public IResponse<ApiResponse> UpdateLeavePlanType([FromRoute] int leavePlanTypeId, [FromBody] LeavePlanType leavePlanType)
         {
-            var result = _leaveService.UpdateLeavePlanTypeService(leavePlanTypeId, leavePlanType);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.UpdateLeavePlanTypeService(leavePlanTypeId, leavePlanType);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leavePlanType);
+            }
         }
 
         [HttpPost("AddUpdateLeaveQuota")]
         public IResponse<ApiResponse> AddUpdateLeaveQuota([FromBody] LeaveDetail leaveDetail)
         {
-            var result = _leaveService.AddUpdateLeaveQuotaService(leaveDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.AddUpdateLeaveQuotaService(leaveDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leaveDetail);
+            }
         }
 
         [HttpGet("GetLeaveTypeDetailById/{leavePlanTypeId}")]
         public IResponse<ApiResponse> GetLeaveTypeDetailById(int leavePlanTypeId)
         {
-            var result = _leaveService.GetLeaveTypeDetailByIdService(leavePlanTypeId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeaveTypeDetailByIdService(leavePlanTypeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leavePlanTypeId);
+            }
         }
 
         [HttpGet("GetLeaveTypeFilter")]
         public IResponse<ApiResponse> GetLeaveTypeFilter()
         {
-            var result = _leaveService.GetLeaveTypeFilterService();
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeaveTypeFilterService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPut("SetDefaultPlan/{leavePlanId}")]
         public IResponse<ApiResponse> SetDefaultPlan([FromRoute] int leavePlanId, [FromBody] LeavePlan leavePlan)
         {
-            var result = _leaveService.SetDefaultPlanService(leavePlanId, leavePlan);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.SetDefaultPlanService(leavePlanId, leavePlan);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { LeavePlanId = leavePlanId, LeavePlan = leavePlan });
+            }
         }
 
         [HttpPut("LeaveRquestManagerAction/{RequestId}")]
         public IResponse<ApiResponse> LeaveRquestManagerAction([FromRoute] ItemStatus RequestId, LeaveRequestNotification approvalRequest)
         {
-            var result = _leaveService.LeaveRquestManagerActionService(approvalRequest, RequestId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.LeaveRquestManagerActionService(approvalRequest, RequestId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { ItemStatus = RequestId, LeaveRequestNotification = approvalRequest });
+            }
         }
 
         [HttpPost("ApplyLeave")]
         public async Task<ApiResponse> ApplyLeave()
         {
+            LeaveRequestModal leaveRequestModal = null;
+
             try
             {
                 StringValues leave = default(string);
@@ -129,7 +201,7 @@ namespace OnlineDataBuilder.Controllers
                 _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
                 if (leave.Count > 0)
                 {
-                    var leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
+                    leaveRequestModal = JsonConvert.DeserializeObject<LeaveRequestModal>(leave);
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
 
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
@@ -139,52 +211,94 @@ namespace OnlineDataBuilder.Controllers
                 return BuildResponse("No files found", HttpStatusCode.OK);
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw Throw(ex, leaveRequestModal);
             }
         }
 
         [HttpPost("GetAllLeavesByEmpId")]
         public async Task<ApiResponse> GetAllLeavesByEmpId(LeaveRequestModal leaveRequestModal)
         {
-            var result = await _leaveService.GetEmployeeLeaveDetail(leaveRequestModal);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _leaveService.GetEmployeeLeaveDetail(leaveRequestModal);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leaveRequestModal);
+            }
         }
 
         [HttpPut("UpdateAccrualForEmployee/{EmployeeId}")]
         public async Task<ApiResponse> RunAccrualByEmployee(long EmployeeId)
         {
-            await _leaveService.RunAccrualByEmployeeService(EmployeeId);
-            return BuildResponse(ApplicationConstants.Successfull);
+            try
+            {
+                await _leaveService.RunAccrualByEmployeeService(EmployeeId);
+                return BuildResponse(ApplicationConstants.Successfull);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpGet("GetLeaveAttachment/{FileIds}")]
         public IResponse<ApiResponse> GetLeaveAttachment([FromRoute] string FileIds)
         {
-            var result = _leaveService.GetLeaveAttachmentService(FileIds);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeaveAttachmentService(FileIds);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, FileIds);
+            }
         }
 
         [HttpPost("GetLeaveAttachByManger")]
         public IResponse<ApiResponse> GetLeaveAttachByManger([FromBody] LeaveRequestNotification leaveRequestNotification)
         {
-            var result = _leaveService.GetLeaveAttachByMangerService(leaveRequestNotification);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeaveAttachByMangerService(leaveRequestNotification);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leaveRequestNotification);
+            }
         }
 
         [HttpGet("GetLeaveDetailByEmpId/{EmployeeId}")]
         public IResponse<ApiResponse> GetLeaveDetailByEmpId([FromRoute] long EmployeeId)
         {
-            var result = _leaveService.GetLeaveDetailByEmpIdService(EmployeeId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _leaveService.GetLeaveDetailByEmpIdService(EmployeeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpPost("AdjustLOPAsLeave")]
         public async Task<ApiResponse> AdjustLOPAsLeave(LOPAdjustmentDetail lOPAdjustmentDetail)
         {
-            var result = await _leaveService.AdjustLOPAsLeaveService(lOPAdjustmentDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _leaveService.AdjustLOPAsLeaveService(lOPAdjustmentDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, lOPAdjustmentDetail);
+            }
         }
     }
 }
