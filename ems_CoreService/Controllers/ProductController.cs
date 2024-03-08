@@ -28,6 +28,7 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ProdcutAddUpdate")]
         public IResponse<ApiResponse> ProdcutAddUpdate()
         {
+            Product product = null;
             try
             {
                 StringValues ProductInfoData = default(string);
@@ -35,7 +36,7 @@ namespace OnlineDataBuilder.Controllers
                 _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
                 if (ProductInfoData.Count > 0)
                 {
-                    Product product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
+                    product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
                     var resetSet = _productService.ProdcutAddUpdateService(product, files, fileDetail);
@@ -48,36 +49,64 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex, product);
             }
         }
 
         [HttpPost("GetAllProducts")]
         public IResponse<ApiResponse> GetAllProducts(FilterModel filterModel)
         {
-            var result = _productService.GetAllProductsService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _productService.GetAllProductsService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpGet("GetProductImages/{FileIds}")]
         public IResponse<ApiResponse> GetProductImages([FromRoute] string FileIds)
         {
-            var result = _productService.GetProductImagesService(FileIds);
-            return BuildResponse(result);
+            try
+            {
+                var result = _productService.GetProductImagesService(FileIds);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, FileIds);
+            }
         }
 
         [HttpPost("AddUpdateProductCatagory")]
         public IResponse<ApiResponse> AddUpdateProductCatagory(ProductCatagory productCatagory)
         {
-            var result = _productService.AddUpdateProductCatagoryService(productCatagory);
-            return BuildResponse(result);
+            try
+            {
+                var result = _productService.AddUpdateProductCatagoryService(productCatagory);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, productCatagory);
+            }
         }
 
         [HttpPost("GetAllCatagory")]
         public IResponse<ApiResponse> GetAllCatagory(FilterModel filterModel)
         {
-            var result = _productService.GetProductCatagoryService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _productService.GetProductCatagoryService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
     }
 }

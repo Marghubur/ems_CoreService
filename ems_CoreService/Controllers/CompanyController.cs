@@ -32,103 +32,187 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("GetAllCompany")]
         public IResponse<ApiResponse> GetAllCompany()
         {
-            var result = _companyService.GetAllCompany();
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyService.GetAllCompany();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost("AddCompanyGroup")]
         public IResponse<ApiResponse> AddCompanyGroup(OrganizationDetail companyGroup)
         {
-            var result = _companyService.AddCompanyGroup(companyGroup);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyService.AddCompanyGroup(companyGroup);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, companyGroup);
+            }
         }
 
         [HttpPut("UpdateCompanyGroup/{companyId}")]
         public IResponse<ApiResponse> UpdateCompanyGroup([FromRoute] int companyId, [FromBody] OrganizationDetail companyGroup)
         {
-            var result = _companyService.UpdateCompanyGroup(companyGroup, companyId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyService.UpdateCompanyGroup(companyGroup, companyId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { COmpanyId = companyId, CompanyGroup = companyGroup });
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("InsertUpdateOrganizationDetail")]
         public async Task<ApiResponse> InsertUpdateOrganizationDetail()
         {
-            StringValues compnyinfo = default(string);
-            OrganizationDetail org = null;
-            _httpContext.Request.Form.TryGetValue("OrganizationInfo", out compnyinfo);
-            if (compnyinfo.Count > 0)
+            try
             {
-                OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = await _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
+                StringValues compnyinfo = default(string);
+                OrganizationDetail org = null;
+                _httpContext.Request.Form.TryGetValue("OrganizationInfo", out compnyinfo);
+                if (compnyinfo.Count > 0)
+                {
+                    OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    org = await _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
+                }
+                return BuildResponse(org);
             }
-            return BuildResponse(org);
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost("UpdateCompanyDetails")]
         public async Task<ApiResponse> UpdateCompanyDetails()
         {
-            StringValues compnyinfo = default(string);
-            OrganizationDetail org = null;
-            _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
-            if (compnyinfo.Count > 0)
+            try
             {
-                OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                org = await _companyService.InsertUpdateCompanyDetailService(organizationSettings, files);
+                StringValues compnyinfo = default(string);
+                OrganizationDetail org = null;
+                _httpContext.Request.Form.TryGetValue("CompanyInfo", out compnyinfo);
+                if (compnyinfo.Count > 0)
+                {
+                    OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    org = await _companyService.InsertUpdateCompanyDetailService(organizationSettings, files);
+                }
+                return BuildResponse(org);
             }
-            return BuildResponse(org);
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpGet("GetCompanyById/{companyId}")]
         public IResponse<ApiResponse> GetCompanyById(int companyId)
         {
-            var result = _companyService.GetCompanyById(companyId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyService.GetCompanyById(companyId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, companyId);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet("GetOrganizationDetail")]
         public IResponse<ApiResponse> GetOrganizationDetail()
         {
-            var result = _companyService.GetOrganizationDetailService();
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyService.GetOrganizationDetailService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost("InsertUpdateCompanyAccounts")]
         public IResponse<ApiResponse> InsertUpdateCompanyAccounts(BankDetail bankDetail)
         {
-            var org = _companyService.InsertUpdateCompanyAccounts(bankDetail);
-            return BuildResponse(org);
+            try
+            {
+                var org = _companyService.InsertUpdateCompanyAccounts(bankDetail);
+                return BuildResponse(org);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, bankDetail);
+            }
         }
 
         [HttpPost("GetCompanyBankDetail")]
         public IResponse<ApiResponse> GetCompanyBankDetail(FilterModel filterModel)
         {
-            var bankDetail = _companyService.GetCompanyBankDetail(filterModel);
-            return BuildResponse(bankDetail);
+            try
+            {
+                var bankDetail = _companyService.GetCompanyBankDetail(filterModel);
+                return BuildResponse(bankDetail);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPut("UpdateSetting/{companyId}/{isRunLeaveAccrual}")]
         public async Task<ApiResponse> UpdateSetting([FromRoute] int companyId, [FromRoute] bool isRunLeaveAccrual, [FromBody] CompanySetting companySetting)
         {
-            var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting, isRunLeaveAccrual);
-            return BuildResponse(settingDetail);
+            try
+            {
+                var settingDetail = await _companyService.UpdateSettingService(companyId, companySetting, isRunLeaveAccrual);
+                return BuildResponse(settingDetail);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { CompanyId = companyId, IsRunLeaveAccrual = isRunLeaveAccrual, CompanySetting = companySetting });
+            }
         }
 
         [HttpGet("RunPayroll/{MonthNumber}/{ReCalculateFlagId}")]
         public async Task<ApiResponse> RunPayroll(int MonthNumber, int ReCalculateFlagId)
         {
-            await _payrollService.RunPayrollCycle(new DateTime(DateTime.UtcNow.Year, MonthNumber, 1), ReCalculateFlagId == 1);
-            return BuildResponse(ApplicationConstants.Successfull);
+            try
+            {
+                await _payrollService.RunPayrollCycle(new DateTime(DateTime.UtcNow.Year, MonthNumber, 1), ReCalculateFlagId == 1);
+                return BuildResponse(ApplicationConstants.Successfull);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { MonthNumber = MonthNumber, ReCalculateFlagId = ReCalculateFlagId });
+            }
         }
 
         [HttpGet("getcompanysettingdetail/{companyId}")]
         public async Task<ApiResponse> GetCompanySetting(int companyId)
         {
-            var settingDetail = await _companyService.GetCompanySettingService(companyId);
-            return BuildResponse(settingDetail);
+            try
+            {
+                var settingDetail = await _companyService.GetCompanySettingService(companyId);
+                return BuildResponse(settingDetail);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, companyId);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -151,9 +235,9 @@ namespace OnlineDataBuilder.Controllers
                     return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw Throw(ex);
             }
         }
 
@@ -161,14 +245,28 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("getcompanyfiles/{CompanyId}")]
         public async Task<ApiResponse> GetCompanyFiles(int CompanyId)
         {
-            var resetSet = await _companyService.GetCompanyFiles(CompanyId);
-            return BuildResponse(resetSet);
+            try
+            {
+                var resetSet = await _companyService.GetCompanyFiles(CompanyId);
+                return BuildResponse(resetSet);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, CompanyId);
+            }
         }
         [HttpPost("DeleteCompanyFile")]
         public async Task<ApiResponse> DeleteCompanyFiles(Files companyFile)
         {
-            var result = await _companyService.DeleteCompanyFilesService(companyFile);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _companyService.DeleteCompanyFilesService(companyFile);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, companyFile);
+            }
         }
     }
 }

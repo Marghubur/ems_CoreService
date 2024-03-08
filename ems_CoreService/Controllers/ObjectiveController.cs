@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -19,29 +20,57 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ObjectiveInsertUpdate")]
         public IResponse<ApiResponse> ObjectiveInsertUpdate([FromBody] ObjectiveDetail objectiveDetail)
         {
-            var result = _objectiveService.ObjectiveInsertUpdateService(objectiveDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = _objectiveService.ObjectiveInsertUpdateService(objectiveDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, objectiveDetail);
+            }
         }
 
         [HttpPost("GetPerformanceObjective")]
         public IResponse<ApiResponse> GetPerformanceObjective([FromBody] FilterModel filterModel)
         {
-            var result = _objectiveService.GetPerformanceObjectiveService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _objectiveService.GetPerformanceObjectiveService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpGet("GetEmployeeObjective/{DesignationId}/{CompanyId}/{EmployeeId}")]
         public IResponse<ApiResponse> GetEmployeeObjective([FromRoute] int DesignationId, [FromRoute] int CompanyId, [FromRoute] long EmployeeId)
         {
-            var result = _objectiveService.GetEmployeeObjectiveService(DesignationId, CompanyId, EmployeeId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _objectiveService.GetEmployeeObjectiveService(DesignationId, CompanyId, EmployeeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { DesignationId = DesignationId, CompanyId = CompanyId, EmployeeId = EmployeeId });
+            }
         }
 
         [HttpPost("UpdateEmployeeObjective")]
         public IResponse<ApiResponse> UpdateEmployeeObjective([FromBody] EmployeePerformance employeePerformance)
         {
-            var result = _objectiveService.UpdateEmployeeObjectiveService(employeePerformance);
-            return BuildResponse(result);
+            try
+            {
+                var result = _objectiveService.UpdateEmployeeObjectiveService(employeePerformance);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeePerformance);
+            }
         }
     }
 }

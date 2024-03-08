@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
@@ -23,18 +24,32 @@ namespace OnlineDataBuilder.Controllers
         [Route("PostUserComments")]
         public IResponse<ApiResponse> PostUserComments(UserComments userComments)
         {
-            string ResultSet = this.manageUserCommentService.PostUserCommentService(userComments);
-            BuildResponse(ResultSet, HttpStatusCode.OK);
-            return apiResponse;
+            try
+            {
+                string ResultSet = this.manageUserCommentService.PostUserCommentService(userComments);
+                BuildResponse(ResultSet, HttpStatusCode.OK);
+                return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, userComments);
+            }
         }
 
         [HttpGet("GetComments")]
         [AllowAnonymous]
         public IResponse<ApiResponse> GetComments(string EmailId)
         {
-            var ResultSet = this.manageUserCommentService.GetCommentsService(EmailId);
-            BuildResponse(ResultSet, HttpStatusCode.OK);
-            return apiResponse;
+            try
+            {
+                var ResultSet = this.manageUserCommentService.GetCommentsService(EmailId);
+                BuildResponse(ResultSet, HttpStatusCode.OK);
+                return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmailId);
+            }
         }
     }
 }

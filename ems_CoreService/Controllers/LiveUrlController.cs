@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 
 namespace OnlineDataBuilder.Controllers
@@ -22,17 +23,31 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("loadpagedata")]
         public IResponse<ApiResponse> LoadPageData(FilterModel filterModel)
         {
+            try
+            {
             var Result = _liveUrlService.LoadPageData(filterModel);
             BuildResponse(Result, System.Net.HttpStatusCode.OK);
             return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPost("saveliveUrl")]
         public IResponse<ApiResponse> SaveLiveUrl(LiveUrlModal liveUrlModal)
         {
+            try
+            {
             var Result = _liveUrlService.SaveUrlService(liveUrlModal);
             BuildResponse(Result, System.Net.HttpStatusCode.OK);
             return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, liveUrlModal);
+            }
         }
 
         [AllowAnonymous]

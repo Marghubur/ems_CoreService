@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineDataBuilder.Controllers;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace ems_CoreService.Controllers
@@ -21,9 +22,15 @@ namespace ems_CoreService.Controllers
         [HttpGet("GetPriceDetail")]
         public async Task<ApiResponse> GetPriceDetail()
         {
-            var result = await _priceService.GetPriceDetailService();
-            return BuildResponse(result);
+            try
+            {
+                var result = await _priceService.GetPriceDetailService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
-
     }
 }

@@ -28,38 +28,66 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("SendEmailRequest")]
         public ApiResponse SendEmailRequest()
         {
-            StringValues emailDetail = default(string);
-            _httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
-            if (emailDetail.Count == 0)
-                throw new HiringBellException("No detail found. Please pass all detail.");
+            try
+            {
+                StringValues emailDetail = default(string);
+                _httpContext.Request.Form.TryGetValue("mailDetail", out emailDetail);
+                if (emailDetail.Count == 0)
+                    throw new HiringBellException("No detail found. Please pass all detail.");
 
-            EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
-            IFormFileCollection files = _httpContext.Request.Form.Files;
-            var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
-            return BuildResponse(Result, HttpStatusCode.OK);
+                EmailSenderModal emailSenderModal = JsonConvert.DeserializeObject<EmailSenderModal>(emailDetail);
+                IFormFileCollection files = _httpContext.Request.Form.Files;
+                var Result = _emailService.SendEmailRequestService(emailSenderModal, files);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpGet("GetMyMails")]
         public ApiResponse GetMyMails()
         {
-            var Result = _emailService.GetMyMailService();
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _emailService.GetMyMailService();
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpGet("GetEmailSettingByCompId/{CompanyId}")]
         public IResponse<ApiResponse> GetEmailSettingByCompId(int CompanyId)
         {
-            var result = _emailService.GetEmailSettingByCompIdService(CompanyId);
-            //Temporary hide the password
-            result.Credentials = "************";
-            return BuildResponse(result);
+            try
+            {
+                var result = _emailService.GetEmailSettingByCompIdService(CompanyId);
+                //Temporary hide the password
+                result.Credentials = "************";
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, CompanyId);
+            }
         }
 
         [HttpPost("InsertUpdateEmailSetting")]
         public IResponse<ApiResponse> InsertUpdateEmailSetting(EmailSettingDetail emailSettingDetail)
         {
-            var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = _emailService.InsertUpdateEmailSettingService(emailSettingDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, emailSettingDetail);
+            }
         }
 
         [HttpPost("InsertUpdateEmailTemplate")]
@@ -72,46 +100,74 @@ namespace OnlineDataBuilder.Controllers
                 {
                     EmailTemplate emailTemplate = JsonConvert.DeserializeObject<EmailTemplate>(templateDetail);
                     IFormFileCollection file = _httpContext.Request.Form.Files;
-                    var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate, file)  ;
+                    var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate, file);
                     return BuildResponse(result);
-                } else
+                }
+                else
                 {
                     return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
                 }
             }
             catch (Exception ex)
             {
-
-                throw ex; ;
+                throw Throw(ex);
             }
         }
 
         [HttpPost("GetEmailTemplate")]
         public IResponse<ApiResponse> GetEmailTemplate([FromBody] FilterModel filterModel)
         {
-            var result = _emailService.GetEmailTemplateService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _emailService.GetEmailTemplateService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpGet("GetEmailTemplateById/{EmailTemplateId}/{CompanyId}")]
         public async Task<ApiResponse> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId)
         {
-            var result = await _emailService.GetEmailTemplateByIdService(EmailTemplateId, CompanyId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _emailService.GetEmailTemplateByIdService(EmailTemplateId, CompanyId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmailTemplateId = EmailTemplateId, CompanyId = CompanyId });
+            }
         }
 
         [HttpPost("EmailTempMappingInsertUpdate")]
         public async Task<ApiResponse> EmailTempMappingInsertUpdate([FromBody] EmailMappedTemplate emailMappedTemplate)
         {
-            var result = await _emailService.EmailTempMappingInsertUpdateService(emailMappedTemplate);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _emailService.EmailTempMappingInsertUpdateService(emailMappedTemplate);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, emailMappedTemplate);
+            }
         }
 
         [HttpPost("GetEmailTempMapping")]
         public async Task<ApiResponse> GetEmailTempMapping([FromBody] FilterModel filterModel)
         {
-            var result = await _emailService.GetEmailTempMappingService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _emailService.GetEmailTempMappingService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
     }
 }

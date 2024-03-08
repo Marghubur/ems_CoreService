@@ -6,6 +6,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Net;
 
@@ -27,32 +28,53 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("InsertUpdateNotification")]
         public IResponse<ApiResponse> InsertUpdateNotification()
         {
-            StringValues notification = default(string);
-            _httpContext.Request.Form.TryGetValue("notification", out notification);
-            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
-            if (notification.Count > 0)
+            try
             {
-                var notifications = JsonConvert.DeserializeObject<CompanyNotification>(notification);
-                List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                var result = _companyNotificationService.InsertUpdateNotificationService(notifications, files, fileDetail);
-                return BuildResponse(result);
+                StringValues notification = default(string);
+                _httpContext.Request.Form.TryGetValue("notification", out notification);
+                _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+                if (notification.Count > 0)
+                {
+                    var notifications = JsonConvert.DeserializeObject<CompanyNotification>(notification);
+                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                    IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+                    var result = _companyNotificationService.InsertUpdateNotificationService(notifications, files, fileDetail);
+                    return BuildResponse(result);
+                }
+                return BuildResponse("No files found", HttpStatusCode.OK);
             }
-            return BuildResponse("No files found", HttpStatusCode.OK);
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost("GetNotificationRecord")]
         public IResponse<ApiResponse> GetNotificationRecord(FilterModel filterModel)
         {
-            var result = _companyNotificationService.GetNotificationRecordService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyNotificationService.GetNotificationRecordService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpGet("GetDepartmentsAndRoles")]
         public IResponse<ApiResponse> GetDepartmentsAndRoles()
         {
-            var result = _companyNotificationService.GetDepartmentsAndRolesService();
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyNotificationService.GetDepartmentsAndRolesService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
     }
 }

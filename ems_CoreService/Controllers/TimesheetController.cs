@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -23,60 +24,115 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetTimesheetByFilter")]
         public IResponse<ApiResponse> GetTimesheetByFilter(TimesheetDetail timesheetDetail)
         {
-            var result = _timesheetService.GetTimesheetByFilterService(timesheetDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = _timesheetService.GetTimesheetByFilterService(timesheetDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
 
         [HttpGet("GetWeekTimesheetData/{TimesheetId}")]
         public async Task<ApiResponse> GetWeekTimesheetData(long TimesheetId)
         {
-            var result = await _timesheetService.GetWeekTimesheetDataService(TimesheetId);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _timesheetService.GetWeekTimesheetDataService(TimesheetId);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, TimesheetId);
+            }
         }
 
         [HttpPost("SaveTimesheet")]
         public async Task<ApiResponse> SaveTimesheet(TimesheetDetail timesheetDetail)
         {
-            var result = await _timesheetService.SaveTimesheetService(timesheetDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _timesheetService.SaveTimesheetService(timesheetDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
 
         [HttpPost("SubmitTimesheet")]
         public async Task<ApiResponse> SubmitTimesheet(TimesheetDetail timesheetDetail)
         {
-            var result = await _timesheetService.SubmitTimesheetService(timesheetDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _timesheetService.SubmitTimesheetService(timesheetDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("ExecuteActionOnTimesheet")]
         public async Task<ApiResponse> ExecuteActionOnTimesheet(TimesheetDetail timesheetDetail)
         {
-            var result = await _timesheetService.ExecuteActionOnTimesheetService(timesheetDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _timesheetService.ExecuteActionOnTimesheetService(timesheetDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
-
 
         [HttpGet("GetPendingTimesheetById/{EmployeeId}/{clientId}")]
         public IResponse<ApiResponse> GetPendingTimesheetById(long employeeId, long clientId)
         {
-            var result = _timesheetService.GetPendingTimesheetByIdService(employeeId, clientId);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _timesheetService.GetPendingTimesheetByIdService(employeeId, clientId);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmployeeId = employeeId, ClientId = clientId });
+            }
         }
 
         [HttpPost("GetEmployeeTimeSheet")]
         public IResponse<ApiResponse> GetEmployeeTimeSheet(TimesheetDetail timesheetDetail)
         {
-            var result = _timesheetService.GetEmployeeTimeSheetService(timesheetDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _timesheetService.GetEmployeeTimeSheetService(timesheetDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
 
         [HttpPost]
         [Route("EditEmployeeBillDetail")]
         public IResponse<ApiResponse> EditEmployeeBillDetail([FromBody] GenerateBillFileDetail fileDetail)
         {
-            var result = _timesheetService.EditEmployeeBillDetailService(fileDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _timesheetService.EditEmployeeBillDetailService(fileDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, fileDetail);
+            }
         }
     }
 }
