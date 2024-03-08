@@ -1,8 +1,6 @@
-﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.API;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -52,22 +50,43 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetPageDate")]
         public async Task<ApiResponse> GetPageDate(FilterModel filter)
         {
-            var result = await _approvalChainService.GetPageDateService(filter);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _approvalChainService.GetPageDateService(filter);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filter);
+            }
         }
 
         [HttpGet("GetApprovalChainData/{ApprovalWorkFlowId}")]
         public async Task<ApiResponse> GetApprovalChainData(int ApprovalWorkFlowId)
         {
-            var result = await _approvalChainService.GetApprovalChainData(ApprovalWorkFlowId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _approvalChainService.GetApprovalChainData(ApprovalWorkFlowId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, ApprovalWorkFlowId);
+            }
         }
 
         [HttpDelete("DeleteApprovalChain/{ApprovalChainDetailId}")]
         public async Task<ApiResponse> DeleteApprovalChain([FromRoute] int ApprovalChainDetailId)
         {
-            var result = await _approvalChainService.DeleteApprovalChainService(ApprovalChainDetailId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _approvalChainService.DeleteApprovalChainService(ApprovalChainDetailId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, ApprovalChainDetailId);
+            }
         }
     }
 }

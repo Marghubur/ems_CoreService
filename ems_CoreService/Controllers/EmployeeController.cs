@@ -33,48 +33,90 @@ namespace OnlineDataBuilder.Controllers
         [Route("GetEmployees")]
         public ApiResponse GetEmployees([FromBody] FilterModel filterModel)
         {
-            var Result = _employeeService.GetEmployees(filterModel);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetEmployees(filterModel);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPost]
         [Route("EmployeesListData")]
         public ApiResponse EmployeesListData([FromRoute] FilterModel filterModel)
         {
-            var Result = _employeeService.EmployeesListDataService(filterModel);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.EmployeesListDataService(filterModel);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpGet]
         [Route("GetManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetManageEmployeeDetail(long EmployeeId)
         {
-            var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpGet]
         [Route("LoadMappedClients/{EmployeeId}")]
         public ApiResponse LoadMappedClients(long EmployeeId)
         {
-            var Result = _employeeService.LoadMappedClientService(EmployeeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.LoadMappedClientService(EmployeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpGet]
         [Route("GetAllManageEmployeeDetail/{EmployeeId}")]
         public ApiResponse GetAllManageEmployeeDetail(long EmployeeId)
         {
-            var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetManageEmployeeDetailService(EmployeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpGet]
         [Route("GetManageClient/{EmployeeId}")]
         public ApiResponse GetManageClient(long EmployeeId)
         {
-            var Result = _employeeService.GetManageClientService(EmployeeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetManageClientService(EmployeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpPost]
@@ -82,23 +124,44 @@ namespace OnlineDataBuilder.Controllers
         [Route("UpdateEmployeeMappedClientDetail/{IsUpdating}")]
         public ApiResponse UpdateEmployeeMappedClientDetail([FromBody] EmployeeMappedClient employeeMappedClient, bool IsUpdating)
         {
-            var Result = _employeeService.UpdateEmployeeMappedClientDetailService(employeeMappedClient, IsUpdating);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.UpdateEmployeeMappedClientDetailService(employeeMappedClient, IsUpdating);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmployeeMappedClient = employeeMappedClient, IsUpdating = IsUpdating });
+            }
         }
 
         [HttpGet("GetEmployeeById/{EmployeeId}/{IsActive}")]
         public ApiResponse GetEmployeeById(int EmployeeId, int IsActive)
         {
-            var Result = _employeeService.GetEmployeeByIdService(EmployeeId, IsActive);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetEmployeeByIdService(EmployeeId, IsActive);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmployeeId = EmployeeId, IsActive = IsActive });
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpDelete("ActivateOrDeActiveEmployee/{EmployeeId}/{IsActive}")]
         public ApiResponse DeleteEmployeeById(int EmployeeId, bool IsActive)
         {
-            var Result = _employeeService.ActivateOrDeActiveEmployeeService(EmployeeId, IsActive);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.ActivateOrDeActiveEmployeeService(EmployeeId, IsActive);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmployeeId = EmployeeId, IsActive = IsActive });
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -126,7 +189,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex);
             }
         }
 
@@ -152,7 +215,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex);
             }
         }
 
@@ -160,16 +223,30 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GenerateOfferLetter")]
         public async Task<ApiResponse> GenerateOfferLetter(EmployeeOfferLetter employeeOfferLetter)
         {
-            var result = await _employeeService.GenerateOfferLetterService(employeeOfferLetter);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _employeeService.GenerateOfferLetterService(employeeOfferLetter);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeeOfferLetter);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet("ExportEmployee/{CompanyId}/{FileType}")]
         public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromRoute] int FileType)
         {
-            var result = await _employeeService.ExportEmployeeService(CompanyId, FileType);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _employeeService.ExportEmployeeService(CompanyId, FileType);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { CompanyId = CompanyId, FileType = FileType });
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -184,29 +261,50 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex);
             }
         }
 
         [HttpGet("GetEmployeeResignationById/{EmployeeId}")]
         public async Task<ApiResponse> GetEmployeeResignationById(long EmployeeId)
         {
-            var Result = await _employeeService.GetEmployeeResignationByIdService(EmployeeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = await _employeeService.GetEmployeeResignationByIdService(EmployeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
         }
 
         [HttpPost("SubmitResignation")]
         public async Task<ApiResponse> SubmitResignation([FromBody] EmployeeNoticePeriod employeeNoticePeriod)
         {
-            var Result = await _employeeService.SubmitResignationService(employeeNoticePeriod);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = await _employeeService.SubmitResignationService(employeeNoticePeriod);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeeNoticePeriod);
+            }
         }
 
         [HttpPost("ManageInitiateExist")]
         public async Task<ApiResponse> ManageInitiateExist([FromBody] EmployeeNoticePeriod employeeNoticePeriod)
         {
-            var Result = await _employeeService.ManageInitiateExistService(employeeNoticePeriod);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = await _employeeService.ManageInitiateExistService(employeeNoticePeriod);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeeNoticePeriod);
+            }
         }
     }
 }

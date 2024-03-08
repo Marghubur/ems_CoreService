@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -22,58 +23,114 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("GetManagerRequestedData/{employeeId}/{itemStatus}")]
         public IResponse<ApiResponse> FetchPendingRequests(int employeeId, ItemStatus itemStatus)
         {
-            var result = _requestService.FetchPendingRequestService(employeeId, itemStatus);
-            return BuildResponse(result);
+            try
+            {
+                var result = _requestService.FetchPendingRequestService(employeeId, itemStatus);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { employeeId = employeeId, ItemStatus = itemStatus });
+            }
         }
 
         [HttpGet("GetAllRequestedData/{employeeId}/{itemStatus}")]
         [Authorize(Roles = Role.Admin)]
         public IResponse<ApiResponse> GetAllRequestedData(int employeeId)
         {
-            var result = _requestService.GetManagerAndUnAssignedRequestService(employeeId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _requestService.GetManagerAndUnAssignedRequestService(employeeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeeId);
+            }
         }
 
         [HttpPut("ApprovalAction")]
         public async Task<ApiResponse> ApprovalAction(Attendance attendanceDetail)
         {
-            var result = await _requestService.ApproveAttendanceService(attendanceDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _requestService.ApproveAttendanceService(attendanceDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendanceDetail);
+            }
         }
 
         [HttpPut("RejectAction")]
         public async Task<ApiResponse> RejectAction([FromBody] Attendance attendanceDetail)
         {
-            var result = await _requestService.RejectAttendanceService(attendanceDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _requestService.RejectAttendanceService(attendanceDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendanceDetail);
+            }
         }
-        
+
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
-            var result = await _requestService.ApproveAttendanceService(attendanceDetail, filterId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _requestService.ApproveAttendanceService(attendanceDetail, filterId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { FilterId = filterId, Attendance = attendanceDetail });
+            }
         }
 
         [HttpPut("RejectAttendanceRequest/{filterId}")]
         public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] Attendance attendanceDetail)
         {
-            var result = await _requestService.RejectAttendanceService(attendanceDetail, filterId);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _requestService.RejectAttendanceService(attendanceDetail, filterId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { FilterId = filterId, Attendance = attendanceDetail });
+            }
         }
 
         [HttpPut("ReAssigneAttendanceRequest/{filterId}")]
         public IResponse<ApiResponse> ReAssigneToOtherManager(AttendenceDetail attendanceDetail)
         {
-            var result = _requestService.ReAssigneAttendanceService(attendanceDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = _requestService.ReAssigneAttendanceService(attendanceDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendanceDetail);
+            }
         }
 
         [HttpPost("GetAttendenceRequestData")]
         public async Task<ApiResponse> GetAttendenceRequestData(Attendance attendance)
         {
-            var result = await _requestService.GetAttendenceRequestDataServive(attendance);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _requestService.GetAttendenceRequestDataServive(attendance);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendance);
+            }
         }
     }
 }

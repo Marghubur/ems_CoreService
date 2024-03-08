@@ -3,6 +3,7 @@ using EMailService.Modal;
 using Microsoft.AspNetCore.Mvc;
 using OnlineDataBuilder.Controllers;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace ems_CoreService.Controllers
@@ -21,15 +22,29 @@ namespace ems_CoreService.Controllers
         [HttpGet("GetCronJobSetting")]
         public async Task<ApiResponse> GetCronJobSetting()
         {
-            var result = await _cronJobSetting.GetCronJobSettingService();
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var result = await _cronJobSetting.GetCronJobSettingService();
+                return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost("ManageCronJObSetting")]
         public async Task<ApiResponse> ManageCronJObSetting(CronJobSettingJson cronJobSetting)
         {
-            var result = await _cronJobSetting.ManageCronJobSettingService(cronJobSetting);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var result = await _cronJobSetting.ManageCronJobSettingService(cronJobSetting);
+                return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, cronJobSetting);
+            }
         }
     }
 }

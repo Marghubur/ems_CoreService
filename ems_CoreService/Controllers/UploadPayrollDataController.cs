@@ -32,7 +32,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex);
             }
         }
     }

@@ -25,22 +25,43 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetAllHoliday")]
         public IResponse<ApiResponse> GetAllHoliday(FilterModel filterModel)
         {
-            var result = _companyCalendar.GetAllHolidayService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyCalendar.GetAllHolidayService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpPost("HolidayInsertUpdate")]
         public IResponse<ApiResponse> HolidayInsertUpdate(Calendar calendar)
         {
-            var result = _companyCalendar.HolidayInsertUpdateService(calendar);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyCalendar.HolidayInsertUpdateService(calendar);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, calendar);
+            }
         }
 
         [HttpDelete("DeleteHolidy/{CompanyCalendarId}")]
         public IResponse<ApiResponse> HolidayInsertUpdate([FromRoute] long CompanyCalendarId)
         {
-            var result = _companyCalendar.DeleteHolidayService(CompanyCalendarId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _companyCalendar.DeleteHolidayService(CompanyCalendarId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, CompanyCalendarId);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -55,7 +76,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw Throw(ex);
             }
         }
     }

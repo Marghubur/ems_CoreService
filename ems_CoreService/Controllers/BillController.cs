@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using OnlineDataBuilder.ContextHandler;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Net;
 
@@ -33,37 +33,59 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("UpdateGstStatus/{BillNo}")]
         public ApiResponse UpdateGstStatus(string BillNo)
         {
-            _httpContext.Request.Form.TryGetValue("gstDetail", out StringValues GstDetail);
-            _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
-            if (GstDetail.Count > 0)
+            try
             {
-                GstStatusModel gstStatusModel = JsonConvert.DeserializeObject<GstStatusModel>(GstDetail[0]);
-                List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                if (gstStatusModel != null)
+                _httpContext.Request.Form.TryGetValue("gstDetail", out StringValues GstDetail);
+                _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+                if (GstDetail.Count > 0)
                 {
-                    IFormFileCollection files = _httpContext.Request.Form.Files;
-                    var Result = _billService.UpdateGstStatus(gstStatusModel, files, fileDetail);
-                    return BuildResponse(Result, HttpStatusCode.OK);
+                    GstStatusModel gstStatusModel = JsonConvert.DeserializeObject<GstStatusModel>(GstDetail[0]);
+                    List<Files> fileDetail = JsonConvert.DeserializeObject<List<Files>>(FileData);
+                    if (gstStatusModel != null)
+                    {
+                        IFormFileCollection files = _httpContext.Request.Form.Files;
+                        var Result = _billService.UpdateGstStatus(gstStatusModel, files, fileDetail);
+                        return BuildResponse(Result, HttpStatusCode.OK);
+                    }
                 }
-            }
 
-            return GenerateResponse(HttpStatusCode.BadRequest);
+                return GenerateResponse(HttpStatusCode.BadRequest);
+
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, BillNo);
+            }
         }
 
 
         [HttpPost("SendBillToClient")]
         public ApiResponse SendBillToClient(GenerateBillFileDetail generateBillFileDetail)
         {
-            var Result = _billService.SendBillToClientService(generateBillFileDetail);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _billService.SendBillToClientService(generateBillFileDetail);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, generateBillFileDetail);
+            }
         }
 
         [HttpPost]
         [Route("GetBillDetailForEmployee")]
         public ApiResponse GetEmployees([FromBody] FilterModel filterModel)
         {
-            var Result = _employeeService.GetBillDetailForEmployeeService(filterModel);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _employeeService.GetBillDetailForEmployeeService(filterModel);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
     }
 }
