@@ -42,35 +42,49 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetAttendanceByUserId")]
         public async Task<ApiResponse> GetAttendanceByUserId(Attendance attendance)
         {
-            var result = await _attendanceService.GetAttendanceByUserId(attendance);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.GetAttendanceByUserId(attendance);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendance);
+            }
         }
 
         [HttpPost("SendEmailNotification")]
         [AllowAnonymous]
         public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
         {
-            var config = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.SendEmail);
-            if(config == null)
+            try
             {
-                throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.SendEmail, HttpStatusCode.InternalServerError);
-            }
-
-            var result = JsonConvert.SerializeObject(attendanceTemplateModel);
-            _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {config.Topic}, Service: {config.ServiceName}");
-            using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
-            {
-                _logger.LogInformation($"[Kafka] Sending mesage: {result}");
-                await producer.ProduceAsync(config.Topic, new Message<Null, string>
+                var config = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.SendEmail);
+                if (config == null)
                 {
-                    Value = result
-                });
+                    throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.SendEmail, HttpStatusCode.InternalServerError);
+                }
 
-                producer.Flush(TimeSpan.FromSeconds(10));
-                _logger.LogInformation($"[Kafka] Messge send successfully");
+                var result = JsonConvert.SerializeObject(attendanceTemplateModel);
+                _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {config.Topic}, Service: {config.ServiceName}");
+                using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
+                {
+                    _logger.LogInformation($"[Kafka] Sending mesage: {result}");
+                    await producer.ProduceAsync(config.Topic, new Message<Null, string>
+                    {
+                        Value = result
+                    });
+
+                    producer.Flush(TimeSpan.FromSeconds(10));
+                    _logger.LogInformation($"[Kafka] Messge send successfully");
+                }
+
+                return BuildResponse(result, HttpStatusCode.OK);
             }
-
-            return BuildResponse(result, HttpStatusCode.OK);
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendanceTemplateModel);
+            }
         }
 
         [HttpGet("BuildMonthBlankAttadanceData")]
@@ -82,85 +96,169 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("GetPendingAttendanceById/{EmployeeId}/{UserTypeId}/{clientId}")]
         public IResponse<ApiResponse> GetPendingAttendanceById(long employeeId, int UserTypeId, long clientId)
         {
-            var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, UserTypeId, clientId);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _attendanceService.GetAllPendingAttendanceByUserIdService(employeeId, UserTypeId, clientId);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { EmployeeId = employeeId, UserTypeId = UserTypeId, ClientId = clientId });
+            }
         }
 
         [HttpPost("SubmitAttendance")]
         public async Task<ApiResponse> SubmitAttendance(Attendance attendance)
         {
-            var result = await _attendanceService.SubmitAttendanceService(attendance);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.SubmitAttendanceService(attendance);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendance);
+            }
         }
 
         [HttpPost("GetMissingAttendanceRequest")]
         public async Task<ApiResponse> GetMissingAttendanceRequest(FilterModel filter)
         {
-            var result = await _attendanceService.GetMissingAttendanceRequestService(filter);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.GetMissingAttendanceRequestService(filter);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filter);
+            }
         }
 
         [HttpPost("GetMissingAttendanceApprovalRequest")]
         public async Task<ApiResponse> GetMissingAttendanceApprovalRequest(FilterModel filter)
         {
-            var result = await _attendanceService.GetMissingAttendanceApprovalRequestService(filter);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.GetMissingAttendanceApprovalRequestService(filter);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filter);
+            }
         }
 
         [HttpPost("RaiseMissingAttendanceRequest")]
         public async Task<ApiResponse> RaiseMissingAttendanceRequest(ComplaintOrRequestWithEmail compalintOrRequest)
         {
-            var result = await _attendanceService.RaiseMissingAttendanceRequestService(compalintOrRequest);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.RaiseMissingAttendanceRequestService(compalintOrRequest);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, compalintOrRequest);
+            }
         }
 
         [HttpPost("EnablePermission")]
         public IResponse<ApiResponse> EnablePermission(AttendenceDetail attendenceDetail)
         {
-            var result = _attendanceService.EnablePermission(attendenceDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _attendanceService.EnablePermission(attendenceDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendenceDetail);
+            }
         }
 
         [HttpPost("GetEmployeePerformance")]
         public IResponse<ApiResponse> GetEmployeePerformance(AttendenceDetail attendenceDetail)
         {
-            var result = _attendanceService.GetEmployeePerformanceService(attendenceDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _attendanceService.GetEmployeePerformanceService(attendenceDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendenceDetail);
+            }
         }
 
         [HttpPut("ApproveRaisedAttendanceRequest")]
         public async Task<ApiResponse> ApproveRaisedAttendanceRequest(List<ComplaintOrRequest> complaintOrRequests)
         {
-            var result = await _attendanceService.ApproveRaisedAttendanceRequestService(complaintOrRequests);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.ApproveRaisedAttendanceRequestService(complaintOrRequests);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, complaintOrRequests);
+            }
         }
 
         [HttpPut("RejectRaisedAttendanceRequest")]
         public async Task<ApiResponse> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests)
         {
-            var result = await _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.RejectRaisedAttendanceRequestService(complaintOrRequests);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, complaintOrRequests);
+            }
         }
 
         [HttpPost("AdjustAttendance")]
         public async Task<ApiResponse> AdjustAttendance(Attendance attendance)
         {
-            var result = await _attendanceService.AdjustAttendanceService(attendance);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.AdjustAttendanceService(attendance);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendance);
+            }
         }
 
         [HttpGet("GetLOPAdjustment/{month}/{year}")]
         public async Task<ApiResponse> GetLOPAdjustment([FromRoute] int month, [FromRoute] int year)
         {
-            var result = await _attendanceService.GetLOPAdjustmentService(month, year);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = await _attendanceService.GetLOPAdjustmentService(month, year);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { Month = month, Year = year });
+            }
         }
 
         [HttpPost("GenerateAttendance")]
         public async Task<ApiResponse> GenerateAttendance(AttendenceDetail attendenceDetail)
         {
-            await _attendanceService.GenerateAttendanceService(attendenceDetail);
-            return BuildResponse(ApplicationConstants.Successfull, HttpStatusCode.OK);
+            try
+            {
+                await _attendanceService.GenerateAttendanceService(attendenceDetail);
+                return BuildResponse(ApplicationConstants.Successfull, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendenceDetail);
+            }
         }
     }
 }

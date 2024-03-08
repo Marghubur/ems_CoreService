@@ -9,6 +9,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -42,20 +43,27 @@ namespace OnlineDataBuilder.Controllers
         [Route("GenerateBill")]
         public async Task<ApiResponse> GenerateBill()
         {
-            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
-            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
-            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
-            _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
+            try
+            {
+                _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+                _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+                _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+                _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
 
-            BillGenerationModal billModal = new BillGenerationModal();
-            billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
-            billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
-            billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
-            billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
+                BillGenerationModal billModal = new BillGenerationModal();
+                billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
+                billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+                billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+                billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
 
-            // var fileDetail = _billService.GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
-            var fileDetail = await _billService.GenerateBillService(billModal);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+                // var fileDetail = _billService.GenerateDocument(pdfModal, dailyTimesheetDetails, timesheetDetail, Comment);
+                var fileDetail = await _billService.GenerateBillService(billModal);
+                return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -63,19 +71,26 @@ namespace OnlineDataBuilder.Controllers
         [Route("UpdateGeneratedBill")]
         public async Task<ApiResponse> UpdateGeneratedBill()
         {
-            _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
-            _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
-            _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
-            _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
+            try
+            {
+                _httpContext.Request.Form.TryGetValue("Comment", out StringValues commentJson);
+                _httpContext.Request.Form.TryGetValue("DailyTimesheetDetail", out StringValues timeSheetDetailJson);
+                _httpContext.Request.Form.TryGetValue("TimesheetDetail", out StringValues timesheetJson);
+                _httpContext.Request.Form.TryGetValue("BillRequestData", out StringValues pdfModalJson);
 
-            BillGenerationModal billModal = new BillGenerationModal();
-            billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
-            billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
-            billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
-            billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
+                BillGenerationModal billModal = new BillGenerationModal();
+                billModal.Comment = JsonConvert.DeserializeObject<string>(commentJson);
+                billModal.FullTimeSheet = JsonConvert.DeserializeObject<List<DailyTimesheetDetail>>(timeSheetDetailJson);
+                billModal.TimesheetDetail = JsonConvert.DeserializeObject<TimesheetDetail>(timesheetJson);
+                billModal.PdfModal = JsonConvert.DeserializeObject<PdfModal>(pdfModalJson);
 
-            var fileDetail = await _billService.UpdateGeneratedBillService(billModal);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+                var fileDetail = await _billService.UpdateGeneratedBillService(billModal);
+                return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -83,16 +98,30 @@ namespace OnlineDataBuilder.Controllers
         [Route("ReGenerateBill")]
         public IResponse<ApiResponse> ReGenerateBill([FromBody] GenerateBillFileDetail fileDetail)
         {
-            var Result = _onlineDocumentService.ReGenerateService(fileDetail);
-            return BuildResponse(Result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var Result = _onlineDocumentService.ReGenerateService(fileDetail);
+                return BuildResponse(Result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [HttpPost]
         [Route("CreateFolder")]
         public IResponse<ApiResponse> CreateFolder(Files file)
         {
-            var result = _fileService.CreateFolder(file);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var result = _fileService.CreateFolder(file);
+                return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, file);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -100,16 +129,30 @@ namespace OnlineDataBuilder.Controllers
         [Route("DeleteFile/{userId}/{UserTypeId}")]
         public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
         {
-            var result = _fileService.DeleteFiles(userId, fileIds, userTypeId);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var result = _fileService.DeleteFiles(userId, fileIds, userTypeId);
+                return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { UserId = userId, FileIds = fileIds, UserTypeId = userTypeId });
+            }
         }
 
         [HttpPost]
         [Route("GetDocxHtml")]
         public IResponse<ApiResponse> GetDocxHtml(FileDetail fileDetail)
         {
-            var result = _iDOCXToHTMLConverter.ToHtml(fileDetail);
-            return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var result = _iDOCXToHTMLConverter.ToHtml(fileDetail);
+                return BuildResponse(result, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, fileDetail);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -117,16 +160,30 @@ namespace OnlineDataBuilder.Controllers
         [Route("GetBillDetailWithTemplate/{BillNo}/{EmployeeId}")]
         public async Task<ApiResponse> GetBillDetailWithTemplate(string BillNo, long EmployeeId)
         {
-            var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo, EmployeeId);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var fileDetail = await _billService.GetBillDetailWithTemplateService(BillNo, EmployeeId);
+                return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { BillNo = BillNo, EmployeeId = EmployeeId });
+            }
         }
 
         [HttpPost]
         [Route("GeneratePayslip")]
         public async Task<ApiResponse> GeneratePayslip(PayslipGenerationModal payslipGenerationModal)
         {
-            var fileDetail = await _billService.GeneratePayslipService(payslipGenerationModal);
-            return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            try
+            {
+                var fileDetail = await _billService.GeneratePayslipService(payslipGenerationModal);
+                return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, payslipGenerationModal);
+            }
         }
     }
 }

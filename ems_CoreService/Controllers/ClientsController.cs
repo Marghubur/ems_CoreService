@@ -7,6 +7,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -28,8 +29,15 @@ namespace OnlineDataBuilder.Controllers
         [HttpGet("GetClientById/{ClientId}/{IsActive}/{UserTypeId}")]
         public ApiResponse GetClientById(long ClientId, bool IsActive, int UserTypeId)
         {
-            var Result = _clientsService.GetClientDetailById(ClientId, IsActive, UserTypeId);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _clientsService.GetClientDetailById(ClientId, IsActive, UserTypeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { ClientId = ClientId, IsActive = IsActive, UserTypeId = UserTypeId });
+            }
         }
 
         [HttpPost("RegisterClient/{IsUpdating}")]
@@ -37,34 +45,55 @@ namespace OnlineDataBuilder.Controllers
         {
             //    var Result = await _clientsService.RegisterClient(client, isUpdating);
             //    return BuildResponse(Result, HttpStatusCode.OK);
-            StringValues Client = default(string);
-            
-            _httpContext.Request.Form.TryGetValue("clientDetail", out Client);
-            if (Client.Count > 0 )
+            try
             {
-                Organization client = JsonConvert.DeserializeObject<Organization>(Client);
-                IFormFileCollection files = _httpContext.Request.Form.Files;
-                var Result = await _clientsService.RegisterClient(client, files, isUpdating);
-                return BuildResponse(Result, HttpStatusCode.OK);
+                StringValues Client = default(string);
+
+                _httpContext.Request.Form.TryGetValue("clientDetail", out Client);
+                if (Client.Count > 0)
+                {
+                    Organization client = JsonConvert.DeserializeObject<Organization>(Client);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    var Result = await _clientsService.RegisterClient(client, files, isUpdating);
+                    return BuildResponse(Result, HttpStatusCode.OK);
+                }
+                else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                throw Throw(ex, isUpdating);
             }
         }
 
         [HttpPost("GetClients")]
         public ApiResponse GetClients(FilterModel filterModel)
         {
-            var Result = _clientsService.GetClients(filterModel);
-            return BuildResponse(Result, HttpStatusCode.OK);
+            try
+            {
+                var Result = _clientsService.GetClients(filterModel);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [HttpDelete("DeactivateClient")]
         public ApiResponse DeactivateClient(Employee employee)
         {
-            var result = _clientsService.DeactivateClient(employee);
-            return BuildResponse(result);
+            try
+            {
+                var result = _clientsService.DeactivateClient(employee);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employee);
+            }
         }
     }
 }

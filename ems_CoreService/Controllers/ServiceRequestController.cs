@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -22,22 +23,43 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetServiceRequest")]
         public async Task<ApiResponse> GetServiceRequest(FilterModel filter)
         {
-            var result = await _serviceRequestService.GetServiceRequestService(filter);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _serviceRequestService.GetServiceRequestService(filter);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filter);
+            }
         }
 
         [HttpPost("AddUpdateServiceRequest")]
         public async Task<ApiResponse> AddUpdateServiceRequest(ServiceRequest serviceRequest)
         {
-            var result = await _serviceRequestService.AddUpdateServiceRequestService(serviceRequest);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _serviceRequestService.AddUpdateServiceRequestService(serviceRequest);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, serviceRequest);
+            }
         }
 
         [HttpPost("GetServiceRequestByEmpId")]
         public async Task<ApiResponse> GetServiceRequestByEmpId(FilterModel filter)
         {
-            var result = await _serviceRequestService.GetServiceRequestService(filter);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _serviceRequestService.GetServiceRequestService(filter);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filter);
+            }
         }
     }
 }

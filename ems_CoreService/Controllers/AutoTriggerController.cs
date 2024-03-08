@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
-using OnlineDataBuilder.ContextHandler;
 using OnlineDataBuilder.Controllers;
 using ServiceLayer.Interface;
 using System;
@@ -26,22 +25,43 @@ namespace ems_CoreService.Controllers
         // [Authorize(Roles = Role.Admin)]
         public async Task LeaveAccrualTriggerLeave()
         {
-            await _autoTriggerService.ExecuteLeaveAccrualJobAsync(null, null);
+            try
+            {
+                await _autoTriggerService.ExecuteLeaveAccrualJobAsync(null, null);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("triggerWeeklyTimesheet")]
         public async Task<ApiResponse> WeeklyTimesheetTrigger([FromBody] TimesheetDetail timesheetDetail)
         {
-            await _autoTriggerService.RunTimesheetJobAsync(null, timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
-            return BuildResponse("Timesheet generated successfully", System.Net.HttpStatusCode.OK);
+            try
+            {
+                await _autoTriggerService.RunTimesheetJobAsync(null, timesheetDetail.TimesheetStartDate, timesheetDetail.TimesheetEndDate, false);
+                return BuildResponse("Timesheet generated successfully", System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, timesheetDetail);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet("triggerMonthlyPayroll/{forYear}/{forMonth}/{dom}")]
         public async Task MonthlyPayrollTrigger(int forYear, int forMonth, int dom)
         {
-            await _autoTriggerService.RunPayrollJobAsync(new DateTime(forYear, forMonth, dom));
+            try
+            {
+                await _autoTriggerService.RunPayrollJobAsync(new DateTime(forYear, forMonth, dom));
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { ForYear = forYear, ForMonth = forMonth, DOM = dom });
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -16,49 +17,91 @@ namespace OnlineDataBuilder.Controllers
         {
             _projectService = projectService;
         }
+
         [HttpPost("AddWiki")]
         public IResponse<ApiResponse> AddWiki(WikiDetail project)
         {
-            var result = _projectService.AddWikiService(project);
-            return BuildResponse(result);
+            try
+            {
+                var result = _projectService.AddWikiService(project);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, project);
+            }
         }
+
         [HttpGet("GetAllWiki/{ProjectId}")]
         public IResponse<ApiResponse> GetAllWikiById(long ProjectId)
         {
-            var result = _projectService.GetAllWikiService(ProjectId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _projectService.GetAllWikiService(ProjectId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, ProjectId);
+            }
         }
 
         [HttpPost("AddUpdateProjectDetail")]
         public async Task<ApiResponse> AddUpdateProjectDetail(Project projectDetail)
         {
-            var result = await _projectService.AddUpdateProjectDetailService(projectDetail);
-            return BuildResponse(result);
+            try
+            {
+                var result = await _projectService.AddUpdateProjectDetailService(projectDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, projectDetail);
+            }
         }
 
         [HttpPost("GetAllProjectDeatil")]
         public IResponse<ApiResponse> GetAllProjectDeatil(FilterModel filterModel)
         {
-            var result = _projectService.GetAllProjectDeatilService(filterModel);
-            return BuildResponse(result);
+            try
+            {
+                var result = _projectService.GetAllProjectDeatilService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet("GetProjectPageDetail/{ProjectId}")]
         public IResponse<ApiResponse> GetProjectPageDetail([FromRoute] long ProjectId)
         {
-            var result = _projectService.GetProjectPageDetailService(ProjectId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _projectService.GetProjectPageDetailService(ProjectId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, ProjectId);
+            }
         }
 
         [Authorize(Roles = Role.Admin)]
         [HttpDelete("DeleteTeamMember/{ProjectMemberDetailId}/{ProjectId}")]
         public IResponse<ApiResponse> DeleteTeamMember([FromRoute] int ProjectMemberDetailId, [FromRoute] int ProjectId)
         {
-            var result = _projectService.DeleteTeamMemberService(ProjectMemberDetailId, ProjectId);
-            return BuildResponse(result);
+            try
+            {
+                var result = _projectService.DeleteTeamMemberService(ProjectMemberDetailId, ProjectId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { ProjectMemberDetailId = ProjectMemberDetailId, ProjectId = ProjectId });
+            }
         }
-
-
     }
 }

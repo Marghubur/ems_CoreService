@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
+using System;
 using System.Net;
 
 namespace OnlineDataBuilder.Controllers
@@ -21,8 +22,15 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("GetSystemDashboard")]
         public IResponse<ApiResponse> GetSystemDashboard(AttendenceDetail userDetail)
         {
-            var result = _dashboardService.GetSystemDashboardService(userDetail);
-            return BuildResponse(result, HttpStatusCode.OK);
+            try
+            {
+                var result = _dashboardService.GetSystemDashboardService(userDetail);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, userDetail);
+            }
         }
     }
 }
