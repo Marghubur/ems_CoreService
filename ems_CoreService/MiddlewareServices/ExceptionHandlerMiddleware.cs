@@ -4,8 +4,13 @@ using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Utilities.Net;
 using ServiceLayer.Code;
@@ -13,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SchoolInMindServer.MiddlewareServices
@@ -43,7 +49,7 @@ namespace SchoolInMindServer.MiddlewareServices
                     });
                 }
 
-                await HandleHiringBellExceptionMessageAsync(context, ex.UserMessage, ex);
+                await HandleHiringBellExceptionMessageAsync(context, ex.UserMessage, ex, applicationConfiguration);
             }
             catch (Exception ex)
             {
@@ -55,77 +61,123 @@ namespace SchoolInMindServer.MiddlewareServices
                     });
                 }
 
-                if (applicationConfiguration.IsLoggingEnabled)
-                    await HandleExceptionWriteToFile(context, ex, applicationConfiguration);
-                else
-                    await HandleHiringBellExceptionMessageAsync(context, string.Empty, ex);
+                await HandleExceptionMessageAsync(context, string.Empty, ex, applicationConfiguration);
             }
         }
 
-        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context, string userMessage, Exception ex)
+        private static async Task<Task> HandleHiringBellExceptionMessageAsync(HttpContext context, string userMessage, HiringBellException ex, ApplicationConfiguration applicationConfiguration)
+        {
+            string result = await BuildEmstumErrorResponse(context, userMessage, ex);
+
+            if (applicationConfiguration.IsLoggingEnabled)
+            {
+                await LogErrorToFile(result, applicationConfiguration);
+            }
+
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            return await Task.FromResult(context.Response.WriteAsync(result));
+        }
+
+        private static async Task<string> BuildEmstumErrorResponse(HttpContext context, string userMessage, HiringBellException ex)
+        {
+            if (string.IsNullOrEmpty(ex.RequestBody))
+            {
+                ex.RequestBody = await GetRequestBodyAsync(context); // For POST, PUT, DELETE
+            }
+
+            return JsonConvert.SerializeObject(new ApiResponse
+            {
+                AuthenticationToken = string.Empty,
+                HttpStatusCode = HttpStatusCode.BadRequest,
+                HttpStatusMessage = userMessage,
+                ResponseBody = new
+                {
+                    context.Request.Method,
+                    Url = context.Request.Path,
+                    context.Request.QueryString,
+                    context.Request.RouteValues,
+                    Request = ex.RequestBody,
+                    ExceptionMessage = ex.Message
+                }
+            });
+        }
+
+        private static async Task<Task> HandleExceptionMessageAsync(HttpContext context, string userMessage, Exception ex, ApplicationConfiguration applicationConfiguration)
+        {
+            var result = await BuildErrorResponse(context, userMessage, ex);
+
+            if (applicationConfiguration.IsLoggingEnabled)
+            {
+                await LogErrorToFile(result, applicationConfiguration);
+            }
+
+            context.Response.ContentType = ApplicationConstants.ApplicationJson;
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest; ;
+            return await Task.FromResult(context.Response.WriteAsync(result));
+        }
+
+        private static async Task<string> BuildErrorResponse(HttpContext context, string userMessage, Exception ex)
         {
             context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            int statusCode = (int)HttpStatusCode.BadRequest;
+            var body = await GetRequestBodyAsync(context); // For POST, PUT, DELETE
 
-            var result = JsonConvert.SerializeObject(new ApiResponse
+            return JsonConvert.SerializeObject(new ApiResponse
             {
                 AuthenticationToken = string.Empty,
                 HttpStatusCode = HttpStatusCode.BadRequest,
                 HttpStatusMessage = ex.Message,
-                ResponseBody = userMessage
+                ResponseBody = new
+                {
+                    context.Request.Method,
+                    Url = context.Request.Path,
+                    context.Request.QueryString,
+                    context.Request.RouteValues,
+                    Request = body
+                }
             });
-
-            context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            context.Response.StatusCode = statusCode;
-            return await Task.FromResult(context.Response.WriteAsync(result));
         }
 
-        private static async Task<Task> HandleExceptionWriteToFile(HttpContext context, HiringBellException e, ApplicationConfiguration applicationConfiguration)
+        private static async Task<string> GetRequestBodyAsync(HttpContext context)
         {
-            context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            int statusCode = (int)e.HttpStatusCode;
-            var result = new ApiResponse
-            {
-                AuthenticationToken = string.Empty,
-                HttpStatusCode = e.HttpStatusCode,
-                HttpStatusMessage = e.UserMessage
-            };
+            HttpRequest request = context.Request;
+            string requestBody = string.Empty;
 
-            context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            context.Response.StatusCode = statusCode;
+            if (request.HasFormContentType)
+            {
+                // Handle form data (e.g., multipart/form-data)
+                var form = await context.Request.ReadFormAsync();
+                requestBody = form.ToString();
+            }
+            else if (request.ContentType == "application/json")
+            {
+                // Handle JSON request bodies
+                using (var reader = new StreamReader(request.Body, Encoding.UTF8)) // Specify UTF-8 encoding
+                {
+                    var body = await reader.ReadToEndAsync();
+                    requestBody = body;
+                }
+            }
+            else
+            {
+                // Handle other request body formats (optional)
+                using (var reader = new StreamReader(request.Body, Encoding.UTF8)) // Specify UTF-8 encoding
+                {
+                    var body = await reader.ReadToEndAsync();
+                    requestBody = body;
+                }
+            }
+
+            return requestBody;
+        }
+
+        private static async Task LogErrorToFile(string requestMessage, ApplicationConfiguration applicationConfiguration)
+        {
             await Task.Run(() =>
             {
                 var path = Path.Combine(applicationConfiguration.LoggingFilePath, DateTime.Now.ToString("dd_MM_yyyy") + ".txt");
-                result.ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message, e.StackTrace };
-                File.AppendAllTextAsync(path, JsonConvert.SerializeObject(result));
+                File.AppendAllTextAsync(path, requestMessage);
             });
-
-            result.ResponseBody = new { e.UserMessage, InnerMessage = e.InnerException?.Message };
-            return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
-        }
-
-        private static async Task<Task> HandleExceptionWriteToFile(HttpContext context, Exception e, ApplicationConfiguration applicationConfiguration)
-        {
-            context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            int statusCode = (int)HttpStatusCode.InternalServerError;
-            var result = new ApiResponse
-            {
-                AuthenticationToken = string.Empty,
-                HttpStatusCode = HttpStatusCode.InternalServerError,
-                HttpStatusMessage = e.Message
-            };
-
-            context.Response.ContentType = ApplicationConstants.ApplicationJson;
-            context.Response.StatusCode = statusCode;
-            await Task.Run(() =>
-            {
-                var path = Path.Combine(applicationConfiguration.LoggingFilePath, DateTime.Now.ToString("dd_MM_yyyy") + ".txt");
-                result.ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message, e.StackTrace };
-                File.AppendAllTextAsync(path, JsonConvert.SerializeObject(result));
-            });
-
-            result.ResponseBody = new { e.Message, InnerMessage = e.InnerException?.Message };
-            return await Task.FromResult(context.Response.WriteAsync(JsonConvert.SerializeObject(result)));
         }
 
         private async Task SendExceptionEmailService(string userMessage,

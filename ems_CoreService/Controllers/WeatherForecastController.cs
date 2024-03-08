@@ -1,15 +1,12 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using EMailService.Modal.CronJobs;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -66,9 +63,9 @@ namespace OnlineDataBuilder.Controllers
             _runLeaveEndYearService = runLeaveEndYearService;
         }
 
-        [HttpPost("testError")]
+        [HttpPut("testError/{id}")]
         [AllowAnonymous]
-        public async Task<List<WeatherForecast>> TestError([FromBody] UserDetail userDetail)
+        public async Task<List<WeatherForecast>> TestError([FromBody] UserDetail userDetail, [FromRoute] string id)
         {
             IEnumerable<WeatherForecast> weatherForecast = new List<WeatherForecast>();
 

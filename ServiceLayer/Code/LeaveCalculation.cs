@@ -983,24 +983,18 @@ namespace ServiceLayer.Code
         public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
-            var resultSet = _db.GetDataSet(Procedures.Workflow_Chain_By_Ids, new
+            (var approvalChainDetail, var employeeWithRoles) = _db.GetList<ApprovalChainDetail, EmployeeWithRoles>(Procedures.Workflow_Chain_By_Ids, new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
                 EmployeeId = employeeId,
                 DesignationIds = designationId
             });
 
-            if (resultSet.Tables.Count != 2)
-                throw HiringBellException.ThrowBadRequest("Workflow chain count is not match");
-
-            if (resultSet.Tables[0] == null || resultSet.Tables[0].Rows.Count == 0)
+            if (approvalChainDetail == null || approvalChainDetail.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
 
-            if (resultSet.Tables[1] == null || resultSet.Tables[1].Rows.Count == 0)
+            if (employeeWithRoles == null || employeeWithRoles.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");
-
-            List<ApprovalChainDetail> approvalChainDetail = Converter.ToList<ApprovalChainDetail>(resultSet.Tables[0]);
-            List<EmployeeWithRoles> employeeWithRoles = Converter.ToList<EmployeeWithRoles>(resultSet.Tables[1]);
 
             ApprovalChainDetail ApprovalChain = approvalChainDetail.First();
             LeaveRequestNotification notification = new LeaveRequestNotification

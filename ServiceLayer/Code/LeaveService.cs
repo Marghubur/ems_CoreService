@@ -407,10 +407,10 @@ namespace ServiceLayer.Code
             if (leaveRequestModal.EmployeeId <= 0)
                 throw new HiringBellException("Invalid Employee Id submitted.");
 
-            if (leaveRequestModal.LeaveFromDay == null || leaveRequestModal.LeaveToDay == null)
+            if (leaveRequestModal?.LeaveFromDay == null || leaveRequestModal?.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
-            if (DateTime.UtcNow.Subtract(leaveRequestModal.LeaveFromDay).TotalDays > 0)
+            if (DateTime.UtcNow.Date.Subtract(leaveRequestModal.LeaveFromDay.Date).TotalDays > 0)
                 throw new HiringBellException("You don't take any action on past date leave");
         }
 
