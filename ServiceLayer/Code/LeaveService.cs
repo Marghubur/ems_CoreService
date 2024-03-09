@@ -481,7 +481,6 @@ namespace ServiceLayer.Code
                     totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
 
                 monthlyLeaveData.Add(monthName, totalDays);
-
             }
 
             return new
@@ -543,7 +542,6 @@ namespace ServiceLayer.Code
                     totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
 
                 monthlyLeaveData.Add(monthName, totalDays);
-
             }
 
             return new
@@ -553,7 +551,8 @@ namespace ServiceLayer.Code
                 CompanyHoliday = companyHoliday,
                 ShiftDetail = leaveCalculationModal.shiftDetail,
                 LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList(),
-                MonthlyLeaveData = monthlyLeaveData
+                MonthlyLeaveData = monthlyLeaveData,
+                EmployeeProject = leaveCalculationModal.EmployeeProject
             };
         }
 

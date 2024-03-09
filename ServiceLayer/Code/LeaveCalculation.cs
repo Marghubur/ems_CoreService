@@ -111,7 +111,7 @@ namespace ServiceLayer.Code
                 EmployeeId,
                 Year = DateTime.UtcNow.Year
             });
-            if (!ApplicationConstants.IsValidDataSet(result, 4))
+            if (!ApplicationConstants.IsValidDataSet(result, 5))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
 
             if (!ApplicationConstants.IsSingleRow(result.Tables[0]))
@@ -136,12 +136,16 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest($"Shift detail not found for employee id: {EmployeeId}");
 
             List<LeaveRequestNotification> leaveRequestNotification = Converter.ToList<LeaveRequestNotification>(result.Tables[3]);
+            List<WikiDetail> employeeProject = null;
+            if (result.Tables[4].Rows.Count > 0)
+                employeeProject = Converter.ToList<WikiDetail>(result.Tables[4]);
 
             LeaveCalculationModal leaveCalculationModal = new LeaveCalculationModal
             {
                 shiftDetail = shiftDetail,
                 leaveTypeBriefs = leaveTypeBriefs,
-                lastAppliedLeave = leaveRequestNotification
+                lastAppliedLeave = leaveRequestNotification,
+                EmployeeProject = employeeProject
             };
 
             return await Task.FromResult(leaveCalculationModal);
@@ -859,8 +863,8 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
                 UserMessage = leaveRequestModal.Reason,
                 leaveRequestModal.EmployeeId,
-                leaveCalculationModal.employee.ReportingManagerId,
-                ProjectId = 0,
+                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
+                ProjectId = leaveRequestModal.ProjectId,
                 ProjectName = string.Empty,
                 FromDate = leaveRequestModal.LeaveFromDay,
                 ToDate = leaveRequestModal.LeaveToDay,
