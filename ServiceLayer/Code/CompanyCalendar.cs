@@ -405,9 +405,9 @@ namespace ServiceLayer
                     }
                     existCalendar = calendar;
                     existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-                    //var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
-                    //if (string.IsNullOrEmpty(value))
-                    //    throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
+                    var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
+                    if (string.IsNullOrEmpty(value))
+                        throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
                 }
 
                 i++;
