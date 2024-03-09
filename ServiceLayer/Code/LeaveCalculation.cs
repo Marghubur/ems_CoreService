@@ -154,7 +154,7 @@ namespace ServiceLayer.Code
             _currentSession.CurrentUserDetail.CompanyId = companySetting.CompanyId;
             _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
             await RunAccrualCycle(runAccrualModel);
-            
+
             _logger.LogInformation("End Accrual Cycle");
             await Task.CompletedTask;
         }
@@ -856,23 +856,23 @@ namespace ServiceLayer.Code
             string result = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Request_Notification_InsUpdate, new
             {
                 LeaveRequestNotificationId = 0,
-                LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
+                leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
                 UserMessage = leaveRequestModal.Reason,
                 leaveRequestModal.EmployeeId,
-                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
+                leaveCalculationModal.employee.ReportingManagerId,
                 ProjectId = 0,
                 ProjectName = string.Empty,
                 FromDate = leaveRequestModal.LeaveFromDay,
                 ToDate = leaveRequestModal.LeaveToDay,
                 NumOfDays = Convert.ToDecimal(leaveCalculationModal.numberOfLeaveApplyring),
                 RequestStatusId = (int)ItemStatus.Pending,
-                NoOfApprovalsRequired = requestChainDetail.NoOfApprovalsRequired,
-                ReporterDetail = requestChainDetail.ReporterDetail,
+                requestChainDetail.NoOfApprovalsRequired,
+                requestChainDetail.ReporterDetail,
                 FileIds = fileIds,
                 FeedBack = ApplicationConstants.EmptyJsonArray,
                 LeaveTypeName = leaveRequestModal.LeavePlanName,
-                AutoActionAfterDays = requestChainDetail.AutoActionAfterDays,
-                IsAutoApprovedEnabled = requestChainDetail.IsAutoApprovedEnabled,
+                requestChainDetail.AutoActionAfterDays,
+                requestChainDetail.IsAutoApprovedEnabled,
                 leaveCalculationModal.LeaveTypeId,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
@@ -983,7 +983,7 @@ namespace ServiceLayer.Code
         public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
         {
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
-            (var approvalChainDetail, var employeeWithRoles) = _db.GetList<ApprovalChainDetail, EmployeeWithRoles>(Procedures.Workflow_Chain_By_Ids, new
+            (var approvalChainDetail, var employeeWithRoles) = _db.GetList<ApprovalChainDetail, EmployeeWithRoles>(Procedures.Leave_Approver_By_Workflow, new
             {
                 Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
                 EmployeeId = employeeId,

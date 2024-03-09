@@ -39,7 +39,7 @@
         public static string Leave_Accrual_Cycle_Master_Data = "sp_leave_accrual_cycle_master_data";
         public static string SP_LEAVE_YEAREND_PROCESSING_ALL = "sp_leave_yearend_processing_all";
         public static string Userfiledetail_Upload = "sp_userfiledetail_Upload";
-        public static string Workflow_Chain_By_Ids = "sp_workflow_chain_by_ids";
+        public static string Leave_Approver_By_Workflow = "sp_leave_approver_by_workflow";
         public static string Project_basic_Detail_Page_By_Offset = "sp_project_basic_detail_page_by_offset";
 
         /*-------------- Attendance Service proceudures ------------*/

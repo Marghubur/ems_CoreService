@@ -416,46 +416,39 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
-            this.ValidateRequestModal(leaveRequestModal);
+            ValidateRequestModal(leaveRequestModal);
             var leaveCalculationModal = await _leaveCalculation.CheckAndApplyForLeave(leaveRequestModal, fileCollection, fileDetail);
 
-            LeaveTemplateModel leaveTemplateModel = null;
+            LeaveTemplateModel leaveTemplateModel = new LeaveTemplateModel
+            {
+                kafkaServiceName = KafkaServiceName.Leave,
+                RequestType = nameof(RequestType.Leave),
+                ActionType = nameof(ItemStatus.Submitted),
+                FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveFromDay, _currentSession.TimeZone),
+                ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveToDay, _currentSession.TimeZone),
+                Message = leaveRequestModal.Reason,
+                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
+                DeveloperName = _currentSession.CurrentUserDetail.FullName,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            };
+
             if (!leaveCalculationModal.IsEmailNotificationPasued)
             {
                 leaveTemplateModel = new LeaveTemplateModel
                 {
-                    kafkaServiceName = KafkaServiceName.Leave,
-                    RequestType = nameof(RequestType.Leave),
                     ActionType = nameof(ItemStatus.Submitted),
-                    FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveFromDay, _currentSession.TimeZone),
-                    ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveToDay, _currentSession.TimeZone),
                     Message = leaveRequestModal.Reason,
-                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
-                    LocalConnectionString = _currentSession.LocalConnectionString,
-                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
             }
 
             if (leaveCalculationModal.IsLeaveAutoApproval)
             {
-                leaveTemplateModel = new LeaveTemplateModel
-                {
-                    kafkaServiceName = KafkaServiceName.Leave,
-                    RequestType = nameof(RequestType.Leave),
-                    ActionType = "Auto Approved",
-                    FromDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveFromDay, _currentSession.TimeZone),
-                    ToDate = _timezoneConverter.ToTimeZoneDateTime(leaveRequestModal.LeaveToDay, _currentSession.TimeZone),
-                    ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                    DeveloperName = _currentSession.CurrentUserDetail.FullName,
-                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = (int)leaveRequestModal.LeaveToDay.Subtract(leaveRequestModal.LeaveFromDay).TotalDays + 1,
-                    LocalConnectionString = _currentSession.LocalConnectionString,
-                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                };
+                leaveTemplateModel.ActionType = "Auto Approved";
             }
+
             leaveTemplateModel.ToAddress = new List<string>();
             leaveCalculationModal.ReporterEmail.ForEach(x =>
             {
@@ -464,8 +457,9 @@ namespace ServiceLayer.Code
 
             _logger.LogInformation($"Call to kafka: {leaveCalculationModal.ReporterEmail.ToString()}");
             await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
-            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
             var monthlyLeaveData = new Dictionary<string, decimal>();
+
             for (int i = 1; i <= 12; i++)
             {
                 var leaveCurrentMonth = leaveCalculationModal.lastAppliedLeave.FindAll(x => x.FromDate.Month == i && x.ToDate.Month == i);
@@ -594,8 +588,8 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected");
 
             var PresentDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
-            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new 
-            { 
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new
+            {
                 EmployeeId = employeeId,
                 PresentDate.Year
             });

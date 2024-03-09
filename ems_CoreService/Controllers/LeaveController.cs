@@ -208,8 +208,8 @@ namespace OnlineDataBuilder.Controllers
                     var result = await _leaveService.ApplyLeaveService(leaveRequestModal, fileDetail, files);
                     return BuildResponse(result, HttpStatusCode.OK);
                 }
-                return BuildResponse("No files found", HttpStatusCode.OK);
 
+                return BuildResponse("No files found", HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
