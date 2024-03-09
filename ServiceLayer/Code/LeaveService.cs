@@ -487,7 +487,6 @@ namespace ServiceLayer.Code
                     totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
 
                 monthlyLeaveData.Add(monthName, totalDays);
-
             }
 
             return new
@@ -549,7 +548,6 @@ namespace ServiceLayer.Code
                     totalDays += (decimal)leavePrevAndCurrentMonth.FromDate.Subtract(new DateTime(2023, i, 1)).TotalDays + 1;
 
                 monthlyLeaveData.Add(monthName, totalDays);
-
             }
 
             return new
@@ -559,7 +557,8 @@ namespace ServiceLayer.Code
                 CompanyHoliday = companyHoliday,
                 ShiftDetail = leaveCalculationModal.shiftDetail,
                 LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList(),
-                MonthlyLeaveData = monthlyLeaveData
+                MonthlyLeaveData = monthlyLeaveData,
+                EmployeeProject = leaveCalculationModal.EmployeeProject
             };
         }
 
@@ -594,8 +593,8 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected");
 
             var PresentDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
-            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new 
-            { 
+            var result = _db.Get<Leave>(Procedures.Employee_Leave_Request_By_Empid, new
+            {
                 EmployeeId = employeeId,
                 PresentDate.Year
             });

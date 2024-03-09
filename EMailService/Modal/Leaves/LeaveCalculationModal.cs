@@ -39,6 +39,7 @@ namespace ModalLayer.Modal.Leaves
         public bool IsAllLeaveAvailable { set; get; }
         public int ProjectOffset { set; get; } = 0;
         public List<string> ReporterEmail { get; set; }
+        public List<WikiDetail> EmployeeProject { get; set; }
         public int GetNextOffset()
         {
             return ProjectOffset += 100;

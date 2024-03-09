@@ -15,5 +15,6 @@ namespace ModalLayer.Modal.Leaves
         public DateTime LeaveFromDay { get; set; }
         public DateTime LeaveToDay { get; set; }
         public bool DocumentProffAttached { get; set; }
+        public int ProjectId { get; set; }
     }
 }
