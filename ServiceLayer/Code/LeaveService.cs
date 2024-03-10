@@ -552,7 +552,7 @@ namespace ServiceLayer.Code
                 ShiftDetail = leaveCalculationModal.shiftDetail,
                 LeaveNotificationDetail = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList(),
                 MonthlyLeaveData = monthlyLeaveData,
-                EmployeeProject = leaveCalculationModal.EmployeeProject
+                leaveCalculationModal.EmployeeProject
             };
         }
 

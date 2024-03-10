@@ -19,6 +19,6 @@ namespace ServiceLayer.Interface
         Task<LeaveCalculationModal> GetLeaveDetailService(long EmployeeId);
         Task RunAccrualCycleByEmployee(long EmployeeId);
         Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal);
-        LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails);
+        LeaveRequestNotification GetApprovalChainDetail(LeaveRequestModal leaveRequestModal, out List<string> emails);
     }
 }

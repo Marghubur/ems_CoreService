@@ -855,7 +855,7 @@ namespace ServiceLayer.Code
             var fileIds = await SaveLeaveAttachment(fileCollection, fileDetail, leaveCalculationModal.employee);
 
             List<string> emails = new List<string>();
-            LeaveRequestNotification requestChainDetail = GetApprovalChainDetail(leaveRequestModal.EmployeeId, out emails);
+            LeaveRequestNotification requestChainDetail = GetApprovalChainDetail(leaveRequestModal, out emails);
 
             string result = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Request_Notification_InsUpdate, new
             {
@@ -863,8 +863,8 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
                 UserMessage = leaveRequestModal.Reason,
                 leaveRequestModal.EmployeeId,
-                ReportingManagerId = leaveCalculationModal.employee.ReportingManagerId,
-                ProjectId = leaveRequestModal.ProjectId,
+                leaveCalculationModal.employee.ReportingManagerId,
+                leaveRequestModal.ProjectId,
                 ProjectName = string.Empty,
                 FromDate = leaveRequestModal.LeaveFromDay,
                 ToDate = leaveRequestModal.LeaveToDay,
@@ -984,14 +984,14 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(fileIds);
         }
 
-        public LeaveRequestNotification GetApprovalChainDetail(long employeeId, out List<string> emails)
+        public LeaveRequestNotification GetApprovalChainDetail(LeaveRequestModal leaveRequestModal, out List<string> emails)
         {
             string designationId = JsonConvert.SerializeObject(new List<int> { (int)Roles.Admin, (int)Roles.Manager });
             (var approvalChainDetail, var employeeWithRoles) = _db.GetList<ApprovalChainDetail, EmployeeWithRoles>(Procedures.Leave_Approver_By_Workflow, new
             {
-                Ids = $"{_leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId}",
-                EmployeeId = employeeId,
-                DesignationIds = designationId
+                _leavePlanConfiguration.leaveApproval.ApprovalWorkFlowId,
+                leaveRequestModal.ProjectId,
+                leaveRequestModal.EmployeeId
             });
 
             if (approvalChainDetail == null || approvalChainDetail.Count == 0)
@@ -1017,7 +1017,7 @@ namespace ServiceLayer.Code
             var record = employeeWithRoles.Find(x => x.DesignationId == chain.AssignieId);
             if (record != null)
             {
-                chain.AssignieId = record.EmployeeUid;
+                chain.AssignieId = record.EmployeeId;
                 chain.AssignieeEmail = record.Email;
                 return true;
             }
