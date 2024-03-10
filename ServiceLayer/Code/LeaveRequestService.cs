@@ -107,7 +107,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to find leave detail. Please contact to admin.");
 
             var reporterDetails = JsonConvert.DeserializeObject<List<EmployeeWithRoles>>(leaveRequestDetail.Notify);
-            var selectedReporter = reporterDetails.Find(x => x.EmployeeUid == _currentSession.CurrentUserDetail.UserId);
+            var selectedReporter = reporterDetails.Find(x => x.EmployeeId == _currentSession.CurrentUserDetail.UserId);
             if (selectedReporter == null)
                 throw HiringBellException.ThrowBadRequest("Reporter detail not found. Please contact to admin");
 
