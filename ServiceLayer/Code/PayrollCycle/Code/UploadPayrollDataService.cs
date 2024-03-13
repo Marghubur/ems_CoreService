@@ -274,22 +274,37 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                                     switch (TypeName)
                                     {
                                         case nameof(Boolean):
-                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, default(bool));
                                             break;
                                         case nameof(Int32):
-                                            x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, Int32.MinValue);
                                             break;
                                         case nameof(Int64):
-                                            x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, Int64.MinValue);
                                             break;
                                         case nameof(Decimal):
-                                            x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, Decimal.MinValue);
                                             break;
                                         case nameof(String):
-                                            x.SetValue(t, dr[x.Name].ToString());
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, dr[x.Name].ToString());
+                                            else
+                                                x.SetValue(t, string.Empty);
                                             break;
                                         case nameof(DateTime):
-                                            if (dr[x.Name].ToString() != null)
+                                            if (dr[x.Name] == DBNull.Value || dr[x.Name].ToString() != null)
                                             {
                                                 date = Convert.ToDateTime(dr[x.Name].ToString());
                                                 date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
@@ -305,9 +320,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                                             break;
                                     }
                                 }
-                                catch (Exception ex)
+                                catch
                                 {
-                                    throw ex;
+                                    throw;
                                 }
                             }
                             else
