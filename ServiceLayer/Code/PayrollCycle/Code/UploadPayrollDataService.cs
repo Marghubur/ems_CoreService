@@ -103,6 +103,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         {
             var salarygroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { CTC = emp.CTC });
             if (salarygroup == null)
+                salarygroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
+            else
                 throw HiringBellException.ThrowBadRequest("Salary group not found. Please contact to admin");
 
             Employee employee = new Employee

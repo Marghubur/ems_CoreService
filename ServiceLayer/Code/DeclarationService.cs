@@ -1552,6 +1552,7 @@ namespace ServiceLayer.Code
                             }
                         }
 
+                        await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
                     }
                     else
                     {
@@ -1563,8 +1564,6 @@ namespace ServiceLayer.Code
                     _logger.LogInformation($"Requested component: {employeeDeclaration.ComponentId} found.");
                 }
             }
-
-            await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
         }
 
         public async Task<string> ExportEmployeeDeclarationService(List<int> EmployeeIds)
