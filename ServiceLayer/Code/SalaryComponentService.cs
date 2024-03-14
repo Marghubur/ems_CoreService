@@ -1076,7 +1076,7 @@ namespace ServiceLayer.Code
                 {
                     if (item.ComponentId == "EPER-PF")
                     {
-                        if (eCal.pfEsiSetting.PFEnable)
+                        if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
                         {
                             item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
                             amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
@@ -1103,7 +1103,7 @@ namespace ServiceLayer.Code
                     }
                     else if (item.ComponentId == "ECI")
                     {
-                        if (eCal.pfEsiSetting.EsiEnable)
+                        if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.EsiEnable)
                         {
                             amount = eCal.pfEsiSetting.EsiEmployerContribution + eCal.pfEsiSetting.EsiEmployeeContribution;
                             item.IncludeInPayslip = eCal.pfEsiSetting.IsHideEsiEmployer;
@@ -1310,8 +1310,8 @@ namespace ServiceLayer.Code
             bool currentYearMonthFlag = false;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
             eCal.pfEsiSetting = _db.Get<PfEsiSetting>(Procedures.Pf_Esi_Setting_Get, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
-            if (eCal.pfEsiSetting == null)
-                throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
+            //if (eCal.pfEsiSetting == null)
+            //    throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
 
             while (index < 12)
             {
