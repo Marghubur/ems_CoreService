@@ -1750,8 +1750,6 @@ namespace ServiceLayer.Code
                         employeeDeclarations.Add(employeeDeclaration);
                     }
                 }
-
-
                 try
                 {
                     await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);

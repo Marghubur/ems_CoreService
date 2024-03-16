@@ -257,17 +257,17 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("SalaryBreakupCalc/{EmployeeId}/{CTCAnnually}")]
-        public async Task<ApiResponse> SalaryBreakupCalc(long EmployeeId, int CTCAnnually)
+        [HttpGet("ResetSalaryBreakup")]
+        public async Task<ApiResponse> SalaryBreakupCalc()
         {
             try
             {
-                var result = await _salaryComponentService.SalaryBreakupCalcService(EmployeeId, CTCAnnually);
+                var result = await _salaryComponentService.ResetSalaryBreakupService();
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, new { EmployeeId = EmployeeId, CTCAnnually = CTCAnnually });
+                throw Throw(ex);
             }
         }
 

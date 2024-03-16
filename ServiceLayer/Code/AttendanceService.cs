@@ -135,7 +135,7 @@ namespace ServiceLayer.Code
                     SessionType = 1,
                     TotalMinutes = totalMinute,
                     IsOpen = i >= days ? true : false,
-                    Emails = "[]"
+                    WorkTypeId = (int)WorkType.WORKFROMHOME
                 });
 
                 i++;

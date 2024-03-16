@@ -242,7 +242,7 @@ namespace ServiceLayer.Code
                     y.ManagerName = x.ManagerName;
                     y.EmployeeId = x.EmployeeId;
                     y.AttendanceId = x.AttendanceId;
-                    y.Index = index++;
+                    y.RowIndex = index++;
                     y.FileExtension = x.FileExtension;
                     y.FileName = x.FileName;
                     y.FilePath = x.FilePath;

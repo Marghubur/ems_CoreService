@@ -901,24 +901,37 @@ namespace ServiceLayer.Code
         //    return await Task.FromResult(employeeCalculation);
         //}
 
-        public async Task<List<AnnualSalaryBreakup>> SalaryBreakupCalcService(long EmployeeId, decimal CTCAnnually)
+        public async Task<string> ResetSalaryBreakupService()
         {
-            if (EmployeeId < 0)
-                throw new HiringBellException("Invalid EmployeeId");
-
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation
+            List<EmployeeSalaryDetail> employeeSalaryDetails = _db.GetList<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get);
+            employeeSalaryDetails.ForEach(async x =>
             {
-                EmployeeId = EmployeeId,
-                employee = new Employee { EmployeeUid = EmployeeId }
-            };
+                List<AnnualSalaryBreakup> annualSalaryBreakups = null;
+                EmployeeCalculation employeeCalculation = new EmployeeCalculation
+                {
+                    EmployeeId = x.EmployeeId,
+                    employee = new Employee { EmployeeUid = x.EmployeeId }
+                };
 
-            await GetEmployeeSalaryDetail(employeeCalculation);
-            ValidateCurrentSalaryGroupNComponents(employeeCalculation);
+                await GetEmployeeSalaryDetail(employeeCalculation);
+                ValidateCurrentSalaryGroupNComponents(employeeCalculation);
 
-            if (CTCAnnually <= 0)
-                return this.CreateSalaryBreakUpWithZeroCTC(EmployeeId, CTCAnnually);
-            else
-                return this.CreateSalaryBreakupWithValue(employeeCalculation);
+                if (x.CTC <= 0)
+                    annualSalaryBreakups = CreateSalaryBreakUpWithZeroCTC(x.EmployeeId, x.CTC);
+                else
+                    annualSalaryBreakups = CreateSalaryBreakupWithValue(employeeCalculation);
+
+                var result = _db.Execute<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
+                {
+                    EmployeeId = x.EmployeeId,
+                    TaxDetail = x.TaxDetail,
+                    CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups)
+                }, true);
+                if (string.IsNullOrEmpty(result))
+                    throw HiringBellException.ThrowBadRequest($"Fail to reset salary breakup of EmpoyeeId: {x.EmployeeId}");
+            });
+
+            return await Task.FromResult("Reset successfully");
         }
 
         private void ValidateCurrentSalaryGroupNComponents(EmployeeCalculation empCal)
@@ -1680,7 +1693,7 @@ namespace ServiceLayer.Code
             employeeCalculation.salaryGroup.GroupComponents = JsonConvert
                 .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
 
-            if (employeeCalculation.employeeDeclaration.SalaryDetail != null)
+            if (employeeCalculation.employeeDeclaration != null && employeeCalculation.employeeDeclaration.SalaryDetail != null)
                 employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
 
             var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;

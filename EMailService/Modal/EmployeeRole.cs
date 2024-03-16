@@ -7,5 +7,7 @@
         public string Description {get; set;}
         public int AccessCode { get; set; }
         public int DepartmentId { get; set; }
+        public bool IsDepartment { get; set; }
+        public bool IsActive { get; set; }
     }
 }

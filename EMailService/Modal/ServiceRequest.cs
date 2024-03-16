@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -23,5 +22,6 @@ namespace ModalLayer.Modal
         public DateTime RequestedOn { set; get; }
         public string AssignTo { get; set; }
         public int Total { get; set; }
+        public int RowIndex { get; set; }
     }
 }

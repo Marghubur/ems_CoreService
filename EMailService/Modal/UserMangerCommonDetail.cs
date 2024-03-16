@@ -16,7 +16,7 @@ namespace CoreBottomHalf.Modal
         public string ManagerMobile { set; get; }
         public string ManagerEmail { set; get; }
         public int Total { set; get; }
-        public int Index { set; get; }
+        public int RowIndex { set; get; }
         public int PageIndex { get; set; }
         public long CreatedBy { get; set; }
         public long? UpdatedBy { get; set; }
