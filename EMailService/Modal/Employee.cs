@@ -20,7 +20,6 @@ namespace ModalLayer.Modal
         public string Specification { set; get; }
         public decimal ExprienceInYear { set; get; }
         public string LastCompanyName { set; get; }
-        public int Index { set; get; }
         public bool IsActive { set; get; }
         public int Total { set; get; }
         public int Duration { set; get; }
