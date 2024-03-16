@@ -1251,7 +1251,7 @@ namespace ServiceLayer.Code
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
-            var totalDeduction = payslipModal.TaxDetail.TaxDeducted + pTaxAmount;
+            var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? payslipModal.TaxDetail.TaxDeducted : pTaxAmount;
             var netSalary = totalEarning > 0 ? totalEarning - (employerPFAmount + totalDeduction) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
@@ -1291,7 +1291,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
                 Replace("[[PFAmount]]", employerPFAmount.ToString("0.00")).
                 Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
-                Replace("[[TotalIncomeTax]]", payslipModal.TaxDetail.TaxDeducted.ToString("0.00")).
+                Replace("[[TotalIncomeTax]]", (payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? payslipModal.TaxDetail.TaxDeducted - pTaxAmount : 0).ToString("0.00")).
                 Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).

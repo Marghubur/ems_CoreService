@@ -8,6 +8,6 @@
         public string CatagoryCode {set; get;}
         public string CatagoryDescription { set; get; }
         public int Total { get; set; }
-        public int Index { get; set; }
+        public int RowIndex { get; set; }
     }
 }
