@@ -153,12 +153,12 @@ namespace ServiceLayer.Code
                 TotalBurnedMinutes = 0,
                 ForYear = attendanceModal.firstDate.AddDays(1).Year,
                 ForMonth = attendanceModal.firstDate.AddDays(1).Month,
-                UserId = _currentSession.CurrentUserDetail.UserId,
+                _currentSession.CurrentUserDetail.UserId,
                 PendingRequestCount = 0,
-                ReportingManagerId = attendanceModal.employee.ReportingManagerId,
-                ManagerName = _currentSession.CurrentUserDetail.ManagerName,
-                Mobile = attendanceModal.employee.Mobile,
-                Email = attendanceModal.employee.Email,
+                attendanceModal.employee.ReportingManagerId,
+                attendanceModal.employee.ManagerName,
+                attendanceModal.employee.Mobile,
+                attendanceModal.employee.Email,
                 EmployeeName = attendanceModal.employee.FirstName + " " + attendanceModal.employee.LastName,
                 AttendenceStatus = (int)DayStatus.WorkFromOffice,
                 BillingHours = 0,
@@ -1243,7 +1243,7 @@ namespace ServiceLayer.Code
             {
                 Month = month,
                 Year = year,
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                _currentSession.CurrentUserDetail.CompanyId
             }, false);
 
             if (ds == null && ds.Tables.Count != 3)
@@ -1256,30 +1256,33 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to get attendance setting details. Please contact to admin.");
 
             AttendanceSetting attendanceSetting = Converter.ToType<AttendanceSetting>(ds.Tables[2]);
-            List<LeaveRequestNotification> leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[0]);
+            // List<LeaveRequestNotification> leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[0]);
             List<Attendance> attendance = Converter.ToList<Attendance>(ds.Tables[1]);
             attendance.ForEach(x =>
             {
                 int daysLimit = attendanceSetting.BackDateLimitToApply + 1;
                 List<AttendanceJson> attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(x.AttendanceDetail);
-                List<LeaveRequestNotification> leaves = leaveRequestNotifications.FindAll(x => x.EmployeeId == x.EmployeeId);
+                // List<LeaveRequestNotification> leaves = leaveRequestNotifications.FindAll(x => x.EmployeeId == x.EmployeeId);
                 DateTime lastAppliedDate = DateTime.UtcNow.AddDays(-daysLimit);
-                attendanceDetail.ForEach(i =>
-                {
-                    if (leaves != null && leaves.Count > 0)
-                    {
-                        var leaveDetail = leaves.Find(x => x.FromDate.Date.Subtract(i.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(i.AttendanceDay.Date).TotalDays >= 0);
-                        if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
-                        {
-                            i.IsOnLeave = true;
-                            i.IsOpen = false;
-                        }
-                    }
-                    if (!i.IsOnLeave && i.PresentDayStatus != 3 && i.PresentDayStatus != 4 && i.AttendanceDay.Date.Subtract(lastAppliedDate.Date).TotalDays <= 0)
-                        i.IsOpen = false;
+                //attendanceDetail.ForEach(i =>
+                //{
+                //    if (leaves != null && leaves.Count > 0)
+                //    {
+                //        var leaveDetail = leaves.Find(x => x.FromDate.Date.Subtract(i.AttendanceDay.Date).TotalDays <= 0 && x.ToDate.Date.Subtract(i.AttendanceDay.Date).TotalDays >= 0);
+                //        if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
+                //        {
+                //            i.IsOnLeave = true;
+                //            i.IsOpen = false;
+                //        }
+                //    }
 
-                });
-                List<AttendanceJson> blockedAttendance = attendanceDetail.FindAll(a => !a.IsOpen && !a.IsOnLeave && a.PresentDayStatus == 0);
+                //    // if (!i.IsOnLeave && i.PresentDayStatus != 3 && i.PresentDayStatus != 4 && i.AttendanceDay.Date.Subtract(lastAppliedDate.Date).TotalDays <= 0)
+                //    if (!i.IsOnLeave && i.PresentDayStatus != 9)
+                //        i.IsOpen = false;
+
+                //});
+
+                List<AttendanceJson> blockedAttendance = attendanceDetail.FindAll(a => a.PresentDayStatus != 9 && a.PresentDayStatus != 3);
                 if (blockedAttendance != null && blockedAttendance.Count > 0)
                 {
                     lOPAdjustmentDetails.Add(new LOPAdjustmentDetail

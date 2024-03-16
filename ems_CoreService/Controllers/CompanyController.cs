@@ -187,12 +187,13 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("RunPayroll/{MonthNumber}/{ReCalculateFlagId}")]
-        public async Task<ApiResponse> RunPayroll(int MonthNumber, int ReCalculateFlagId)
+        [HttpGet("RunPayroll/{MonthNumber}/{Year}/{ReCalculateFlagId}")]
+        public async Task<ApiResponse> RunPayroll(int MonthNumber, int Year, int ReCalculateFlagId)
         {
             try
             {
-                await _payrollService.RunPayrollCycle(new DateTime(DateTime.UtcNow.Year, MonthNumber, 1), ReCalculateFlagId == 1);
+                var runDate = new DateTime(Year, MonthNumber, 1);
+                await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
                 return BuildResponse(ApplicationConstants.Successfull);
             }
             catch (Exception ex)

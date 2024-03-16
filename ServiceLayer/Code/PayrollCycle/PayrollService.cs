@@ -428,7 +428,13 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             _logger.LogInformation($"[RunPayrollCycle] method started");
             PayrollCommonData payrollCommonData = GetCommonPayrollData();
+
             var payroll = payrollCommonData.payroll;
+
+            if (payroll.FinancialYear != runDate.Year && payroll.FinancialYear + 1 != runDate.Year)
+            {
+                throw HiringBellException.ThrowBadRequest("Invalid year or month. Current financial year is: " + payroll.FinancialYear);
+            }
 
             _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payroll.TimezoneName);
             payrollCommonData.timeZone = _currentSession.TimeZone;
