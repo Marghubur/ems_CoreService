@@ -40,7 +40,7 @@ namespace ModalLayer.Modal
         public long UpdatedBy { set; get; }
         public DateTime CreatedOn { set; get; }
         public DateTime? UpdatedOn { set; get; }
-        public int Index { get; set; }
+        public int RowIndex { get; set; }
         public int Total { get; set; }
     }
 }

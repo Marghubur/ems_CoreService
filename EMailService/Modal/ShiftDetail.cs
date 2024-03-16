@@ -19,7 +19,7 @@ namespace ModalLayer.Modal
         public int Status { get; set; }
         public DateTime LastUpdatedOn { get; set; }
         public int Total { get; set; }
-        public int Index { get; set; }
+        public int RowIndex { get; set; }
         public long CreatedBy { set; get; }
         public long? UpdatedBy { set; get; }
         public DateTime CreatedOn { set; get; }

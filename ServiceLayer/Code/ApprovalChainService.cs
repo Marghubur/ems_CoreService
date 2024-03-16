@@ -189,7 +189,8 @@ namespace ServiceLayer.Code
 
             (List<ApprovalWorkFlowChainFilter> approvalWorkFlow, List<EmployeeRole> employeeRole) = _db.GetList<ApprovalWorkFlowChainFilter, EmployeeRole>(ConfigurationDetail.sp_approval_chain_detail_by_id, new
             {
-                ApprovalWorkFlowId
+                ApprovalWorkFlowId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
             });
 
             if (employeeRole.Count == 0)
@@ -227,7 +228,7 @@ namespace ServiceLayer.Code
                  ).ToList<ApprovalChainDetail>();
             }
 
-            employeeRole = employeeRole.FindAll(x => x.RoleId == 1 || x.RoleId == 2 || x.RoleId == 19 || x.RoleId == 3 || x.RoleId == 5);
+            employeeRole = employeeRole.FindAll(x => !x.IsDepartment && x.IsActive);
 
             return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
         }
