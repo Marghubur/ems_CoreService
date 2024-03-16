@@ -1233,7 +1233,11 @@ namespace ServiceLayer.Code
                 x.IsIncludeInPayslip == true
             );
             EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
-            string declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
+
+            // here add condition that it detail will shown or not
+            string declarationHTML = String.Empty;
+            //declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
+
             var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
 
             foreach (var item in salaryDetail)
@@ -1296,7 +1300,6 @@ namespace ServiceLayer.Code
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).
                 Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00")).
-                Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
                 Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
                 Replace("[[EmployeeDeclaration]]", declarationHTML);
             }

@@ -733,6 +733,20 @@ namespace ServiceLayer.Code
 
             // build and bind compnay setting
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
+
+            if (employeeCalculation.companySetting.FinancialYear == 0)
+            {
+                if (DateTime.UtcNow.Month < 4)
+                    employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year - 1;
+                else
+                    employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year;
+            }
+
+            if (employeeCalculation.companySetting.DeclarationStartMonth == 0)
+            {
+                employeeCalculation.companySetting.DeclarationStartMonth = 4;
+            }
+
             employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
                 employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -788,7 +802,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection)
+        private async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false)
         {
             bool IsNewRegistration = false;
 
@@ -957,8 +971,9 @@ namespace ServiceLayer.Code
                 }
 
                 // var ResultSet = this.GetManageEmployeeDetailService(eCal.EmployeeId);
+                if (!isEmpByExcel)
+                    await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
 
-                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
                 return employeeId;
             }
             catch
@@ -1708,7 +1723,7 @@ namespace ServiceLayer.Code
             employeeCalculation.employeeDeclaration.TaxRegimeDescId = currentRegimeId;
 
             SetupPreviousEmployerIncome(employeeCalculation, uploaded);
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, null);
+            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, null, true);
 
             if (!string.IsNullOrEmpty(result))
             {
