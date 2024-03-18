@@ -1,7 +1,9 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -18,7 +20,8 @@ namespace ServiceLayer.Interface
         Task<EmployeeDeclaration> GetEmployeeDeclarationDetail(long EmployeeId, bool reCalculateFlag = false);
         Task<EmployeeDeclaration> GetEmployeeIncomeDetailService(FilterModel filterModel);
         Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false, bool isCTCChanged = false);
-        Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, bool IsTaxCalculationRequired);
+        Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData,
+            PayrollMonthlyDetail payrollMonthlyDetail, DateTime payrollDate, bool IsTaxCalculationRequired);
         Task<string> UpdateTaxDetailsService(long EmployeeId, int PresentMonth, int PresentYear);
         Task<string> SwitchEmployeeTaxRegimeService(EmployeeDeclaration employeeDeclaration);
         Task<EmployeeDeclaration> DeleteDeclarationValueService(long DeclarationId, string ComponentId);

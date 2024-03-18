@@ -5,6 +5,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using DocMaker.ExcelMaker;
 using EMailService.Modal;
+using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -191,12 +192,12 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a valid employee");
 
-            if (_currentSession.TimeZoneNow == null)
+            if (_currentSession?.TimeZoneNow == null)
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
             DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Declaration_Get_ByEmployeeId, new
             {
-                EmployeeId = EmployeeId,
+                EmployeeId,
                 UserTypeId = (int)UserType.Compnay
             });
 
@@ -210,7 +211,7 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[1].Rows.Count > 0)
                 files = Converter.ToList<Files>(resultSet.Tables[1]);
 
-            employeeDeclaration.SalaryDetail = await this.CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag, false);
+            employeeDeclaration.SalaryDetail = await CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag, false);
 
             employeeDeclaration.FileDetails = files;
             employeeDeclaration.Sections = _sections;
@@ -808,6 +809,11 @@ namespace ServiceLayer.Code
             return taxdetails;
         }
 
+        //private int TotalMonthWorkedInFinancialYear(Company company, DateTime joiningDate)
+        //{
+
+        //}
+
         private List<TaxDetails> GetPerMonthTaxInitialData(EmployeeCalculation eCal)
         {
             _logger.LogInformation("Starting method: GetPerMonthTaxInitialData");
@@ -986,13 +992,35 @@ namespace ServiceLayer.Code
             return await Task.FromResult("Done");
         }
 
-        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData, bool IsTaxCalculationRequired)
+        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData,
+            PayrollMonthlyDetail payrollMonthlyDetail, DateTime payrollDate, bool IsTaxCalculationRequired)
         {
-            var Result = await _db.ExecuteAsync(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
+            payrollMonthlyDetail.ForYear = payrollDate.Year;
+            payrollMonthlyDetail.ForMonth = payrollDate.Month;
+            payrollMonthlyDetail.PayrollStatus = 16;
+            payrollMonthlyDetail.PaymentRunDate = payrollDate;
+            payrollMonthlyDetail.ExecutedBy = _currentSession.CurrentUserDetail.UserId;
+            payrollMonthlyDetail.ExecutedOn = DateTime.Now;
+            payrollMonthlyDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+
+            var Result = await _db.ExecuteAsync(Procedures.PAYROLL_AND_SALARY_DETAIL_INSUPD, new
             {
+                payrollMonthlyDetail.PayrollMonthlyDetailId,
                 payrollEmployeeData.EmployeeId,
                 payrollEmployeeData.TaxDetail,
-                payrollEmployeeData.CompleteSalaryDetail
+                payrollEmployeeData.CompleteSalaryDetail,
+                payrollMonthlyDetail.ForYear,
+                payrollMonthlyDetail.ForMonth,
+                payrollMonthlyDetail.PayableToEmployee,
+                payrollMonthlyDetail.PFByEmployer,
+                payrollMonthlyDetail.PFByEmployee,
+                payrollMonthlyDetail.ProfessionalTax,
+                payrollMonthlyDetail.TotalDeduction,
+                payrollMonthlyDetail.PayrollStatus,
+                payrollMonthlyDetail.PaymentRunDate,
+                payrollMonthlyDetail.ExecutedBy,
+                payrollMonthlyDetail.ExecutedOn,
+                payrollMonthlyDetail.CompanyId
             }, true);
 
             if (ApplicationConstants.IsExecuted(Result.statusMessage) && IsTaxCalculationRequired)

@@ -149,15 +149,14 @@ namespace ServiceLayer.Code.PayrollCycle
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollCommonData.presentDate, offsetindex, pageSize);
-                // payrollDate = _timezoneConverter.ToSpecificTimezoneDateTime(payrollCommonData.timeZone, payrollDate);
 
                 if (payrollEmployeePageData.payrollEmployeeData.Count == 0)
                     break;
 
                 List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData;
 
-                // run pay cycle by considering actual days in months if value = 1
-                // else run pay cycle by considering only weekdays in month value = 0
+                // run pay cycle by considering actual days in months if payroll.PayCalculationId = 1
+                // else run pay cycle by considering only weekdays in month if payroll.PayCalculationId = 0
                 if (payroll.PayCalculationId != 1)
                 {
                     totalDaysInMonth = TimezoneConverter.GetNumberOfWeekdaysInMonth(payrollCommonData.presentDate.Year, payrollCommonData.presentDate.Month);
@@ -219,10 +218,13 @@ namespace ServiceLayer.Code.PayrollCycle
 
                             presentData.IsPayrollCompleted = true;
                             empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
-                            await _declarationService.UpdateTaxDetailsService(empPayroll, IsTaxCalculationRequired);
+                            await _declarationService.UpdateTaxDetailsService(empPayroll,
+                                payrollMonthlyDetail,
+                                payrollCommonData.utcPresentDate,
+                                IsTaxCalculationRequired
+                            );
 
                             IsTaxCalculationRequired = false;
-                            await UpdatePayrollMonthlyDetail(payrollMonthlyDetail, payrollCommonData.utcPresentDate);
                         }
                     }
                     catch (Exception ex)
@@ -306,34 +308,6 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             return Tuple.Create(actualMinutesWorked, expectedMinuteInMonth);
-        }
-
-        private async Task UpdatePayrollMonthlyDetail(PayrollMonthlyDetail payrollMonthlyDetail, DateTime payrollDate)
-        {
-            payrollMonthlyDetail.ForYear = payrollDate.Year;
-            payrollMonthlyDetail.ForMonth = payrollDate.Month;
-            payrollMonthlyDetail.PayrollStatus = 16;
-            payrollMonthlyDetail.PaymentRunDate = payrollDate;
-            payrollMonthlyDetail.ExecutedBy = _currentSession.CurrentUserDetail.UserId;
-            payrollMonthlyDetail.ExecutedOn = DateTime.Now;
-            payrollMonthlyDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
-
-            await _db.ExecuteAsync(Procedures.Payroll_Monthly_Detail_Ins, new
-            {
-                payrollMonthlyDetail.PayrollMonthlyDetailId,
-                payrollMonthlyDetail.ForYear,
-                payrollMonthlyDetail.ForMonth,
-                payrollMonthlyDetail.PayableToEmployee,
-                payrollMonthlyDetail.PFByEmployer,
-                payrollMonthlyDetail.PFByEmployee,
-                payrollMonthlyDetail.ProfessionalTax,
-                payrollMonthlyDetail.TotalDeduction,
-                payrollMonthlyDetail.PayrollStatus,
-                payrollMonthlyDetail.PaymentRunDate,
-                payrollMonthlyDetail.ExecutedBy,
-                payrollMonthlyDetail.ExecutedOn,
-                payrollMonthlyDetail.CompanyId
-            });
         }
 
         private string BuildPayrollTemplateBody(List<string> missingDetail)
