@@ -219,6 +219,7 @@
         public static string Catagory_Getby_Id = "sp_catagory_getby_id";
         public static string Catagory_Insupd = "sp_catagory_insupd";
         public static string Catagory_Getby_Filter = "sp_catagory_getby_filter";
+        public static string Payroll_Monthly_Detail_Ins = "sp_payroll_monthly_detail_ins";
 
         /*--------------  Project Service procedures ------------*/
         public static string Project_Detail_Getby_Id = "sp_project_detail_getby_id";
@@ -247,6 +248,8 @@
         public static string Employee_Salary_Detail_GetbyFilter = "sp_employee_salary_detail_getbyFilter";
         public static string Salary_Components_Group_By_Employeeid = "sp_salary_components_group_by_employeeid";
         public static string HIKE_BONUS_SALARY_ADHOC_INS_UPDATE = "sp_hike_bonus_salary_adhoc_ins_update";
+        public static string Payroll_Cycle_Setting_Get_All = "sp_payroll_cycle_setting_get_all";
+
         /*--------------  Service Request Service procedures ------------*/
         public static string Service_Request_Filter = "sp_service_request_filter";
         public static string Service_Request_Sel_By_Id = "sp_service_request_sel_by_id";
