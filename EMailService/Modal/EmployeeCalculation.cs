@@ -48,8 +48,9 @@ namespace ModalLayer.Modal
         public Payroll payroll { set; get; }
         public List<SurChargeSlab> surchargeSlabs { set; get; }
         public List<PTaxSlab> ptaxSlab { set; get; }
-        public List<ShiftDetail> shiftDetail{ get; set; }
+        public List<ShiftDetail> shiftDetail { get; set; }
         public TimeZoneInfo timeZone { set; get; }
+        public Company company { set; get; }
         public DateTime presentDate { set; get; }
         public DateTime utcPresentDate { set; get; }
     }

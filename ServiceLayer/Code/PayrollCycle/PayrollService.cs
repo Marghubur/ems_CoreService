@@ -4,6 +4,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
@@ -126,10 +127,9 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             attendanceDetailJsons = attendanceDetailJsons.FindAll(x =>
-                x.PresentDayStatus == (int)AttendanceEnum.Approved);
+                x.PresentDayStatus == (int)AttendanceEnum.Approved ||
+                x.PresentDayStatus == (int)AttendanceEnum.WeekOff);
 
-            //decimal totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
-            //totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
             return attendanceDetailJsons;
         }
 
@@ -144,7 +144,8 @@ namespace ServiceLayer.Code.PayrollCycle
             int offsetindex = 0;
             int pageSize = 15;
             List<FileDetail> fileDetails = new List<FileDetail>();
-            PayrollMonthlyDetail payrollMonthlyDetail = new PayrollMonthlyDetail();
+            PayrollMonthlyDetail payrollMonthlyDetail = null;
+
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollCommonData.presentDate, offsetindex, pageSize);
@@ -193,9 +194,9 @@ namespace ServiceLayer.Code.PayrollCycle
                                 totalDaysInMonth = totalDaysInMonth
                             };
 
-                            (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyActualandExpectedMinute(payrollCalculationModal);
+                            (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyMinutesConsideringWeekoffNHoliday(payrollCalculationModal);
 
-                            UpdateSalaryBreakup(payrollCommonData.utcPresentDate, expectedMinuteInMonth, actualMinutesWorked, empPayroll, payrollMonthlyDetail);
+                            payrollMonthlyDetail = GetUpdatedBreakup(payrollCommonData.utcPresentDate, expectedMinuteInMonth, actualMinutesWorked, empPayroll);
                             if (actualMinutesWorked != expectedMinuteInMonth)
                             {
                                 var newAmount = (presentData.TaxDeducted / expectedMinuteInMonth) * actualMinutesWorked;
@@ -208,13 +209,20 @@ namespace ServiceLayer.Code.PayrollCycle
                                 presentData.TaxPaid = presentData.TaxDeducted;
                             }
 
-                            payrollMonthlyDetail.TotalPayableToEmployees -= presentData.TaxPaid;
+                            payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
+                            var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
+
+                            payrollMonthlyDetail.PayableToEmployee -= pTax;
+
+
                             payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
 
                             presentData.IsPayrollCompleted = true;
                             empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
                             await _declarationService.UpdateTaxDetailsService(empPayroll, IsTaxCalculationRequired);
+
                             IsTaxCalculationRequired = false;
+                            await UpdatePayrollMonthlyDetail(payrollMonthlyDetail, payrollCommonData.utcPresentDate);
                         }
                     }
                     catch (Exception ex)
@@ -243,20 +251,39 @@ namespace ServiceLayer.Code.PayrollCycle
             };
 
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
-            await UpdatePayrollMonthlyDetail(payrollMonthlyDetail, payrollCommonData.utcPresentDate);
         }
 
-        private async Task<Tuple<decimal, decimal>> GetMonthlyActualandExpectedMinute(PayrollCalculationModal payrollCalculationModal)
+        private decimal GetProfessionalTaxAmount(List<PTaxSlab> ptaxs, Company company, decimal totalIncome)
+        {
+            var maxMinimumIncome = ptaxs.Where(i => i.StateName.ToUpper() == company.State.ToUpper()).Max(i => i.MinIncome);
+
+            PTaxSlab ptax = null;
+            if (totalIncome >= maxMinimumIncome)
+                ptax = ptaxs.OrderByDescending(i => i.MinIncome).First();
+            else
+                ptax = ptaxs.Find(x => totalIncome >= x.MinIncome && totalIncome <= x.MaxIncome);
+
+            if (ptax == null)
+                return 0;
+
+            return ptax.TaxAmount;
+        }
+
+        private async Task<Tuple<decimal, decimal>> GetMonthlyMinutesConsideringWeekoffNHoliday(PayrollCalculationModal payrollCalculationModal)
         {
             List<AttendanceJson> attendance = GetTotalAttendance(payrollCalculationModal.employeeId, payrollCalculationModal.payrollEmployeeDatas);
             decimal actualMinutesWorked = 0;
             if (attendance.Count > 0)
                 actualMinutesWorked = attendance.Select(x => x.TotalMinutes).Aggregate((x, y) => x + y);
-            
+
+            // get total week off days in current month
             int weekOff = CalculateWeekOffs(attendance, payrollCalculationModal.shiftDetail);
 
+            // get total holidays in current month
             decimal holidays = await _companyCalendar.GetHolidayCountInMonth(payrollCalculationModal.payrollDate.Month, payrollCalculationModal.payrollDate.Year);
+
             decimal expectedMinuteInMonth = 0M;
+            // payrollCalculationModal.payCalculationId == 1 -> todays days in month including weekoffs
             if (payrollCalculationModal.payCalculationId == 1)
             {
                 actualMinutesWorked = actualMinutesWorked + (weekOff * payrollCalculationModal.shiftDetail.Duration);
@@ -268,9 +295,15 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             if (payrollCalculationModal.isExcludeHolidays)
-                expectedMinuteInMonth = (payrollCalculationModal.totalDaysInMonth - holidays) * payrollCalculationModal.shiftDetail.Duration;
+            {
+                actualMinutesWorked = actualMinutesWorked - (holidays * payrollCalculationModal.shiftDetail.Duration);
+                expectedMinuteInMonth = expectedMinuteInMonth - (holidays * payrollCalculationModal.shiftDetail.Duration);
+            }
             else
+            {
                 actualMinutesWorked = actualMinutesWorked + (holidays * payrollCalculationModal.shiftDetail.Duration);
+                expectedMinuteInMonth = expectedMinuteInMonth + (holidays * payrollCalculationModal.shiftDetail.Duration);
+            }
 
             return Tuple.Create(actualMinutesWorked, expectedMinuteInMonth);
         }
@@ -280,25 +313,23 @@ namespace ServiceLayer.Code.PayrollCycle
             payrollMonthlyDetail.ForYear = payrollDate.Year;
             payrollMonthlyDetail.ForMonth = payrollDate.Month;
             payrollMonthlyDetail.PayrollStatus = 16;
-            payrollMonthlyDetail.Reason = string.Empty;
             payrollMonthlyDetail.PaymentRunDate = payrollDate;
             payrollMonthlyDetail.ExecutedBy = _currentSession.CurrentUserDetail.UserId;
             payrollMonthlyDetail.ExecutedOn = DateTime.Now;
             payrollMonthlyDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
 
-            await _db.ExecuteAsync("sp_payroll_monthly_detail_ins", new
+            await _db.ExecuteAsync(Procedures.Payroll_Monthly_Detail_Ins, new
             {
                 payrollMonthlyDetail.PayrollMonthlyDetailId,
                 payrollMonthlyDetail.ForYear,
                 payrollMonthlyDetail.ForMonth,
-                payrollMonthlyDetail.TotalPayableToEmployees,
-                payrollMonthlyDetail.TotalPFByEmployer,
-                payrollMonthlyDetail.TotalProfessionalTax,
+                payrollMonthlyDetail.PayableToEmployee,
+                payrollMonthlyDetail.PFByEmployer,
+                payrollMonthlyDetail.PFByEmployee,
+                payrollMonthlyDetail.ProfessionalTax,
                 payrollMonthlyDetail.TotalDeduction,
                 payrollMonthlyDetail.PayrollStatus,
-                payrollMonthlyDetail.Reason,
                 payrollMonthlyDetail.PaymentRunDate,
-                payrollMonthlyDetail.ProofOfDocumentPath,
                 payrollMonthlyDetail.ExecutedBy,
                 payrollMonthlyDetail.ExecutedOn,
                 payrollMonthlyDetail.CompanyId
@@ -333,9 +364,9 @@ namespace ServiceLayer.Code.PayrollCycle
             return builder.ToString();
         }
 
-        private static void UpdateSalaryBreakup(DateTime payrollDate, decimal minuteUsedForDeduction, decimal minutePresnet,
-            PayrollEmployeeData empPayroll, PayrollMonthlyDetail payrollMonthlyDetail)
+        private PayrollMonthlyDetail GetUpdatedBreakup(DateTime payrollDate, decimal minuteUsedForDeduction, decimal minutePresnet, PayrollEmployeeData empPayroll)
         {
+            PayrollMonthlyDetail payrollMonthlyDetail = new PayrollMonthlyDetail();
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
             if (salaryBreakup == null)
                 throw HiringBellException.ThrowBadRequest("Salary breakup not found. Fail to run payroll.");
@@ -348,18 +379,19 @@ namespace ServiceLayer.Code.PayrollCycle
                     item.FinalAmount = (item.FinalAmount / minuteUsedForDeduction) * minutePresnet;
                     switch (item.ComponentId)
                     {
-                        case ComponentNames.ProfessionalTax:
-                            payrollMonthlyDetail.TotalProfessionalTax += item.FinalAmount;
-                            break;
                         case ComponentNames.EmployerPF:
-                            payrollMonthlyDetail.TotalPFByEmployer += item.FinalAmount;
+                            payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
+                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                            break;
+                        case ComponentNames.EmployeePF:
+                            payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
+                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
                             break;
                         case ComponentNames.CTCId:
-                            break;
                         case ComponentNames.GrossId:
                             break;
                         default:
-                            payrollMonthlyDetail.TotalPayableToEmployees += item.FinalAmount;
+                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
                             break;
                     }
                 }
@@ -368,14 +400,15 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             empPayroll.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);
+            return payrollMonthlyDetail;
         }
 
 
         private PayrollCommonData GetCommonPayrollData()
         {
             PayrollCommonData payrollCommonData = new PayrollCommonData();
-            var result = _db.FetchDataSet("sp_payroll_cycle_setting_get_all");
-            if (result.Tables.Count != 6)
+            var result = _db.FetchDataSet(Procedures.Payroll_Cycle_Setting_Get_All, new { _currentSession.CurrentUserDetail.CompanyId });
+            if (result.Tables.Count != 7)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Fail to get payroll cycle data to run it. Please contact to admin");
 
             if (result.Tables[0].Rows.Count != 1)
@@ -396,12 +429,16 @@ namespace ServiceLayer.Code.PayrollCycle
             if (result.Tables[5].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Shift detail not found. Please contact to admin");
 
+            if (result.Tables[6].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest($"[GetCommonPayrollData]: Company detail not found. Please contact to admin");
+
             payrollCommonData.payroll = Converter.ToType<Payroll>(result.Tables[0]);
             payrollCommonData.salaryComponents = Converter.ToList<SalaryComponents>(result.Tables[1]);
             payrollCommonData.surchargeSlabs = Converter.ToList<SurChargeSlab>(result.Tables[2]);
             payrollCommonData.ptaxSlab = Converter.ToList<PTaxSlab>(result.Tables[3]);
             payrollCommonData.salaryGroups = Converter.ToList<SalaryGroup>(result.Tables[4]);
             payrollCommonData.shiftDetail = Converter.ToList<ShiftDetail>(result.Tables[5]);
+            payrollCommonData.company = Converter.ToType<Company>(result.Tables[6]);
 
             return payrollCommonData;
         }
