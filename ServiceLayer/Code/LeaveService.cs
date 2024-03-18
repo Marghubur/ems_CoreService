@@ -305,7 +305,7 @@ namespace ServiceLayer.Code
             if (leavePlan.LeavePlanId <= 0)
                 throw new HiringBellException("Invalid leave plan selected.");
 
-            var value = _db.Execute<LeavePlan>(Procedures.Leave_Plan_Insupd, new
+            var value = _db.Execute<LeavePlan>(Procedures.LEAVE_PLAN_SET_DEFAULT, new
             {
                 leavePlan.LeavePlanId,
                 leavePlan.IsDefaultPlan
