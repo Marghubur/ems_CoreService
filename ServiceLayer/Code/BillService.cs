@@ -12,6 +12,7 @@ using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -43,6 +44,7 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly KafkaNotificationService _kafkaNotificationService;
         private readonly IDeclarationService _declarationService;
+        private readonly MasterDatabase _masterDatabase;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
@@ -54,7 +56,8 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService,
-            IDeclarationService declarationService)
+            IDeclarationService declarationService,
+            IOptions<MasterDatabase> options)
         {
             this.db = db;
             _logger = logger;
@@ -70,6 +73,7 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _kafkaNotificationService = kafkaNotificationService;
             _declarationService = declarationService;
+            _masterDatabase = options.Value;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -689,30 +693,40 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> GetBillDetailWithTemplateService(string billNo, long employeeId)
         {
-            var Result = db.FetchDataSet("sp_billdetail_and_template_by_billno",
-                new
-                {
-                    BillNo = billNo,
-                    TemplateId = ApplicationConstants.BillingEmailTemplate,
-                    EmployeeId = employeeId
-                });
+            var Result = db.FetchDataSet("sp_billdetail_and_template_by_billno", new
+            {
+                BillNo = billNo,
+                EmployeeId = employeeId
+            });
 
-            if (Result == null || Result.Tables.Count != 4)
+            if (Result == null || Result.Tables.Count != 3)
                 throw new HiringBellException("Fail to get bill and template detail.");
 
             if (Result.Tables[0].Rows.Count != 1)
                 throw new HiringBellException("Invalid bill no. No record found.");
 
-            if (Result.Tables[1].Rows.Count != 1)
-                throw new HiringBellException("Invalid request. No email template found for this operation.");
-
             return await Task.FromResult(new
             {
                 EmployeeDetail = Result.Tables[0],
-                EmailTemplate = Result.Tables[1],
-                Receiver = Result.Tables[2],
-                Sender = Result.Tables[3]
+                EmailTemplate = GetEmailTemplateService(),
+                Receiver = Result.Tables[1],
+                Sender = Result.Tables[2]
             });
+        }
+
+        private EmailTemplate GetEmailTemplateService()
+        {
+            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            db.SetupConnectionString(cs);
+            var result = db.Get<EmailTemplate>(Procedures.Email_Template_Get, new
+            {
+                EmailTemplateId = ApplicationConstants.BillingEmailTemplate,
+            });
+
+            if (result == null)
+                throw new HiringBellException("Invalid request. No email template found for this operation.");
+
+            return result;
         }
 
         public dynamic GenerateDocument(PdfModal pdfModal, List<DailyTimesheetDetail> dailyTimesheetDetails,
