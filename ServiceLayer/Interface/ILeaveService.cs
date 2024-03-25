@@ -28,5 +28,6 @@ namespace ServiceLayer.Interface
         DataSet GetLeaveAttachByMangerService(LeaveRequestNotification leaveRequestNotification);
         Leave GetLeaveDetailByEmpIdService(long EmployeeId);
         Task<string> AdjustLOPAsLeaveService(LOPAdjustmentDetail lOPAdjustmentDetail);
+        string AddInitialLeavePlanService(LeavePlan leavePlan);
     }
 }

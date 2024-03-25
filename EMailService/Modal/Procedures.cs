@@ -30,6 +30,7 @@
         public static string Leave_Plan_Calculation_Get = "sp_leave_plan_calculation_get";
         public static string EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR = "sp_employee_salary_detail_by_empid_year";
         public static string LEAVE_PLAN_SET_DEFAULT = "sp_leave_plan_set_default";
+        public static string LEAVE_PLAN_TYPE_GET_BY_IDS_JSON = "sp_leave_plan_type_get_by_ids_json";
 
         /*-------------- Leave Calculation proceudures ------------*/
         public static string Leave_Type_Detail_Get_By_EmployeeId = "sp_leave_type_detail_get_by_employeeId";

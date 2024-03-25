@@ -300,5 +300,19 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, lOPAdjustmentDetail);
             }
         }
+
+        [HttpPost("AddInitialLeavePlan")]
+        public IResponse<ApiResponse> AddInitialLeavePlan([FromBody] LeavePlan leavePlan)
+        {
+            try
+            {
+                var result = _leaveService.AddInitialLeavePlanService(leavePlan);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leavePlan);
+            }
+        }
     }
 }
