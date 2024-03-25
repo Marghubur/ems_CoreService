@@ -296,6 +296,7 @@ namespace ServiceLayer.Code
             var result = await _db.ExecuteAsync(Procedures.Leave_Plan_Insupd, leavePlan, true);
             if (result.rowsEffected != 1 || string.IsNullOrEmpty(result.statusMessage))
                 throw new HiringBellException("Unable to add leave type. Please contact to admin.");
+
             return leavePlan;
         }
 
@@ -756,6 +757,38 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
 
             return leaveCalculationModal;
+        }
+
+        public string AddInitialLeavePlanService(LeavePlan leavePlan)
+        {
+            if (string.IsNullOrEmpty(leavePlan.PlanName))
+                throw HiringBellException.ThrowBadRequest("Leave plan name is null or empty");
+
+            List<LeavePlanTypeBrief> leavePlanTypes = _db.GetList<LeavePlanTypeBrief>(Procedures.LEAVE_PLAN_TYPE_GET_BY_IDS_JSON, new
+            {
+                LeavePlanTypeId = JsonConvert.SerializeObject(leavePlan.AssociatedPlanTypes)
+            });
+
+            leavePlanTypes.ForEach(x =>
+            {
+                x.LeavePlanId = 1;
+            });
+
+            leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
+            leavePlan.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+            leavePlan.PlanDescription = leavePlan.PlanName;
+            leavePlan.PlanName = leavePlan.PlanName;
+            leavePlan.IsDefaultPlan = true;
+            leavePlan.IsShowLeavePolicy = false;
+            leavePlan.IsUploadedCustomLeavePolicy = false;
+            leavePlan.LeavePlanId = 0;
+            leavePlan.PlanStartCalendarDate = DateTime.UtcNow;
+
+            var value = _db.Execute<LeavePlan>(Procedures.Leave_Plan_Insupd, leavePlan, true);
+            if (string.IsNullOrEmpty(value))
+                throw new HiringBellException("Unable to add or update leave plan");
+
+            return "Leave plan added successfully";
         }
     }
 }
