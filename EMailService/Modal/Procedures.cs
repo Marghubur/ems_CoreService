@@ -157,6 +157,7 @@
         public static string EMPLOYEE_NOTICE_PERIOD_GETBY_EMPID = "sp_employee_notice_period_getby_empid";
         public static string EMPLOYEE_NOTICE_PERIOD_INSUPD = "sp_employee_notice_period_insupd";
         public static string EMPLOYEE_NOTICE_PERIOD_GETBY_ID = "sp_employee_notice_period_getby_id";
+        public static string EMPLOYEE_PAYROLL_GET_BY_PAGE = "sp_employee_payroll_get_by_page";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";

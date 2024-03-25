@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal.Accounts;
+﻿using EMailService.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
@@ -43,6 +44,7 @@ namespace ModalLayer.Modal
     {
         public LeaveRequestDetail leaveRequestDetail { set; get; }
         public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
+        public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
 
     }
 

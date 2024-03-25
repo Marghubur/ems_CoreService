@@ -11,6 +11,8 @@ namespace EMailService.Modal
         public bool IsPaidByCompany {set; get;}
         public bool IsFine {set; get;}
         public bool IsHikeInSalary {set; get;}
+        public bool IsSalaryOnHold { set; get;}
+        public int ProcessStepId { set; get; }
         public bool IsBonus {set; get;}
         public string Description {set; get;}
         public decimal Amount {set; get;}
