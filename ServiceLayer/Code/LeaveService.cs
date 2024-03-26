@@ -764,16 +764,18 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(leavePlan.PlanName))
                 throw HiringBellException.ThrowBadRequest("Leave plan name is null or empty");
 
+            if (string.IsNullOrEmpty(leavePlan.AssociatedPlanTypes))
+                throw HiringBellException.ThrowBadRequest("Please select Leave type first");
+
             List<LeavePlanTypeBrief> leavePlanTypes = _db.GetList<LeavePlanTypeBrief>(Procedures.LEAVE_PLAN_TYPE_GET_BY_IDS_JSON, new
             {
-                LeavePlanTypeId = JsonConvert.SerializeObject(leavePlan.AssociatedPlanTypes)
+                LeavePlanTypeId = leavePlan.AssociatedPlanTypes
             });
 
-            leavePlanTypes.ForEach(x =>
-            {
-                x.LeavePlanId = 1;
-            });
+            if (leavePlanTypes.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Leave plan type not found. Please contact to admin");
 
+            leavePlanTypes.ForEach(x => x.LeavePlanId = 1);
             leavePlan.AssociatedPlanTypes = JsonConvert.SerializeObject(leavePlanTypes);
             leavePlan.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
             leavePlan.PlanDescription = leavePlan.PlanName;

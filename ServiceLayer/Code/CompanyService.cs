@@ -419,6 +419,7 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
+
             var result = _db.FetchDataSet(Procedures.Company_Setting_Get_Byid, new { CompanyId = companyId });
             if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Fail to get company setting details. Please contact to admin");
@@ -565,5 +566,52 @@ namespace ServiceLayer.Code
             return fileList;
         }
 
+        public async Task<CompanySetting> UpdateCompanyInitialSettingService(int companyId, CompanySetting companySetting)
+        {
+            if (companyId <= 0)
+                throw new HiringBellException("Invalid company id supplied.");
+
+            var result = _db.FetchDataSet(Procedures.Company_Setting_Get_Byid, new { CompanyId = companyId });
+            if (result == null || result.Tables.Count != 2)
+                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
+
+            CompanySetting companySettingDetail = null;
+            if (result.Tables[0].Rows.Count > 0)
+                companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
+
+            if (companySettingDetail == null)
+                throw HiringBellException.ThrowBadRequest("COmpany setting not found. Please contact to admin");
+
+
+            companySettingDetail.DeclarationStartMonth = companySetting.DeclarationStartMonth;
+            companySettingDetail.DeclarationEndMonth = companySetting.DeclarationEndMonth;
+            companySettingDetail.FinancialYear = companySetting.FinancialYear;
+            companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
+            var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
+            {
+                companySettingDetail.CompanyId,
+                companySettingDetail.SettingId,
+                companySettingDetail.ProbationPeriodInDays,
+                companySettingDetail.NoticePeriodInDays,
+                companySettingDetail.DeclarationStartMonth,
+                companySettingDetail.DeclarationEndMonth,
+                companySettingDetail.IsPrimary,
+                companySettingDetail.FinancialYear,
+                companySettingDetail.AttendanceSubmissionLimit,
+                companySettingDetail.LeaveAccrualRunCronDayOfMonth,
+                companySettingDetail.EveryMonthLastDayOfDeclaration,
+                companySettingDetail.TimezoneName,
+                companySetting.IsJoiningBarrierDayPassed,
+                companySettingDetail.NoticePeriodInProbation,
+                AdminId = _currentSession.CurrentUserDetail.UserId,
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(status.statusMessage))
+                throw new HiringBellException("Fail to update company setting detail. CompnayId: ",
+                    nameof(companySettingDetail.CompanyId),
+                    " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
+
+            return companySettingDetail;
+        }
     }
 }
