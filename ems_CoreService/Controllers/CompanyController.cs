@@ -242,7 +242,6 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-
         [HttpGet("getcompanyfiles/{CompanyId}")]
         public async Task<ApiResponse> GetCompanyFiles(int CompanyId)
         {
@@ -256,6 +255,7 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, CompanyId);
             }
         }
+
         [HttpPost("DeleteCompanyFile")]
         public async Task<ApiResponse> DeleteCompanyFiles(Files companyFile)
         {
@@ -267,6 +267,20 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, companyFile);
+            }
+        }
+
+        [HttpPut("UpdateCompanyInitialSetting/{companyId}")]
+        public async Task<ApiResponse> UpdateCompanyInitialSetting([FromRoute] int companyId, [FromBody] CompanySetting companySetting)
+        {
+            try
+            {
+                var settingDetail = await _companyService.UpdateCompanyInitialSettingService(companyId, companySetting);
+                return BuildResponse(settingDetail);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { CompanyId = companyId, CompanySetting = companySetting });
             }
         }
     }

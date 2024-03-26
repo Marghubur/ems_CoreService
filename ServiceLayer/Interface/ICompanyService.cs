@@ -24,5 +24,6 @@ namespace ServiceLayer.Interface
         Task<List<Files>> GetCompanyFiles(int CompanyId);
         Task<List<Files>> DeleteCompanyFilesService(Files companyFile);
         Task<CompanySetting> GetCompanySettingByCompanyId(int companyId);
+        Task<CompanySetting> UpdateCompanyInitialSettingService(int companyId, CompanySetting companySetting);
     }
 }
