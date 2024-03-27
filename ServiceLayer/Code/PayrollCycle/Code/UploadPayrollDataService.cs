@@ -81,8 +81,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     {
                         EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
                         {
-                            Mobile = e.Mobile,
-                            Email = e.Email
+                            e.Mobile,
+                            e.Email
                         });
 
                         if (employeeEmailMobileCheck.MobileCount > 0)
@@ -347,13 +347,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     }
                 }
             }
-            catch (MySqlException ex)
+            catch
             {
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                throw;
             }
 
             return items;

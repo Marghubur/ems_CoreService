@@ -8,6 +8,7 @@ namespace EMailService.Modal.Payroll
         public int EmployeeId { set; get; }
         public int ForYear { set; get; }
         public int ForMonth { set; get; }
+        public decimal GrossTotal { set; get; }
         public decimal PayableToEmployee { set; get; }
         public decimal PFByEmployer { set; get; }
         public decimal PFByEmployee { set; get; }

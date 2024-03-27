@@ -641,68 +641,80 @@ namespace ServiceLayer.Code
                         new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
                         _currentSession.TimeZone
                     );
+            
             decimal taxNeetToPay = 0;
             if (empCal.employeeDeclaration.EmployeeCurrentRegime == ApplicationConstants.OldRegim)
                 taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPay;
             else
                 taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPayOnNewRegim;
 
-            List<TaxDetails> taxdetails = null;
             if (empCal.companySetting == null)
                 throw new HiringBellException("Company setting not found. Please contact to admin.");
 
             if (!string.IsNullOrEmpty(empCal.employeeSalaryDetail.TaxDetail) && empCal.employeeSalaryDetail.TaxDetail != "[]")
             {
-                // decimal totalTaxNeedToPay = 0;
-                var calculationOnRemainingMonth = false;
-                taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
-                if (empCal.financialYearDateTime.Year != DateTime.UtcNow.Year && DateTime.UtcNow.Month == 1 && DateTime.UtcNow.Day == 1)
+                await ReCalculateTaxDetail(empCal, reCalculateFlag, taxNeetToPay);
+            }
+            else
+            {
+                await CreateTaxDetailForEmployee(empCal, taxNeetToPay);
+            }
+
+            _logger.LogInformation("Leaving method: TaxDetailsCalculation");
+        }
+
+        private async Task ReCalculateTaxDetail(EmployeeCalculation empCal, bool reCalculateFlag, decimal taxNeetToPay)
+        {
+            List<TaxDetails> taxdetails;
+            var calculationOnRemainingMonth = false;
+            taxdetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empCal.employeeSalaryDetail.TaxDetail);
+            if (empCal.financialYearDateTime.Year != DateTime.UtcNow.Year && DateTime.UtcNow.Month == 1 && DateTime.UtcNow.Day == 1)
+            {
+                reCalculateFlag = true;
+                calculationOnRemainingMonth = true;
+            }
+
+            if (reCalculateFlag)
+            {
+                if (taxNeetToPay > 0)
                 {
-                    reCalculateFlag = true;
-                    calculationOnRemainingMonth = true;
-                }
+                    UpdateTaxDetail(empCal, taxNeetToPay, taxdetails, calculationOnRemainingMonth);
 
-                if (reCalculateFlag)
-                {
-                    if (taxNeetToPay > 0)
-                    {
-                        UpdateTaxDetail(empCal, taxNeetToPay, taxdetails, calculationOnRemainingMonth);
-
-                        empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                        await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
-                    }
-                    else
-                    {
-                        UpdatePerMonthTaxData(empCal, taxdetails);
-                        empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
-                                    .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
-
-                        empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                        await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
-                    }
+                    empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+                    await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
                 }
                 else
                 {
+                    UpdatePerMonthTaxData(empCal, taxdetails);
                     empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
-                            .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+                                .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+
+                    empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+                    await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
                 }
             }
             else
             {
-                if (taxNeetToPay > 0)
-                {
-                    taxdetails = GetPerMonthTaxInitialData(empCal);
-                }
-                else
-                {
-                    taxdetails = GetPerMontTaxDetail(empCal);
-                }
+                empCal.employeeDeclaration.TaxPaid = Convert.ToDecimal(taxdetails
+                        .Select(x => x.TaxPaid).Aggregate((i, k) => i + k));
+            }
+        }
 
-                empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
-                await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
+        private async Task CreateTaxDetailForEmployee(EmployeeCalculation empCal, decimal taxNeetToPay)
+        {
+            List<TaxDetails> taxdetails;
+
+            if (taxNeetToPay > 0)
+            {
+                taxdetails = GetPerMonthTaxInitialData(empCal);
+            }
+            else
+            {
+                taxdetails = GetPerMontTaxDetail(empCal);
             }
 
-            _logger.LogInformation("Leaving method: TaxDetailsCalculation");
+            empCal.employeeSalaryDetail.TaxDetail = JsonConvert.SerializeObject(taxdetails);
+            await UpdateEmployeeSalaryDetailChanges(empCal.EmployeeId, empCal.employeeSalaryDetail);
         }
 
         private void UpdateTaxDetail(EmployeeCalculation empCal, decimal taxNeetToPay, List<TaxDetails> taxdetails, bool calculationOnRemainingMonth)
@@ -1011,6 +1023,7 @@ namespace ServiceLayer.Code
                 payrollEmployeeData.CompleteSalaryDetail,
                 payrollMonthlyDetail.ForYear,
                 payrollMonthlyDetail.ForMonth,
+                payrollMonthlyDetail.GrossTotal,
                 payrollMonthlyDetail.PayableToEmployee,
                 payrollMonthlyDetail.PFByEmployer,
                 payrollMonthlyDetail.PFByEmployee,

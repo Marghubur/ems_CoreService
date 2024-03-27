@@ -57,21 +57,23 @@ namespace ServiceLayer.Code.PayrollCycle
 
         private PayrollEmployeePageData GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
         {
-            var resultSet = _db.FetchDataSet("sp_employee_payroll_get_by_page", new
+            var resultSet = _db.FetchDataSet(Procedures.EMPLOYEE_PAYROLL_GET_BY_PAGE, new
             {
                 ForYear = presentDate.Year,
                 ForMonth = presentDate.Month,
                 OffsetIndex = offsetindex,
-                PageSize = pageSize
+                PageSize = pageSize,
+                _currentSession.CurrentUserDetail.CompanyId
             }, false);
 
-            if (resultSet == null || resultSet.Tables.Count != 3)
+            if (resultSet == null || resultSet.Tables.Count != 4)
                 throw HiringBellException.ThrowBadRequest($"[GetEmployeeDetail]: Employee data not found for date: {presentDate} of offSet: {offsetindex}");
 
             PayrollEmployeePageData payrollEmployeePageData = new PayrollEmployeePageData
             {
                 payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
-                leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(resultSet.Tables[2])
+                leaveRequestDetail = Converter.ToType<LeaveRequestDetail>(resultSet.Tables[2]),
+                hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3])
             };
 
             if (payrollEmployeePageData.payrollEmployeeData == null)
@@ -168,63 +170,71 @@ namespace ServiceLayer.Code.PayrollCycle
                 {
                     try
                     {
-                        var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
-                        if (taxDetails == null)
-                            throw HiringBellException.ThrowBadRequest("TaxDtail not prepaired for the current employee. Fail to run payroll.");
-
-                        var presentData = taxDetails.Find(x => x.Month == payrollCommonData.presentDate.Month);
-                        if (presentData == null)
-                            throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
-
-                        if (!presentData.IsPayrollCompleted || reRunFlag)
+                        (bool flag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
+                        if (flag)
                         {
-                            var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
-                            if (shiftDetail == null)
-                                throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
+                            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(empPayroll.TaxDetail);
+                            if (taxDetails == null)
+                                throw HiringBellException.ThrowBadRequest("TaxDtail not prepaired for the current employee. Fail to run payroll.");
 
-                            PayrollCalculationModal payrollCalculationModal = new PayrollCalculationModal
+                            var presentData = taxDetails.Find(x => x.Month == payrollCommonData.presentDate.Month);
+                            if (presentData == null)
+                                throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+                            if (!presentData.IsPayrollCompleted || reRunFlag)
                             {
-                                shiftDetail = shiftDetail,
-                                payrollDate = payrollCommonData.presentDate,
-                                isExcludeHolidays = payroll.IsExcludeHolidays,
-                                payCalculationId = payroll.PayCalculationId,
-                                employeeId = empPayroll.EmployeeId,
-                                payrollEmployeeDatas = payrollEmployeeData,
-                                totalDaysInMonth = totalDaysInMonth
-                            };
+                                var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
+                                if (shiftDetail == null)
+                                    throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
 
-                            (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyMinutesConsideringWeekoffNHoliday(payrollCalculationModal);
+                                PayrollCalculationModal payrollCalculationModal = new PayrollCalculationModal
+                                {
+                                    shiftDetail = shiftDetail,
+                                    payrollDate = payrollCommonData.presentDate,
+                                    isExcludeHolidays = payroll.IsExcludeHolidays,
+                                    payCalculationId = payroll.PayCalculationId,
+                                    employeeId = empPayroll.EmployeeId,
+                                    payrollEmployeeDatas = payrollEmployeeData,
+                                    totalDaysInMonth = totalDaysInMonth
+                                };
 
-                            payrollMonthlyDetail = GetUpdatedBreakup(payrollCommonData.utcPresentDate, expectedMinuteInMonth, actualMinutesWorked, empPayroll);
-                            if (actualMinutesWorked != expectedMinuteInMonth)
-                            {
-                                var newAmount = (presentData.TaxDeducted / expectedMinuteInMonth) * actualMinutesWorked;
-                                presentData.TaxPaid = newAmount;
-                                presentData.TaxDeducted = newAmount;
-                                IsTaxCalculationRequired = true;
+                                (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyMinutesConsideringWeekoffNHoliday(payrollCalculationModal);
+
+                                payrollMonthlyDetail = GetUpdatedBreakup(payrollCommonData.utcPresentDate, expectedMinuteInMonth, actualMinutesWorked, empPayroll);
+                                if (actualMinutesWorked != expectedMinuteInMonth)
+                                {
+                                    var newAmount = (presentData.TaxDeducted / expectedMinuteInMonth) * actualMinutesWorked;
+                                    presentData.TaxPaid = newAmount;
+                                    presentData.TaxDeducted = newAmount;
+                                    IsTaxCalculationRequired = true;
+                                }
+                                else
+                                {
+                                    presentData.TaxPaid = presentData.TaxDeducted;
+                                }
+
+                                payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
+                                var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
+
+                                payrollMonthlyDetail.PayableToEmployee -= pTax;
+                                payrollMonthlyDetail.GrossTotal = payrollMonthlyDetail.PayableToEmployee + amount;
+
+                                payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
+
+                                presentData.IsPayrollCompleted = true;
+                                empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
+                                await _declarationService.UpdateTaxDetailsService(empPayroll,
+                                    payrollMonthlyDetail,
+                                    payrollCommonData.utcPresentDate,
+                                    IsTaxCalculationRequired
+                                );
+
+                                IsTaxCalculationRequired = false;
                             }
-                            else
-                            {
-                                presentData.TaxPaid = presentData.TaxDeducted;
-                            }
-
-                            payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
-                            var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
-
-                            payrollMonthlyDetail.PayableToEmployee -= pTax;
-
-
-                            payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
-
-                            presentData.IsPayrollCompleted = true;
-                            empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
-                            await _declarationService.UpdateTaxDetailsService(empPayroll,
-                                payrollMonthlyDetail,
-                                payrollCommonData.utcPresentDate,
-                                IsTaxCalculationRequired
-                            );
-
-                            IsTaxCalculationRequired = false;
+                        }
+                        else
+                        {
+                            // salary is on hold for current employee.
                         }
                     }
                     catch (Exception ex)
@@ -253,6 +263,32 @@ namespace ServiceLayer.Code.PayrollCycle
             };
 
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
+        }
+
+        private (bool, decimal) GetAdhocComponentValue(long EmployeeId, List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc)
+        {
+            bool flag = true;
+            decimal amount = 0;
+
+            var presnetEmployees = hikeBonusSalaryAdhoc.Where(x => x.EmployeeId == EmployeeId).ToList();
+
+            var record = presnetEmployees.Find(x => x.EmployeeId == EmployeeId &&
+                    (
+                        (x.ProcessStepId == (int)ProcessStep.NewJoineeExit && x.IsSalaryOnHold) ||
+                        (x.ProcessStepId == (int)ProcessStep.SalaryArrear && x.IsSalaryOnHold)
+                    )
+                );
+            if (record != null)
+            {
+                flag = false;
+            }
+            else
+            {
+                amount = presnetEmployees.Where(x => x.ProcessStepId != (int)ProcessStep.NewJoineeExit && x.ProcessStepId != (int)ProcessStep.SalaryArrear)
+                    .Sum(i => i.Amount);
+            }
+
+            return (flag, amount);
         }
 
         private decimal GetProfessionalTaxAmount(List<PTaxSlab> ptaxs, Company company, decimal totalIncome)
@@ -570,5 +606,15 @@ namespace ServiceLayer.Code.PayrollCycle
             _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Sending email");
             await _eMailManager.SendMailAsync(emailSenderModal);
         }
+    }
+
+    enum ProcessStep
+    {
+        LeaveAttendance = 1,
+        NewJoineeExit,
+        BonusOverTime,
+        ReimbursmentAdhoc,
+        SalaryArrear,
+        OverrideComponent
     }
 }
