@@ -307,5 +307,10 @@
         /*--------------  CronJobSetting Service procedures ------------*/
         public static string APPLICATION_SETTING_INSUPD = "sp_application_setting_insupd";
         public static string APPLICATION_SETTING_GET_BY_COMPID = "sp_application_setting_get_by_compid";
+
+        /*--------------  Home Page Service Procedure -----------------------*/
+        public static string CONTACT_US_INSUPD = "sp_contact_us_insupd";
+        public static string TRAIL_REQUEST_INSUPD = "sp_trail_request_insupd";
+        public static string TRAIL_REQUEST_GETBY_EMAIL_PHONE = "sp_trail_request_getby_email_phone";
     }
 }
