@@ -251,6 +251,7 @@
         public static string Salary_Components_Group_By_Employeeid = "sp_salary_components_group_by_employeeid";
         public static string HIKE_BONUS_SALARY_ADHOC_INS_UPDATE = "sp_hike_bonus_salary_adhoc_ins_update";
         public static string Payroll_Cycle_Setting_Get_All = "sp_payroll_cycle_setting_get_all";
+        public static string SALARY_GROUP_AND_COMPONENTS_GET = "sp_salary_group_and_components_get";
 
         /*--------------  Service Request Service procedures ------------*/
         public static string Service_Request_Filter = "sp_service_request_filter";
