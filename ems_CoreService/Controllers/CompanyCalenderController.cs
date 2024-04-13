@@ -51,7 +51,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpDelete("DeleteHolidy/{CompanyCalendarId}")]
-        public IResponse<ApiResponse> HolidayInsertUpdate([FromRoute] long CompanyCalendarId)
+        public IResponse<ApiResponse> DeleteHolidyByCompId([FromRoute] long CompanyCalendarId)
         {
             try
             {

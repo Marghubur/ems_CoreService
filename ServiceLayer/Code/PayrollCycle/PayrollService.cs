@@ -113,7 +113,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return 0;
         }
 
-        private List<AttendanceJson> GetTotalAttendance(long employeeId, List<PayrollEmployeeData> payrollEmployeeData)
+        private List<AttendanceJson> GetTotalAttendance(long employeeId, List<PayrollEmployeeData> payrollEmployeeData, int payrollRunDay)
         {
             var attrDetail = payrollEmployeeData.Find(x => x.EmployeeId == employeeId);
 
@@ -128,6 +128,9 @@ namespace ServiceLayer.Code.PayrollCycle
                     throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
             }
 
+            var assumedAttendance = attendanceDetailJsons.FindAll(x => x.PresentDayStatus == (int)AttendanceEnum.NotSubmitted 
+                                                                    && x.AttendanceDay.Day > payrollRunDay);
+            assumedAttendance.ForEach(x => x.PresentDayStatus = (int)AttendanceEnum.Approved);
             attendanceDetailJsons = attendanceDetailJsons.FindAll(x =>
                 x.PresentDayStatus == (int)AttendanceEnum.Approved ||
                 x.PresentDayStatus == (int)AttendanceEnum.WeekOff);
@@ -147,7 +150,7 @@ namespace ServiceLayer.Code.PayrollCycle
             int pageSize = 15;
             List<FileDetail> fileDetails = new List<FileDetail>();
             PayrollMonthlyDetail payrollMonthlyDetail = null;
-
+            int payrollRunDay = payrollCommonData.payroll.PayCycleDayOfMonth;
             while (true)
             {
                 PayrollEmployeePageData payrollEmployeePageData = GetEmployeeDetail(payrollCommonData.presentDate, offsetindex, pageSize);
@@ -198,7 +201,7 @@ namespace ServiceLayer.Code.PayrollCycle
                                     totalDaysInMonth = totalDaysInMonth
                                 };
 
-                                (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyMinutesConsideringWeekoffNHoliday(payrollCalculationModal);
+                                (decimal actualMinutesWorked, decimal expectedMinuteInMonth) = await GetMonthlyMinutesConsideringWeekoffNHoliday(payrollCalculationModal, payrollRunDay);
 
                                 payrollMonthlyDetail = GetUpdatedBreakup(payrollCommonData.utcPresentDate, expectedMinuteInMonth, actualMinutesWorked, empPayroll);
                                 if (actualMinutesWorked != expectedMinuteInMonth)
@@ -307,9 +310,9 @@ namespace ServiceLayer.Code.PayrollCycle
             return ptax.TaxAmount;
         }
 
-        private async Task<Tuple<decimal, decimal>> GetMonthlyMinutesConsideringWeekoffNHoliday(PayrollCalculationModal payrollCalculationModal)
+        private async Task<Tuple<decimal, decimal>> GetMonthlyMinutesConsideringWeekoffNHoliday(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
         {
-            List<AttendanceJson> attendance = GetTotalAttendance(payrollCalculationModal.employeeId, payrollCalculationModal.payrollEmployeeDatas);
+            List<AttendanceJson> attendance = GetTotalAttendance(payrollCalculationModal.employeeId, payrollCalculationModal.payrollEmployeeDatas, payrollRunDay);
             decimal actualMinutesWorked = 0;
             if (attendance.Count > 0)
                 actualMinutesWorked = attendance.Select(x => x.TotalMinutes).Aggregate((x, y) => x + y);
