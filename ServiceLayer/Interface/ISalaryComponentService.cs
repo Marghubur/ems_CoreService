@@ -35,5 +35,6 @@ namespace ServiceLayer.Interface
         List<AnnualSalaryBreakup> UpdateSalaryBreakUp(EmployeeCalculation eCal, EmployeeSalaryDetail salaryBreakup);
         Task GetEmployeeSalaryDetail(EmployeeCalculation employeeCalculation);
         List<SalaryGroup> CloneSalaryGroupService(SalaryGroup salaryGroup);
+        Task<dynamic> GetSalaryGroupAndComponentService();
     }
 }

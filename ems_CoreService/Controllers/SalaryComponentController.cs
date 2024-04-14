@@ -343,5 +343,20 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, salaryGroup);
             }
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("GetSalaryGroupAndComponent")]
+        public async Task<ApiResponse> GetSalaryGroupAndComponent()
+        {
+            try
+            {
+                var result = await _salaryComponentService.GetSalaryGroupAndComponentService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
     }
 }

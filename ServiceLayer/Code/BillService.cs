@@ -397,7 +397,7 @@ namespace ServiceLayer.Code
         private async Task BuildBackAccountDetail(BillGenerationModal billModal)
         {
             if (billModal.ResultSet.Tables[5] == null || billModal.ResultSet.Tables[5].Rows.Count != 1)
-                throw new HiringBellException("Unable to find sender back account detail.");
+                throw HiringBellException.ThrowBadRequest("Unable to find sender back account detail.");
 
             billModal.SenderBankDetail = Converter.ToType<BankDetail>(billModal.ResultSet.Tables[5]);
 
@@ -673,7 +673,7 @@ namespace ServiceLayer.Code
                 await SaveExecuteBill(billModal);
 
                 // get email notification detail
-                EmailTemplate emailTemplate = _templateService.GetBillingTemplateDetailService();
+                EmailTemplate emailTemplate = GetEmailTemplateService();
                 emailTemplate.Emails = emails;
 
                 // return result data
@@ -1174,7 +1174,7 @@ namespace ServiceLayer.Code
                 this.CleanOldFiles(fileDetail);
 
                 // generate pdf files
-                await GeneratePayslipPdfFile(payslipGenerationModal);
+                 await GeneratePayslipPdfFile(payslipGenerationModal);
 
                 // return result data
                 return await Task.FromResult(new { FileDetail = fileDetail });
@@ -1258,6 +1258,8 @@ namespace ServiceLayer.Code
             {
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + item.ComponentName + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
             }

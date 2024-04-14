@@ -1708,5 +1708,24 @@ namespace ServiceLayer.Code
 
             await Task.CompletedTask;
         }
+
+        public async Task<dynamic> GetSalaryGroupAndComponentService()
+        {
+            (List<SalaryGroup> salaryGroups, List<SalaryComponents> salaryComponents) = _db.GetList<SalaryGroup, SalaryComponents>(Procedures.SALARY_GROUP_AND_COMPONENTS_GET, new
+            {
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            });
+
+            if (salaryGroups.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Salary group not found. Please contact to admin");
+
+            if (salaryComponents.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Salary components not found. Please contact to admin");
+
+            var salaryGroup = salaryGroups[0];
+            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
+
+            return await Task.FromResult(new { SalaryGroup = salaryGroup, SalaryComponents = salaryComponents });
+        }
     }
 }
