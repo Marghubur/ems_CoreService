@@ -28,6 +28,7 @@ namespace ModalLayer.Modal.Accounts
         public string ComponentName { set; get; }
         public string Formula { set; get; }
         public decimal FinalAmount { set; get; }
+        public decimal ActualAmount { set; get; } // this is the actual amount considering the complete day as working in a month
         public decimal ComponentTypeId { set; get; }
         public bool IsIncludeInPayslip { get; set; }
     }
