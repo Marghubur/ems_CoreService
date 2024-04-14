@@ -1458,7 +1458,7 @@ namespace ServiceLayer.Code
 
         public dynamic GetSalaryBreakupByEmpIdService(long EmployeeId)
         {
-            (EmployeeSalaryDetail completeSalaryBreakup, UserDetail userDetail) = _db.GetMulti<EmployeeSalaryDetail, UserDetail>("sp_employee_salary_detail_get_by_empid", new { EmployeeId });
+            (EmployeeSalaryDetail completeSalaryBreakup, UserDetail userDetail) = _db.GetMulti<EmployeeSalaryDetail, UserDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId });
             return new { completeSalaryBreakup, userDetail };
         }
 
