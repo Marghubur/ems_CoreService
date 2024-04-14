@@ -389,6 +389,7 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
+                    item.ActualAmount = item.FinalAmount;
                     item.FinalAmount = (item.FinalAmount / minuteUsedForDeduction) * minutePresnet;
                     switch (item.ComponentId)
                     {
