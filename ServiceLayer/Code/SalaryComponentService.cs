@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -1069,7 +1070,7 @@ namespace ServiceLayer.Code
 
             decimal amount = 0;
             decimal taxableComponentAmount = 0;
-            List<SalaryComponents> taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false).ToList();
+            List<SalaryComponents> taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false || x.ComponentId == "EPF").ToList();
 
             var autoComponent = taxableComponents.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (autoComponent == null)
@@ -1087,9 +1088,38 @@ namespace ServiceLayer.Code
 
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
                 {
-                    if (item.ComponentId == "EPER-PF")
+                    if (item.ComponentId == "EPF" && !string.IsNullOrEmpty(eCal.employee.EmployeePF))
                     {
-                        if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
+                        if (eCal.employee.EmployeePF.Contains("basic", StringComparison.OrdinalIgnoreCase))
+                        {
+                            decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
+                            item.Formula = eCal.employee.EmployeePF.Replace(" of Basic", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase);
+                        }
+                        else
+                        {
+                            item.Formula = eCal.employee.EmployeePF;
+                        }
+                        amount = calculateExpressionUsingInfixDS(item.Formula, 0);
+                        amount = amount / 12;
+                    }
+                    else if (item.ComponentId == "EPER-PF")
+                    {
+                        if (!string.IsNullOrEmpty(eCal.employee.EmployerPF))
+                        {
+                            if (eCal.employee.EmployerPF.Contains("basic", StringComparison.OrdinalIgnoreCase))
+                            {
+                                decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
+                                item.Formula = eCal.employee.EmployerPF.Replace(" of BASIC inclusive to CTC", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                                        .Replace(" of BASIC exclusive to CTC", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase);
+                            } else
+                            {
+                                Match match = Regex.Match(eCal.employee.EmployerPF, @"\d+");
+                                item.Formula = match.Value;
+                            }
+                            amount = calculateExpressionUsingInfixDS(item.Formula, 0);
+                            amount = amount / 12;
+                        }
+                        else if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
                         {
                             item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
                             amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
@@ -1378,9 +1408,9 @@ namespace ServiceLayer.Code
                     IsArrearMonth = (eCal.companySetting.IsJoiningBarrierDayPassed && currentYearMonthFlag),
                     PresentMonthDate = startDate,
                     IsActive = !IsJoinedInMiddleOfCalendar,
+                    StateName = eCal.employee.BaseLocation,
                     SalaryBreakupDetails = otherDetails
                 });
-
 
                 startDate = startDate.AddMonths(1);
                 index++;

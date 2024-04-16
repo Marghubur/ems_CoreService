@@ -45,6 +45,7 @@ namespace ModalLayer.Modal.Accounts
         // e.g. if joined, then current and onword month's he/she is eligible but not for previous month of current financial year.
         public bool IsActive { set; get; }
         public bool IsPreviouEmployer { get; set; } = false;
+        public string StateName { get; set; }
         public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
     }
 }
