@@ -49,8 +49,9 @@ namespace ModalLayer.Modal
         public DateTime AssigneDate { set; get; }
         public string LeaveTypeBriefJson { set; get; }
         public long EmployeeDeclarationId { set; get; }
-
-
+        public string EmployeePF { get; set; }
+        public string EmployerPF { get; set; }
+        public string BaseLocation { get; set; }
     }
 
     public class EmployeeAccrualData

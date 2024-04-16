@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -1174,7 +1175,7 @@ namespace ServiceLayer.Code
                 this.CleanOldFiles(fileDetail);
 
                 // generate pdf files
-                 await GeneratePayslipPdfFile(payslipGenerationModal);
+                await GeneratePayslipPdfFile(payslipGenerationModal);
 
                 // return result data
                 return await Task.FromResult(new { FileDetail = fileDetail });
@@ -1253,14 +1254,20 @@ namespace ServiceLayer.Code
             //declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
 
             var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
-
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
             foreach (var item in salaryDetail)
             {
+                var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth);
+                decimal YTDAmount = 0;
+                YTDSalaryBreakup.ForEach(x =>
+                {
+                    YTDAmount += x.SalaryBreakupDetails.Find(i => i.ComponentId == item.ComponentId).FinalAmount;
+                });
                 salaryDetailsHTML += "<tr>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + item.ComponentName + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
             }
 
@@ -1401,8 +1408,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Salary breakup not found. Please contact to admin");
 
             payslipGenerationModal.Gross = SalaryDetail.GrossIncome;
-            var allSalaryDetails = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(SalaryDetail.CompleteSalaryDetail);
-            payslipGenerationModal.SalaryDetail = allSalaryDetails.Find(x => x.MonthNumber == payslipGenerationModal.Month);
+            payslipGenerationModal.AnnualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(SalaryDetail.CompleteSalaryDetail);
+            payslipGenerationModal.SalaryDetail = payslipGenerationModal.AnnualSalaryBreakup.Find(x => x.MonthNumber == payslipGenerationModal.Month);
             if (payslipGenerationModal.SalaryDetail == null)
                 throw new HiringBellException("Salary breakup of your selected month is not found");
 

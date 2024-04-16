@@ -22,5 +22,6 @@ namespace ModalLayer.Modal
         public decimal Gross { get; set; }
         public List<PTaxSlab> PTaxSlabs { get; set; }
         public List<EmployeeRole> EmployeeRoles { get; set; }
+        public List<AnnualSalaryBreakup> AnnualSalaryBreakup {get; set;}
     }
 }
