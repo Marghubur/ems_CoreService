@@ -109,7 +109,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
             Employee employee = new Employee
             {
-                AadharNo = "NA",
+                AadharNo = emp.AadharNo,
                 AccountNumber = "NA",
                 BankName = "NA",
                 BranchName = "NA",
@@ -154,7 +154,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 DateOfJoining = emp.DOJ,
                 DOB = new DateTime(1990, 5, 16),
                 WorkShiftId = 1,
-                IsCTCChanged = false
+                IsCTCChanged = false,
+                EmployerPF = emp.EmployerPF,
+                EmployeePF = emp.EmployeePF
             };
 
             var Names = emp.EmployeeName.Split(' ');

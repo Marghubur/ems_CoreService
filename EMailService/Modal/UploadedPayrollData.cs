@@ -27,5 +27,9 @@ namespace ModalLayer.Modal
         public decimal PR_EPER_PT { set; get; }
         public decimal PR_EPER_TDS { set; get; }
         public decimal PR_EPER_TotalIncome { set; get; }
+        public string AadharNo { set; get; }
+        public string EmployeePF { get; set; }
+        public string EmployerPF { get; set; }
+        public string BaseLocation { get; set; }
     }
 }
