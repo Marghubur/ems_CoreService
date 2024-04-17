@@ -1062,6 +1062,28 @@ namespace ServiceLayer.Code
             return calculatedSalaryBreakupDetail;
         }
 
+        private string GetConvertedFormula(EmployeeCalculation eCal, string userFormula)
+        {
+            decimal basicAmountValue = 0;
+            string formula = userFormula;
+
+            if (userFormula.Contains("basic", StringComparison.OrdinalIgnoreCase))
+            {
+                basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
+            }
+
+            var elems = formula.Split(" ");
+            if (elems != null && elems.Length > 0)
+            {
+                if (int.TryParse(elems[0].Trim(), out int value))
+                {
+                    formula = $"{value}%{basicAmountValue}";
+                }
+            }
+
+            return formula;
+        }
+
         private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime currentDate, decimal calculatedMontlyGross, bool currentYearMonthFlag)
         {
             _logger.LogInformation("Starting method: GetComponentsDetail");
@@ -1070,12 +1092,14 @@ namespace ServiceLayer.Code
 
             decimal amount = 0;
             decimal taxableComponentAmount = 0;
-            List<SalaryComponents> taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false || x.ComponentId == "EPF").ToList();
+            List<SalaryComponents> taxableComponents = eCal.salaryGroup.GroupComponents
+                                                        .Where(x => x.TaxExempt == false || x.ComponentId == LocalConstants.EPF)
+                                                        .ToList();
 
             var autoComponent = taxableComponents.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (autoComponent == null)
             {
-                var spaComponent = taxableComponents.Find(x => x.ComponentId == "SPA");
+                var spaComponent = taxableComponents.Find(x => x.ComponentId == LocalConstants.SPA);
                 if (spaComponent != null && string.IsNullOrEmpty(spaComponent.Formula))
                 {
                     spaComponent.Formula = ApplicationConstants.AutoCalculation;
@@ -1088,41 +1112,24 @@ namespace ServiceLayer.Code
 
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
                 {
-                    if (item.ComponentId == "EPF" && !string.IsNullOrEmpty(eCal.employee.EmployeePF))
+                    if (item.ComponentId == LocalConstants.EPF && !string.IsNullOrEmpty(eCal.employee.EmployeePF))
                     {
-                        if (eCal.employee.EmployeePF.Contains("basic", StringComparison.OrdinalIgnoreCase))
-                        {
-                            decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
-                            item.Formula = eCal.employee.EmployeePF.Replace(" of Basic", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase);
-                        }
-                        else
-                        {
-                            item.Formula = eCal.employee.EmployeePF;
-                        }
+                        item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployeePF);
                         amount = calculateExpressionUsingInfixDS(item.Formula, 0);
                         amount = amount / 12;
                     }
-                    else if (item.ComponentId == "EPER-PF")
+                    else if (item.ComponentId == LocalConstants.EEPF)
                     {
                         if (!string.IsNullOrEmpty(eCal.employee.EmployerPF))
                         {
-                            if (eCal.employee.EmployerPF.Contains("basic", StringComparison.OrdinalIgnoreCase))
-                            {
-                                decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
-                                item.Formula = eCal.employee.EmployerPF.Replace(" of BASIC inclusive to CTC", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase)
-                                                                        .Replace(" of BASIC exclusive to CTC", basicAmountValue.ToString(), StringComparison.OrdinalIgnoreCase);
-                            } else
-                            {
-                                Match match = Regex.Match(eCal.employee.EmployerPF, @"\d+");
-                                item.Formula = match.Value;
-                            }
+                            item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployerPF);
                             amount = calculateExpressionUsingInfixDS(item.Formula, 0);
                             amount = amount / 12;
                         }
                         else if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
                         {
                             item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
-                            amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                            amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                             amount = amount / 12;
 
                             if (currentYearMonthFlag)
@@ -1144,7 +1151,7 @@ namespace ServiceLayer.Code
                             item.IncludeInPayslip = false;
                         }
                     }
-                    else if (item.ComponentId == "ECI")
+                    else if (item.ComponentId == LocalConstants.ECI)
                     {
                         if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.EsiEnable)
                         {
@@ -1161,11 +1168,8 @@ namespace ServiceLayer.Code
                         amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                         amount = amount / 12;
 
-                        //eCal.companySetting.IsJoiningBarrierDayPassed = false;
-
                         if (currentYearMonthFlag)
                         {
-                            //eCal.companySetting.IsJoiningBarrierDayPassed = true;
                             int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
                             int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
                             if (daysWorked <= 0)
