@@ -6,7 +6,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using ServiceLayer.Interface;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using System;
 using System.Collections.Generic;
 using System.Net;

@@ -8,15 +8,15 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Code
+namespace ServiceLayer.Code.PayrollCycle.Code
 {
     public class SalaryComponentService : ISalaryComponentService
     {
@@ -62,8 +62,8 @@ namespace ServiceLayer.Code
 
         public dynamic GetCustomSalryPageDataService(int CompanyId)
         {
-            List<SalaryGroup> salaryGroups = this.GetSalaryGroupService(CompanyId);
-            List<SalaryComponents> salaryComponents = this.GetSalaryComponentsDetailService();
+            List<SalaryGroup> salaryGroups = GetSalaryGroupService(CompanyId);
+            List<SalaryComponents> salaryComponents = GetSalaryComponentsDetailService();
             return new { SalaryComponents = salaryComponents, SalaryGroups = salaryGroups };
         }
 
@@ -269,7 +269,7 @@ namespace ServiceLayer.Code
             }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
+            List<SalaryGroup> value = GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
         }
 
@@ -361,7 +361,7 @@ namespace ServiceLayer.Code
             else
                 await updateSalaryGroupByUdatingComponent(value);
 
-            List<SalaryComponents> salaryComponents = this.GetSalaryComponentsDetailService();
+            List<SalaryComponents> salaryComponents = GetSalaryComponentsDetailService();
             return salaryComponents;
         }
 
@@ -470,7 +470,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to add adhoc component.");
 
-            return this.GetSalaryComponentsDetailService();
+            return GetSalaryComponentsDetailService();
         }
 
         public List<SalaryComponents> AddDeductionComponents(SalaryStructure deductionComponent)
@@ -531,7 +531,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to add deduction component.");
 
-            return this.GetSalaryComponentsDetailService();
+            return GetSalaryComponentsDetailService();
         }
 
         public List<SalaryComponents> AddBonusComponents(SalaryComponents bonusComponent)
@@ -587,7 +587,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to add bonus component.");
 
-            return this.GetSalaryComponentsDetailService();
+            return GetSalaryComponentsDetailService();
         }
 
         public List<SalaryGroup> UpdateSalaryGroup(SalaryGroup salaryGroup)
@@ -596,7 +596,7 @@ namespace ServiceLayer.Code
             salaryGroups = salaryGroups.Where(x => x.SalaryGroupId != salaryGroup.SalaryGroupId && x.CompanyId == _currentSession.CurrentUserDetail.CompanyId).ToList();
             foreach (SalaryGroup existSalaryGroup in salaryGroups)
             {
-                if ((salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount) || (salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount))
+                if (salaryGroup.MinAmount < existSalaryGroup.MinAmount && salaryGroup.MinAmount > existSalaryGroup.MaxAmount || salaryGroup.MaxAmount > existSalaryGroup.MinAmount && salaryGroup.MaxAmount < existSalaryGroup.MaxAmount)
                     throw new HiringBellException("Salary group limit already exist");
             }
             SalaryGroup salaryGrp = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { salaryGroup.SalaryGroupId });
@@ -617,7 +617,7 @@ namespace ServiceLayer.Code
             var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
+            List<SalaryGroup> value = GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
         }
 
@@ -676,14 +676,14 @@ namespace ServiceLayer.Code
             var result = _db.Execute<SalaryGroup>(Procedures.Salary_Group_Insupd, salaryGrp, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
-            List<SalaryComponents> value = this.GetSalaryGroupComponents(salaryGroup.SalaryGroupId, Convert.ToDecimal(salaryGroup.CTC));
+            List<SalaryComponents> value = GetSalaryGroupComponents(salaryGroup.SalaryGroupId, Convert.ToDecimal(salaryGroup.CTC));
             return value;
         }
 
         public List<SalaryComponents> GetSalaryGroupComponents(int salaryGroupId, decimal CTC)
         {
             SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_Get_By_Id_Or_Ctc,
-                new { SalaryGroupId = salaryGroupId, CTC, CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+                new { SalaryGroupId = salaryGroupId, CTC, _currentSession.CurrentUserDetail.CompanyId });
             if (salaryGroup == null)
             {
                 salaryGroup = GetDefaultSalaryGroup();
@@ -749,7 +749,7 @@ namespace ServiceLayer.Code
             if (_currentSession.TimeZone != null)
                 present = _timezoneConverter.ToIstTime(present);
 
-            AnnualSalaryBreakup matchedSalaryBreakups = annualSalaryBreakups.Where(x => x.PresentMonthDate.Subtract(present).TotalDays >= 0).FirstOrDefault<AnnualSalaryBreakup>();
+            AnnualSalaryBreakup matchedSalaryBreakups = annualSalaryBreakups.Where(x => x.PresentMonthDate.Subtract(present).TotalDays >= 0).FirstOrDefault();
             if (matchedSalaryBreakups == null)
                 throw new HiringBellException("Invalid data found in salary detail. Please contact to admin.");
             else
@@ -766,7 +766,7 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
-            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId = EmployeeId });
+            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId });
             if (employeeSalaryDetail == null)
                 throw new HiringBellException("Fail to get salary detail. Please contact to admin.");
 
@@ -803,27 +803,27 @@ namespace ServiceLayer.Code
             if (gratutity != null && !string.IsNullOrEmpty(gratutity.Formula))
             {
                 if (gratutity.Formula.Contains("[CTC]"))
-                    gratutity.Formula = gratutity.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+                    gratutity.Formula = gratutity.Formula.Replace("[CTC]", Convert.ToDecimal(CTC).ToString());
 
-                finalAmount += this.calculateExpressionUsingInfixDS(gratutity.Formula, gratutity.DeclaredValue);
+                finalAmount += calculateExpressionUsingInfixDS(gratutity.Formula, gratutity.DeclaredValue);
             }
 
             var employeePF = salaryComponents.FirstOrDefault(x => x.ComponentId.ToUpper() == "EPER-PF");
             if (employeePF != null && !string.IsNullOrEmpty(employeePF.Formula))
             {
                 if (employeePF.Formula.Contains("[CTC]"))
-                    employeePF.Formula = employeePF.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+                    employeePF.Formula = employeePF.Formula.Replace("[CTC]", Convert.ToDecimal(CTC).ToString());
 
-                finalAmount += this.calculateExpressionUsingInfixDS(employeePF.Formula, employeePF.DeclaredValue);
+                finalAmount += calculateExpressionUsingInfixDS(employeePF.Formula, employeePF.DeclaredValue);
             }
 
             var employeeInsurance = salaryComponents.FirstOrDefault(x => x.ComponentId.ToUpper() == "ECI");
             if (employeeInsurance != null && !string.IsNullOrEmpty(employeeInsurance.Formula))
             {
                 if (employeeInsurance.Formula.Contains("[CTC]"))
-                    employeeInsurance.Formula = employeeInsurance.Formula.Replace("[CTC]", (Convert.ToDecimal(CTC)).ToString());
+                    employeeInsurance.Formula = employeeInsurance.Formula.Replace("[CTC]", Convert.ToDecimal(CTC).ToString());
 
-                finalAmount += this.calculateExpressionUsingInfixDS(employeeInsurance.Formula, employeeInsurance.DeclaredValue);
+                finalAmount += calculateExpressionUsingInfixDS(employeeInsurance.Formula, employeeInsurance.DeclaredValue);
             }
 
             return finalAmount;
@@ -839,7 +839,7 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in taxExamptedComponents)
                 {
-                    finalAmount += this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    finalAmount += calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                 }
             }
 
@@ -858,10 +858,10 @@ namespace ServiceLayer.Code
                 if (!string.IsNullOrEmpty(basicComponent.Formula))
                 {
                     if (basicComponent.Formula.Contains(ComponentNames.CTCName))
-                        basicComponent.Formula = basicComponent.Formula.Replace(ComponentNames.CTCName, (Convert.ToDecimal(CTC)).ToString());
+                        basicComponent.Formula = basicComponent.Formula.Replace(ComponentNames.CTCName, Convert.ToDecimal(CTC).ToString());
                 }
 
-                finalAmount = this.calculateExpressionUsingInfixDS(basicComponent.Formula, basicComponent.DeclaredValue);
+                finalAmount = calculateExpressionUsingInfixDS(basicComponent.Formula, basicComponent.DeclaredValue);
             }
             _logger.LogInformation("Leaving method: GetBaiscAmountValue");
 
@@ -924,8 +924,8 @@ namespace ServiceLayer.Code
 
                 var result = _db.Execute<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
                 {
-                    EmployeeId = x.EmployeeId,
-                    TaxDetail = x.TaxDetail,
+                    x.EmployeeId,
+                    x.TaxDetail,
                     CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups)
                 }, true);
                 if (string.IsNullOrEmpty(result))
@@ -965,7 +965,7 @@ namespace ServiceLayer.Code
                     if (item.Formula.Contains(ComponentNames.BasicName))
                         item.Formula = item.Formula.Replace(ComponentNames.BasicName, basicAmountValue.ToString());
                     else if (item.Formula.Contains(ComponentNames.CTCName))
-                        item.Formula = item.Formula.Replace(ComponentNames.CTCName, (Convert.ToDecimal(eCal.CTC)).ToString());
+                        item.Formula = item.Formula.Replace(ComponentNames.CTCName, Convert.ToDecimal(eCal.CTC).ToString());
                 }
 
                 i++;
@@ -1049,7 +1049,7 @@ namespace ServiceLayer.Code
             if (employerPFComponents.ComponentId == null)
                 throw HiringBellException.ThrowBadRequest("EmployerPR component is not defined. Please add one.");
 
-            decimal amount = this.calculateExpressionUsingInfixDS(employerPFComponents.Formula, employerPFComponents.DeclaredValue);
+            decimal amount = calculateExpressionUsingInfixDS(employerPFComponents.Formula, employerPFComponents.DeclaredValue);
 
             CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
             calculatedSalaryBreakupDetail.ComponentId = employerPFComponents.ComponentId;
@@ -1082,7 +1082,8 @@ namespace ServiceLayer.Code
                     {
                         formula = $"{value}%{basicAmountValue}";
                     }
-                } else
+                }
+                else
                 {
                     if (int.TryParse(elems[0].Trim(), out int value))
                     {
@@ -1145,14 +1146,14 @@ namespace ServiceLayer.Code
                             if (currentYearMonthFlag)
                             {
                                 int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                                int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                                int daysWorked = numberOfDays - eCal.Doj.Day + 1;
                                 if (daysWorked <= 0)
                                 {
                                     amount = 0;
                                 }
                                 else
                                 {
-                                    amount = (amount / numberOfDays) * daysWorked;
+                                    amount = amount / numberOfDays * daysWorked;
                                 }
                             }
                         }
@@ -1175,20 +1176,20 @@ namespace ServiceLayer.Code
                     }
                     else
                     {
-                        amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                        amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
                         amount = amount / 12;
 
                         if (currentYearMonthFlag)
                         {
                             int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                            int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                            int daysWorked = numberOfDays - eCal.Doj.Day + 1;
                             if (daysWorked <= 0)
                             {
                                 amount = 0;
                             }
                             else
                             {
-                                amount = (amount / numberOfDays) * daysWorked;
+                                amount = amount / numberOfDays * daysWorked;
                             }
                         }
                     }
@@ -1215,7 +1216,7 @@ namespace ServiceLayer.Code
             var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (component != null)
             {
-                component.ActualAmount = (calculatedMontlyGross - taxableComponentAmount);
+                component.ActualAmount = calculatedMontlyGross - taxableComponentAmount;
             }
 
             // calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
@@ -1235,7 +1236,7 @@ namespace ServiceLayer.Code
             DateTime currentDate = annualSalaryBreakup.PresentMonthDate;
 
             var taxableComponents = eCal.salaryGroup.GroupComponents.Where(x => x.TaxExempt == false);
-            eCal.pfEsiSetting = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            eCal.pfEsiSetting = _db.Get<PfEsiSetting>("sp_pf_esi_setting_get", new { _currentSession.CurrentUserDetail.CompanyId });
             if (eCal.pfEsiSetting == null)
                 throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
 
@@ -1248,20 +1249,20 @@ namespace ServiceLayer.Code
                         if (eCal.pfEsiSetting.PFEnable)
                         {
                             item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
-                            amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                            amount = (amount / 12);
+                            amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                            amount = amount / 12;
 
                             if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
                             {
                                 int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                                int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                                int daysWorked = numberOfDays - eCal.Doj.Day + 1;
                                 if (daysWorked <= 0)
                                 {
                                     amount = 0;
                                 }
                                 else
                                 {
-                                    amount = (amount / numberOfDays) * daysWorked;
+                                    amount = amount / numberOfDays * daysWorked;
                                 }
                             }
                         }
@@ -1285,20 +1286,20 @@ namespace ServiceLayer.Code
                     }
                     else
                     {
-                        amount = this.calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                        amount = (amount / 12);
+                        amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                        amount = amount / 12;
 
                         if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == currentDate.Month)
                         {
                             int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                            int daysWorked = (numberOfDays - eCal.Doj.Day) + 1;
+                            int daysWorked = numberOfDays - eCal.Doj.Day + 1;
                             if (daysWorked <= 0)
                             {
                                 amount = 0;
                             }
                             else
                             {
-                                amount = (amount / numberOfDays) * daysWorked;
+                                amount = amount / numberOfDays * daysWorked;
                             }
                         }
                     }
@@ -1322,7 +1323,7 @@ namespace ServiceLayer.Code
 
             var autoComponent = calculatedSalaryBreakupDetail.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (autoComponent != null)
-                autoComponent.ActualAmount = (monthlyGrossIncome - taxableComponentAmount);
+                autoComponent.ActualAmount = monthlyGrossIncome - taxableComponentAmount;
 
             if (monthlyGrossIncome < taxableComponentAmount)
                 throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
@@ -1346,7 +1347,7 @@ namespace ServiceLayer.Code
                 if (numberOfDaysInPresentMonth <= 0)
                     return 0;
 
-                monthlyGross = (monthlyGross / numberOfDays) * numberOfDaysInPresentMonth;
+                monthlyGross = monthlyGross / numberOfDays * numberOfDaysInPresentMonth;
             }
 
             return monthlyGross;
@@ -1368,7 +1369,7 @@ namespace ServiceLayer.Code
 
             bool currentYearMonthFlag = false;
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = null;
-            eCal.pfEsiSetting = _db.Get<PfEsiSetting>(Procedures.Pf_Esi_Setting_Get, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            eCal.pfEsiSetting = _db.Get<PfEsiSetting>(Procedures.Pf_Esi_Setting_Get, new { _currentSession.CurrentUserDetail.CompanyId });
             //if (eCal.pfEsiSetting == null)
             //    throw HiringBellException.ThrowBadRequest("PF and ESI setting is not found. Please contact contact to admin");
 
@@ -1423,7 +1424,7 @@ namespace ServiceLayer.Code
                     MonthName = startDate.ToString("MMM"),
                     IsPayrollExecutedForThisMonth = IsJoinedInMiddleOfCalendar,
                     MonthNumber = startDate.Month,
-                    IsArrearMonth = (eCal.companySetting.IsJoiningBarrierDayPassed && currentYearMonthFlag),
+                    IsArrearMonth = eCal.companySetting.IsJoiningBarrierDayPassed && currentYearMonthFlag,
                     PresentMonthDate = startDate,
                     IsActive = !IsJoinedInMiddleOfCalendar,
                     StateName = eCal.employee.BaseLocation,
@@ -1445,7 +1446,7 @@ namespace ServiceLayer.Code
 
 
             List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails = new List<CalculatedSalaryBreakupDetail>();
-            List<SalaryComponents> salaryComponents = this.GetSalaryGroupComponentsByCTC(EmployeeId, CTCAnnually);
+            List<SalaryComponents> salaryComponents = GetSalaryGroupComponentsByCTC(EmployeeId, CTCAnnually);
 
             CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = null;
             foreach (var item in salaryComponents)
@@ -1688,7 +1689,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert or update.");
 
-            List<SalaryGroup> value = this.GetSalaryGroupService(salaryGroup.CompanyId);
+            List<SalaryGroup> value = GetSalaryGroupService(salaryGroup.CompanyId);
             return value;
         }
 
@@ -1717,19 +1718,19 @@ namespace ServiceLayer.Code
             if (ResultSet.Tables[6].Rows.Count == 0)
                 throw new Exception("Company Shift data not found. Please contact to admin");
 
-            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(ResultSet.Tables[3]);
-            employeeCalculation.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ResultSet.Tables[1]);
+            employeeCalculation.salaryComponents = ResultSet.Tables[3].ToList<SalaryComponents>();
+            employeeCalculation.employeeSalaryDetail = ResultSet.Tables[1].ToType<EmployeeSalaryDetail>();
             employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.DateOfJoining;
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(ResultSet.Tables[0]);
-            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(ResultSet.Tables[4]);
-            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(ResultSet.Tables[5]);
-            employeeCalculation.shiftDetail = Converter.ToType<ShiftDetail>(ResultSet.Tables[6]);
+            employeeCalculation.salaryGroup = ResultSet.Tables[0].ToType<SalaryGroup>();
+            employeeCalculation.surchargeSlabs = ResultSet.Tables[4].ToList<SurChargeSlab>();
+            employeeCalculation.ptaxSlab = ResultSet.Tables[5].ToList<PTaxSlab>();
+            employeeCalculation.shiftDetail = ResultSet.Tables[6].ToType<ShiftDetail>();
 
             if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
                 employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
 
-            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(ResultSet.Tables[2]);
+            employeeCalculation.companySetting = ResultSet.Tables[2].ToType<CompanySetting>();
             employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
                 employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -1761,7 +1762,7 @@ namespace ServiceLayer.Code
         {
             (List<SalaryGroup> salaryGroups, List<SalaryComponents> salaryComponents) = _db.GetList<SalaryGroup, SalaryComponents>(Procedures.SALARY_GROUP_AND_COMPONENTS_GET, new
             {
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                _currentSession.CurrentUserDetail.CompanyId
             });
 
             if (salaryGroups.Count == 0)

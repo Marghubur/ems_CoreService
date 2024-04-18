@@ -17,9 +17,8 @@ using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -42,7 +41,7 @@ namespace ServiceLayer.Code
         private readonly IConfiguration _configuration;
         private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
-        private ILogger<EmployeeService> _logger;
+        private readonly ILogger<EmployeeService> _logger;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IEMailManager _eMailManager;
@@ -688,7 +687,7 @@ namespace ServiceLayer.Code
             return declarationId;
         }
 
-        private EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation)
+        public EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation)
         {
             _logger.LogInformation("Starting method: GetEmployeeDetail");
 
@@ -802,7 +801,7 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false)
+        public async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false)
         {
             bool IsNewRegistration = false;
 
@@ -1644,52 +1643,6 @@ namespace ServiceLayer.Code
             return await Task.FromResult(status);
         }
 
-        public async Task<string> UpdateEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
-        {
-            if (employee.EmployeeUid <= 0)
-                throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
-
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            employeeCalculation.employee = employee;
-            this.GetEmployeeDetail(employeeCalculation);
-
-            employeeCalculation.Doj = employee.DateOfJoining;
-            employeeCalculation.IsFirstYearDeclaration = false;
-            employeeCalculation.employee.IsCTCChanged = true;
-
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
-
-            if (!string.IsNullOrEmpty(result))
-            {
-                List<EmployeeDeclaration> employeeDeclarations = new List<EmployeeDeclaration>();
-                string componentId = string.Empty;
-                foreach (var item in uploaded.Investments)
-                {
-                    var values = item.Key.Split(" (");
-                    if (values.Length > 0)
-                    {
-                        componentId = values[0].Trim();
-                        EmployeeDeclaration employeeDeclaration = new EmployeeDeclaration
-                        {
-                            ComponentId = componentId,
-                            DeclaredValue = item.Value,
-                            Email = employee.Email,
-                            EmployeeId = employee.EmployeeUid
-                        };
-                    }
-                }
-                try
-                {
-                    await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
-                }
-                catch
-                {
-                    _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {employee.EmployeeDeclarationId}");
-                }
-            }
-            return null;
-        }
-
         private void SetupPreviousEmployerIncome(EmployeeCalculation employeeCalculation, UploadedPayrollData uploaded)
         {
             var pemp = new PreviousEmployerDetail
@@ -1861,7 +1814,7 @@ namespace ServiceLayer.Code
                     }
                 }
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }
@@ -1936,9 +1889,9 @@ namespace ServiceLayer.Code
                                             break;
                                     }
                                 }
-                                catch (Exception ex)
+                                catch
                                 {
-                                    throw ex;
+                                    throw;
                                 }
                             }
                         });
@@ -1948,13 +1901,9 @@ namespace ServiceLayer.Code
                     }
                 }
             }
-            catch (MySqlException ex)
+            catch
             {
-                throw ex;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                throw;
             }
 
             return items;

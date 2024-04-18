@@ -16,6 +16,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -1265,7 +1266,7 @@ namespace ServiceLayer.Code
                 });
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.ActualAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
@@ -1274,7 +1275,7 @@ namespace ServiceLayer.Code
             decimal employerPFAmount = 0;
             var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF");
             if (employerPF != null)
-                employerPFAmount = employerPF.ActualAmount;
+                employerPFAmount = employerPF.FinalAmount;
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount);

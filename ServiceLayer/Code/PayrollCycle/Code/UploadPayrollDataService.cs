@@ -7,7 +7,6 @@ using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
@@ -26,13 +25,17 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         private readonly IDb _db;
         private readonly IEmployeeService _employeeService;
         private readonly CurrentSession _currentSession;
+        private readonly IRegisterEmployeeCalculateDeclaration _registerEmployeeCalculateDeclaration;
 
-        public UploadPayrollDataService(IDb db, IEmployeeService employeeService, CurrentSession currentSession)
+        public UploadPayrollDataService(IDb db,
+            IEmployeeService employeeService,
+            CurrentSession currentSession,
+            IRegisterEmployeeCalculateDeclaration registerEmployeeCalculateDeclaration)
         {
             _db = db;
             _employeeService = employeeService;
             _currentSession = currentSession;
-
+            _registerEmployeeCalculateDeclaration = registerEmployeeCalculateDeclaration;
         }
 
         public async Task<List<UploadedPayrollData>> ReadPayrollDataService(IFormFileCollection files)
@@ -76,7 +79,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                         {
                             em.CTC = e.CTC;
                             em.IsCTCChanged = true;
-                            await _employeeService.UpdateEmployeeByExcelService(em, null, null);
+                            // await _employeeService.UpdateEmployeeByExcelService(em, null, null);
+                            await _registerEmployeeCalculateDeclaration.UpdateEmployeeService(em, null, null);
                         }
                     }
                     else
@@ -236,7 +240,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 if (data.CTC <= 0)
                     throw HiringBellException.ThrowBadRequest("CTC is zero");
 
-                if (data.DOJ == null)
+                if (data?.DOJ == null)
                     throw HiringBellException.ThrowBadRequest("DOJ is invalid");
 
             }

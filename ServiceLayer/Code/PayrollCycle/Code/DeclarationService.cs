@@ -14,6 +14,7 @@ using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Code
+namespace ServiceLayer.Code.PayrollCycle.Code
 {
     public class DeclarationService : IDeclarationService
     {
@@ -74,7 +75,7 @@ namespace ServiceLayer.Code
         public async Task<EmployeeDeclaration> UpdateDeclarationDetail(long EmployeeDeclarationId, EmployeeDeclaration employeeDeclaration, IFormFileCollection FileCollection, List<Files> files)
         {
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
-            EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            EmployeeDeclaration declaration = GetDeclarationById(EmployeeDeclarationId);
             if (declaration.EmployeeCurrentRegime != 1)
                 throw HiringBellException.ThrowBadRequest("You can't submit the declration because you have selected new tax regime");
 
@@ -116,7 +117,7 @@ namespace ServiceLayer.Code
             }
 
             await ExecuteDeclarationDetail(files, declaration, FileCollection, salaryComponent);
-            return await this.GetEmployeeDeclarationDetail(employeeDeclaration.EmployeeId, true);
+            return await GetEmployeeDeclarationDetail(employeeDeclaration.EmployeeId, true);
         }
 
         public EmployeeDeclaration GetDeclarationById(long EmployeeDeclarationId)
@@ -132,7 +133,7 @@ namespace ServiceLayer.Code
         {
             EmployeeDeclaration declaration = _db.Get<EmployeeDeclaration>(Procedures.Employee_Declaration_Get_ById, new
             {
-                EmployeeDeclarationId = EmployeeDeclarationId
+                EmployeeDeclarationId
             });
 
             return declaration;
@@ -204,12 +205,12 @@ namespace ServiceLayer.Code
             if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
                 throw HiringBellException.ThrowBadRequest("Unable to get the detail");
 
-            EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+            EmployeeDeclaration employeeDeclaration = resultSet.Tables[0].ToType<EmployeeDeclaration>();
             if (employeeDeclaration == null)
                 throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
             if (resultSet.Tables[1].Rows.Count > 0)
-                files = Converter.ToList<Files>(resultSet.Tables[1]);
+                files = resultSet.Tables[1].ToList<Files>();
 
             employeeDeclaration.SalaryDetail = await CalculateSalaryDetail(EmployeeId, employeeDeclaration, reCalculateFlag, false);
 
@@ -270,8 +271,8 @@ namespace ServiceLayer.Code
                             FileId = n.FileUid,
                             FileOwnerId = declaration.EmployeeId,
                             FilePath = declaration.DocumentPath,
-                            FileName = n.FileName,
-                            FileExtension = n.FileExtension,
+                            n.FileName,
+                            n.FileExtension,
                             UserTypeId = (int)UserType.Compnay,
                             AdminId = _currentSession.CurrentUserDetail.UserId
                         }, true);
@@ -288,15 +289,15 @@ namespace ServiceLayer.Code
 
                 Result = await _db.ExecuteAsync(Procedures.Employee_Declaration_Insupd, new
                 {
-                    EmployeeDeclarationId = declaration.EmployeeDeclarationId,
-                    EmployeeId = declaration.EmployeeId,
-                    DocumentPath = declaration.DocumentPath,
-                    DeclarationDetail = declaration.DeclarationDetail,
-                    HouseRentDetail = declaration.HouseRentDetail,
-                    TotalDeclaredAmount = declaration.TotalDeclaredAmount,
-                    TotalApprovedAmount = declaration.TotalApprovedAmount,
-                    TotalRejectedAmount = declaration.TotalRejectedAmount,
-                    EmployeeCurrentRegime = declaration.EmployeeCurrentRegime
+                    declaration.EmployeeDeclarationId,
+                    declaration.EmployeeId,
+                    declaration.DocumentPath,
+                    declaration.DeclarationDetail,
+                    declaration.HouseRentDetail,
+                    declaration.TotalDeclaredAmount,
+                    declaration.TotalApprovedAmount,
+                    declaration.TotalRejectedAmount,
+                    declaration.EmployeeCurrentRegime
                 }, true);
 
                 if (!BotConstant.IsSuccess(Result))
@@ -328,7 +329,7 @@ namespace ServiceLayer.Code
         {
             try
             {
-                EmployeeDeclaration declaration = this.GetDeclarationWithComponents(EmployeeDeclarationId);
+                EmployeeDeclaration declaration = GetDeclarationWithComponents(EmployeeDeclarationId);
                 if (declaration == null)
                     throw new HiringBellException("Fail to get current employee declaration detail");
 
@@ -357,7 +358,7 @@ namespace ServiceLayer.Code
 
                 // update declaration detail with housing detail in database
                 await UpdateDeclarationDetail(files, declaration, FileCollection, DeclarationDetail);
-                return await this.GetEmployeeDeclarationDetail(DeclarationDetail.EmployeeId, true);
+                return await GetEmployeeDeclarationDetail(DeclarationDetail.EmployeeId, true);
             }
             catch (Exception)
             {
@@ -415,7 +416,7 @@ namespace ServiceLayer.Code
             if (employeeCalculation.salaryComponents.Count != employeeCalculation.employeeDeclaration.SalaryComponentItems.Count)
                 throw new HiringBellException("Salary component and Employee declaration count is not match. Please contact to admin");
 
-            this.BuildSectionWiseComponents(employeeCalculation);
+            BuildSectionWiseComponents(employeeCalculation);
 
             _logger.LogInformation("Leaving method: CalculateAndBuildDeclarationDetail");
             return await Task.FromResult(flag);
@@ -508,7 +509,7 @@ namespace ServiceLayer.Code
             if (empCal.previousEmployerDetail != null)
             {
                 totalDeduction += UpdatePreviousEmployerIncome(empCal, completeSalaryBreakups);
-                empCal.expectedAnnualGrossIncome = ((empCal.CTC / 12) * totalMonths) + empCal.previousEmployerDetail.TotalIncome;
+                empCal.expectedAnnualGrossIncome = empCal.CTC / 12 * totalMonths + empCal.previousEmployerDetail.TotalIncome;
             }
 
             // final total taxable amount.
@@ -641,7 +642,7 @@ namespace ServiceLayer.Code
                         new DateTime(empCal.companySetting.FinancialYear, empCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
                         _currentSession.TimeZone
                     );
-            
+
             decimal taxNeetToPay = 0;
             if (empCal.employeeDeclaration.EmployeeCurrentRegime == ApplicationConstants.OldRegim)
                 taxNeetToPay = empCal.employeeDeclaration.TaxNeedToPay;
@@ -732,7 +733,7 @@ namespace ServiceLayer.Code
             decimal remaningTaxAmount = taxNeetToPay - empCal.employeeDeclaration.TaxPaid;
             int pendingMonths = taxdetails.Count(x => !x.IsPayrollCompleted);
 
-            decimal singleMonthTax = Convert.ToDecimal((remaningTaxAmount / pendingMonths));
+            decimal singleMonthTax = Convert.ToDecimal(remaningTaxAmount / pendingMonths);
             foreach (var taxDetail in taxdetails)
             {
                 if (!taxDetail.IsPayrollCompleted)
@@ -740,7 +741,7 @@ namespace ServiceLayer.Code
                     if (taxDetail.Month == doj.Month && taxDetail.Year == doj.Year)
                     {
                         var daysInMonth = DateTime.DaysInMonth(doj.Year, doj.Month);
-                        taxDetail.TaxDeducted = (singleMonthTax / daysInMonth) * (daysInMonth - doj.Day + 1);
+                        taxDetail.TaxDeducted = singleMonthTax / daysInMonth * (daysInMonth - doj.Day + 1);
                         taxDetail.TaxPaid = 0M;
                         if (pendingMonths > 1)
                             singleMonthTax = (remaningTaxAmount - taxDetail.TaxDeducted) / (pendingMonths - 1);
@@ -805,7 +806,7 @@ namespace ServiceLayer.Code
             var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
             var workingDays = daysInMonth - eCal.Doj.Day + 1;
             var currentMonthTax = ProrateAmountOnJoiningMonth(permonthTax, daysInMonth, workingDays);
-            var remaningTaxAmount = (permonthTax * totalWorkingMonth) - currentMonthTax;
+            var remaningTaxAmount = permonthTax * totalWorkingMonth - currentMonthTax;
             permonthTax = remaningTaxAmount > 0 ? remaningTaxAmount / (totalWorkingMonth - 1) : 0;
 
 
@@ -843,7 +844,7 @@ namespace ServiceLayer.Code
             //if (doj.Year == DateTime.UtcNow.Year && doj.Month >= eCal.companySetting.DeclarationStartMonth && doj.Month < 12)
             //    totalWorkingMonth = totalWorkingMonth - companySetting.DeclarationEndMonth;
 
-            if ((doj.Year == eCal.companySetting.FinancialYear && doj.Month < 12) || doj.Year < eCal.companySetting.FinancialYear)
+            if (doj.Year == eCal.companySetting.FinancialYear && doj.Month < 12 || doj.Year < eCal.companySetting.FinancialYear)
                 totalWorkingMonth = totalWorkingMonth - companySetting.DeclarationEndMonth;
 
             var permonthTax = employeeDeclaration.TaxNeedToPay / totalWorkingMonth;
@@ -870,7 +871,7 @@ namespace ServiceLayer.Code
                     var daysInMonth = DateTime.DaysInMonth(startDate.Year, startDate.Month);
                     var workingDays = daysInMonth - eCal.Doj.Day + 1;
                     var currentMonthTax = ProrateAmountOnJoiningMonth(permonthTax, daysInMonth, workingDays);
-                    var remaningTaxAmount = (permonthTax * totalWorkingMonth) - currentMonthTax;
+                    var remaningTaxAmount = permonthTax * totalWorkingMonth - currentMonthTax;
                     permonthTax = remaningTaxAmount > 0 ? remaningTaxAmount / (totalWorkingMonth - 1) : 0;
 
                     taxdetails.Add(new TaxDetails
@@ -928,7 +929,7 @@ namespace ServiceLayer.Code
             _logger.LogInformation("Leaving method: ProrateAmountOnJoiningMonth");
 
             if (numOfDaysInMonth != workingDays)
-                return (monthlyTaxAmount / numOfDaysInMonth) * workingDays;
+                return monthlyTaxAmount / numOfDaysInMonth * workingDays;
             else
                 return monthlyTaxAmount;
         }
@@ -1053,7 +1054,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Please select a valid tx regime type");
 
             var result = _db.Execute<EmployeeDeclaration>(Procedures.Employee_Taxregime_Update,
-                new { EmployeeId = employeeDeclaration.EmployeeId, EmployeeCurrentRegime = employeeDeclaration.EmployeeCurrentRegime }, true);
+                new { employeeDeclaration.EmployeeId, employeeDeclaration.EmployeeCurrentRegime }, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to switch the tax regime");
 
@@ -1070,8 +1071,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid declaration component selected. Please select a valid component");
 
             var resultset = _db.FetchDataSet(Procedures.Employee_Declaration_Components_Get_ById, new { EmployeeDeclarationId = DeclarationId });
-            EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
-            List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
+            EmployeeDeclaration declaration = resultset.Tables[0].ToType<EmployeeDeclaration>();
+            List<SalaryComponents> salaryComponent = resultset.Tables[1].ToList<SalaryComponents>();
             if (declaration == null || salaryComponent == null)
                 throw new HiringBellException("Declaration detail not found. Please contact to admin.");
 
@@ -1090,8 +1091,8 @@ namespace ServiceLayer.Code
             string ComponentId = ComponentNames.HRA;
 
             var resultset = _db.FetchDataSet(Procedures.Employee_Declaration_Components_Get_ById, new { EmployeeDeclarationId = DeclarationId });
-            EmployeeDeclaration declaration = Converter.ToType<EmployeeDeclaration>(resultset.Tables[0]);
-            List<SalaryComponents> salaryComponent = Converter.ToList<SalaryComponents>(resultset.Tables[1]);
+            EmployeeDeclaration declaration = resultset.Tables[0].ToType<EmployeeDeclaration>();
+            List<SalaryComponents> salaryComponent = resultset.Tables[1].ToList<SalaryComponents>();
             if (declaration == null || salaryComponent == null)
                 throw new HiringBellException("Declaration detail not found. Please contact to admin.");
 
@@ -1145,7 +1146,7 @@ namespace ServiceLayer.Code
                 if (files != null)
                     _fileService.DeleteFiles(files);
 
-                return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, true);
+                return await GetEmployeeDeclarationDetail(declaration.EmployeeId, true);
             }
             catch
             {
@@ -1202,7 +1203,7 @@ namespace ServiceLayer.Code
                         _fileService.DeleteFiles(new List<Files> { file });
                 }
 
-                return await this.GetEmployeeDeclarationDetail(declaration.EmployeeId, false);
+                return await GetEmployeeDeclarationDetail(declaration.EmployeeId, false);
             }
             catch
             {
@@ -1215,15 +1216,15 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            var dataSet = await _db.GetDataSetAsync(Procedures.Previous_Employement_And_Salary_Details_By_Empid, new { EmployeeId = EmployeeId });
+            var dataSet = await _db.GetDataSetAsync(Procedures.Previous_Employement_And_Salary_Details_By_Empid, new { EmployeeId });
             if (dataSet.Tables.Count != 2)
                 throw HiringBellException.ThrowBadRequest("Fail to get employee previous employment and salary detail.");
 
-            var salaryDetail = Converter.ToType<EmployeeSalaryDetail>(dataSet.Tables[1]);
+            var salaryDetail = dataSet.Tables[1].ToType<EmployeeSalaryDetail>();
             if (salaryDetail == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get employee salary detail.");
 
-            List<PreviousEmployementDetail> employementDetails = Converter.ToList<PreviousEmployementDetail>(dataSet.Tables[0]);
+            List<PreviousEmployementDetail> employementDetails = dataSet.Tables[0].ToList<PreviousEmployementDetail>();
             if (employementDetails != null && employementDetails.Count > 0)
             {
                 employementDetails.ForEach(x =>
@@ -1296,22 +1297,22 @@ namespace ServiceLayer.Code
             var item = (from n in employementDetails
                         select new
                         {
-                            PreviousEmpDetailId = n.PreviousEmpDetailId,
-                            EmployeeId = n.EmployeeId,
-                            Month = n.Month,
-                            MonthNumber = n.MonthNumber,
-                            Year = n.Year,
-                            Gross = n.Gross,
-                            Basic = n.Basic,
-                            HouseRent = n.HouseRent,
-                            EmployeePR = n.EmployeePR,
-                            ESI = n.ESI,
-                            LWF = n.LWF,
-                            LWFEmp = n.LWFEmp,
-                            Professional = n.Professional,
-                            IncomeTax = n.IncomeTax,
-                            OtherTax = n.OtherTax,
-                            OtherTaxable = n.OtherTaxable,
+                            n.PreviousEmpDetailId,
+                            n.EmployeeId,
+                            n.Month,
+                            n.MonthNumber,
+                            n.Year,
+                            n.Gross,
+                            n.Basic,
+                            n.HouseRent,
+                            n.EmployeePR,
+                            n.ESI,
+                            n.LWF,
+                            n.LWFEmp,
+                            n.Professional,
+                            n.IncomeTax,
+                            n.OtherTax,
+                            n.OtherTaxable,
                             CreatedBy = _currentSession.CurrentUserDetail.UserId,
                             UpdatedBy = _currentSession.CurrentUserDetail.UserId,
                             CreatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
@@ -1347,11 +1348,11 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee selected. Please select a vlid employee");
 
-            DataSet ds = _db.FetchDataSet(Procedures.Previous_Employement_Details_And_Emp_By_Empid, new { EmployeeId = EmployeeId });
+            DataSet ds = _db.FetchDataSet(Procedures.Previous_Employement_Details_And_Emp_By_Empid, new { EmployeeId });
             if (ds != null && ds.Tables.Count > 0)
             {
-                employementDetails = Converter.ToList<PreviousEmployementDetail>(ds.Tables[0]);
-                emp = Converter.ToType<Employee>(ds.Tables[1]);
+                employementDetails = ds.Tables[0].ToList<PreviousEmployementDetail>();
+                emp = ds.Tables[1].ToType<Employee>();
             }
 
             return await Task.FromResult(new
@@ -1368,8 +1369,8 @@ namespace ServiceLayer.Code
 
             var result = _db.FetchDataSet(Procedures.Previous_Employement_Details_By_Empid, new
             {
-                EmployeeId = EmployeeId,
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                EmployeeId,
+                _currentSession.CurrentUserDetail.CompanyId
             });
             result.Tables[0].TableName = "PreviousSalary";
             result.Tables[1].TableName = "Employee";
@@ -1479,7 +1480,7 @@ namespace ServiceLayer.Code
             EmployeeDeclaration employeeDeclaration = null;
             if (declarationTable.Rows.Count == 1)
             {
-                employeeDeclaration = Converter.ToType<EmployeeDeclaration>(declarationTable);
+                employeeDeclaration = declarationTable.ToType<EmployeeDeclaration>();
                 if (employeeDeclaration.SalaryDetail == null)
                 {
                     employeeDeclaration.SalaryDetail = new EmployeeSalaryDetail();
@@ -1518,7 +1519,7 @@ namespace ServiceLayer.Code
             EmployeeSalaryDetail employeeSalaryDetail = null;
             if (salaryDetailTable.Rows.Count == 1)
             {
-                employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(salaryDetailTable);
+                employeeSalaryDetail = salaryDetailTable.ToType<EmployeeSalaryDetail>();
             }
             else
             {
@@ -1541,7 +1542,7 @@ namespace ServiceLayer.Code
             EmployeeDeclaration empDeclaration = new EmployeeDeclaration();
             SalaryComponents salaryComponent = null;
 
-            EmployeeDeclaration declaration = this.GetDeclarationById(EmployeeDeclarationId);
+            EmployeeDeclaration declaration = GetDeclarationById(EmployeeDeclarationId);
             if (declaration.EmployeeCurrentRegime != 1)
                 throw HiringBellException.ThrowBadRequest("You can't submit the declration because you selected new tax regime");
 

@@ -12,6 +12,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -389,7 +390,8 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
-                    item.FinalAmount = (item.ActualAmount / minuteUsedForDeduction) * minutePresnet;
+                    item.ActualAmount = item.FinalAmount;
+                    item.FinalAmount = (item.FinalAmount / minuteUsedForDeduction) * minutePresnet;
                     switch (item.ComponentId)
                     {
                         case ComponentNames.EmployerPF:

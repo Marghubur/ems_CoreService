@@ -21,7 +21,6 @@ namespace ServiceLayer.Interface
         Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
         Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp);
         Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
-        Task<string> UpdateEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
         Task<string> ExportEmployeeService(int CompanyId, int FileType);
@@ -30,5 +29,7 @@ namespace ServiceLayer.Interface
         Task<dynamic> GetEmployeeResignationByIdService(long employeeId);
         Task<string> SubmitResignationService(EmployeeNoticePeriod employeeNoticePeriod);
         Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod);
+        EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation);
+        Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false);
     }
 }

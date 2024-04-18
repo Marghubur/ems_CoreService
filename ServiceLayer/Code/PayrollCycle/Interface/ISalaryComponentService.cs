@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Interface
+namespace ServiceLayer.Code.PayrollCycle.Interface
 {
     public interface ISalaryComponentService
     {
