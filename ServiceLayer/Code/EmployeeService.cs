@@ -1791,6 +1791,16 @@ namespace ServiceLayer.Code
 
                 foreach (Employee e in emps)
                 {
+                    e.WorkShiftId = LocalConstants.DefaultWorkShiftId;
+                    e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+                    e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+                    e.ReportingManagerId = LocalConstants.DefaultReportingMangerId;
+                    e.UserTypeId = (int)UserType.Employee;
+                    e.AccessLevelId = (int)RolesName.User;
+                    e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
+                    e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
+                    e.DesignationId = LocalConstants.DefaultDesignation;
+
                     var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
                     if (em != null)
                     {

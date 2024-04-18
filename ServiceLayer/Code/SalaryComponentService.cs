@@ -1075,9 +1075,19 @@ namespace ServiceLayer.Code
             var elems = formula.Split(" ");
             if (elems != null && elems.Length > 0)
             {
-                if (int.TryParse(elems[0].Trim(), out int value))
+                if (elems[0].Contains("%"))
                 {
-                    formula = $"{value}%{basicAmountValue}";
+                    elems[0] = elems[0].Replace("%", "");
+                    if (int.TryParse(elems[0].Trim(), out int value))
+                    {
+                        formula = $"{value}%{basicAmountValue}";
+                    }
+                } else
+                {
+                    if (int.TryParse(elems[0].Trim(), out int value))
+                    {
+                        formula = value.ToString();
+                    }
                 }
             }
 
@@ -1192,9 +1202,10 @@ namespace ServiceLayer.Code
                 calculatedSalaryBreakupDetail.Formula = item.Formula;
                 calculatedSalaryBreakupDetail.ComponentName = item.ComponentFullName;
                 calculatedSalaryBreakupDetail.ComponentTypeId = item.ComponentTypeId;
-                calculatedSalaryBreakupDetail.FinalAmount = amount;
+                calculatedSalaryBreakupDetail.FinalAmount = 0;
+                calculatedSalaryBreakupDetail.ActualAmount = amount;
                 calculatedSalaryBreakupDetail.IsIncludeInPayslip = item.IncludeInPayslip;
-                taxableComponentAmount += calculatedSalaryBreakupDetail.FinalAmount;
+                taxableComponentAmount += calculatedSalaryBreakupDetail.ActualAmount;
                 calculatedSalaryBreakupDetails.Add(calculatedSalaryBreakupDetail);
             }
 
@@ -1204,7 +1215,7 @@ namespace ServiceLayer.Code
             var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (component != null)
             {
-                component.FinalAmount = (calculatedMontlyGross - taxableComponentAmount);
+                component.ActualAmount = (calculatedMontlyGross - taxableComponentAmount);
             }
 
             // calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
@@ -1301,25 +1312,26 @@ namespace ServiceLayer.Code
                 if (component != null)
                 {
                     component.Formula = item.Formula;
-                    component.FinalAmount = amount;
+                    component.ActualAmount = amount;
+                    component.FinalAmount = 0;
                     component.IsIncludeInPayslip = item.IncludeInPayslip;
                 }
             }
 
-            var taxableComponentAmount = calculatedSalaryBreakupDetail.FindAll(x => x.ComponentId != nameof(ComponentNames.Gross) && x.ComponentId != nameof(ComponentNames.CTC)).Sum(x => x.FinalAmount);
+            var taxableComponentAmount = calculatedSalaryBreakupDetail.FindAll(x => x.ComponentId != nameof(ComponentNames.Gross) && x.ComponentId != nameof(ComponentNames.CTC)).Sum(x => x.ActualAmount);
 
             var autoComponent = calculatedSalaryBreakupDetail.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
             if (autoComponent != null)
-                autoComponent.FinalAmount = (monthlyGrossIncome - taxableComponentAmount);
+                autoComponent.ActualAmount = (monthlyGrossIncome - taxableComponentAmount);
 
             if (monthlyGrossIncome < taxableComponentAmount)
                 throw HiringBellException.ThrowBadRequest("Invalid calculation. Gross amount must be greater than or equals to the sum of other components.");
 
             var currentComponent = calculatedSalaryBreakupDetail.Find(x => x.ComponentId == nameof(ComponentNames.Gross));
-            currentComponent.FinalAmount = monthlyGrossIncome;
+            currentComponent.ActualAmount = monthlyGrossIncome;
 
             currentComponent = calculatedSalaryBreakupDetail.Find(x => x.ComponentId == nameof(ComponentNames.CTC));
-            currentComponent.FinalAmount = eCal.CTC / 12;
+            currentComponent.ActualAmount = eCal.CTC / 12;
 
             _logger.LogInformation("Endning method: GetComponentsDetail");
         }
@@ -1384,7 +1396,8 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.Gross),
                     Formula = null,
                     ComponentName = ComponentNames.Gross,
-                    FinalAmount = calculatedMontlyGross,
+                    FinalAmount = 0,
+                    ActualAmount = calculatedMontlyGross,
                     ComponentTypeId = 100,
                     IsIncludeInPayslip = true
                 };
@@ -1395,7 +1408,8 @@ namespace ServiceLayer.Code
                     ComponentId = nameof(ComponentNames.CTC),
                     Formula = null,
                     ComponentName = ComponentNames.CTC,
-                    FinalAmount = eCal.CTC / 12,
+                    FinalAmount = 0,
+                    ActualAmount = eCal.CTC / 12,
                     ComponentTypeId = 101,
                     IsIncludeInPayslip = true
                 };

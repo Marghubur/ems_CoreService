@@ -247,7 +247,7 @@ namespace ServiceLayer.Code
             {
                 calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {
-                    FinalAmount = 0
+                    ActualAmount = 0
                 };
             }
 
@@ -255,8 +255,8 @@ namespace ServiceLayer.Code
             if (basicComponent == null)
                 throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
 
-            decimal HRA1 = calculatedSalaryBreakupDetail.FinalAmount;
-            decimal HRA2 = basicComponent.FinalAmount / 2;
+            decimal HRA1 = calculatedSalaryBreakupDetail.ActualAmount;
+            decimal HRA2 = basicComponent.ActualAmount / 2;
             decimal HRA3 = 0;
             decimal HRAAmount = 0;
 
@@ -269,7 +269,7 @@ namespace ServiceLayer.Code
             if (hraComponent != null && hraComponent.DeclaredValue > 0)
             {
                 decimal declaredValue = hraComponent.DeclaredValue;
-                HRA3 = declaredValue - (basicComponent.FinalAmount * .1M);
+                HRA3 = declaredValue - (basicComponent.ActualAmount * .1M);
 
                 if (HRA3 > 0 && HRA3 < HRAAmount)
                     HRAAmount = HRA3;
