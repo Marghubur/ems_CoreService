@@ -1,6 +1,8 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -109,7 +111,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
             Employee employee = new Employee
             {
-                AadharNo = "NA",
+                AadharNo = emp.AadharNo,
                 AccountNumber = "NA",
                 BankName = "NA",
                 BranchName = "NA",
@@ -128,8 +130,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 SecondaryMobile = "NA",
                 Specification = "NA",
                 AccessLevelId = (int)RolesName.User,
-                OrganizationId = 1,
-                LeavePlanId = 1,
+                OrganizationId = _currentSession.CurrentUserDetail.OrganizationId,
+                LeavePlanId = LocalConstants.DefaultLeavePlanId,
                 PayrollGroupId = 0,
                 SalaryGroupId = salarygroup.SalaryGroupId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
@@ -147,14 +149,16 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 ActualPackage = 0,
                 FinalPackage = 0,
                 TakeHomeByCandidate = 0,
-                ReportingManagerId = 1,
+                ReportingManagerId = LocalConstants.DefaultReportingMangerId,
                 DesignationId = 13,
-                UserTypeId = 1,
+                UserTypeId = (int)UserType.Employee,
                 CTC = emp.CTC,
                 DateOfJoining = emp.DOJ,
                 DOB = new DateTime(1990, 5, 16),
-                WorkShiftId = 1,
-                IsCTCChanged = false
+                WorkShiftId = LocalConstants.DefaultWorkShiftId,
+                IsCTCChanged = false,
+                EmployerPF = emp.EmployerPF,
+                EmployeePF = emp.EmployeePF
             };
 
             var Names = emp.EmployeeName.Split(' ');

@@ -388,7 +388,7 @@ namespace ServiceLayer.Code
 
             return salary.Where(x => x.IsActive).SelectMany(i => i.SalaryBreakupDetails)
                 .Where(x => x.ComponentName == ComponentNames.Gross)
-                .Sum(x => x.FinalAmount);
+                .Sum(x => x.ActualAmount);
         }
 
         public async Task<EmployeeSalaryDetail> CalculateSalaryDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, bool reCalculateFlag = false, bool isCTCChanged = false)
@@ -1266,22 +1266,22 @@ namespace ServiceLayer.Code
                             switch (elem.ComponentId)
                             {
                                 case ComponentNames.GrossId:
-                                    elem.FinalAmount = workingMonth.Gross;
+                                    elem.ActualAmount = workingMonth.Gross;
                                     break;
                                 case ComponentNames.Basic:
-                                    elem.FinalAmount = workingMonth.Basic;
+                                    elem.ActualAmount = workingMonth.Basic;
                                     break;
                                 case ComponentNames.HRA:
-                                    elem.FinalAmount = workingMonth.HouseRent;
+                                    elem.ActualAmount = workingMonth.HouseRent;
                                     break;
                                 case ComponentNames.ProfessionalTax:
-                                    elem.FinalAmount = workingMonth.Professional;
+                                    elem.ActualAmount = workingMonth.Professional;
                                     break;
                                 case ComponentNames.EmployeePF:
-                                    elem.FinalAmount = workingMonth.EmployeePR;
+                                    elem.ActualAmount = workingMonth.EmployeePR;
                                     break;
                                 case ComponentNames.SpecialAllowanceId:
-                                    elem.FinalAmount = workingMonth.LWF;
+                                    elem.ActualAmount = workingMonth.LWF;
                                     break;
                             }
                         }

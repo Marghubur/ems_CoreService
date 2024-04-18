@@ -462,7 +462,7 @@ namespace ServiceLayer.Code.Leaves
 
             var curretMonthSalary = annualSalaryBreakup.OrderByDescending(x => x.MonthNumber).ToList().FirstOrDefault();
             var basicSalary = curretMonthSalary.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.Basic);
-            var perDayBasicSalary = (basicSalary.FinalAmount / calculationDaysInCurrentMonth);
+            var perDayBasicSalary = (basicSalary.ActualAmount / calculationDaysInCurrentMonth);
             return await Task.FromResult(perDayBasicSalary);
         }
 
