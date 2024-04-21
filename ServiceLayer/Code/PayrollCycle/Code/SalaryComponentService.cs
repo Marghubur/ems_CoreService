@@ -28,11 +28,13 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         private readonly IUtilityService _utilityService;
         private readonly ICommonService _commonService;
 
-        public SalaryComponentService(IDb db, CurrentSession currentSession,
+        public SalaryComponentService(IDb db, 
+            CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter,
             IUtilityService utilityService,
-        ILogger<DeclarationService> logger, ICommonService commonService)
+            ILogger<DeclarationService> logger, 
+            ICommonService commonService)
         {
             _db = db;
             _currentSession = currentSession;

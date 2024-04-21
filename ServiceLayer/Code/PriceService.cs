@@ -80,12 +80,18 @@ namespace ServiceLayer.Code
             validateTrailRequestDetail(contactUsDetail);
             var result = _db.Execute<ContactUsDetail>(Procedures.TRAIL_REQUEST_INSUPD, new
             {
-                TrailRequestId = contactUsDetail.TrailRequestId,
-                FullName = contactUsDetail.FullName,
-                Email = contactUsDetail.Email,
-                CompanyName = contactUsDetail.CompanyName,
-                PhoneNumber = contactUsDetail.PhoneNumber,
-                HeadCount = contactUsDetail.HeadCount
+                contactUsDetail.TrailRequestId,
+                contactUsDetail.FullName,
+                contactUsDetail.Email,
+                contactUsDetail.CompanyName,
+                contactUsDetail.OrganizationName,
+                contactUsDetail.PhoneNumber,
+                contactUsDetail.HeadCount,
+                contactUsDetail.FullAddress,
+                contactUsDetail.Country,
+                contactUsDetail.State,
+                contactUsDetail.City,
+                IsProcessed = false
             }, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Faild to add contact details");
