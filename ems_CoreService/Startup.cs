@@ -245,6 +245,7 @@ namespace OnlineDataBuilder
             services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();
             services.AddScoped<IWeeklyTimesheetCreationJob, WeeklyTimesheetCreationJob>();
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
+            services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, policy =>
