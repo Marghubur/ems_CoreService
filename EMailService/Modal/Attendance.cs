@@ -42,7 +42,7 @@ namespace ModalLayer.Modal
 
     public class PayrollEmployeePageData
     {
-        public LeaveRequestDetail leaveRequestDetail { set; get; }
+        public List<LeaveRequestDetail> leaveRequestDetails { set; get; }
         public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
         public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
 

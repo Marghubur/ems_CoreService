@@ -12,6 +12,11 @@
         public static string SPA = "SPA";
         public static string ECI = "ECI";
 
+        public const string MonthlyPayFrequency = "monthly";
+        public const string DailyPayFrequency = "daily";
+        public const string HourlyPayFrequency = "hourly";
+
+
         public static int DefaultReportingMangerId = 1;
         public static int DefaultWorkShiftId = 1;
         public static int DefaultLeavePlanId = 1;

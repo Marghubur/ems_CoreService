@@ -28,12 +28,12 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         private readonly IUtilityService _utilityService;
         private readonly ICommonService _commonService;
 
-        public SalaryComponentService(IDb db, 
+        public SalaryComponentService(IDb db,
             CurrentSession currentSession,
             IEvaluationPostfixExpression postfixToInfixConversion,
             ITimezoneConverter timezoneConverter,
             IUtilityService utilityService,
-            ILogger<DeclarationService> logger, 
+            ILogger<DeclarationService> logger,
             ICommonService commonService)
         {
             _db = db;
@@ -1072,6 +1072,10 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             if (userFormula.Contains("basic", StringComparison.OrdinalIgnoreCase))
             {
                 basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.CTC);
+            }
+            else
+            {
+                formula = (Convert.ToDouble(userFormula) * 12).ToString();
             }
 
             var elems = formula.Split(" ");
