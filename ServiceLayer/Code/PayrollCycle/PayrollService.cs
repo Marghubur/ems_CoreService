@@ -159,9 +159,6 @@ namespace ServiceLayer.Code.PayrollCycle
                     throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
             }
 
-            attendanceDetailJsons.FindAll(x => x.At)
-
-
             var consideredAttendance = attendanceDetailJsons.FindAll(x => x.AttendanceDay.Day > payrollRunDay);
 
             consideredAttendance.ForEach(x => x.PresentDayStatus = (int)AttendanceEnum.Approved);
