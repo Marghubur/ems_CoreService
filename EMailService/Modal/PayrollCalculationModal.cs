@@ -14,5 +14,9 @@ namespace ModalLayer.Modal
         public DateTime payrollDate { get; set; }
         public ShiftDetail shiftDetail { get; set; }
         public int totalDaysInMonth { get; set; }
+        public decimal actualMinutesWorked { set; get; }
+        public decimal expectedMinutesToWorked { set; get; }
+        public bool isExcludingWeekends { set; get; }
+        public bool isExcludingHolidays { set; get; }
     }
 }
