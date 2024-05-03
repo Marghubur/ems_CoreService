@@ -2,16 +2,14 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using EMailService.Modal;
 using EMailService.Modal.DashboardCalculation;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Profile;
-using MySqlX.XDevAPI.Common;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -40,7 +38,7 @@ namespace ServiceLayer.Code
                 ForMonth = presentDate.Month,
                 Period = 30
             });
-            
+
 
             if (Result != null && Result.Tables.Count == 7)
             {
@@ -55,7 +53,7 @@ namespace ServiceLayer.Code
             return dashboard;
         }
 
-        public async Task<AdminDashboardResponse> GetProfitAndLossDetail(DataSet Result)
+        private async Task<AdminDashboardResponse> GetProfitAndLossDetail(DataSet Result)
         {
             AdminDashboardResponse dashboard = new AdminDashboardResponse();
 
@@ -63,10 +61,62 @@ namespace ServiceLayer.Code
             List<GSTExpensesModel> gstDetail = Converter.ToList<GSTExpensesModel>(Result.Tables[1]);
             List<GSTExpensesModel> billingDetail = Converter.ToList<GSTExpensesModel>(Result.Tables[2]);
 
-            dashboard.expensesModel = null;
-            dashboard.profitModel = null;
+            int currentMonth = DateTime.UtcNow.Month;
+            int currentYear = DateTime.UtcNow.Year;
+            dashboard.expensesModel = new List<ProfitExpenseModel>();
+            dashboard.profitModel = new List<ProfitExpenseModel>();
+
+            for (int i = 1; i <= currentMonth; i++)
+            {
+                dashboard.expensesModel.Add(new ProfitExpenseModel
+                {
+                    Amount = getTotalMonthlyExpense(expensesModel, gstDetail, i),
+                    Month = i,
+                    Year = currentYear
+                });
+
+                dashboard.profitModel.Add(new ProfitExpenseModel
+                {
+                    Amount = getTotalMonthlyProfit(billingDetail, i),
+                    Month = i,
+                    Year = currentYear
+                });
+            }
 
             return await Task.FromResult(dashboard);
+        }
+
+        private decimal getTotalMonthlyExpense(List<ExpensesModel> expensesModel, List<GSTExpensesModel> gstDetail, int month)
+        {
+            decimal totalExpense = 0;
+            if (expensesModel.Count > 0)
+            {
+                var monthlyExpense = expensesModel.Find(x => x.ForMonth == month);
+                if (monthlyExpense != null)
+                    totalExpense = monthlyExpense.TotalPayableToEmployees + monthlyExpense.TotalPFByEmployer + monthlyExpense.TotalProfessionalTax;
+            }
+
+            if (gstDetail.Count > 0)
+            {
+                var monththlyGst = gstDetail.FindAll(x => x.PaidOn.Month == month);
+                if (monththlyGst.Count > 0)
+                    totalExpense += monththlyGst.Aggregate(0m, (sum, value) => sum + value.Amount);
+            }
+
+            return totalExpense;
+        }
+
+        private decimal getTotalMonthlyProfit(List<GSTExpensesModel> billingDetail, int month)
+        {
+            decimal totalProfit = 0;
+            if (billingDetail.Count > 0)
+            {
+                var monthlyBills = billingDetail.FindAll(x => x.PaidOn.Month == month);
+                if (monthlyBills.Count > 0)
+                    totalProfit = monthlyBills.Aggregate(0m, (sum, current) => sum + current.PaidAmount);
+            }
+
+            return totalProfit;
         }
     }
 }
