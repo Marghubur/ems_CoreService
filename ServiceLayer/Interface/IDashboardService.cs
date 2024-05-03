@@ -1,13 +1,11 @@
-﻿using ModalLayer.Modal;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
+﻿using EMailService.Modal.DashboardCalculation;
+using ModalLayer.Modal;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface IDashboardService
     {
-        DataSet GetSystemDashboardService(AttendenceDetail userDetails);
+        Task<AdminDashboardResponse> GetSystemDashboardService(AttendenceDetail userDetails);
     }
 }

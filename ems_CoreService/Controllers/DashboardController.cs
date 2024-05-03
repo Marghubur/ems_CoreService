@@ -5,6 +5,7 @@ using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -20,11 +21,11 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("GetSystemDashboard")]
-        public IResponse<ApiResponse> GetSystemDashboard(AttendenceDetail userDetail)
+        public async Task<ApiResponse> GetSystemDashboard(AttendenceDetail userDetail)
         {
             try
             {
-                var result = _dashboardService.GetSystemDashboardService(userDetail);
+                var result = await _dashboardService.GetSystemDashboardService(userDetail);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             catch (Exception ex)

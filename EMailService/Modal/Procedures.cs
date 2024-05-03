@@ -106,6 +106,7 @@
 
         /*--------------  Dashboard Service procedures ------------*/
         public static string Dashboard_Get = "sp_dashboard_get";
+        public static string AdminDashboard_Get = "sp_admin_dashboard_get";
 
         /*--------------  Declaration Service procedures ------------*/
         public static string Employee_Declaration_Get_ById = "sp_employee_declaration_get_byId";
