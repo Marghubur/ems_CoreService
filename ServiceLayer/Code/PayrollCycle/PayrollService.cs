@@ -4,6 +4,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using DocumentFormat.OpenXml.Bibliography;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
@@ -169,12 +170,40 @@ namespace ServiceLayer.Code.PayrollCycle
             return attendanceDetailJsons;
         }
 
-        private async Task<PayrollWorkingDetail> GetPayrollWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
+        private async Task GetPayrollWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
         {
-            PayrollWorkingDetail payrollWorkingDetail = await GetCurrentMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
-            PayrollWorkingDetail previousMonthWorkingDetail = await GetPreviousMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
+            var payrollDetail = await GetCurrentMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
+            var previousPayrollDetail = await GetPreviousMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
+            var previousMonth = payrollCalculationModal.payrollDate.AddMonths(-1);
+            payrollCalculationModal.daysInPreviousMonth = DateTime.DaysInMonth(previousMonth.Year, previousMonth.Month);
 
-            return payrollWorkingDetail;
+            if (payrollCalculationModal.isExcludeHolidays)
+            {
+                payrollCalculationModal.presentActualMins = payrollDetail.ApprovedAttendanceMinutes
+                                                            -
+                                                            (payrollDetail.Holidays * payrollCalculationModal.shiftDetail.Duration);
+
+                payrollCalculationModal.daysInPreviousMonth -= previousPayrollDetail.Holidays;
+                payrollCalculationModal.totalDaysInPresentMonth -= payrollDetail.Holidays;
+            }
+
+            if (payrollCalculationModal.isExcludingWeekends)
+            {
+                payrollCalculationModal.presentActualMins = payrollDetail.ApprovedAttendanceMinutes
+                                                            -
+                                                            (payrollDetail.WeekOffs * payrollCalculationModal.shiftDetail.Duration);
+
+                payrollCalculationModal.daysInPreviousMonth -= previousPayrollDetail.WeekOffs;
+                payrollCalculationModal.totalDaysInPresentMonth -= payrollDetail.WeekOffs;
+            }
+
+            payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPAttendanceMiutes;
+            payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPLeaveMinutes;
+
+            payrollCalculationModal.presentMinsNeeded = (payrollCalculationModal.totalDaysInPresentMonth * payrollCalculationModal.shiftDetail.Duration);
+
+            payrollCalculationModal.prevLOPMins = previousPayrollDetail.LOPLeaveMinutes + previousPayrollDetail.LOPAttendanceMiutes;
+            payrollCalculationModal.prevMinsNeeded = (payrollCalculationModal.daysInPreviousMonth * payrollCalculationModal.shiftDetail.Duration);
         }
 
         private async Task<PayrollWorkingDetail> GetCurrentMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
@@ -182,25 +211,29 @@ namespace ServiceLayer.Code.PayrollCycle
             List<AttendanceJson> attendanceDetail = new List<AttendanceJson>();
             var attrDetail = payrollCalculationModal.payrollEmployeeData.Find(x => x.EmployeeId == payrollCalculationModal.employeeId
                                                                                 && x.ForMonth == payrollCalculationModal.payrollDate.Month);
-            if (attrDetail == null)
+            if (attrDetail == null || string.IsNullOrEmpty(attrDetail.AttendanceDetail))
                 throw HiringBellException.ThrowBadRequest("Employee attendance detail not found. Please contact to admin.");
 
-            if (!string.IsNullOrEmpty(attrDetail.AttendanceDetail))
+            attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
+
+            if (attendanceDetail == null)
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
+
+            // Update date's to be approved after payroll run date
+            Parallel.ForEach(attendanceDetail.FindAll(x => x.AttendanceDay.Day > payrollRunDay), x =>
             {
-                attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
-                if (attendanceDetail == null)
-                    throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
-            }
-            var consideredAttendance = attendanceDetail.FindAll(x => x.AttendanceDay.Day > payrollRunDay);
-            consideredAttendance.ForEach(x => x.PresentDayStatus = (int)AttendanceEnum.Approved);
+                x.PresentDayStatus = (int)AttendanceEnum.Approved;
+            });
 
             PayrollWorkingDetail payrollWorkingDetail = new PayrollWorkingDetail
             {
                 ApprovedAttendanceMinutes = GetApprovedMinutes(attendanceDetail),
                 LOPAttendanceMiutes = GetLOPAttendanceMinutes(attendanceDetail),
-                WeekOffMinutes = GetWeekOffsMinutes(attendanceDetail, payrollCalculationModal.shiftDetail),
-                HolidayMinutes = await GetHolidayMinutes(payrollCalculationModal.payrollDate.Month,
-                                                                            payrollCalculationModal.payrollDate.Year, payrollCalculationModal.shiftDetail),
+                WeekOffs = CalculateWeekOffs(attendanceDetail, payrollCalculationModal.shiftDetail),
+                Holidays = await _companyCalendar.GetHolidayCountInMonth(
+                                            payrollCalculationModal.payrollDate.Month,
+                                            payrollCalculationModal.payrollDate.Year
+                                       ),
                 LOPLeaveMinutes = GetPresentMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate)
             };
 
@@ -214,15 +247,13 @@ namespace ServiceLayer.Code.PayrollCycle
             var attrDetail = payrollCalculationModal.payrollEmployeeData
                                 .Find(x => x.EmployeeId == payrollCalculationModal.employeeId && x.ForMonth == payrollDate.Month);
 
-            if (attrDetail == null)
+            if (attrDetail == null || string.IsNullOrEmpty(attrDetail.AttendanceDetail))
                 throw HiringBellException.ThrowBadRequest("Employee attendance detail not found. Please contact to admin.");
 
-            if (!string.IsNullOrEmpty(attrDetail.AttendanceDetail))
-            {
-                attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
-                if (attendanceDetail == null)
-                    throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
-            }
+            attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
+
+            if (attendanceDetail == null)
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
 
             attendanceDetail = attendanceDetail.FindAll(x => x.AttendanceDay.Day > payrollRunDay);
 
@@ -230,8 +261,8 @@ namespace ServiceLayer.Code.PayrollCycle
             {
                 ApprovedAttendanceMinutes = GetApprovedMinutes(attendanceDetail),
                 LOPAttendanceMiutes = GetLOPAttendanceMinutes(attendanceDetail),
-                WeekOffMinutes = GetWeekOffsMinutes(attendanceDetail, payrollCalculationModal.shiftDetail),
-                HolidayMinutes = await GetHolidayMinutes(payrollDate.Month, payrollDate.Year, payrollCalculationModal.shiftDetail),
+                WeekOffs = CalculateWeekOffs(attendanceDetail, payrollCalculationModal.shiftDetail),
+                Holidays = await _companyCalendar.GetHolidayCountInMonth(payrollDate.Month, payrollDate.Year),
                 LOPLeaveMinutes = GetPreviousMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate)
             };
 
@@ -261,20 +292,21 @@ namespace ServiceLayer.Code.PayrollCycle
             var attendances = attendanceDetail.FindAll(x =>
                 x.PresentDayStatus != (int)AttendanceEnum.Approved &&
                 x.PresentDayStatus != (int)AttendanceEnum.WeekOff);
+
             return attendances.Select(x => x.TotalMinutes).Aggregate((x, y) => x + y);
         }
 
-        private int GetWeekOffsMinutes(List<AttendanceJson> attendanceDetail, ShiftDetail shiftDetail)
-        {
-            int weekOff = CalculateWeekOffs(attendanceDetail, shiftDetail);
-            return weekOff * shiftDetail.Duration;
-        }
+        //private int GetWeekOffsMinutes(List<AttendanceJson> attendanceDetail, ShiftDetail shiftDetail)
+        //{
+        //    int weekOff = CalculateWeekOffs(attendanceDetail, shiftDetail);
+        //    return weekOff * shiftDetail.Duration;
+        //}
 
-        private async Task<int> GetHolidayMinutes(int month, int year, ShiftDetail shiftDetail)
-        {
-            decimal holidays = await _companyCalendar.GetHolidayCountInMonth(month, year);
-            return Convert.ToInt32(holidays * shiftDetail.Duration);
-        }
+        //private async Task<int> GetHolidayMinutes(int month, int year, ShiftDetail shiftDetail)
+        //{
+        //    decimal holidays = await _companyCalendar.GetHolidayCountInMonth(month, year);
+        //    return Convert.ToInt32(holidays * shiftDetail.Duration);
+        //}
 
         private async Task CalculateRunPayrollForEmployees(PayrollCommonData payrollCommonData, bool reRunFlag)
         {
@@ -320,25 +352,29 @@ namespace ServiceLayer.Code.PayrollCycle
 
                             if (!presentData.IsPayrollCompleted || reRunFlag)
                             {
-                                PayrollCalculationModal payrollCalculationModal =
-                                    await GetCalculationModal(payrollCommonData, empPayroll, payrollRunDay);
+                                PayrollCalculationModal payrollCalculationModal = new PayrollCalculationModal
+                                {
+                                    payrollEmployeeData = payrollEmployeeData,
+                                    userLeaveRequests = payrollEmployeePageData.leaveRequestDetails
+                                                    .Where(x => x.EmployeeId == empPayroll.EmployeeId).ToList(),
+                                    totalDaysInPresentMonth = totalDaysInMonth
 
-                                payrollCalculationModal.payrollEmployeeData = payrollEmployeeData;
-                                payrollCalculationModal.userLeaveRequests = payrollEmployeePageData.leaveRequestDetails
-                                                    .Where(x => x.EmployeeId == empPayroll.EmployeeId).ToList();
-                                payrollCalculationModal.totalDaysInMonth = totalDaysInMonth;
+                                };
+
+                                await GetCalculationModal(payrollCommonData, empPayroll, payrollCalculationModal, payrollRunDay);
+
 
                                 payrollMonthlyDetail = GetUpdatedBreakup(
                                                             payrollCommonData.utcPresentDate,
-                                                            payrollCalculationModal.expectedMinutesToWorked,
-                                                            payrollCalculationModal.actualMinutesWorked,
+                                                            payrollCalculationModal.presentMinsNeeded,
+                                                            payrollCalculationModal.presentActualMins,
                                                             empPayroll
                                                         );
 
-                                if (payrollCalculationModal.actualMinutesWorked != payrollCalculationModal.expectedMinutesToWorked)
+                                if (payrollCalculationModal.presentActualMins != payrollCalculationModal.presentMinsNeeded)
                                 {
-                                    var taxAmount = (presentData.TaxDeducted / payrollCalculationModal.expectedMinutesToWorked)
-                                        * payrollCalculationModal.actualMinutesWorked;
+                                    var taxAmount = (presentData.TaxDeducted / payrollCalculationModal.presentMinsNeeded)
+                                        * payrollCalculationModal.presentActualMins;
                                     presentData.TaxPaid = taxAmount;
                                     presentData.TaxDeducted = taxAmount;
                                     IsTaxCalculationRequired = true;
@@ -349,6 +385,10 @@ namespace ServiceLayer.Code.PayrollCycle
                                 }
 
                                 payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
+                                payrollMonthlyDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, payrollMonthlyDetail.GrossTotal);
+
+                                payrollMonthlyDetail.PayableToEmployee += payrollMonthlyDetail.ArrearAmount;
+
                                 var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
 
                                 payrollMonthlyDetail.PayableToEmployee -= pTax;
@@ -399,8 +439,22 @@ namespace ServiceLayer.Code.PayrollCycle
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
         }
 
-        private async Task<PayrollCalculationModal> GetCalculationModal(PayrollCommonData payrollCommonData,
-            PayrollEmployeeData empPayroll, int payrollRunDay)
+        private async Task<decimal> GetPreviousMonthLOPAmount(PayrollCalculationModal payrollCalculationModal, decimal grossAmount)
+        {
+            decimal amount = 0;
+
+            if (payrollCalculationModal.prevLOPMins > 0)
+            {
+                amount = (grossAmount / (payrollCalculationModal.daysInPreviousMonth * payrollCalculationModal.shiftDetail.Duration))
+                            *
+                         payrollCalculationModal.prevLOPMins;
+            }
+
+            return await Task.FromResult(amount);
+        }
+
+        private async Task GetCalculationModal(PayrollCommonData payrollCommonData,
+            PayrollEmployeeData empPayroll, PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
         {
             var payroll = payrollCommonData.payroll;
 
@@ -408,22 +462,17 @@ namespace ServiceLayer.Code.PayrollCycle
             if (shiftDetail == null)
                 throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
 
-            PayrollCalculationModal payrollCalculationModal = new PayrollCalculationModal
-            {
-                shiftDetail = shiftDetail,
-                payrollDate = payrollCommonData.presentDate,
-                isExcludeHolidays = payroll.IsExcludeHolidays,
-                payCalculationId = payroll.PayCalculationId,
-                employeeId = empPayroll.EmployeeId,
-                isExcludingWeekends = payroll.IsExcludeWeeklyOffs,
-                isExcludingHolidays = payroll.IsExcludeHolidays
-            };
+            payrollCalculationModal.shiftDetail = shiftDetail;
+            payrollCalculationModal.payrollDate = payrollCommonData.presentDate;
+            payrollCalculationModal.isExcludeHolidays = payroll.IsExcludeHolidays;
+            payrollCalculationModal.payCalculationId = payroll.PayCalculationId;
+            payrollCalculationModal.employeeId = empPayroll.EmployeeId;
+            payrollCalculationModal.isExcludingWeekends = payroll.IsExcludeWeeklyOffs;
 
             (decimal actualMins, decimal expectedMins) = await GetMinutesForPayroll(payrollCalculationModal, payrollRunDay);
-            payrollCalculationModal.actualMinutesWorked = actualMins;
-            payrollCalculationModal.expectedMinutesToWorked = expectedMins;
 
-            return await Task.FromResult(payrollCalculationModal);
+
+            await GetPayrollWorkingDetail(payrollCalculationModal, payrollRunDay);
         }
 
         private List<TaxDetails> ValidateTaxDetail(PayrollCommonData payrollCommonData, PayrollEmployeeData empPayroll, TaxDetails presentData)
@@ -520,11 +569,11 @@ namespace ServiceLayer.Code.PayrollCycle
             if (payrollCalculationModal.payCalculationId == 1)
             {
                 modifiedActualMinutesWorked = modifiedActualMinutesWorked + (weekOff * payrollCalculationModal.shiftDetail.Duration);
-                expectedMinuteInMonth = payrollCalculationModal.totalDaysInMonth * payrollCalculationModal.shiftDetail.Duration;
+                expectedMinuteInMonth = payrollCalculationModal.totalDaysInPresentMonth * payrollCalculationModal.shiftDetail.Duration;
             }
             else
             {
-                expectedMinuteInMonth = (payrollCalculationModal.totalDaysInMonth - weekOff) * payrollCalculationModal.shiftDetail.Duration;
+                expectedMinuteInMonth = (payrollCalculationModal.totalDaysInPresentMonth - weekOff) * payrollCalculationModal.shiftDetail.Duration;
             }
 
             if (payrollCalculationModal.isExcludeHolidays)
@@ -569,7 +618,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return builder.ToString();
         }
 
-        private PayrollMonthlyDetail GetUpdatedBreakup(DateTime payrollDate, decimal minuteUsedForDeduction, decimal minutePresnet, PayrollEmployeeData empPayroll)
+        private PayrollMonthlyDetail GetUpdatedBreakup(DateTime payrollDate, decimal presentMinsNeeded, decimal presentActualMins, PayrollEmployeeData empPayroll)
         {
             PayrollMonthlyDetail payrollMonthlyDetail = new PayrollMonthlyDetail();
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
@@ -582,7 +631,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
                 {
                     item.ActualAmount = item.FinalAmount;
-                    item.FinalAmount = (item.FinalAmount / minuteUsedForDeduction) * minutePresnet;
+                    item.FinalAmount = (item.FinalAmount / presentMinsNeeded) * presentActualMins;
                     switch (item.ComponentId)
                     {
                         case ComponentNames.EmployerPF:
@@ -741,46 +790,46 @@ namespace ServiceLayer.Code.PayrollCycle
             return weekOffCount;
         }
 
-        private async Task SendEmail(List<string> missingDetail, string presentDate)
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine($"<div style=\"margin-bottom: 25px;\">Payroll of the month {presentDate} completed</div>");
+        //private async Task SendEmail(List<string> missingDetail, string presentDate)
+        //{
+        //    StringBuilder builder = new StringBuilder();
+        //    builder.AppendLine($"<div style=\"margin-bottom: 25px;\">Payroll of the month {presentDate} completed</div>");
 
-            string status = "<b style=\"color: green\">Ran successfully</b>";
-            if (missingDetail.Count > 0 && missingDetail.Count <= 20)
-            {
-                foreach (var detail in missingDetail)
-                {
-                    builder.Append("<div>" + detail + "</div>");
-                }
+        //    string status = "<b style=\"color: green\">Ran successfully</b>";
+        //    if (missingDetail.Count > 0 && missingDetail.Count <= 20)
+        //    {
+        //        foreach (var detail in missingDetail)
+        //        {
+        //            builder.Append("<div>" + detail + "</div>");
+        //        }
 
-                status = "<b style=\"color: red\">Partially successfull</b>";
-            }
-            else if (missingDetail.Count > 20)
-            {
-                builder.Append("<div style=\"color: red;\"><b>Alert!!!</b>  " +
-                    "payroll cycle failed, more than 20 employee payroll cycle raise exception. " +
-                    "For detail please check the log files. Total failed count: " + missingDetail.Count + "</div>");
+        //        status = "<b style=\"color: red\">Partially successfull</b>";
+        //    }
+        //    else if (missingDetail.Count > 20)
+        //    {
+        //        builder.Append("<div style=\"color: red;\"><b>Alert!!!</b>  " +
+        //            "payroll cycle failed, more than 20 employee payroll cycle raise exception. " +
+        //            "For detail please check the log files. Total failed count: " + missingDetail.Count + "</div>");
 
-                status = "<b style=\"color: red\">Many failed</b>";
-            }
+        //        status = "<b style=\"color: red\">Many failed</b>";
+        //    }
 
-            builder.AppendLine($"<div style=\"margin-top 50px;\">Status: {status}</div>");
+        //    builder.AppendLine($"<div style=\"margin-top 50px;\">Status: {status}</div>");
 
-            EmailSenderModal emailSenderModal = new EmailSenderModal
-            {
-                To = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
-                CC = new List<string>(),
-                BCC = new List<string>(),
-                FileDetails = new List<FileDetail>(),
-                Subject = "Monthly Payslip | " + presentDate,
-                Body = builder.ToString(),
-                Title = "Payslip"
-            };
+        //    EmailSenderModal emailSenderModal = new EmailSenderModal
+        //    {
+        //        To = new List<string> { "istiyaq.mi9@gmail.com", "marghub12@gmail.com" },
+        //        CC = new List<string>(),
+        //        BCC = new List<string>(),
+        //        FileDetails = new List<FileDetail>(),
+        //        Subject = "Monthly Payslip | " + presentDate,
+        //        Body = builder.ToString(),
+        //        Title = "Payslip"
+        //    };
 
-            _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Sending email");
-            await _eMailManager.SendMailAsync(emailSenderModal);
-        }
+        //    _logger.LogInformation($"[SendPayrollGeneratedEmail] method: Sending email");
+        //    await _eMailManager.SendMailAsync(emailSenderModal);
+        //}
     }
 
     enum ProcessStep

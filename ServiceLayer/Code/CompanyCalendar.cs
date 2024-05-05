@@ -176,9 +176,11 @@ namespace ServiceLayer
             DateTime fromDate = new DateTime(year, month, 1);
             DateTime toDate = fromDate.AddMonths(1).AddDays(-1);
             LoadHolidayCalendar();
+
             int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
             int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
             totalDays = (decimal)(fullDayHoliday + (halfDayHoliday * 0.5));
+            
             return await Task.FromResult(totalDays);
         }
 

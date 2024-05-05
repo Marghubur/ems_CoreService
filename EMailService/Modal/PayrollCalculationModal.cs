@@ -13,10 +13,12 @@ namespace ModalLayer.Modal
         public List<LeaveRequestDetail> userLeaveRequests { set; get; }
         public DateTime payrollDate { get; set; }
         public ShiftDetail shiftDetail { get; set; }
-        public int totalDaysInMonth { get; set; }
-        public decimal actualMinutesWorked { set; get; }
-        public decimal expectedMinutesToWorked { set; get; }
+        public decimal totalDaysInPresentMonth { get; set; }
+        public decimal daysInPreviousMonth { get; set; }
+        public decimal presentActualMins { set; get; }
+        public decimal presentMinsNeeded { set; get; }
+        public decimal prevLOPMins { set; get; }
+        public decimal prevMinsNeeded { set; get; }
         public bool isExcludingWeekends { set; get; }
-        public bool isExcludingHolidays { set; get; }
     }
 }
