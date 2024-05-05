@@ -15,8 +15,9 @@ namespace EMailService.Modal.DashboardCalculation
 
     public class GSTExpensesModel
     {
-        public decimal Amount { set; get; }
+        public decimal PaidAmount { set; get; }
         public DateTime PaidOn { set; get; }
+        public decimal Amount { set; get; }
     }
 
     public class ProfitExpenseModel
