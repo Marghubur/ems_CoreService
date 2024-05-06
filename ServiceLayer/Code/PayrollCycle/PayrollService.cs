@@ -59,10 +59,25 @@ namespace ServiceLayer.Code.PayrollCycle
 
         private PayrollEmployeePageData GetEmployeeDetail(DateTime presentDate, int offsetindex, int pageSize)
         {
+            int previousMonth = presentDate.Month;
+            int previousYear = presentDate.Year;
+
+            if (presentDate.Month > 1 && presentDate.Month <= 12)
+            {
+                previousMonth -= 1;
+            }
+            else if (presentDate.Month == 1)
+            {
+                previousMonth = 12;
+                previousYear = presentDate.Year - 1;
+            }
+
             var resultSet = _db.FetchDataSet(Procedures.EMPLOYEE_PAYROLL_GET_BY_PAGE, new
             {
                 ForYear = presentDate.Year,
                 ForMonth = presentDate.Month,
+                PreviousYear = previousYear,
+                PreviousMonth = previousMonth,
                 OffsetIndex = offsetindex,
                 PageSize = pageSize,
                 _currentSession.CurrentUserDetail.CompanyId
@@ -390,7 +405,7 @@ namespace ServiceLayer.Code.PayrollCycle
                                 }
 
                                 payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
-                                 payrollMonthlyDetail.PayableToEmployee += payrollCalculationModal.ArrearAmount;
+                                payrollMonthlyDetail.PayableToEmployee += payrollCalculationModal.ArrearAmount;
 
                                 var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
 
@@ -654,7 +669,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
 
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
-                var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId ==  ComponentNames.GrossId).ActualAmount;
+                var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
                 presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
                 payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
             }
