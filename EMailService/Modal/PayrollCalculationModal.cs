@@ -20,5 +20,6 @@ namespace ModalLayer.Modal
         public decimal prevLOPMins { set; get; }
         public decimal prevMinsNeeded { set; get; }
         public bool isExcludingWeekends { set; get; }
+        public decimal ArrearAmount { get; set; }
     }
 }
