@@ -6,9 +6,9 @@ namespace EMailService.Modal.DashboardCalculation
 {
     public class ExpensesModel
     {
-        public decimal TotalPayableToEmployees { set; get; }
-        public decimal TotalPFByEmployer { set; get; }
-        public decimal TotalProfessionalTax { set; get; }
+        public decimal PayableToEmployee { set; get; }
+        public decimal PFByEmployer { set; get; }
+        public decimal ProfessionalTax { set; get; }
         public int ForYear { set; get; }
         public int ForMonth { set; get; }
     }

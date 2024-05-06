@@ -29,7 +29,7 @@ namespace ServiceLayer.Code
 
         public async Task<AdminDashboardResponse> GetSystemDashboardService(AttendenceDetail userDetails)
         {
-            AdminDashboardResponse dashboard = default(AdminDashboardResponse);
+            AdminDashboardResponse dashboard = new AdminDashboardResponse();
             var presentDate = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
             var Result = _db.GetDataSet(Procedures.AdminDashboard_Get, new
@@ -91,16 +91,19 @@ namespace ServiceLayer.Code
             decimal totalExpense = 0;
             if (expensesModel.Count > 0)
             {
-                var monthlyExpense = expensesModel.Find(x => x.ForMonth == month);
-                if (monthlyExpense != null)
-                    totalExpense = monthlyExpense.TotalPayableToEmployees + monthlyExpense.TotalPFByEmployer + monthlyExpense.TotalProfessionalTax;
+                var monthlyExpense = expensesModel.FindAll(x => x.ForMonth == month);
+                if (monthlyExpense.Count > 0)
+                {
+                    totalExpense = monthlyExpense.Aggregate(0m, (sum, value) => sum +
+                                    value.PayableToEmployee + value.ProfessionalTax + value.PFByEmployer);
+                }
             }
 
             if (gstDetail.Count > 0)
             {
-                var monththlyGst = gstDetail.FindAll(x => x.PaidOn.Month == month);
-                if (monththlyGst.Count > 0)
-                    totalExpense += monththlyGst.Aggregate(0m, (sum, value) => sum + value.Amount);
+                var monthlyGst = gstDetail.FindAll(x => x.PaidOn.Month == month);
+                if (monthlyGst.Count > 0)
+                    totalExpense += monthlyGst.Aggregate(0m, (sum, value) => sum + value.Amount);
             }
 
             return totalExpense;

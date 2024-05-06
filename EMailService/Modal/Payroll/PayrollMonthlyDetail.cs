@@ -20,6 +20,5 @@ namespace EMailService.Modal.Payroll
         public DateTime ExecutedOn { set; get; }
         public int CompanyId { set; get; }
         public int TotalEmployees { set; get; }
-        public decimal ArrearAmount { set; get; }
     }
 }
