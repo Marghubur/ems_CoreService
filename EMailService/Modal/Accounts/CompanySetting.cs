@@ -38,5 +38,6 @@ namespace ModalLayer.Modal.Accounts
         public string TimezoneName { set; get; }
         public bool IsJoiningBarrierDayPassed { set; get; }
         public int NoticePeriodInProbation { get; set; }
+        public int ExcludePayrollFromJoinDate { get; set; }
     }
 }

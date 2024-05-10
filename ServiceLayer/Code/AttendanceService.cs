@@ -417,12 +417,13 @@ namespace ServiceLayer.Code
                 attendenceDetails = await CreateAttendanceTillDate(attendanceDetailBuildModal);
             }
 
-            var attendances = attendenceDetails.OrderBy(i => i.AttendanceDay)
-                                .TakeWhile(x => DateTime.Now.Date.Subtract(x.AttendanceDay.Date).TotalDays >= 0)
-                                .OrderByDescending(i => i.AttendanceDay)
-                                .ToList();
+            //var attendances = attendenceDetails.OrderBy(i => i.AttendanceDay)
+            //                    .TakeWhile(x => DateTime.Now.Date.Subtract(x.AttendanceDay.Date).TotalDays >= 0)
+            //                    .OrderByDescending(i => i.AttendanceDay)
+            //                    .ToList();
 
-            //attendances = attendances.OrderByDescending(i => i.AttendanceDay).ToList();
+            var attendances = attendenceDetails.OrderByDescending(i => i.AttendanceDay).ToList();
+
             var leave = _db.GetList<LeaveRequestNotification>(Procedures.Leave_Request_Notification_Get_By_Empid, new
             {
                 EmployeeId = attendance.EmployeeId,
@@ -430,24 +431,26 @@ namespace ServiceLayer.Code
             });
 
             int daysLimit = attendanceDetailBuildModal.attendanceSubmissionLimit + 1;
-            if (attendances.Count == DateTime.UtcNow.Day || DateTime.UtcNow.Day < daysLimit)
+            if (attendanceDetailBuildModal.attendance.ForMonth == DateTime.UtcNow.Month || DateTime.UtcNow.Day < daysLimit)
             {
-                //if (DateTime.UtcNow.Day < daysLimit)
-                //    daysLimit = daysLimit - DateTime.UtcNow.Day;
-
                 foreach (var item in attendances)
                 {
                     if (!CheckWeekend(attendanceDetailBuildModal.shiftDetail, item.AttendanceDay))
                     {
-                        if (daysLimit > 0)
+                        if (daysLimit > 0 && DateTime.UtcNow.Subtract(item.AttendanceDay).TotalDays >= 0)
+                        {
                             item.IsOpen = true;
+                            daysLimit--;
+                        }
                         else
                             item.IsOpen = false;
-
                     }
-                    daysLimit--;
+                    else
+                    {
+                        if (daysLimit > 0 && DateTime.UtcNow.Subtract(item.AttendanceDay).Days >= 0)
+                            daysLimit--;
+                    }
                 }
-
             }
             else
             {

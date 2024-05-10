@@ -154,7 +154,7 @@ namespace ServiceLayer.Code
 
                 employeeSalaryDetail.ForEach(async x =>
                 {
-                    DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Salary_Detail_Upd_Salarydetail, new
+                    DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Declaration_Get_ByEmployeeId, new
                     {
                         EmployeeId = x.EmployeeId,
                         UserTypeId = (int)UserType.Compnay
@@ -303,7 +303,6 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to get salary group. Please contact admin");
 
             salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-
             var existingComponent = salaryGroup.GroupComponents.Find(x => x.ComponentId == component.ComponentId);
             if (existingComponent == null)
             {

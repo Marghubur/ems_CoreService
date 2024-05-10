@@ -974,6 +974,121 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             }
         }
 
+        private List<CalculatedSalaryBreakupDetail> CalculateESIAmount(decimal grossAmount,
+                                                                        List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails,
+                                                                        PfEsiSetting pfEsiSetting,
+                                                                        List<SalaryComponents> salaryComponents)
+        {
+            var employerESIComp = salaryComponents.Find(x => x.ComponentId == LocalConstants.EESI);
+            if (employerESIComp == null)
+                throw HiringBellException.ThrowBadRequest("Employer ESI component not found.");
+
+            decimal employerESI = (grossAmount * pfEsiSetting.EsiEmployerContribution) / 100;
+            calculatedSalaryBreakupDetails.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentId = employerESIComp.ComponentId,
+                Formula = (employerESI * 12).ToString(),
+                ComponentName = employerESIComp.ComponentFullName,
+                ComponentTypeId = employerESIComp.ComponentTypeId,
+                FinalAmount = 0,
+                ActualAmount = employerESI,
+                IsIncludeInPayslip = !pfEsiSetting.IsHideEsiEmployer
+            });
+
+            var employeeESIComp = salaryComponents.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeESIComp == null)
+                throw HiringBellException.ThrowBadRequest("Employer ESI component not found.");
+
+            decimal employeeESI = (grossAmount * pfEsiSetting.EsiEmployeeContribution) / 100;
+            calculatedSalaryBreakupDetails.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentId = employeeESIComp.ComponentId,
+                Formula = (employeeESI * 12).ToString(),
+                ComponentName = employeeESIComp.ComponentFullName,
+                ComponentTypeId = employeeESIComp.ComponentTypeId,
+                FinalAmount = 0,
+                ActualAmount = employeeESI,
+                IsIncludeInPayslip = true
+            });
+
+            return calculatedSalaryBreakupDetails;
+        }
+
+        private List<CalculatedSalaryBreakupDetail> CalculatePFAmount(decimal grossAmount,
+                                                                       List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails,
+                                                                       EmployeeCalculation eCal,
+                                                                       List<SalaryComponents> salaryComponents)
+        {
+            var employeePFComp = salaryComponents.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePFComp == null)
+                throw HiringBellException.ThrowBadRequest("Employee PF component not found.");
+
+            var employerPFComp = salaryComponents.Find(x => x.ComponentId == LocalConstants.EEPF);
+            if (employerPFComp == null)
+                throw HiringBellException.ThrowBadRequest("Employer PF component not found.");
+
+            if (!string.IsNullOrEmpty(eCal.employee.EmployeePF) && employeePFComp != null)
+            {
+                var amount = calculateExpressionUsingInfixDS(employeePFComp.Formula, 0);
+                calculatedSalaryBreakupDetails.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = employeePFComp.ComponentId,
+                    Formula = GetConvertedFormula(eCal, eCal.employee.EmployeePF),
+                    ComponentName = employeePFComp.ComponentFullName,
+                    ComponentTypeId = employeePFComp.ComponentTypeId,
+                    FinalAmount = 0,
+                    ActualAmount = amount / 12,
+                    IsIncludeInPayslip = true
+                });
+            }
+            else if (employerPFComp != null)
+            {
+                decimal actualAmount = 0;
+                if (!string.IsNullOrEmpty(eCal.employee.EmployerPF))
+                {
+                    employerPFComp.Formula = GetConvertedFormula(eCal, eCal.employee.EmployerPF);
+                    var amount = calculateExpressionUsingInfixDS(employerPFComp.Formula, 0);
+                    actualAmount = amount / 12;
+                }
+                else if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
+                {
+                    employerPFComp.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
+                    var amount = calculateExpressionUsingInfixDS(employerPFComp.Formula, employerPFComp.DeclaredValue);
+                    actualAmount = amount / 12;
+
+                    //if (currentYearMonthFlag)
+                    //{
+                    //    int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                    //    int daysWorked = numberOfDays - eCal.Doj.Day + 1;
+                    //    if (daysWorked <= 0)
+                    //    {
+                    //        actualAmount = 0;
+                    //    }
+                    //    else
+                    //    {
+                    //        actualAmount = actualAmount / numberOfDays * daysWorked;
+                    //    }
+                    //}
+                }
+                else
+                {
+                    employerPFComp.IncludeInPayslip = false;
+                }
+                calculatedSalaryBreakupDetails.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentId = employerPFComp.ComponentId,
+                    Formula = employerPFComp.Formula,
+                    ComponentName = employerPFComp.ComponentFullName,
+                    ComponentTypeId = employerPFComp.ComponentTypeId,
+                    FinalAmount = 0,
+                    ActualAmount = actualAmount,
+                    IsIncludeInPayslip = employerPFComp.IncludeInPayslip
+                });
+            }
+
+            return calculatedSalaryBreakupDetails;
+        }
+
         public List<AnnualSalaryBreakup> CreateSalaryBreakupWithValue(EmployeeCalculation eCal)
         {
             _logger.LogInformation("Starting method: CreateSalaryBreakupWithValue");
@@ -983,43 +1098,6 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             List<AnnualSalaryBreakup> annualSalaryBreakups = CreateFreshSalaryBreakUp(eCal);
             if (annualSalaryBreakups == null || annualSalaryBreakups.Count == 0)
                 throw new HiringBellException("Unable to build salary detail. Please contact to admin.");
-
-
-            //DateTime startDate = new DateTime(eCal.companySetting.FinancialYear, eCal.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
-            //eCal.PayrollStartDate = startDate;
-
-            //decimal taxExamptedComponents = GetTaxExamptedAmount(eCal.salaryGroup.GroupComponents);
-            //eCal.TaxableCTC = Convert.ToDecimal(eCal.CTC - taxExamptedComponents);
-            //decimal basicAmountValue = GetBaiscAmountValue(eCal.salaryGroup.GroupComponents, eCal.TaxableCTC);
-
-            //int i = 0;
-            //while (i < eCal.salaryGroup.GroupComponents.Count)
-            //{
-            //    var item = eCal.salaryGroup.GroupComponents.ElementAt(i);
-            //    if (!string.IsNullOrEmpty(item.Formula))
-            //    {
-            //        if (item.Formula.Contains(ComponentNames.BasicName))
-            //            item.Formula = item.Formula.Replace(ComponentNames.BasicName, basicAmountValue.ToString());
-            //        else if (item.Formula.Contains(ComponentNames.CTCName))
-            //            item.Formula = item.Formula.Replace(ComponentNames.CTCName, (Convert.ToDecimal(eCal.TaxableCTC)).ToString());
-            //    }
-
-            //    i++;
-            //}
-
-            //List<AnnualSalaryBreakup> annualSalaryBreakup = null;
-            //if (!string.IsNullOrEmpty(eCal.employeeSalaryDetail.CompleteSalaryDetail))
-            //    annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(eCal.employeeSalaryDetail.CompleteSalaryDetail);
-
-            // create salary brackup freshelly            
-            //if (eCal.employee.IsCTCChanged || annualSalaryBreakup == null || annualSalaryBreakup.Count == 0)
-            //{
-            //    annualSalaryBreakups = CreateFreshSalaryBreakUp(eCal);
-            //}
-            //else // update salary brackup
-            //{
-            //    annualSalaryBreakups = UpdateSalaryBreakUp(eCal, annualSalaryBreakup);
-            //}
 
             _logger.LogInformation("Leaving method: CreateSalaryBreakupWithValue");
 
@@ -1122,81 +1200,68 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                     spaComponent.Formula = ApplicationConstants.AutoCalculation;
                 }
             }
-
-            foreach (var item in taxableComponents)
+            var taxableSalaryComponents = taxableComponents.FindAll(x => x.ComponentId != LocalConstants.ESI
+                                                                    && x.ComponentId != LocalConstants.EESI && x.ComponentId != LocalConstants.EEPF
+                                                                    && x.ComponentId != LocalConstants.EPF);
+            foreach (var item in taxableSalaryComponents)
             {
                 CalculatedSalaryBreakupDetail calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail();
 
                 if (!string.IsNullOrEmpty(item.ComponentId) && item.Formula != ApplicationConstants.AutoCalculation)
                 {
-                    if (item.ComponentId == LocalConstants.EPF && !string.IsNullOrEmpty(eCal.employee.EmployeePF))
-                    {
-                        item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployeePF);
-                        amount = calculateExpressionUsingInfixDS(item.Formula, 0);
-                        amount = amount / 12;
-                    }
-                    else if (item.ComponentId == LocalConstants.EEPF)
-                    {
-                        if (!string.IsNullOrEmpty(eCal.employee.EmployerPF))
-                        {
-                            item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployerPF);
-                            amount = calculateExpressionUsingInfixDS(item.Formula, 0);
-                            amount = amount / 12;
-                        }
-                        else if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
-                        {
-                            item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
-                            amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                            amount = amount / 12;
+                    //if (item.ComponentId == LocalConstants.EPF && !string.IsNullOrEmpty(eCal.employee.EmployeePF))
+                    //{
+                    //    item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployeePF);
+                    //    amount = calculateExpressionUsingInfixDS(item.Formula, 0);
+                    //    amount = amount / 12;
+                    //}
+                    //else if (item.ComponentId == LocalConstants.EEPF)
+                    //{
+                    //    if (!string.IsNullOrEmpty(eCal.employee.EmployerPF))
+                    //    {
+                    //        item.Formula = GetConvertedFormula(eCal, eCal.employee.EmployerPF);
+                    //        amount = calculateExpressionUsingInfixDS(item.Formula, 0);
+                    //        amount = amount / 12;
+                    //    }
+                    //    else if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.PFEnable)
+                    //    {
+                    //        item.IncludeInPayslip = !eCal.pfEsiSetting.IsHidePfEmployer;
+                    //        amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    //        amount = amount / 12;
 
-                            if (currentYearMonthFlag)
-                            {
-                                int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                                int daysWorked = numberOfDays - eCal.Doj.Day + 1;
-                                if (daysWorked <= 0)
-                                {
-                                    amount = 0;
-                                }
-                                else
-                                {
-                                    amount = amount / numberOfDays * daysWorked;
-                                }
-                            }
+                    //        if (currentYearMonthFlag)
+                    //        {
+                    //            int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                    //            int daysWorked = numberOfDays - eCal.Doj.Day + 1;
+                    //            if (daysWorked <= 0)
+                    //            {
+                    //                amount = 0;
+                    //            }
+                    //            else
+                    //            {
+                    //                amount = amount / numberOfDays * daysWorked;
+                    //            }
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        item.IncludeInPayslip = false;
+                    //    }
+                    //}
+                    amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
+                    amount = amount / 12;
+
+                    if (currentYearMonthFlag)
+                    {
+                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                        int daysWorked = numberOfDays - eCal.Doj.Day + 1;
+                        if (daysWorked <= 0)
+                        {
+                            amount = 0;
                         }
                         else
                         {
-                            item.IncludeInPayslip = false;
-                        }
-                    }
-                    else if (item.ComponentId == LocalConstants.ECI)
-                    {
-                        if (eCal.pfEsiSetting != null && eCal.pfEsiSetting.EsiEnable)
-                        {
-                            amount = eCal.pfEsiSetting.EsiEmployerContribution + eCal.pfEsiSetting.EsiEmployeeContribution;
-                            item.IncludeInPayslip = eCal.pfEsiSetting.IsHideEsiEmployer;
-                        }
-                        else
-                        {
-                            item.IncludeInPayslip = false;
-                        }
-                    }
-                    else
-                    {
-                        amount = calculateExpressionUsingInfixDS(item.Formula, item.DeclaredValue);
-                        amount = amount / 12;
-
-                        if (currentYearMonthFlag)
-                        {
-                            int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                            int daysWorked = numberOfDays - eCal.Doj.Day + 1;
-                            if (daysWorked <= 0)
-                            {
-                                amount = 0;
-                            }
-                            else
-                            {
-                                amount = amount / numberOfDays * daysWorked;
-                            }
+                            amount = amount / numberOfDays * daysWorked;
                         }
                     }
                 }
@@ -1226,7 +1291,19 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             }
 
             // calculatedSalaryBreakupDetails.Add(ResolvEMPPFForumulaAmount(eCal));
-            _logger.LogInformation("Endning method: GetComponentsDetail");
+            _logger.LogInformation("Ending method: GetComponentsDetail");
+            if (calculatedMontlyGross <= eCal.pfEsiSetting.MaximumGrossForESI)
+            {
+                var esiComponents = taxableComponents.FindAll(x => x.ComponentId == LocalConstants.ESI
+                                                                    || x.ComponentId == LocalConstants.EESI);
+                CalculateESIAmount(calculatedMontlyGross, calculatedSalaryBreakupDetails, eCal.pfEsiSetting, esiComponents);
+            }
+            else
+            {
+                var pfComponents = taxableComponents.FindAll(x => x.ComponentId == LocalConstants.EEPF
+                                                                    || x.ComponentId == LocalConstants.EPF);
+                CalculatePFAmount(calculatedMontlyGross, calculatedSalaryBreakupDetails, eCal, pfComponents);
+            }
 
             return calculatedSalaryBreakupDetails;
         }
