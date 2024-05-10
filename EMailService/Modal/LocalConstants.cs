@@ -11,6 +11,8 @@
         public static string EEPF = "EPER-PF";
         public static string SPA = "SPA";
         public static string ECI = "ECI";
+        public static string ESI = "ESI";
+        public static string EESI = "EPER-SI";
 
         public const string MonthlyPayFrequency = "monthly";
         public const string DailyPayFrequency = "daily";

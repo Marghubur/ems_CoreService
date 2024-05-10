@@ -443,6 +443,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
                 companySettingDetail.IsJoiningBarrierDayPassed = companySetting.IsJoiningBarrierDayPassed;
                 companySettingDetail.NoticePeriodInProbation = companySetting.NoticePeriodInProbation;
+                companySettingDetail.ExcludePayrollFromJoinDate = companySetting.ExcludePayrollFromJoinDate;
             }
 
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
@@ -461,11 +462,12 @@ namespace ServiceLayer.Code
                 companySettingDetail.TimezoneName,
                 companySetting.IsJoiningBarrierDayPassed,
                 companySettingDetail.NoticePeriodInProbation,
+                companySettingDetail.ExcludePayrollFromJoinDate,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
             if (!ApplicationConstants.IsExecuted(status.statusMessage))
-                throw new HiringBellException("Fail to update company setting detail. CompnayId: ",
+                throw new HiringBellException("Fail to update company setting detail. CompanyId: ",
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
 

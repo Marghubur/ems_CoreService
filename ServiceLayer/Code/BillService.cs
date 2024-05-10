@@ -1245,7 +1245,10 @@ namespace ServiceLayer.Code
             var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x =>
                 x.ComponentId != ComponentNames.GrossId &&
                 x.ComponentId != ComponentNames.CTCId &&
-                //x.ComponentId != ComponentNames.EmployerPF &&
+                x.ComponentId != ComponentNames.EmployerPF &&
+                x.ComponentId != LocalConstants.EPF &&
+                x.ComponentId != LocalConstants.ESI &&
+                x.ComponentId != LocalConstants.EESI &&
                 x.IsIncludeInPayslip == true
             );
             EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
@@ -1256,9 +1259,11 @@ namespace ServiceLayer.Code
 
             var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
             var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            decimal totalYTDAmount = 0;
             foreach (var item in salaryDetail)
             {
-                var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth);
+                var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth
+                                                                                    && payslipModal.SalaryDetail.PresentMonthDate.Subtract(x.PresentMonthDate).Days >= 0);
                 decimal YTDAmount = 0;
                 YTDSalaryBreakup.ForEach(x =>
                 {
@@ -1270,17 +1275,66 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
+                totalYTDAmount += YTDAmount;
             }
 
-            decimal employerPFAmount = 0;
-            var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == "EPER-PF");
-            if (employerPF != null)
-                employerPFAmount = employerPF.FinalAmount;
+            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.ArrearAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+
+            string employeeContribution = string.Empty;
+            decimal totalContribution = 0;
+            var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EEPF);
+            if (employerPF != null && employerPF.IsIncludeInPayslip)
+            {
+                totalContribution += employerPF.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer PF" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerPF.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
+
+            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePF != null && employeePF.IsIncludeInPayslip)
+            {
+                totalContribution += employeePF.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee PF" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeePF.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
+
+            var employerSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EESI);
+            if (employerSI != null && employerSI.IsIncludeInPayslip)
+            {
+                totalContribution += employerSI.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer ESI" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerSI.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
+
+            var employeeSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeSI != null && employeeSI.IsIncludeInPayslip)
+            {
+                totalContribution += employeeSI.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee ESI" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeeSI.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
-            var totalEarning = salaryDetail.Sum(x => x.FinalAmount);
+            var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount;
+            var totalActualEarning = salaryDetail.Sum(x => x.FinalAmount);
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? payslipModal.TaxDetail.TaxDeducted : pTaxAmount;
-            var netSalary = totalEarning > 0 ? totalEarning - (employerPFAmount + totalDeduction) : 0;
+            var netSalary = totalEarning > 0 ? totalEarning - (totalContribution + totalDeduction) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
@@ -1317,14 +1371,17 @@ namespace ServiceLayer.Code
                 Replace("[[Month]]", payslipModal.SalaryDetail.MonthName.ToUpper()).
                 Replace("[[Year]]", payslipModal.Year.ToString()).
                 Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
-                Replace("[[PFAmount]]", employerPFAmount.ToString("0.00")).
+                Replace("[[CompleteContributions]]", employeeContribution).
                 Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
                 Replace("[[TotalIncomeTax]]", (payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? payslipModal.TaxDetail.TaxDeducted - pTaxAmount : 0).ToString("0.00")).
                 Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
+                Replace("[[TotalContribution]]", totalContribution.ToString("0.00")).
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).
                 Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00")).
                 Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
+                Replace("[[TotalActualEarnings]]", totalActualEarning.ToString("0.00")).
+                Replace("[[TotalYTD]]", totalYTDAmount.ToString("0.00")).
                 Replace("[[EmployeeDeclaration]]", declarationHTML);
             }
 
@@ -1370,12 +1427,13 @@ namespace ServiceLayer.Code
         {
             decimal totalDays = 0;
             List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(AttendanceDetail.AttendanceDetail);
-            var submittedAttendance = attendanceDetailJsons.FindAll(x => x.PresentDayStatus == (int)ItemStatus.Approved);
-            if (submittedAttendance != null || submittedAttendance.Count > 0)
+            var approvedAttendance = attendanceDetailJsons.FindAll(x => x.PresentDayStatus == (int)ItemStatus.Approved
+                                                                        || x.PresentDayStatus == (int)AttendanceEnum.WeekOff
+                                                                        || x.PresentDayStatus == (int)AttendanceEnum.Holiday);
+            if (approvedAttendance != null || approvedAttendance.Count > 0)
             {
-                attendanceDetailJsons = attendanceDetailJsons.FindAll(x => x.PresentDayStatus != (int)ItemStatus.Rejected && x.PresentDayStatus != (int)ItemStatus.NotSubmitted);
-                totalDays = attendanceDetailJsons.Count(x => x.SessionType == (int)SessionType.FullDay);
-                totalDays = totalDays + (attendanceDetailJsons.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
+                totalDays = approvedAttendance.Count(x => x.SessionType == (int)SessionType.FullDay);
+                totalDays = totalDays + (approvedAttendance.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
             }
             return totalDays;
         }
