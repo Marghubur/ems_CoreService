@@ -83,14 +83,15 @@ namespace ServiceLayer.Code.PayrollCycle
                 _currentSession.CurrentUserDetail.CompanyId
             }, false);
 
-            if (resultSet == null || resultSet.Tables.Count != 4)
+            if (resultSet == null || resultSet.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest($"[GetEmployeeDetail]: Employee data not found for date: {presentDate} of offSet: {offsetindex}");
 
             PayrollEmployeePageData payrollEmployeePageData = new PayrollEmployeePageData
             {
                 payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
                 leaveRequestDetails = Converter.ToList<LeaveRequestDetail>(resultSet.Tables[2]),
-                hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3])
+                hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3]),
+                joinedAfterPayrollEmployees = Converter.ToList<long>(resultSet.Tables[4])
             };
 
             if (payrollEmployeePageData.payrollEmployeeData == null)
