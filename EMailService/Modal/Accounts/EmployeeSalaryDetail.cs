@@ -5,7 +5,7 @@ namespace ModalLayer.Modal.Accounts
 {
     public class EmployeeSalaryDetail : EmployeePFDetail
     {
-        public int SalaryDetailId { set; get; };
+        public int SalaryDetailId { set; get; }
         public decimal CTC { set; get; }
         public decimal GrossIncome { set; get; }
         public decimal NetSalary { set; get; }

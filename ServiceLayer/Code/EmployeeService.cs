@@ -930,6 +930,7 @@ namespace ServiceLayer.Code
                     employee.PFNumber,
                     employee.PFJoinDate,
                     employee.UniversalAccountNumber,
+                    employee.SalaryDetailId,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
