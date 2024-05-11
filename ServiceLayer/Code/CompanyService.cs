@@ -605,6 +605,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.TimezoneName,
                 companySetting.IsJoiningBarrierDayPassed,
                 companySettingDetail.NoticePeriodInProbation,
+                companySettingDetail.ExcludePayrollFromJoinDate,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 

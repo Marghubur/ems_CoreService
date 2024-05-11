@@ -616,6 +616,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
             var result = await _db.ExecuteAsync(Procedures.Employee_Salary_Detail_InsUpd, new
             {
+                salaryBreakup.SalaryDetailId,
                 EmployeeId,
                 salaryBreakup.CTC,
                 salaryBreakup.GrossIncome,
@@ -1328,6 +1329,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             {
                 var state = _db.Execute(Procedures.Employee_Salary_Detail_Upd_Salarydetail, new
                 {
+                    _currentSession.FinancialStartYear,
                     salaryDetail.EmployeeId,
                     salaryDetail.CompleteSalaryDetail,
                     salaryDetail.TaxDetail,

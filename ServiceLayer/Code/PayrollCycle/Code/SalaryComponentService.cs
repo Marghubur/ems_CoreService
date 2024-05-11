@@ -768,7 +768,13 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException("Invalid EmployeeId");
 
-            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId });
+            EmployeeSalaryDetail employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid,
+                new
+                {
+                    _currentSession.FinancialStartYear,
+                    EmployeeId
+                });
+
             if (employeeSalaryDetail == null)
                 throw new HiringBellException("Fail to get salary detail. Please contact to admin.");
 
@@ -790,7 +796,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 TaxDetail = employeeSalaryDetail.TaxDetail,
                 NewSalaryDetail = employeeSalaryDetail.NewSalaryDetail
             };
+
             var result = _db.Execute<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_InsUpd, salaryBreakup, true);
+
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert or update salary breakup");
             else
@@ -926,6 +934,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
                 var result = _db.Execute<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Upd_On_Payroll_Run, new
                 {
+                    _currentSession.FinancialStartYear,
                     x.EmployeeId,
                     x.TaxDetail,
                     CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakups)
@@ -1590,7 +1599,15 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
         public dynamic GetSalaryBreakupByEmpIdService(long EmployeeId)
         {
-            (EmployeeSalaryDetail completeSalaryBreakup, UserDetail userDetail) = _db.GetMulti<EmployeeSalaryDetail, UserDetail>(Procedures.Employee_Salary_Detail_Get_By_Empid, new { EmployeeId });
+            (EmployeeSalaryDetail completeSalaryBreakup, UserDetail userDetail) =
+                _db.GetMulti<EmployeeSalaryDetail, UserDetail>(
+                    Procedures.Employee_Salary_Detail_Get_By_Empid,
+                    new
+                    {
+                        _currentSession.FinancialStartYear,
+                        EmployeeId
+                    });
+
             return new { completeSalaryBreakup, userDetail };
         }
 
@@ -1722,10 +1739,11 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         public DataSet GetAllSalaryDetailService(FilterModel filterModel)
         {
             if (string.IsNullOrEmpty(filterModel.SearchString))
-                filterModel.SearchString = $"1=1 and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
+                filterModel.SearchString = $"1=1 and s.FinancialStartYear = {_currentSession.FinancialStartYear} and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} and ";
             else
-                filterModel.SearchString += $" and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
+                filterModel.SearchString += $" and s.FinancialStartYear = {_currentSession.FinancialStartYear} and e.CompanyId = {_currentSession.CurrentUserDetail.CompanyId}";
             filterModel.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+
             var result = _db.FetchDataSet(Procedures.Employee_Salary_Detail_GetbyFilter, filterModel);
             result.Tables[0].TableName = "SalaryDetail";
             if (result.Tables[1].Rows.Count == 0)

@@ -142,10 +142,11 @@ namespace ServiceLayer.Code
                 var data = (from n in employeeSalaryDetail
                             select new
                             {
-                                EmployeeId = n.EmployeeId,
-                                CompleteSalaryDetail = n.CompleteSalaryDetail,
-                                TaxDetail = n.TaxDetail,
-                                CTC = n.CTC
+                                _currentSession.FinancialStartYear,
+                                n.EmployeeId,
+                                n.CompleteSalaryDetail,
+                                n.TaxDetail,
+                                n.CTC
                             }).ToList();
 
                 var result = await _db.BulkExecuteAsync(Procedures.Employee_Salary_Detail_Upd_Salarydetail, data, true);
@@ -368,10 +369,11 @@ namespace ServiceLayer.Code
                 var data = (from n in employeeSalaryDetail
                             select new
                             {
-                                EmployeeId = n.EmployeeId,
-                                CompleteSalaryDetail = n.CompleteSalaryDetail,
-                                TaxDetail = n.TaxDetail,
-                                CTC = n.CTC
+                                _currentSession.FinancialStartYear,
+                                n.EmployeeId,
+                                n.CompleteSalaryDetail,
+                                n.TaxDetail,
+                                n.CTC
                             }).ToList();
 
                 var result = await _db.BulkExecuteAsync(Procedures.Employee_Salary_Detail_Upd_Salarydetail, data, true);
