@@ -91,7 +91,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
                 leaveRequestDetails = Converter.ToList<LeaveRequestDetail>(resultSet.Tables[2]),
                 hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3]),
-                joinedAfterPayrollEmployees = Converter.ToList<long>(resultSet.Tables[4])
+                joinedAfterPayrollEmployees = resultSet.Tables[4] == null ? [] : Converter.ToList<long>(resultSet.Tables[4])
             };
 
             if (payrollEmployeePageData.payrollEmployeeData == null)
@@ -417,11 +417,20 @@ namespace ServiceLayer.Code.PayrollCycle
 
                                 presentData.IsPayrollCompleted = true;
                                 empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
-                                await _declarationService.UpdateTaxDetailsService(empPayroll,
-                                    payrollMonthlyDetail,
-                                    payrollCommonData.utcPresentDate,
-                                    IsTaxCalculationRequired
-                                );
+
+                                if (payrollEmployeePageData.joinedAfterPayrollEmployees.Count > 0 &&
+                                    payrollEmployeePageData.joinedAfterPayrollEmployees.Contains(empPayroll.EmployeeId))
+                                {
+                                    // update hike_bonus_salary_adhoc
+                                }
+                                else
+                                {
+                                    await _declarationService.UpdateTaxDetailsService(empPayroll,
+                                        payrollMonthlyDetail,
+                                        payrollCommonData.utcPresentDate,
+                                        IsTaxCalculationRequired
+                                    );
+                                }
 
                                 IsTaxCalculationRequired = false;
                             }
@@ -456,6 +465,11 @@ namespace ServiceLayer.Code.PayrollCycle
             };
 
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
+        }
+
+        private async Task<decimal> GetPreviousMonthArrearAmount(PayrollCalculationModal payrollCalculationModal, decimal grossAmount)
+        {
+            return await Task.FromResult(0);
         }
 
         private async Task<decimal> GetPreviousMonthLOPAmount(PayrollCalculationModal payrollCalculationModal, decimal grossAmount)
@@ -672,6 +686,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
                 var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
                 presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
+                presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(payrollCalculationModal, grossAmount);
                 payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
             }
 
