@@ -223,6 +223,7 @@
         public static string Catagory_Insupd = "sp_catagory_insupd";
         public static string Catagory_Getby_Filter = "sp_catagory_getby_filter";
         public static string PAYROLL_AND_SALARY_DETAIL_INSUPD = "sp_payroll_and_salary_detail_insupd";
+        public static string HIKE_BONUS_SALARY_ADHOC_TAXDETAIL_INS_UPDATE = "sp_hike_bonus_salary_adhoc_taxdetail_ins_update";
 
         /*--------------  Project Service procedures ------------*/
         public static string Project_Detail_Getby_Id = "sp_project_detail_getby_id";
