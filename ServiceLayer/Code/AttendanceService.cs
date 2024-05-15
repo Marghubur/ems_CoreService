@@ -9,7 +9,6 @@ using EMailService.Modal;
 using EMailService.Service;
 using ModalLayer;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -19,7 +18,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TimeZoneConverter;
 
 namespace ServiceLayer.Code
 {
@@ -264,6 +262,7 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
+
             attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
             return attendenceDetails;
         }
