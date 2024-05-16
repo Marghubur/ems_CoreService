@@ -45,8 +45,12 @@ namespace ModalLayer.Modal
         public List<LeaveRequestDetail> leaveRequestDetails { set; get; }
         public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
         public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
-        public List<long> joinedAfterPayrollEmployees { set; get; } = [];
+        public List<JoinedAfterPayrollEmployees> joinedAfterPayrollEmployees { set; get; } = [];
+    }
 
+    public class JoinedAfterPayrollEmployees
+    {
+        public long EmployeeUid { get; set; }
     }
 
     public enum WorkType

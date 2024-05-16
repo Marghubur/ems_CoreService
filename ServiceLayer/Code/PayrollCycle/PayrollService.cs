@@ -4,7 +4,6 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
-using DocumentFormat.OpenXml.Bibliography;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
@@ -91,7 +90,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
                 leaveRequestDetails = Converter.ToList<LeaveRequestDetail>(resultSet.Tables[2]),
                 hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3]),
-                joinedAfterPayrollEmployees = resultSet.Tables[4] == null ? [] : Converter.ToList<long>(resultSet.Tables[4])
+                joinedAfterPayrollEmployees = resultSet.Tables[4] == null ? [] : Converter.ToList<JoinedAfterPayrollEmployees>(resultSet.Tables[4])
             };
 
             if (payrollEmployeePageData.payrollEmployeeData == null)
@@ -186,10 +185,10 @@ namespace ServiceLayer.Code.PayrollCycle
             return attendanceDetailJsons;
         }
 
-        private async Task GetPayrollWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
+        private async Task GetPayrollWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay, DateTime doj)
         {
-            var payrollDetail = await GetCurrentMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
-            var previousPayrollDetail = await GetPreviousMonthWorkingDetail(payrollCalculationModal, payrollRunDay);
+            var payrollDetail = await GetCurrentMonthWorkingDetail(payrollCalculationModal, payrollRunDay, doj);
+            var previousPayrollDetail = await GetPreviousMonthWorkingDetail(payrollCalculationModal, payrollRunDay, doj);
             var previousMonth = payrollCalculationModal.payrollDate.AddMonths(-1);
             payrollCalculationModal.daysInPreviousMonth = DateTime.DaysInMonth(previousMonth.Year, previousMonth.Month);
             payrollCalculationModal.presentActualMins = payrollDetail.ApprovedAttendanceMinutes;
@@ -227,7 +226,7 @@ namespace ServiceLayer.Code.PayrollCycle
             payrollCalculationModal.prevMinsNeeded = (payrollCalculationModal.daysInPreviousMonth * payrollCalculationModal.shiftDetail.Duration);
         }
 
-        private async Task<PayrollWorkingDetail> GetCurrentMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
+        private async Task<PayrollWorkingDetail> GetCurrentMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay, DateTime doj)
         {
             List<AttendanceJson> attendanceDetail = new List<AttendanceJson>();
             var attrDetail = payrollCalculationModal.payrollEmployeeData.Find(x => x.EmployeeId == payrollCalculationModal.employeeId
@@ -239,6 +238,9 @@ namespace ServiceLayer.Code.PayrollCycle
 
             if (attendanceDetail == null)
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
+
+            if (payrollCalculationModal.payrollDate.Month == doj.Month && payrollCalculationModal.payrollDate.Year == doj.Year)
+                attendanceDetail = attendanceDetail.FindAll(x => x.AttendanceDay.Day >= doj.Day);
 
             // Update date's to be approved after payroll run date
             Parallel.ForEach(attendanceDetail.FindAll(x => x.AttendanceDay.Day > payrollRunDay), x =>
@@ -260,18 +262,20 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollWorkingDetail;
         }
 
-        private async Task<PayrollWorkingDetail> GetPreviousMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
+        private async Task<PayrollWorkingDetail> GetPreviousMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay, DateTime doj)
         {
             List<AttendanceJson> attendanceDetail = new List<AttendanceJson>();
+            PayrollWorkingDetail payrollWorkingDetail = null;
             DateTime payrollDate = payrollCalculationModal.payrollDate.AddMonths(-1);
             var attrDetail = payrollCalculationModal.payrollEmployeeData
                                 .Find(x => x.EmployeeId == payrollCalculationModal.employeeId && x.ForMonth == payrollDate.Month);
-            PayrollWorkingDetail payrollWorkingDetail = null;
 
             if (attrDetail == null || string.IsNullOrEmpty(attrDetail.AttendanceDetail))
                 return payrollWorkingDetail = new PayrollWorkingDetail();
 
             attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
+            if (payrollDate.Month == doj.Month && payrollDate.Year == doj.Year)
+                attendanceDetail = attendanceDetail.FindAll(x => x.AttendanceDay.Day >= doj.Day);
 
             if (attendanceDetail == null)
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found while running payroll cycle.");
@@ -385,12 +389,18 @@ namespace ServiceLayer.Code.PayrollCycle
                                     payrollEmployeeData = payrollEmployeeData,
                                     userLeaveRequests = payrollEmployeePageData.leaveRequestDetails
                                                     .Where(x => x.EmployeeId == empPayroll.EmployeeId).ToList(),
-                                    totalDaysInPresentMonth = totalDaysInMonth
+                                    totalDaysInPresentMonth = totalDaysInMonth,
+                                    employeeId = empPayroll.EmployeeId,
+                                    shiftDetail = GetEmployeeShiftDetail(payrollCommonData, empPayroll.WorkShiftId)
                                 };
 
-                                await GetCalculationModal(payrollCommonData, empPayroll, payrollCalculationModal, payrollRunDay);
+                                await GetCalculationModal(payrollCommonData, payrollCalculationModal, payrollRunDay, empPayroll.Doj);
 
-                                payrollMonthlyDetail = await GetUpdatedBreakup(payrollCommonData.utcPresentDate, payrollCalculationModal, empPayroll);
+                                payrollMonthlyDetail = await GetUpdatedBreakup(payrollCommonData.utcPresentDate,
+                                                                                payrollCalculationModal,
+                                                                                empPayroll,
+                                                                                payrollEmployeePageData.hikeBonusSalaryAdhoc
+                                                                                );
 
                                 if (payrollCalculationModal.presentActualMins != payrollCalculationModal.presentMinsNeeded)
                                 {
@@ -415,13 +425,17 @@ namespace ServiceLayer.Code.PayrollCycle
 
                                 payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
 
-                                presentData.IsPayrollCompleted = true;
+                                var data = taxDetails.Find(x => x.Month == presentData.Month && x.Year == presentData.Year);
+                                data.TaxPaid = presentData.TaxPaid;
+                                data.TaxDeducted = presentData.TaxDeducted;
+                                data.IsPayrollCompleted = true;
                                 empPayroll.TaxDetail = JsonConvert.SerializeObject(taxDetails);
 
                                 if (payrollEmployeePageData.joinedAfterPayrollEmployees.Count > 0 &&
-                                    payrollEmployeePageData.joinedAfterPayrollEmployees.Contains(empPayroll.EmployeeId))
+                                    payrollEmployeePageData.joinedAfterPayrollEmployees.FirstOrDefault(x => x.EmployeeUid == empPayroll.EmployeeId) != null)
                                 {
-                                    // update hike_bonus_salary_adhoc
+                                    await UpdateEmployeeArrearAmount(empPayroll.EmployeeId, payrollMonthlyDetail.PayableToEmployee, 
+                                                                    payrollCommonData.presentDate, empPayroll.TaxDetail);
                                 }
                                 else
                                 {
@@ -467,9 +481,72 @@ namespace ServiceLayer.Code.PayrollCycle
             _ = Task.Run(() => _kafkaNotificationService.SendEmailNotification(payrollTemplateModel));
         }
 
-        private async Task<decimal> GetPreviousMonthArrearAmount(PayrollCalculationModal payrollCalculationModal, decimal grossAmount)
+        private ShiftDetail GetEmployeeShiftDetail(PayrollCommonData payrollCommonData, int workShiftId)
         {
-            return await Task.FromResult(0);
+            var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == workShiftId);
+            return shiftDetail == null
+                ? throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin")
+                : shiftDetail;
+        }
+
+        private async Task UpdateEmployeeArrearAmount(long employeeId, decimal arrearAmount, 
+                                                    DateTime presentDate, string taxDetail)
+        {
+            if (arrearAmount != decimal.Zero)
+            {
+                var result = await _db.ExecuteAsync(Procedures.HIKE_BONUS_SALARY_ADHOC_TAXDETAIL_INS_UPDATE,
+                new
+                {
+                    SalaryAdhocId = 0,
+                    EmployeeId = employeeId,
+                    ProcessStepId = 0,
+                    FinancialYear = _currentSession.FinancialStartYear,
+                    _currentSession.CurrentUserDetail.OrganizationId,
+                    _currentSession.CurrentUserDetail.CompanyId,
+                    IsPaidByCompany = false,
+                    IsPaidByEmployee = false,
+                    IsFine = false,
+                    IsHikeInSalary = false,
+                    IsBonus = false,
+                    IsReimbursment = false,
+                    IsSalaryOnHold = false,
+                    IsArrear = true,
+                    IsOvertime = false,
+                    IsCompOff = false,
+                    OTCalculatedOn = "",
+                    AmountInPercentage = 0,
+                    Amount = arrearAmount,
+                    IsActive = true,
+                    PaymentActionType = "",
+                    Comments = "",
+                    Status = (int)ItemStatus.Approved,
+                    ForYear = presentDate.Year,
+                    ForMonth = presentDate.Month,
+                    ProgressState = (int)ItemStatus.Approved,
+                    TaxDetail = taxDetail
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to insert arrear amount");
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task<decimal> GetPreviousMonthArrearAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, long employeeId, DateTime payrollDate)
+        {
+            decimal arrearAmount = 0;
+            if (hikeBonusSalaryAdhocs.Count > 0)
+            {
+                DateTime previousMonthDate = payrollDate.AddMonths(-1);
+
+                var prevMonthArrearDetail = hikeBonusSalaryAdhocs.Find(x => x.EmployeeId == employeeId && x.ForMonth == previousMonthDate.Month
+                                            && x.ForYear == previousMonthDate.Year && x.IsArrear);
+                if (prevMonthArrearDetail != null)
+                    arrearAmount = prevMonthArrearDetail.Amount;
+            }
+
+            return await Task.FromResult(arrearAmount);
         }
 
         private async Task<decimal> GetPreviousMonthLOPAmount(PayrollCalculationModal payrollCalculationModal, decimal grossAmount)
@@ -487,24 +564,17 @@ namespace ServiceLayer.Code.PayrollCycle
         }
 
         private async Task GetCalculationModal(PayrollCommonData payrollCommonData,
-            PayrollEmployeeData empPayroll, PayrollCalculationModal payrollCalculationModal, int payrollRunDay)
+                                                PayrollCalculationModal payrollCalculationModal, int payrollRunDay,
+                                                DateTime doj)
         {
-            var payroll = payrollCommonData.payroll;
-
-            var shiftDetail = payrollCommonData.shiftDetail.Find(x => x.WorkShiftId == empPayroll.WorkShiftId);
-            if (shiftDetail == null)
-                throw HiringBellException.ThrowBadRequest("Shift detail not found. Please contact to admin");
-
-            payrollCalculationModal.shiftDetail = shiftDetail;
             payrollCalculationModal.payrollDate = payrollCommonData.presentDate;
-            payrollCalculationModal.isExcludeHolidays = payroll.IsExcludeHolidays;
-            payrollCalculationModal.payCalculationId = payroll.PayCalculationId;
-            payrollCalculationModal.employeeId = empPayroll.EmployeeId;
-            payrollCalculationModal.isExcludingWeekends = payroll.IsExcludeWeeklyOffs;
+            payrollCalculationModal.isExcludeHolidays = payrollCommonData.payroll.IsExcludeHolidays;
+            payrollCalculationModal.payCalculationId = payrollCommonData.payroll.PayCalculationId;
+            payrollCalculationModal.isExcludingWeekends = payrollCommonData.payroll.IsExcludeWeeklyOffs;
 
             // (decimal actualMins, decimal expectedMins) = await GetMinutesForPayroll(payrollCalculationModal, payrollRunDay);
 
-            await GetPayrollWorkingDetail(payrollCalculationModal, payrollRunDay);
+            await GetPayrollWorkingDetail(payrollCalculationModal, payrollRunDay, doj);
         }
 
         private List<TaxDetails> ValidateTaxDetail(PayrollCommonData payrollCommonData, PayrollEmployeeData empPayroll, TaxDetails presentData)
@@ -513,9 +583,18 @@ namespace ServiceLayer.Code.PayrollCycle
             if (taxDetails == null)
                 throw HiringBellException.ThrowBadRequest("TaxDetail not prepaired for the current employee. Fail to run payroll.");
 
-            presentData = taxDetails.Find(x => x.Month == payrollCommonData.presentDate.Month);
-            if (presentData == null)
+            var currentpresentData = taxDetails.Find(x => x.Month == payrollCommonData.presentDate.Month);
+            if (currentpresentData == null)
                 throw HiringBellException.ThrowBadRequest("Invalid taxdetail found. Fail to run payroll.");
+
+            presentData.TaxPaid = currentpresentData.TaxPaid;
+            presentData.TaxDeducted = currentpresentData.TaxDeducted;
+            presentData.Year = currentpresentData.Year;
+            presentData.TaxDeducted = presentData.TaxDeducted;
+            presentData.EmployeeId = currentpresentData.EmployeeId;
+            presentData.IsPayrollCompleted = currentpresentData.IsPayrollCompleted;
+            presentData.Month = currentpresentData.Month;
+            presentData.Year = currentpresentData.Year;
 
             return taxDetails;
         }
@@ -650,7 +729,8 @@ namespace ServiceLayer.Code.PayrollCycle
             return builder.ToString();
         }
 
-        private async Task<PayrollMonthlyDetail> GetUpdatedBreakup(DateTime payrollDate, PayrollCalculationModal payrollCalculationModal, PayrollEmployeeData empPayroll)
+        private async Task<PayrollMonthlyDetail> GetUpdatedBreakup(DateTime payrollDate, PayrollCalculationModal payrollCalculationModal, PayrollEmployeeData empPayroll,
+                                                                    List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs)
         {
             PayrollMonthlyDetail payrollMonthlyDetail = new PayrollMonthlyDetail();
             var salaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(empPayroll.CompleteSalaryDetail);
@@ -686,7 +766,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
                 var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
                 presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
-                presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(payrollCalculationModal, grossAmount);
+                presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
                 payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
             }
 

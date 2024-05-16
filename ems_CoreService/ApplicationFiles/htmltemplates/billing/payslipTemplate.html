@@ -15,7 +15,13 @@
             padding-left: 15px;
             padding-top: 5px;
             padding-bottom: 5px;
-            border-bottom: 1px solid #d9d9d9;
+            /* border-bottom: 1px solid #d9d9d9; */
+        }
+
+        .box-cell-head {
+            padding-left: 15px;
+            padding-top: 3px;
+            padding-bottom: 3px;
         }
 
         .box-bottom-cell {
@@ -29,146 +35,148 @@
             color: #999797;
             font-size: 10px;
         }
+
+        .border-top {
+            border-top: 1px solid #222;
+        }
+
+        .border-bottom {
+            border-bottom: 1px solid #222;
+        }
     </style>
 </head>
 
 <body style="width: 70vw; margin: auto;">
-    <div style="font-size: 30px; color: rgb(27, 104, 134);">
-        <span style="font-weight: bold;">
-            PAYSLIP
-        </span>
-        <span> [[Month]] [[Year]]</span>
+    <div>
+        <div style="position: relative;">
+            <div style="font-size: 25px; color: rgb(27, 104, 134); text-align: center; font-weight: bold;">
+                BOTTOMHALF PVT. LTD.
+            </div>
+            <div style="font-size: 13px; color: rgb(27, 104, 134); text-align: center;">
+                [[CompanyFirstAddress]] [[CompanySecondAddress]] [[CompanyThirdAddress]] [[CompanyFourthAddress]]
+            </div>
+            <div style="font-size: 18px; color: rgb(27, 104, 134); text-align: center; font-weight: bold;">
+                Payslip for thr period of [[Month]] [[Year]]
+            </div>
+            <div style="position: absolute; right: 0; top: 0;">
+                <div style="text-align: right;">
+                    <img style="width: 120px;" src="[[COMPANYLOGO_PATH]]" />
+                </div>
+            </div>
+        </div>
     </div>
-    <table class="gap" width="100%" border="0">
-        <tbody>
-            <tr>
-                <td>
-                    <div style="text-align: left;">
-                        <span style="color: rgb(27, 104, 134); font-size: 16px;">[[CompanyName]]</span>
-                        <br />
-                        <label style="font-size: 13px;">
-                            [[CompanyFirstAddress]]
-                        </label>
-                        <br />
-                        <span style="font-size: 13px;">
-                            [[CompanySecondAddress]]
-                        </span>
-                        <br />
-                        <span style="font-size: 13px;">
-                            [[CompanyThirdAddress]]
-                        </span>
-                        <br />
-                        <span style="font-size: 13px;">
-                            [[CompanyFourthAddress]]
-                        </span>
-                        <br />
-                    </div>
-                </td>
-                <td style="text-align: right;">
-                    <div>
-                        <img style="width: 170px;" src="[[COMPANYLOGO_PATH]]" />
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
 
     <table class="gap" width="100%" border="0" cellspacing="0" cellpadding="0">
-        <thead>
-            <tr>
-                <th colspan="4" style="padding-top:15px; padding-bottom: 10px; font-weight: bold; border-bottom: 1px solid #222; text-align: left;">
-                    [[EmployeeName]]
-                </th>
-            </tr>
-        </thead>
         <tbody>
             <tr>
-                <td class="box-cell">
-                    <span class="text-muted">Emp No</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[EmployeeNo]]</p>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">Emp No</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Date Joined</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[JoiningDate]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[EmployeeNo]]</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Department</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[Department]]</p>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">Name</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Sub Department</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[SubDepartment]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[EmployeeName]]</span>
                 </td>
             </tr>
             <tr>
-                <td class="box-cell">
-                    <span class="text-muted">Designation</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[Designation]]</p>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">Department</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Payment Mode</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[Payment Mode]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[Department]]</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Bank</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[Bank]]</p>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">Designation</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">Bank IFSC</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[BankIFSC]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[Designation]]</span>
                 </td>
             </tr>
             <tr>
-                <td class="box-bottom-cell">
-                    <span class="text-muted">Bank Account</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[Bank Account]]</p>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">Date Joined</span>
                 </td>
-                <td class="box-bottom-cell">
-                    <span class="text-muted">PAN</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[PAN]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[JoiningDate]]</span>
                 </td>
-                <td class="box-bottom-cell">
-                    <span class="text-muted">UAN</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[UAN]]</p>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">Payment Mode</span>
                 </td>
-                <td class="box-bottom-cell">
-                    <span class="text-muted">PF Number</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[PFNumber]]</p>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[Payment Mode]]</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">Bank</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[Bank]]</span>
+                </td>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">Bank IFSC</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[BankIFSC]]</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">Bank Account</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[Bank Account]]</span>
+                </td>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">PAN</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[PAN]]</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="box-cell-head" width="13%">
+                    <span style="font-size: 12px;">UAN</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[UAN]]</span>
+                </td>
+                <td class="box-cell-head" width="14%">
+                    <span style="font-size: 12px;">PF Number</span>
+                </td>
+                <td class="box-cell-head">
+                    <span style="font-size: 12px;">: [[PFNumber]]</span>
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <table class="gap" width="100%" border="0" cellspacing="0" cellpadding="0">
-        <thead>
-            <tr>
-                <th colspan="4" style="padding-top:15px; padding-bottom: 10px; border-bottom: 1px solid #222; text-align: left;">
-                    SALARY DETAILS
-                </th>
-            </tr>
-        </thead>
+    <table style="margin-top: 10px;" width="100%" border="0" cellspacing="0" cellpadding="0">
         <tbody>
             <tr>
-                <td class="box-cell" style="">
-                    <span class="text-muted">ACTUAL PAYABLE DAYS</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[ActualPayableDays]]</p>
+                <td class="box-cell-head border-top border-bottom">
+                    <span style="font-size: 12px;">Actual Payable Days : [[ActualPayableDays]]</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">TOTAL WORKING DAYS</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[TotalWorkingDays]]</p>
+                <td class="box-cell-head border-top border-bottom">
+                    <span style="font-size: 12px;">Total Working Days : [[TotalWorkingDays]]</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">LOSS OF PAY DAYS</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[LossOfPayDays]]</p>
+                <td class="box-cell-head border-top border-bottom">
+                    <span style="font-size: 12px;">LOP : [[LossOfPayDays]]</span>
                 </td>
-                <td class="box-cell">
-                    <span class="text-muted">DAYS PAYABLE</span>
-                    <p style="padding-top: 5px; margin: 0; font-size: 12px;">[[DaysPayable]]</p>
+                <td class="box-cell-head border-top border-bottom">
+                    <span style="font-size: 12px;">Days Payable : [[DaysPayable]]</span>
                 </td>
             </tr>
         </tbody>
     </table>
 
+    <div style="padding-top:15px; font-size: 15px; font-weight: bold; padding-bottom: 5px; border-bottom: 1px solid #222; text-align: left;">
+        SALARY DETAILS
+    </div>
     <div style="display: flex; justify-content:space-between; padding-top: 10px;">
         <div style="width: 63%; padding-right: 10px; border-bottom: 1px solid #222;">
             <table width="100%" border="0" cellspacing="0" cellpadding="0">

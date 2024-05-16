@@ -101,6 +101,7 @@ namespace SchoolInMindServer.MiddlewareServices
             currentSession.CurrentUserDetail = JsonConvert.DeserializeObject<UserDetail>(userDetail);
 
             currentSession.CurrentUserDetail.RoleId = currentSession.CurrentUserDetail.RoleId;
+            currentSession.FinancialStartYear = currentSession.CurrentUserDetail.FinancialYear;
 
             if (currentSession.CurrentUserDetail == null)
                 throw new HiringBellException("Invalid token found. Please contact to admin.");
