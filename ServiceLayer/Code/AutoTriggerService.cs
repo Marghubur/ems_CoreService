@@ -122,7 +122,14 @@ namespace ServiceLayer.Code
                             companySettings.ForEach(async i =>
                             {
                                 LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
-                                await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
+                                try
+                                {
+                                    await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
+                                }
+                                catch (Exception e)
+                                {
+                                    _logger.LogError(e.Message);
+                                }
                             });
                             break;
                         case KafkaServiceName.WeeklyTimesheetJob:
@@ -212,7 +219,7 @@ namespace ServiceLayer.Code
 
         public async Task RunPayrollJobAsync(DateTime? runDate)
         {
-            if(runDate == null)
+            if (runDate == null)
             {
                 throw HiringBellException.ThrowBadRequest("Invalid run date passed. Please check run date.");
             }

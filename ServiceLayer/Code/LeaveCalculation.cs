@@ -392,9 +392,6 @@ namespace ServiceLayer.Code
 
             if (ds != null && ds.Tables.Count == 3)
             {
-                _logger.LogInformation("CompanyId" + _currentSession.CurrentUserDetail.CompanyId  + ",   Table result: " + JsonConvert.SerializeObject(ds));
-
-                //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
                 {
                     _logger.LogError("Fail to get employee related details. Please contact to admin.");
