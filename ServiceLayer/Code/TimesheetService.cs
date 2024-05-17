@@ -50,9 +50,9 @@ namespace ServiceLayer.Code
                     TimesheetEndDate = TimesheetEndDate
                 }, true);
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                throw;
             }
 
             await Task.CompletedTask;

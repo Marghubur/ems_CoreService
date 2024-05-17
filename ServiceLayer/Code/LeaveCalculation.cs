@@ -175,7 +175,6 @@ namespace ServiceLayer.Code
             {
                 try
                 {
-                    _logger.LogInformation("Calling: sp_leave_accrual_cycle_data_by_employee");
                     List<EmployeeAccrualData> employeeAccrualData = _db.GetList<EmployeeAccrualData>(Procedures.Leave_Accrual_Cycle_Data_By_Employee, new
                     {
                         runAccrualModel.EmployeeId,
@@ -189,7 +188,6 @@ namespace ServiceLayer.Code
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
                     {
-                        _logger.LogInformation("employeeAccrualData is null or count is 0");
                         break;
                     }
 
@@ -371,7 +369,6 @@ namespace ServiceLayer.Code
 
         private async Task UpdateEmployeesRecord(List<EmployeeAccrualData> employeeAccrualData)
         {
-            _logger.LogInformation("Method: UpdateEmployeesRecord strated");
             var tableJsonData = (from r in employeeAccrualData
                                  select new
                                  {
@@ -379,26 +376,24 @@ namespace ServiceLayer.Code
                                      Year = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone).Year,
                                      LeaveTypeBriefJson = JsonConvert.SerializeObject(r.LeaveTypeBrief)
                                  }).ToList();
-            _logger.LogInformation("Calling: sp_employee_leave_request_update_accrual_detail");
 
             var rowsAffected = await _db.BulkExecuteAsync(Procedures.Employee_Leave_Request_Update_Accrual_Detail, tableJsonData, false);
             if (rowsAffected != employeeAccrualData.Count)
             {
-                _logger.LogError("Fail to update leave deatil. Please contact to admin");
                 throw new HiringBellException("Fail to update leave deatil. Please contact to admin");
             }
-            _logger.LogInformation("Method: UpdateEmployeesRecord end");
         }
 
         private async Task<LeaveCalculationModal> LoadLeaveMasterData()
         {
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.timeZonePresentDate = DateTime.UtcNow;
-            _logger.LogInformation("Calling : sp_leave_accrual_cycle_master_data");
             var ds = _db.GetDataSet(Procedures.Leave_Accrual_Cycle_Master_Data, new { _currentSession.CurrentUserDetail.CompanyId }, false);
 
             if (ds != null && ds.Tables.Count == 3)
             {
+                _logger.LogInformation("Table result: " + JsonConvert.SerializeObject(ds));
+
                 //if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0 || ds.Tables[3].Rows.Count == 0)
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
                 {
@@ -443,7 +438,6 @@ namespace ServiceLayer.Code
 
         private async Task<LeaveCalculationModal> LoadPrepareRequiredData(LeaveRequestModal leaveRequestModal)
         {
-            _logger.LogInformation("Method: LoadPrepareRequiredData start");
             var leaveCalculationModal = await GetCalculationModal(
                 leaveRequestModal.EmployeeId,
                 leaveRequestModal.LeaveFromDay,
@@ -469,15 +463,11 @@ namespace ServiceLayer.Code
             ValidateAndGetLeavePlanConfiguration(_leavePlanType);
             leaveCalculationModal.leavePlanConfiguration = _leavePlanConfiguration;
 
-            _logger.LogInformation("Method: LoadPrepareRequiredData end");
             return await Task.FromResult(leaveCalculationModal);
         }
 
         private void CheckProjectedFutureLeaves(LeaveRequestModal leaveRequestModal, LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckProjectedFutureLeaves start");
-
-            // check future proejcted date
             if (leaveRequestModal.IsProjectedFutureDateAllowed)
             {
                 decimal leavePerMonth = 0;
@@ -505,8 +495,6 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.ProjectedFutureLeave = leavePerMonth;
                 if ((planType.AvailableLeaves + leavePerMonth) < leaveCalculationModal.numberOfLeaveApplyring)
                     throw HiringBellException.ThrowBadRequest("Total leave applying is exceeding from available (with projected) leaves");
-
-                _logger.LogInformation("Method: CheckProjectedFutureLeaves End");
             }
         }
 
@@ -542,8 +530,6 @@ namespace ServiceLayer.Code
 
         private async Task<decimal> RunAccrualCycleAsync(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
-            _logger.LogInformation("Method: RunAccrualCycleAsync started");
-
             decimal availableLeaves = 0;
 
             // get current leave plan configuration and check if its valid one.
@@ -561,7 +547,6 @@ namespace ServiceLayer.Code
                 availableLeaves = await _accrual.CalculateLeaveAccrualTillMonth(leaveCalculationModal, leavePlanType);
             else
                 availableLeaves = await _accrual.CalculateLeaveAccrual(leaveCalculationModal, leavePlanType);
-            _logger.LogInformation("Method: RunAccrualCycleAsync end");
 
             return await Task.FromResult(availableLeaves);
         }
@@ -633,8 +618,6 @@ namespace ServiceLayer.Code
 
         private void CheckSameDateAlreadyApplied(List<LeaveRequestNotification> completeLeaveDetails, LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckSameDateAlreadyApplied start");
-
             try
             {
                 if (completeLeaveDetails.Count > 0)
@@ -670,7 +653,6 @@ namespace ServiceLayer.Code
                         });
                     }
                 }
-                _logger.LogInformation("Method: CheckSameDateAlreadyApplied end");
             }
             catch (AggregateException ax)
             {
@@ -687,8 +669,6 @@ namespace ServiceLayer.Code
 
         private async Task SameDayRequestValidationCheck(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: SameDayRequestValidationCheck start");
-
             if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             {
                 List<LeaveRequestNotification> completeLeaveDetails = leaveCalculationModal.lastAppliedLeave;
@@ -699,7 +679,6 @@ namespace ServiceLayer.Code
                     CheckSameDateAlreadyApplied(completeLeaveDetails, leaveCalculationModal);
                 }
             }
-            _logger.LogInformation("Method: SameDayRequestValidationCheck end");
 
             await Task.CompletedTask;
         }
@@ -710,7 +689,7 @@ namespace ServiceLayer.Code
             _leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             if (_leavePlanConfiguration == null)
             {
-                _logger.LogInformation("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
+                _logger.LogError("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
                 throw new HiringBellException("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
             }
         }
@@ -762,7 +741,6 @@ namespace ServiceLayer.Code
 
         private void CheckForProbationPeriod(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckForProbationPeriod started");
             leaveCalculationModal.employeeType = ApplicationConstants.Regular;
             if ((leaveCalculationModal.employee.CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays))
                 .Subtract(now).TotalDays > 0)
@@ -771,21 +749,16 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.probationEndDate = leaveCalculationModal.employee
                     .CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays);
             }
-            _logger.LogInformation("Method: CheckForProbationPeriod end");
         }
 
         private void CheckForNoticePeriod(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckForProbationPeriod started");
             if (leaveCalculationModal.employee.NoticePeriodId != 0 && leaveCalculationModal.employee.NoticePeriodAppliedOn != null)
                 leaveCalculationModal.employeeType = ApplicationConstants.InNoticePeriod;
-
-            _logger.LogInformation("Method: CheckForProbationPeriod end");
         }
 
         private async Task<LeaveCalculationModal> GetCalculationModal(long EmployeeId, DateTime FromDate, DateTime ToDate)
         {
-            _logger.LogInformation("Method: GetCalculationModal Start");
             var leaveCalculationModal = new LeaveCalculationModal();
             leaveCalculationModal.fromDate = FromDate;
             leaveCalculationModal.toDate = ToDate;
@@ -807,7 +780,6 @@ namespace ServiceLayer.Code
             // Check employee is in notice period
             CheckForNoticePeriod(leaveCalculationModal);
 
-            _logger.LogInformation("Method: GetCalculationModal end");
             return await Task.FromResult(leaveCalculationModal);
         }
 
@@ -817,8 +789,6 @@ namespace ServiceLayer.Code
         {
             try
             {
-                _logger.LogInformation("Method: CheckAndApplyForLeave start");
-
                 if (fileDetail != null && fileDetail.Count > 0)
                     leaveRequestModal.DocumentProffAttached = true;
 
@@ -827,7 +797,6 @@ namespace ServiceLayer.Code
 
                 List<string> reporterEmail = await ApplyAndSaveChanges(leaveCalculationModal, leaveRequestModal, fileCollection, fileDetail);
                 leaveCalculationModal.ReporterEmail = reporterEmail;
-                _logger.LogInformation("Method: CheckAndApplyForLeave end");
 
                 return leaveCalculationModal;
             }
@@ -839,15 +808,11 @@ namespace ServiceLayer.Code
 
         private async Task<List<string>> ApplyAndSaveChanges(LeaveCalculationModal leaveCalculationModal, LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)
         {
-            _logger.LogInformation("Method: ApplyAndSaveChanges start");
-
             var leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             if (leavePlanType == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get leave plan type detai. Please contact to admin.");
 
-            _logger.LogInformation("Method: ValidateAndGetLeavePlanConfiguration start");
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
-            _logger.LogInformation("Method: ValidateAndGetLeavePlanConfiguration end");
 
             decimal totalAllocatedLeave = leaveCalculationModal.leavePlanTypes.Sum(x => x.MaxLeaveLimit);
 
@@ -881,17 +846,14 @@ namespace ServiceLayer.Code
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
-            _logger.LogInformation("Data inserted inserted in leave request notification and result: " + result);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update leave notification detail");
 
             leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId = int.Parse(result);
-            _logger.LogInformation("LeaveRequestNotifucationId: " + leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId);
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
                 leaveDetails = JsonConvert.DeserializeObject<List<int>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
             leaveDetails.Add(leaveCalculationModal.leaveRequestDetail.LeaveRequestNotificationId);
-            _logger.LogInformation("LeaveDetails: " + leaveDetails.ToString());
 
             var leaveTypeBriefs = JsonConvert.DeserializeObject<List<LeaveTypeBrief>>(leaveCalculationModal.leaveRequestDetail.LeaveQuotaDetail);
             var availableLeave = leaveTypeBriefs.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
@@ -912,7 +874,6 @@ namespace ServiceLayer.Code
                 LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs)
             }, true);
 
-            _logger.LogInformation("Data inserted inserted in leave request notification and result: " + result);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update leave detail");
 
@@ -940,15 +901,13 @@ namespace ServiceLayer.Code
                 AdminId = _currentSession.CurrentUserDetail.UserId,
                 CreatedOn = DateTime.UtcNow
             });
-            leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList();
-            _logger.LogInformation("Method: ApplyAndSaveChanges end");
 
+            leaveCalculationModal.lastAppliedLeave = leaveCalculationModal.lastAppliedLeave.OrderByDescending(x => x.CreatedOn).ToList();
             return await Task.FromResult(emails);
         }
 
         private async Task<string> SaveLeaveAttachment(IFormFileCollection fileCollection, List<Files> fileDetail, Employee employee)
         {
-            _logger.LogInformation("Method: SaveLeaveAttachment start");
             DbResult Result = null;
             List<int> fileIds = new List<int>();
             if (fileCollection != null && fileCollection.Count > 0)
@@ -980,7 +939,7 @@ namespace ServiceLayer.Code
                     fileIds.Add(Convert.ToInt32(Result.statusMessage));
                 }
             }
-            _logger.LogInformation("Method: SaveLeaveAttachment end");
+
             return JsonConvert.SerializeObject(fileIds);
         }
 
