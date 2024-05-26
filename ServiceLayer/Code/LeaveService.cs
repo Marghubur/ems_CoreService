@@ -640,7 +640,7 @@ namespace ServiceLayer.Code
                     LeaveTypeName = lOPAdjustmentDetail.LeavePlanName,
                     AutoActionAfterDays = 0,
                     IsAutoApprovedEnabled = false,
-                    leaveCalculationModal.LeaveTypeId,
+                    lOPAdjustmentDetail.LeaveTypeId,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 }, true);
 
@@ -720,7 +720,7 @@ namespace ServiceLayer.Code
                 EmployeeId,
                 _currentSession.CurrentUserDetail.ReportingManagerId,
                 IsActive = 1,
-                Year = DateTime.UtcNow.Year
+                DateTime.UtcNow.Year
             }, false);
 
             if (ds != null && ds.Tables.Count == 8)

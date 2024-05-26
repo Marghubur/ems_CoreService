@@ -1,6 +1,5 @@
 ﻿using EMailService.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
 
@@ -38,11 +37,12 @@ namespace ModalLayer.Modal
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public DateTime Doj { get; set; }
         public int WorkShiftId { get; set; }
+        public string PreviuosMonthAttendance { get; set; }
     }
 
     public class PayrollEmployeePageData
     {
-        public List<LeaveRequestDetail> leaveRequestDetails { set; get; }
+        public List<LeaveRequestNotification> leaveRequestDetails { set; get; }
         public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
         public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
         public List<JoinedAfterPayrollEmployees> joinedAfterPayrollEmployees { set; get; } = [];
