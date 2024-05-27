@@ -80,6 +80,8 @@ namespace ServiceLayer.Code
             List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
             var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
             int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
+            if (dateOfJoining.Month > timezoneFirstDate.Month && dateOfJoining.Year >= timezoneFirstDate.Year)
+                return null;
 
             double days = 0;
             var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
@@ -380,7 +382,7 @@ namespace ServiceLayer.Code
                     var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
                     attendanceModal.attendanceSubmissionLimit = 2;
-                    await BuildApprovedAttendance(attendanceModal, attendanceStartDate, status);
+                    await BuildApprovedAttendance(attendanceModal, attendanceModal.employee.CreatedOn, status);
 
                     attendanceStartDate = attendanceStartDate.AddMonths(1);
                 }
@@ -497,7 +499,8 @@ namespace ServiceLayer.Code
             {
                 EmployeeDetail = attendanceDetailBuildModal.employee,
                 AttendanceId = attendanceDetailBuildModal.attendance.AttendanceId,
-                AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList()
+                AttendacneDetails = attendances.OrderBy(i => i.AttendanceDay).ToList(),
+                //Projects = attendanceDetailBuildModal.projects
             };
         }
 
@@ -532,6 +535,7 @@ namespace ServiceLayer.Code
 
             attendanceDetailBuildModal.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
             attendanceDetailBuildModal.compalintOrRequests = Converter.ToList<ComplaintOrRequest>(Result.Tables[4]);
+            //attendanceDetailBuildModal.projects = Converter.ToList<Project>(Result.Tables[5]);
 
             if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
                 throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
@@ -1258,13 +1262,16 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to get attendance setting details. Please contact to admin.");
 
             AttendanceSetting attendanceSetting = Converter.ToType<AttendanceSetting>(ds.Tables[2]);
-            // List<LeaveRequestNotification> leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[0]);
+            List<LeaveRequestNotification> leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[0]);
             List<Attendance> attendance = Converter.ToList<Attendance>(ds.Tables[1]);
             attendance.ForEach(x =>
             {
                 int daysLimit = attendanceSetting.BackDateLimitToApply + 1;
                 List<AttendanceJson> attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(x.AttendanceDetail);
-                // List<LeaveRequestNotification> leaves = leaveRequestNotifications.FindAll(x => x.EmployeeId == x.EmployeeId);
+                List<LeaveRequestNotification> leaves = null;
+                if (leaveRequestNotifications.Count > 0)
+                    leaves = leaveRequestNotifications.FindAll(i => i.EmployeeId == x.EmployeeId && i.RequestStatusId == (int)ItemStatus.Approved);
+
                 DateTime lastAppliedDate = DateTime.UtcNow.AddDays(-daysLimit);
                 //attendanceDetail.ForEach(i =>
                 //{

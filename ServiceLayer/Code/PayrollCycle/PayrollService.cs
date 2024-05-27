@@ -88,7 +88,7 @@ namespace ServiceLayer.Code.PayrollCycle
             PayrollEmployeePageData payrollEmployeePageData = new PayrollEmployeePageData
             {
                 payrollEmployeeData = Converter.ToList<PayrollEmployeeData>(resultSet.Tables[0]),
-                leaveRequestDetails = Converter.ToList<LeaveRequestDetail>(resultSet.Tables[2]),
+                leaveRequestDetails = Converter.ToList<LeaveRequestNotification>(resultSet.Tables[2]),
                 hikeBonusSalaryAdhoc = Converter.ToList<HikeBonusSalaryAdhoc>(resultSet.Tables[3]),
                 joinedAfterPayrollEmployees = resultSet.Tables[4] == null ? [] : Converter.ToList<JoinedAfterPayrollEmployees>(resultSet.Tables[4])
             };
@@ -110,30 +110,30 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollEmployeePageData;
         }
 
-        private int GetPresentMonthLOP(List<LeaveRequestDetail> leaveRequestDetail, DateTime toDate)
+        private int GetPresentMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime toDate)
         {
             int days = toDate.Day - 1;
             DateTime fromDate = toDate.AddDays(-days);
 
-            var leaves = leaveRequestDetail.Where(x => x.LeaveFromDay >= fromDate && x.LeaveToDay <= toDate).ToList();
+            var leaves = leaveRequestDetail.Where(x => x.FromDate >= fromDate && x.ToDate <= toDate).ToList();
 
             double leavesCount = 0;
             foreach (var leave in leaveRequestDetail)
             {
-                if (leave.LeaveToDay <= toDate)
+                if (leave.ToDate <= toDate)
                 {
-                    leavesCount += leave.LeaveToDay.Subtract(leave.LeaveFromDay).TotalDays;
+                    leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays + 1;
                 }
                 else
                 {
-                    leavesCount += toDate.Subtract(leave.LeaveFromDay).TotalDays;
+                    leavesCount += toDate.Subtract(leave.FromDate).TotalDays + 1;
                 }
             }
 
             return Convert.ToInt32(leavesCount);
         }
 
-        private int GetPreviousMonthLOP(List<LeaveRequestDetail> leaveRequestDetail, DateTime fromDate)
+        private int GetPreviousMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime fromDate)
         {
             fromDate = fromDate.AddMonths(-1);
 
@@ -142,18 +142,18 @@ namespace ServiceLayer.Code.PayrollCycle
 
             DateTime toDate = fromDate.AddDays(days);
 
-            var leaves = leaveRequestDetail.Where(x => x.LeaveFromDay > fromDate && x.LeaveToDay <= toDate).ToList();
+            var leaves = leaveRequestDetail.Where(x => x.FromDate > fromDate && x.ToDate <= toDate).ToList();
 
             double leavesCount = 0;
             foreach (var leave in leaves)
             {
-                if (leave.LeaveFromDay > fromDate)
+                if (leave.FromDate > fromDate)
                 {
-                    leavesCount += leave.LeaveToDay.Subtract(leave.LeaveFromDay).TotalDays;
+                    leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays;
                 }
                 else
                 {
-                    leavesCount += leave.LeaveToDay.Subtract(fromDate).TotalDays;
+                    leavesCount += leave.ToDate.Subtract(fromDate).TotalDays;
                 }
             }
 
@@ -218,7 +218,7 @@ namespace ServiceLayer.Code.PayrollCycle
             }
 
             payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPAttendanceMiutes;
-            payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPLeaveMinutes;
+            payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPLeaveMinutes * payrollCalculationModal.shiftDetail.Duration;
 
             payrollCalculationModal.presentMinsNeeded = (payrollCalculationModal.totalDaysInPresentMonth * payrollCalculationModal.shiftDetail.Duration);
 
@@ -268,12 +268,12 @@ namespace ServiceLayer.Code.PayrollCycle
             PayrollWorkingDetail payrollWorkingDetail = null;
             DateTime payrollDate = payrollCalculationModal.payrollDate.AddMonths(-1);
             var attrDetail = payrollCalculationModal.payrollEmployeeData
-                                .Find(x => x.EmployeeId == payrollCalculationModal.employeeId && x.ForMonth == payrollDate.Month);
+                                .Find(x => x.EmployeeId == payrollCalculationModal.employeeId && x.ForMonth == payrollCalculationModal.payrollDate.Month);
 
-            if (attrDetail == null || string.IsNullOrEmpty(attrDetail.AttendanceDetail))
+            if (attrDetail.PreviuosMonthAttendance == null || string.IsNullOrEmpty(attrDetail.PreviuosMonthAttendance))
                 return payrollWorkingDetail = new PayrollWorkingDetail();
 
-            attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.AttendanceDetail);
+            attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceJson>>(attrDetail.PreviuosMonthAttendance);
             if (payrollDate.Month == doj.Month && payrollDate.Year == doj.Year)
                 attendanceDetail = attendanceDetail.FindAll(x => x.AttendanceDay.Day >= doj.Day);
 
@@ -361,8 +361,15 @@ namespace ServiceLayer.Code.PayrollCycle
                 if (payrollEmployeePageData.payrollEmployeeData.Count == 0)
                     break;
 
-                List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData;
-
+                List<PayrollEmployeeData> payrollEmployeeData = payrollEmployeePageData.payrollEmployeeData.FindAll(x => x.ForMonth == payrollCommonData.presentDate.Month
+                                                                                                                    && x.ForYear == payrollCommonData.presentDate.Year);
+                var prevpayrollDate = payrollCommonData.presentDate.AddMonths(-1);
+                payrollEmployeeData.ForEach(x =>
+                {
+                    var prevMonthDetail = payrollEmployeePageData.payrollEmployeeData.FirstOrDefault(i => i.ForMonth == prevpayrollDate.Month && i.ForYear == prevpayrollDate.Year);
+                    if (prevMonthDetail != null)
+                        x.PreviuosMonthAttendance = prevMonthDetail.AttendanceDetail;
+                });
                 // run pay cycle by considering actual days in months if payroll.PayCalculationId = 1
                 // else run pay cycle by considering only weekdays in month if payroll.PayCalculationId = 0
                 if (payroll.PayCalculationId != 1)

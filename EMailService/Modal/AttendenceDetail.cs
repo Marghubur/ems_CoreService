@@ -1,5 +1,6 @@
 ﻿using CoreBottomHalf.Modal;
 using ModalLayer.Modal.Leaves;
+using ModalLayer.Modal.Profile;
 using System;
 using System.Collections.Generic;
 
@@ -36,6 +37,7 @@ namespace ModalLayer.Modal
         public List<AttendanceJson> AttendacneDetails { set; get; }
         public long AttendanceId { set; get; }
         public Employee EmployeeDetail { set; get; }
+        public List<Project> Projects { get; set; }
     }
 
     public class AttendanceDetailBuildModal
@@ -50,6 +52,7 @@ namespace ModalLayer.Modal
         public ShiftDetail shiftDetail { set; get; }
         public LeaveDetail leaveDetail { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
+        public List<Project> projects { get; set; }
     }
 
     public class AttendanceJson
