@@ -1443,7 +1443,7 @@ namespace ServiceLayer.Code
             DateTime movingDate = FromDate;
 
             int i = 0;
-            while(movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
+            while (movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
             {
                 if (movingDate.DayOfWeek == DayOfWeek.Sunday)
                 {
@@ -1465,11 +1465,11 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        public async Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService()
+        public async Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates)
         {
-            AttendanceWithClientDetail detail = await GetUserAttendance();
+            AttendanceWithClientDetail detail = await GetUserAttendance(weekDates);
 
-            detail.DailyAttendances = detail.DailyAttendances.OrderByDescending(i => i.AttendanceDate).ToList();
+            detail.DailyAttendances = detail.DailyAttendances.OrderBy(i => i.AttendanceDate).ToList();
 
             if (detail.LeaveRequestDetail.Count > 0)
             {
@@ -1504,15 +1504,13 @@ namespace ServiceLayer.Code
             return await Task.FromResult(Tuple.Create(FromDate, ToDate));
         }
 
-        private async Task<AttendanceWithClientDetail> GetUserAttendance()
+        private async Task<AttendanceWithClientDetail> GetUserAttendance(WeekDates weekDates)
         {
             AttendanceWithClientDetail attendanceWithClientDetail = new AttendanceWithClientDetail();
-            (DateTime FromDate, DateTime ToDate) = await BuildDates();
-
             var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_by_user", new
             {
-                FromDate,
-                ToDate,
+                FromDate = weekDates.StartDate.AddDays(-1),
+                ToDate = weekDates.EndDate,
                 EmployeeId = _currentSession.CurrentUserDetail.UserId
             });
 
@@ -1524,13 +1522,16 @@ namespace ServiceLayer.Code
             attendanceWithClientDetail.EmployeeShift = Converter.ToType<ShiftDetail>(attendanceDs.Tables[3]);
 
             UpdateShiftInAttendance(attendanceWithClientDetail);
-
             return attendanceWithClientDetail;
         }
 
         private void UpdateShiftInAttendance(AttendanceWithClientDetail attendanceWithClientDetail)
         {
-
+            attendanceWithClientDetail.DailyAttendances.ForEach(x =>
+            {
+                var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone);
+                x.IsWeekend = CheckWeekend(attendanceWithClientDetail.EmployeeShift, attendanceDate);
+            });
         }
 
         private void ValidateAttendanceResult(DataSet attendanceDs)
