@@ -6,11 +6,15 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
 using EMailService.Service;
+using ExcelDataReader.Log;
 using ModalLayer;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ServiceLayer.Code
 {
@@ -306,17 +311,6 @@ namespace ServiceLayer.Code
                     flag = !shiftDetail.IsSun;
                     break;
             }
-
-            return flag;
-        }
-
-        private bool CheckIsHoliday(DateTime date, List<Calendar> calendars)
-        {
-            bool flag = false;
-
-            var records = calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
-            if (records != null)
-                flag = true;
 
             return flag;
         }
@@ -1555,6 +1549,127 @@ namespace ServiceLayer.Code
             {
                 throw HiringBellException.ThrowBadRequest("Shift detail not found.");
             }
+        }
+
+        public async Task<AttendanceJson> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
+        {
+            string Result = string.Empty;
+
+            List<Calendar> _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new
+            {
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            });
+
+            await PrepareAttendanceForUpdate(attendances);
+
+            foreach (var x in attendances)
+            {
+                if (x.AttendanceId == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
+
+                if (x.AttendanceDate.Year <= 1900)
+                    throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+
+                // check for holiday
+                await this.CheckIsOnPaidLeave(x.AttendanceDate);
+            }
+
+            await _db.BulkExecuteAsync("sp_daily_attendance_upd_weekly", (
+            from n in attendances
+            select new
+            {
+                n.AttendanceId,
+                n.EmployeeId,
+                n.EmployeeName,
+                n.EmployeeEmail,
+                n.ReviewerId,
+                n.ReviewerName,
+                n.ReviewerEmail,
+                n.ProjectId,
+                n.TaskId,
+                n.TaskType,
+                n.LogOn,
+                n.LogOff,
+                n.TotalMinutes,
+                n.Comments,
+                n.AttendanceStatus,
+                n.WeekOfYear,
+                n.AttendanceDate,
+                n.WorkTypeId,
+                n.IsOnLeave,
+                n.LeaveId,
+                n.CreatedBy
+            }).ToList(), true);
+
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Unable submit the attendace");
+
+            return null;
+        }
+
+        private async Task PrepareAttendanceForUpdate(List<DailyAttendance> attendances)
+        {
+            attendances = attendances.OrderBy(x => x.AttendanceId).ToList();
+            long startAttendanceId = attendances.First().AttendanceId;
+            long endAttendanceId = attendances.Last().AttendanceId;
+
+            AttendanceWithClientDetail attendanceWithClientDetail = new AttendanceWithClientDetail();
+            var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_by_user", new
+            {
+                FromDate = startAttendanceId,
+                ToDate = endAttendanceId,
+                EmployeeId = _currentSession.CurrentUserDetail.UserId
+            });
+
+
+            List<DailyAttendance> dailyAttendance = Converter.ToList<DailyAttendance>(attendanceDs.Tables[0]);
+
+            foreach (var attendance in attendances)
+            {
+                var attr = attendances.Find(x => x.AttendanceId == attendance.AttendanceId);
+                if (attr != null)
+                {
+                    attendance.ProjectId = attr.ProjectId;
+                    attendance.TaskId = attr.TaskId;
+                    attendance.TaskType = attr.TaskType;
+                    attendance.LogOn = attr.LogOn;
+                    attendance.LogOff = attr.LogOff;
+                    attendance.TotalMinutes = attr.TotalMinutes;
+                    attendance.Comments = attr.Comments;
+                    attendance.AttendanceStatus = (int)ItemStatus.Submitted;
+                    attendance.WorkTypeId = attr.WorkTypeId;
+                    attendance.IsOnLeave = attr.IsOnLeave;
+                    attendance.LeaveId = attr.LeaveId;
+                }
+                else
+                {
+                    throw HiringBellException.ThrowBadRequest($"Attendance not found for date: {attendance.AttendanceDate}");
+                }
+            }
+        }
+
+        private bool CheckIsHoliday(DateTime date, List<Calendar> calendars)
+        {
+            bool flag = false;
+
+            var records = calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
+            if (records != null)
+                flag = true;
+
+            return flag;
+        }
+
+        private async Task CheckIsOnPaidLeave(DateTime workingDate)
+        {
+            // check if from date is holiday
+
+            // check if already on leave
+
+            // check if from date already applied for leave
+
+            // check shift weekends
+
+            await Task.CompletedTask;
         }
 
         #endregion

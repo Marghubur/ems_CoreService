@@ -53,41 +53,6 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-
-
-
-        [HttpPost("GetWeeklyAttendanceByUserId")]
-        public async Task<ApiResponse> GetAttendanceByUserId(WeekDates weekDates)
-        {
-            try
-            {
-                var result = await _attendanceService.GetDailyAttendanceByUserIdService(weekDates);
-                return BuildResponse(result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, weekDates);
-            }
-        }
-
-        [HttpGet("LoadAttendanceConfigData/{EmployeeId}")]
-        public async Task<ApiResponse> LoadAttendanceConfigData(long EmployeeId)
-        {
-            try
-            {
-                var result = await _attendanceService.LoadAttendanceConfigDataService(EmployeeId);
-                return BuildResponse(result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, EmployeeId);
-            }
-        }
-
-
-
-
-
         [HttpPost("SendEmailNotification")]
         [AllowAnonymous]
         public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
@@ -295,5 +260,51 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, attendenceDetail);
             }
         }
+
+        #region NEW-SERVICE
+
+        [HttpPost("GetWeeklyAttendanceByUserId")]
+        public async Task<ApiResponse> GetAttendanceByUserId(WeekDates weekDates)
+        {
+            try
+            {
+                var result = await _attendanceService.GetDailyAttendanceByUserIdService(weekDates);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, weekDates);
+            }
+        }
+
+        [HttpGet("LoadAttendanceConfigData/{EmployeeId}")]
+        public async Task<ApiResponse> LoadAttendanceConfigData(long EmployeeId)
+        {
+            try
+            {
+                var result = await _attendanceService.LoadAttendanceConfigDataService(EmployeeId);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
+        }
+
+        [HttpPut("SubmitDailyAttendance")]
+        public async Task<ApiResponse> SubmitDailyAttendance([FromBody] List<DailyAttendance> attendances)
+        {
+            try
+            {
+                var result = await _attendanceService.SubmitDailyAttendanceService(attendances);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendances);
+            }
+        }
+
+        #endregion
     }
 }
