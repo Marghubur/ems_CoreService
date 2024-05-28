@@ -5,6 +5,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using EMailService.Modal;
 using EMailService.Service;
 using ModalLayer;
@@ -1397,9 +1398,164 @@ namespace ServiceLayer.Code
             return await GetMissingAttendanceApprovalRequestService(filter);
         }
 
-        public void PresnetAllAttendance()
+
+        #region ATTENDANCE_NEW_CLASS
+
+        public async Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId)
+        {
+            if (EmployeeId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee id passed");
+
+            return await GetAttendanceConfiData(EmployeeId);
+        }
+
+        private async Task<AttendanceConfig> GetAttendanceConfiData(long EmployeeId)
+        {
+            AttendanceConfig attendanceConfig = new AttendanceConfig();
+            var ds = await _db.GetDataSetAsync("sp_daily_attendance_config_data", new
+            {
+                EmployeeId
+            });
+
+            if (ds.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Employee and project detail not found.");
+
+            if (ds.Tables[0].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Employee detail not found.");
+
+            attendanceConfig.Projects = Converter.ToList<Project>(ds.Tables[1]);
+            attendanceConfig.EmployeeDetail = Converter.ToType<Employee>(ds.Tables[0]);
+
+            await GenerateWeeks(attendanceConfig);
+
+            return attendanceConfig;
+        }
+
+        private async Task GenerateWeeks(AttendanceConfig attendanceConfig)
+        {
+            (DateTime FromDate, DateTime ToDate) = await BuildDates();
+
+            if (ToDate.Date.Subtract(FromDate.Date).TotalDays < 0)
+                throw HiringBellException.ThrowBadRequest("Invalid date calculation for week generation. Please contact to admin.");
+
+            attendanceConfig.Weeks = new List<WeekDates>();
+            DateTime startDate = FromDate;
+            DateTime movingDate = FromDate;
+
+            int i = 0;
+            while(movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
+            {
+                if (movingDate.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    attendanceConfig.Weeks.Add(new WeekDates
+                    {
+                        StartDate = startDate,
+                        EndDate = movingDate,
+                        WeekIndex = ++i
+                    });
+
+                    startDate = movingDate.AddDays(1);
+                }
+
+                movingDate = movingDate.AddDays(1);
+            }
+
+            attendanceConfig.Weeks = attendanceConfig.Weeks.OrderByDescending(x => x.WeekIndex).ToList();
+
+            await Task.CompletedTask;
+        }
+
+        public async Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService()
+        {
+            AttendanceWithClientDetail detail = await GetUserAttendance();
+
+            detail.DailyAttendances = detail.DailyAttendances.OrderByDescending(i => i.AttendanceDate).ToList();
+
+            if (detail.LeaveRequestDetail.Count > 0)
+            {
+                foreach (var item in detail.DailyAttendances)
+                {
+                    var leaveDetail = detail.LeaveRequestDetail
+                                        .Find(
+                                                x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays <= 0
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays >= 0
+                                             );
+
+                    if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
+                    {
+                        item.IsOnLeave = true;
+                    }
+                }
+            }
+
+            return detail;
+        }
+
+        private async Task<Tuple<DateTime, DateTime>> BuildDates()
+        {
+            DateTime PresentDate = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day);
+
+            DateTime FromDate = new DateTime(PresentDate.Year, PresentDate.Month, 1).AddMonths(-1);
+            FromDate = _timezoneConverter.FirstDayOfPresentWeek(FromDate, _currentSession.TimeZone);
+            DateTime ToDate = _timezoneConverter.LastDayOfPresentWeek(PresentDate, _currentSession.TimeZone);
+
+            return await Task.FromResult(Tuple.Create(FromDate, ToDate));
+        }
+
+        private async Task<AttendanceWithClientDetail> GetUserAttendance()
+        {
+            AttendanceWithClientDetail attendanceWithClientDetail = new AttendanceWithClientDetail();
+            (DateTime FromDate, DateTime ToDate) = await BuildDates();
+
+            var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_by_user", new
+            {
+                FromDate,
+                ToDate,
+                EmployeeId = _currentSession.CurrentUserDetail.UserId
+            });
+
+            ValidateAttendanceResult(attendanceDs);
+
+            attendanceWithClientDetail.DailyAttendances = Converter.ToList<DailyAttendance>(attendanceDs.Tables[0]);
+            attendanceWithClientDetail.LeaveRequestDetail = Converter.ToList<LeaveRequestNotification>(attendanceDs.Tables[1]);
+            attendanceWithClientDetail.EmployeeDetail = Converter.ToType<Employee>(attendanceDs.Tables[2]);
+            attendanceWithClientDetail.EmployeeShift = Converter.ToType<ShiftDetail>(attendanceDs.Tables[3]);
+
+            UpdateShiftInAttendance(attendanceWithClientDetail);
+
+            return attendanceWithClientDetail;
+        }
+
+        private void UpdateShiftInAttendance(AttendanceWithClientDetail attendanceWithClientDetail)
         {
 
         }
+
+        private void ValidateAttendanceResult(DataSet attendanceDs)
+        {
+            if (attendanceDs.Tables.Count != 4)
+            {
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found.");
+            }
+
+            if (attendanceDs.Tables[0].Rows.Count == 0)
+            {
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found.");
+            }
+
+            if (attendanceDs.Tables[2].Rows.Count == 0)
+            {
+                throw HiringBellException.ThrowBadRequest("Employee detail not found.");
+            }
+
+            if (attendanceDs.Tables[3].Rows.Count == 0)
+            {
+                throw HiringBellException.ThrowBadRequest("Shift detail not found.");
+            }
+        }
+
+        #endregion
     }
 }

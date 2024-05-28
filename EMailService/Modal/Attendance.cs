@@ -1,5 +1,7 @@
-﻿using EMailService.Modal;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using EMailService.Modal;
 using ModalLayer.Modal.Accounts;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 
@@ -22,6 +24,53 @@ namespace ModalLayer.Modal
         public long SubmittedBy { set; get; }
         public WorkType WorkTypeId { set; get; }
     }
+
+
+
+
+
+
+    public class DailyAttendance
+    {
+        public long AttendanceId { set; get; }
+        public long EmployeeId { set; get; }
+        public string EmployeeName { set; get; }
+        public string EmployeeEmail { set; get; }
+        public long ReviewerId { set; get; }
+        public string ReviewerName { set; get; }
+        public string ReviewerEmail { set; get; }
+        public int ProjectId { set; get; }
+        public int TaskId { set; get; }
+        public int TaskType { set; get; }
+        public string LogOn { set; get; }
+        public string LogOff { set; get; }
+        public int TotalMinutes { set; get; }
+        public string Comments { set; get; }
+        public int AttendanceStatus { set; get; }
+        public int WeekOfYear { set; get; }
+        public DateTime AttendanceDate { set; get; }
+        public WorkType WorkTypeId { set; get; }
+        public bool IsHoliday { set; get; }
+        public int HolidayId { set; get; }
+        public bool IsOnLeave { set; get; }
+        public bool IsWeekend { set; get; }
+        public int LeaveId { set; get; }
+        public long CreatedBy { set; get; }
+        public DateTime CreatedOn { set; get; }
+        public long UpdatedBy { set; get; }
+        public DateTime UpdatedOn { set; get; }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     public class PayrollEmployeeData : Attendance
     {

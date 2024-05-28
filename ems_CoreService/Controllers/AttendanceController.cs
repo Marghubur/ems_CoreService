@@ -53,6 +53,41 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+
+
+
+        [HttpPost("GetDailyAttendanceByUserId")]
+        public async Task<ApiResponse> GetAttendanceByUserId(DailyAttendance attendance)
+        {
+            try
+            {
+                var result = await _attendanceService.GetDailyAttendanceByUserIdService();
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendance);
+            }
+        }
+
+        [HttpGet("LoadAttendanceConfigData/{EmployeeId}")]
+        public async Task<ApiResponse> LoadAttendanceConfigData(long EmployeeId)
+        {
+            try
+            {
+                var result = await _attendanceService.LoadAttendanceConfigDataService(EmployeeId);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, EmployeeId);
+            }
+        }
+
+
+
+
+
         [HttpPost("SendEmailNotification")]
         [AllowAnonymous]
         public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)

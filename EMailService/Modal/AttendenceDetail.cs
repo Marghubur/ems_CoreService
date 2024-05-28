@@ -37,7 +37,12 @@ namespace ModalLayer.Modal
         public List<AttendanceJson> AttendacneDetails { set; get; }
         public long AttendanceId { set; get; }
         public Employee EmployeeDetail { set; get; }
+
+
+        public List<LeaveRequestNotification> LeaveRequestDetail { set; get; }
+        public List<DailyAttendance> DailyAttendances { set; get; }
         public List<Project> Projects { get; set; }
+        public ShiftDetail EmployeeShift { get; set; }
     }
 
     public class AttendanceDetailBuildModal
@@ -82,5 +87,52 @@ namespace ModalLayer.Modal
         public string FilePath { get; set; }
         public string FileExtension { get; set; }
         public string FileName { get; set; }
+    }
+
+
+
+
+
+    // -------------- new daily_attendance_model
+
+    public class DailyAttendanceBuilder
+    {
+        public int attendanceSubmissionLimit { get; set; }
+        public DailyAttendance attendance { set; get; }
+        public Employee employee { set; get; }
+        public int SessionType { set; get; } = 1;
+        public DateTime firstDate { set; get; }
+        public DateTime presentDate { set; get; }
+        public List<Calendar> calendars { set; get; }
+        public ShiftDetail shiftDetail { set; get; }
+        public LeaveDetail leaveDetail { set; get; }
+        public List<ComplaintOrRequest> compalintOrRequests { set; get; }
+        public List<Project> projects { get; set; }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public class AttendanceConfig
+    {
+        public Employee EmployeeDetail { set; get; }
+        public List<Project> Projects { get; set; }
+        public List<WeekDates> Weeks { get; set; }
+    }
+
+    public class WeekDates
+    {
+        public int WeekIndex { set; get; }
+        public DateTime StartDate { set; get; }
+        public DateTime EndDate { set; get; }
     }
 }
