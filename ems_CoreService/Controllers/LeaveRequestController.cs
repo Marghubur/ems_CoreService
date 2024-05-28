@@ -119,5 +119,33 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, leaveRequestNotification);
             }
         }
+
+        [HttpPost("ApproveAppliedLeave")]
+        public async Task<ApiResponse> ApproveAppliedLeave(LeaveRequestDetail leaveRequestDetail)
+        {
+            try
+            {
+                var result = await _requestService.ApproveAppliedLeaveService(leaveRequestDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leaveRequestDetail);
+            }
+        }
+
+        [HttpPost("CancelAppliedLeave")]
+        public async Task<ApiResponse> CancelAppliedLeave(LeaveRequestDetail leaveRequestDetail)
+        {
+            try
+            {
+                var result = await _requestService.CancelAppliedLeaveService(leaveRequestDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, leaveRequestDetail);
+            }
+        }
     }
 }

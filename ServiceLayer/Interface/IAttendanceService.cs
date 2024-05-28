@@ -20,12 +20,7 @@ namespace ServiceLayer.Interface
         Task GenerateAttendanceService(AttendenceDetail attendenceDetail);
         Task<List<AttendanceJson>> AdjustAttendanceService(Attendance attendance);
         Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
-
-
-
-
-
-        Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService();
+        Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates);
         Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId);
     }
 }

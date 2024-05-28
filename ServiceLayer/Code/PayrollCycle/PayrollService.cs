@@ -118,7 +118,7 @@ namespace ServiceLayer.Code.PayrollCycle
             var leaves = leaveRequestDetail.Where(x => x.FromDate >= fromDate && x.ToDate <= toDate).ToList();
 
             double leavesCount = 0;
-            foreach (var leave in leaveRequestDetail)
+            foreach (var leave in leaves)
             {
                 if (leave.ToDate <= toDate)
                 {
@@ -217,12 +217,12 @@ namespace ServiceLayer.Code.PayrollCycle
                 payrollCalculationModal.presentActualMins += payrollDetail.WeekOffs * payrollCalculationModal.shiftDetail.Duration;
             }
 
-            payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPAttendanceMiutes;
+            // payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPAttendanceMiutes;
             payrollCalculationModal.presentActualMins -= (decimal)payrollDetail.LOPLeaveMinutes * payrollCalculationModal.shiftDetail.Duration;
 
             payrollCalculationModal.presentMinsNeeded = (payrollCalculationModal.totalDaysInPresentMonth * payrollCalculationModal.shiftDetail.Duration);
 
-            payrollCalculationModal.prevLOPMins = previousPayrollDetail.LOPLeaveMinutes + previousPayrollDetail.LOPAttendanceMiutes;
+            payrollCalculationModal.prevLOPMins = (previousPayrollDetail.LOPLeaveMinutes * payrollCalculationModal.shiftDetail.Duration) + previousPayrollDetail.LOPAttendanceMiutes;
             payrollCalculationModal.prevMinsNeeded = (payrollCalculationModal.daysInPreviousMonth * payrollCalculationModal.shiftDetail.Duration);
         }
 
@@ -423,7 +423,7 @@ namespace ServiceLayer.Code.PayrollCycle
                                 }
 
                                 payrollMonthlyDetail.PayableToEmployee -= presentData.TaxPaid;
-                                payrollMonthlyDetail.PayableToEmployee += payrollCalculationModal.ArrearAmount;
+                                payrollMonthlyDetail.PayableToEmployee += payrollCalculationModal.ArrearAmount + payrollCalculationModal.BonusAmount;
 
                                 var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
 
@@ -566,6 +566,17 @@ namespace ServiceLayer.Code.PayrollCycle
                             *
                          payrollCalculationModal.prevLOPMins;
             }
+
+            return await Task.FromResult(amount);
+        }
+
+        private async Task<decimal> GetBonusAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, long employeeId, DateTime payrollDate) 
+        {
+            decimal amount = 0;
+            var bonusDetail = hikeBonusSalaryAdhocs.FirstOrDefault(x => x.IsBonus && x.EmployeeId == employeeId 
+                                                                        && x.ForMonth == payrollDate.Month && x.ForYear == payrollDate.Year);
+            if (bonusDetail != null)
+                amount = bonusDetail.Amount;
 
             return await Task.FromResult(amount);
         }
@@ -774,7 +785,9 @@ namespace ServiceLayer.Code.PayrollCycle
                 var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
                 presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
                 presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
+                presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
                 payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
+                payrollCalculationModal.BonusAmount = presentMonthSalaryDetail.BonusAmount;
             }
 
             empPayroll.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);

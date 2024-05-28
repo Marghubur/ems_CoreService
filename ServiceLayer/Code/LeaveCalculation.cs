@@ -109,7 +109,7 @@ namespace ServiceLayer.Code
             var result = _db.FetchDataSet(Procedures.Leave_Type_Detail_Get_By_EmployeeId, new
             {
                 EmployeeId,
-                Year = DateTime.UtcNow.Year
+                DateTime.UtcNow.Year
             });
             if (!ApplicationConstants.IsValidDataSet(result, 5))
                 throw HiringBellException.ThrowBadRequest($"Leave detail not found for employee id: {EmployeeId}");
@@ -698,7 +698,7 @@ namespace ServiceLayer.Code
                 EmployeeId,
                 _currentSession.CurrentUserDetail.ReportingManagerId,
                 IsActive = 1,
-                Year = now.Year
+                now.Year
             }, false);
 
             if (ds != null && ds.Tables.Count == 8)

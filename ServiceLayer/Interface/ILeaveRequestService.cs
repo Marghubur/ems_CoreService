@@ -13,5 +13,7 @@ namespace ServiceLayer.Interface
         List<LeaveRequestNotification> ReAssigneToOtherManagerService(LeaveRequestNotification approvalRequest, int filterId = ApplicationConstants.Only);
         Task LeaveLeaveManagerMigration(List<CompanySetting> companySettings);
         Task<List<LeaveRequestNotification>> GetLeaveRequestNotificationService(LeaveRequestNotification leaveRequestNotification);
+        Task<List<LeaveRequestNotification>> ApproveAppliedLeaveService(LeaveRequestDetail leaveRequestDetail);
+        Task<List<LeaveRequestNotification>> CancelAppliedLeaveService(LeaveRequestDetail leaveRequestDetail);
     }
 }

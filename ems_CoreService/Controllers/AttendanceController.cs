@@ -56,17 +56,17 @@ namespace OnlineDataBuilder.Controllers
 
 
 
-        [HttpPost("GetDailyAttendanceByUserId")]
-        public async Task<ApiResponse> GetAttendanceByUserId(DailyAttendance attendance)
+        [HttpPost("GetWeeklyAttendanceByUserId")]
+        public async Task<ApiResponse> GetAttendanceByUserId(WeekDates weekDates)
         {
             try
             {
-                var result = await _attendanceService.GetDailyAttendanceByUserIdService();
+                var result = await _attendanceService.GetDailyAttendanceByUserIdService(weekDates);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, attendance);
+                throw Throw(ex, weekDates);
             }
         }
 
