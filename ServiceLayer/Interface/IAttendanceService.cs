@@ -22,6 +22,6 @@ namespace ServiceLayer.Interface
         Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
         Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates);
         Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId);
-        Task<AttendanceJson> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
+        Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
     }
 }
