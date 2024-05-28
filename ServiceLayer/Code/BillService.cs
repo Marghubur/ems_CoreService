@@ -1271,7 +1271,7 @@ namespace ServiceLayer.Code
                 });
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.ActualAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "</tr>";
@@ -1284,6 +1284,16 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.ArrearAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+
+            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Bonus Amount" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.BonusAmount.ToString("0.00") + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "</tr>";
             }
@@ -1331,8 +1341,8 @@ namespace ServiceLayer.Code
             }
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
-            var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount;
-            var totalActualEarning = salaryDetail.Sum(x => x.FinalAmount);
+            var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount;
+            var totalActualEarning = salaryDetail.Sum(x => x.ActualAmount);
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? payslipModal.TaxDetail.TaxDeducted : pTaxAmount;
             var netSalary = totalEarning > 0 ? totalEarning - (totalContribution + totalDeduction) : 0;
             var netSalaryInWord = NumberToWords(netSalary);

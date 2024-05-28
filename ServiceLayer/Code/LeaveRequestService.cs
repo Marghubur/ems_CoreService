@@ -9,7 +9,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
@@ -55,6 +54,36 @@ namespace ServiceLayer.Code
             };
             return await GetLeaveRequestNotificationService(leaveRequestNotification);
         }
+
+        public async Task<List<LeaveRequestNotification>> ApproveAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
+        {
+            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Approved);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
+            };
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
+        }
+
+        public async Task<List<LeaveRequestNotification>> CancelAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
+        {
+            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Rejected);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
+            };
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
+        }   
 
         public async Task<List<LeaveRequestNotification>> RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
@@ -198,6 +227,56 @@ namespace ServiceLayer.Code
                 await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
                 //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
             }
+
+            await Task.CompletedTask;
+        }
+
+        public async Task ManageLeaveDetails(LeaveRequestDetail requestDetail, ItemStatus status)
+        {
+            if (requestDetail.LeaveRequestNotificationId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid request. Please check your detail first.");
+
+            (var leaveRequestDetail, LeavePlanType leavePlanType) = _db.Get<LeaveRequestDetail, LeavePlanType>(Procedures.Employee_Leave_Request_GetById, new
+            {
+                requestDetail.LeaveRequestNotificationId
+            });
+
+            if (leaveRequestDetail == null)
+                throw new HiringBellException("Unable to find leave detail. Please contact to admin.");
+
+            if (ItemStatus.Rejected == status)
+            {
+                var totalLeaves = (decimal)requestDetail.LeaveToDay.Date.Subtract(requestDetail.LeaveFromDay.Date).TotalDays + 1;
+                updateLeaveCountOnRejected(leaveRequestDetail, requestDetail.LeaveTypeId, totalLeaves);
+            }
+
+            leaveRequestDetail.RequestStatusId = (int)status;
+
+            string message = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Notification_And_Request_InsUpdate, new
+            {
+                requestDetail.LeaveRequestNotificationId,
+                leaveRequestDetail.LeaveRequestId,
+                leaveRequestDetail.EmployeeId,
+                leaveRequestDetail.LeaveDetail,
+                leaveRequestDetail.Reason,
+                leaveRequestDetail.ReportingManagerId,
+                leaveRequestDetail.Year,
+                leaveRequestDetail.LeaveFromDay,
+                leaveRequestDetail.LeaveToDay,
+                leaveRequestDetail.LeaveTypeId,
+                leaveRequestDetail.RequestStatusId,
+                leaveRequestDetail.AvailableLeaves,
+                leaveRequestDetail.TotalLeaveApplied,
+                leaveRequestDetail.TotalApprovedLeave,
+                leaveRequestDetail.TotalLeaveQuota,
+                leaveRequestDetail.LeaveQuotaDetail,
+                ReporterDetail = leaveRequestDetail.Notify,
+                NumOfDays = 0,
+                IsPending = false,
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(message))
+                throw new HiringBellException("Unable to update leave status. Please contact to admin");
 
             await Task.CompletedTask;
         }
