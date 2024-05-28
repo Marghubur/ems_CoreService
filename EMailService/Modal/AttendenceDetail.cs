@@ -110,18 +110,6 @@ namespace ModalLayer.Modal
         public List<Project> projects { get; set; }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     public class AttendanceConfig
     {
         public Employee EmployeeDetail { set; get; }

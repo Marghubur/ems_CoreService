@@ -5,16 +5,13 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
-using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
 using EMailService.Service;
-using ExcelDataReader.Log;
+using iText.Html2pdf.Css.Apply.Impl;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -23,7 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ServiceLayer.Code
 {
@@ -136,7 +132,7 @@ namespace ServiceLayer.Code
                     LogOff = logoff,
                     PresentDayStatus = presentDayStatus,
                     UserComments = string.Empty,
-                    ApprovedName = String.Empty,
+                    ApprovedName = string.Empty,
                     ApprovedBy = 0,
                     SessionType = 1,
                     TotalMinutes = totalMinute,
@@ -229,7 +225,7 @@ namespace ServiceLayer.Code
                     LogOff = logoff,
                     PresentDayStatus = presentDayStatus,
                     UserComments = string.Empty,
-                    ApprovedName = String.Empty,
+                    ApprovedName = string.Empty,
                     ApprovedBy = 0,
                     SessionType = 1,
                     TotalMinutes = totalMinute,
@@ -813,7 +809,7 @@ namespace ServiceLayer.Code
                 RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { managerDetail.Email },
                 kafkaServiceName = KafkaServiceName.BlockAttendance,
-                Body = String.Join(", ", allAttendanceDates),
+                Body = string.Join(", ", allAttendanceDates),
                 Note = compalintOrRequestWithEmail.CompalintOrRequestList[0].EmployeeMessage,
                 LocalConnectionString = _currentSession.LocalConnectionString,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
@@ -980,7 +976,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public String ConvertToMin(int mins)
+        public string ConvertToMin(int mins)
         {
             int hours = ((mins - mins % 60) / 60);
             string min = ((mins - hours * 60)).ToString();
@@ -1388,7 +1384,7 @@ namespace ServiceLayer.Code
 
 
             var filter = new FilterModel();
-            filter.SearchString = String.Empty;
+            filter.SearchString = string.Empty;
             return await GetMissingAttendanceApprovalRequestService(filter);
         }
 
@@ -1551,73 +1547,79 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<AttendanceJson> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
+        public async Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
         {
-            string Result = string.Empty;
-
-            List<Calendar> _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new
+            try
             {
-                CompanyId = _currentSession.CurrentUserDetail.CompanyId
-            });
+                string Result = string.Empty;
 
-            await PrepareAttendanceForUpdate(attendances);
+                List<Calendar> _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new
+                {
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                });
 
-            foreach (var x in attendances)
-            {
-                if (x.AttendanceId == 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
+                await PrepareAttendanceForUpdate(attendances);
 
-                if (x.AttendanceDate.Year <= 1900)
-                    throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+                foreach (var x in attendances)
+                {
+                    if (x.AttendanceId == 0)
+                        throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
 
-                // check for holiday
-                await this.CheckIsOnPaidLeave(x.AttendanceDate);
+                    if (x.AttendanceDate.Year <= 1900)
+                        throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+
+                    // check for leave
+                    await this.CheckIsOnPaidLeave(x);
+                }
+
+                await _db.BulkExecuteAsync("sp_daily_attendance_upd_weekly", (
+                from n in attendances
+                select new
+                {
+                    n.AttendanceId,
+                    n.EmployeeId,
+                    n.EmployeeName,
+                    n.EmployeeEmail,
+                    n.ReviewerId,
+                    n.ReviewerName,
+                    n.ReviewerEmail,
+                    n.ProjectId,
+                    n.TaskId,
+                    n.TaskType,
+                    n.LogOn,
+                    n.LogOff,
+                    n.TotalMinutes,
+                    n.Comments,
+                    n.AttendanceStatus,
+                    n.WeekOfYear,
+                    n.AttendanceDate,
+                    WorkTypeId = (int)n.WorkTypeId,
+                    n.IsOnLeave,
+                    n.LeaveId,
+                    n.CreatedBy
+                }).ToList(), true);
+
             }
-
-            await _db.BulkExecuteAsync("sp_daily_attendance_upd_weekly", (
-            from n in attendances
-            select new
+            catch (Exception e)
             {
-                n.AttendanceId,
-                n.EmployeeId,
-                n.EmployeeName,
-                n.EmployeeEmail,
-                n.ReviewerId,
-                n.ReviewerName,
-                n.ReviewerEmail,
-                n.ProjectId,
-                n.TaskId,
-                n.TaskType,
-                n.LogOn,
-                n.LogOff,
-                n.TotalMinutes,
-                n.Comments,
-                n.AttendanceStatus,
-                n.WeekOfYear,
-                n.AttendanceDate,
-                n.WorkTypeId,
-                n.IsOnLeave,
-                n.LeaveId,
-                n.CreatedBy
-            }).ToList(), true);
+                throw HiringBellException.ThrowBadRequest(e.Message);
+            }
+            
 
-            if (string.IsNullOrEmpty(Result))
-                throw new HiringBellException("Unable submit the attendace");
-
-            return null;
+            return attendances;
         }
 
         private async Task PrepareAttendanceForUpdate(List<DailyAttendance> attendances)
         {
             attendances = attendances.OrderBy(x => x.AttendanceId).ToList();
-            long startAttendanceId = attendances.First().AttendanceId;
-            long endAttendanceId = attendances.Last().AttendanceId;
+            DateTime startDate = attendances.First().AttendanceDate;
+            DateTime endDate = attendances.Last().AttendanceDate;
 
             AttendanceWithClientDetail attendanceWithClientDetail = new AttendanceWithClientDetail();
-            var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_by_user", new
+            var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_bet_dates", new
             {
-                FromDate = startAttendanceId,
-                ToDate = endAttendanceId,
+                FromDate = startDate,
+                ToDate = endDate,
                 EmployeeId = _currentSession.CurrentUserDetail.UserId
             });
 
@@ -1659,12 +1661,28 @@ namespace ServiceLayer.Code
             return flag;
         }
 
-        private async Task CheckIsOnPaidLeave(DateTime workingDate)
+        private async Task CheckIsOnPaidLeave(DailyAttendance dailyAttendance)
         {
             // check if from date is holiday
+            if (dailyAttendance.IsHoliday)
+                dailyAttendance.TotalMinutes = 480;
 
             // check if already on leave
+            if (dailyAttendance.IsOnLeave)
+            {
+                var leaveType = _db.Get<LeavePlanType>("sp_get_leave_plan_type_by_leaveid", new
+                {
+                    LeaveId = dailyAttendance.LeaveId
+                });
 
+                if (leaveType == null)
+                    throw HiringBellException.ThrowBadRequest("Invalid leave id");
+
+                if (leaveType.IsPaidLeave)
+                    dailyAttendance.TotalMinutes = 480;
+                else
+                    dailyAttendance.TotalMinutes = 0;
+            }
             // check if from date already applied for leave
 
             // check shift weekends
