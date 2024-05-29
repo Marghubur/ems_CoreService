@@ -47,7 +47,7 @@ namespace ModalLayer.Modal.Accounts
         public bool IsPreviouEmployer { get; set; } = false;
         public string StateName { get; set; }
         public List<CalculatedSalaryBreakupDetail> SalaryBreakupDetails { get; set; }
-        public decimal ArrearAmount { get; set; }
         public decimal BonusAmount { get; set; }
+        public decimal ArrearAmount { get; set; }
     }
 }

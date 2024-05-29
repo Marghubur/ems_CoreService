@@ -42,6 +42,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder
@@ -98,10 +100,17 @@ namespace OnlineDataBuilder
                    };
                });
 
-            services.AddControllers().AddNewtonsoftJson(options =>
+            //services.AddControllers().AddNewtonsoftJson(options =>
+            //{
+            //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            //    options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+            //});
+
+            services.AddControllers()
+            .AddJsonOptions(options =>
             {
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = false;
             });
 
             services.Configure<JwtSetting>(o => Configuration.GetSection(nameof(JwtSetting)).Bind(o));
@@ -196,7 +205,10 @@ namespace OnlineDataBuilder
             });
 
             services.AddScoped<IEMailManager, EMailManager>();
-            services.AddSingleton<ITimezoneConverter, TimezoneConverter>();
+            services.AddSingleton<ITimezoneConverter, TimezoneConverter>(x =>
+            {
+                return TimezoneConverter.Instance;
+            });
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
             services.AddScoped<HtmlToPdfConverter>();
             services.AddScoped<ISettingService, SettingService>();
@@ -299,6 +311,22 @@ namespace OnlineDataBuilder
             {
                 endpoints.MapControllers();
             });
+        }
+
+
+    }
+
+    public class UtcDateTimeConverter : JsonConverter<DateTime>
+    {
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var dateTime = reader.GetDateTime();
+            return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToUniversalTime());
         }
     }
 }

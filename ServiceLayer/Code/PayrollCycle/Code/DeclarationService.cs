@@ -1006,7 +1006,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             return await Task.FromResult("Done");
         }
 
-        public async Task<string> UpdateTaxDetailsService(PayrollEmployeeData payrollEmployeeData,
+        public async Task<string> UpdateTaxDetailsService(EmployeePayrollData payrollEmployeeData,
             PayrollMonthlyDetail payrollMonthlyDetail, DateTime payrollDate, bool IsTaxCalculationRequired)
         {
             payrollMonthlyDetail.ForYear = payrollDate.Year;
