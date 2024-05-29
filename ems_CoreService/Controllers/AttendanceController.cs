@@ -305,6 +305,20 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [HttpPut("SaveDailyAttendance")]
+        public async Task<ApiResponse> SaveDailyAttendance([FromBody] List<DailyAttendance> attendances)
+        {
+            try
+            {
+                var result = await _attendanceService.SaveDailyAttendanceService(attendances);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, attendances);
+            }
+        }
+
         #endregion
     }
 }

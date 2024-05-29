@@ -6,6 +6,9 @@
         public static string Attendance_Requests_By_Filter = "sp_attendance_requests_by_filter";
         public static string Attendance_Update_Request = "sp_attendance_update_request";
         public static string Attendance_Get_ById = "sp_attendance_get_byid";
+        public static string LEAVE_PLAN_TYPE_BY_LEAVEID = "sp_get_leave_plan_type_by_leaveid";
+        public static string DAILY_ATTENDANCE_UPD_WEEKLY = "sp_daily_attendance_upd_weekly";
+        public static string DAILY_ATTENDANCE_BET_DATES = "sp_daily_attendance_bet_dates";
 
         /*------------- Leave Request service proceudures -------*/
         public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";
