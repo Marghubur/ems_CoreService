@@ -19,7 +19,7 @@ namespace ModalLayer.Modal
         public int ForYear { set; get; }
         public int ForMonth { set; get; }
         public DateTime? SubmittedOn { set; get; }
-        public DateTime DOJ { set; get; }
+        // public DateTime DOJ { set; get; }
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
         public WorkType WorkTypeId { set; get; }
@@ -75,25 +75,41 @@ namespace ModalLayer.Modal
     public class PayrollEmployeeData : Attendance
     {
         public string LeaveDetail { set; get; }
-        public int CompanyId { set; get; }
-        public string CompleteSalaryDetail { set; get; }
-        public decimal CTC { set; get; }
-        public int GroupId { set; get; }
-        public string TaxDetail { set; get; }
         public int DeclarationStartMonth { set; get; }
         public int DeclarationEndMonth { set; get; }
         public int FinancialYear { set; get; }
         public EmployeeDeclaration employeeDeclaration { set; get; }
         public DateTime Doj { get; set; }
-        public int WorkShiftId { get; set; }
         public string PreviuosMonthAttendance { get; set; }
+        public int CompanyId { set; get; }
+        public string CompleteSalaryDetail { set; get; }
+        public decimal CTC { set; get; }
+        public int GroupId { set; get; }
+        public string TaxDetail { set; get; }
+        public int WorkShiftId { get; set; }
+    }
+
+    public class EmployeePayrollData
+    {
+        public long EmployeeId { set; get; }
+        public string EmployeeName { set; get; }
+        public string Email { set; get; }
+        public string CompleteSalaryDetail { set; get; }
+        public decimal CTC { set; get; }
+        public int GroupId { set; get; }
+        public string TaxDetail { set; get; }
+        public int CompanyId { set; get; }
+        public int WorkShiftId { get; set; }
+        public DateTime Doj { get; set; }
+        public EmployeeDeclaration employeeDeclaration { set; get; }
     }
 
     public class PayrollEmployeePageData
     {
         public List<LeaveRequestNotification> leaveRequestDetails { set; get; }
-        public List<PayrollEmployeeData> payrollEmployeeData { set; get; }
+        public List<EmployeePayrollData> employeeData { set; get; }
         public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
+        public List<DailyAttendance> dailyAttendances { set; get; }
         public List<JoinedAfterPayrollEmployees> joinedAfterPayrollEmployees { set; get; } = [];
     }
 

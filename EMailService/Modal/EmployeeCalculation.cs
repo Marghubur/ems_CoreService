@@ -51,7 +51,7 @@ namespace ModalLayer.Modal
         public List<ShiftDetail> shiftDetail { get; set; }
         public TimeZoneInfo timeZone { set; get; }
         public Company company { set; get; }
-        public DateTime presentDate { set; get; }
-        public DateTime utcPresentDate { set; get; }
+        public DateTime localTimePresentDate { set; get; }
+        public DateTime utcTimePresentDate { set; get; }
     }
 }

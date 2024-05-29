@@ -192,7 +192,8 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                var runDate = new DateTime(Year, MonthNumber, 1);
+                // var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Utc);
+                var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Local);
                 await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
                 return BuildResponse(ApplicationConstants.Successfull);
             }

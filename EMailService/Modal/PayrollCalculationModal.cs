@@ -9,7 +9,8 @@ namespace ModalLayer.Modal
         public int payCalculationId { get; set; }
         public bool isExcludeHolidays { get; set; }
         public long employeeId { get; set; }
-        public List<PayrollEmployeeData> payrollEmployeeData { get; set; }
+        public List<EmployeePayrollData> employeePayrollData { get; set; }
+        public List<DailyAttendance> dailyAttendances { get; set; }
         public List<LeaveRequestNotification> userLeaveRequests { set; get; }
         public DateTime payrollDate { get; set; }
         public ShiftDetail shiftDetail { get; set; }
