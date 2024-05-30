@@ -224,7 +224,8 @@ namespace ServiceLayer.Code.PayrollCycle
         private async Task<PayrollWorkingDetail> GetCurrentMonthWorkingDetail(PayrollCalculationModal payrollCalculationModal, int payrollRunDay, DateTime doj)
         {
             var attendance = payrollCalculationModal.dailyAttendances.Where(x => x.AttendanceDate.Month == payrollCalculationModal.payrollDate.Month).ToList();
-
+            if (payrollCalculationModal.payrollDate.Month == doj.Month && payrollCalculationModal.payrollDate.Year == doj.Year)
+                attendance = attendance.FindAll(x => x.AttendanceDate.Day >= doj.Day);
 
             // Update date's to be approved after payroll run date
             Parallel.ForEach(attendance.FindAll(x => x.AttendanceDate.Day > payrollRunDay), x =>
@@ -251,6 +252,8 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             DateTime payrollDate = payrollCalculationModal.payrollDate.AddMonths(-1);
             var attendance = payrollCalculationModal.dailyAttendances.Where(x => x.AttendanceDate.Month == payrollDate.Month).ToList();
+            if (payrollDate.Month == doj.Month && payrollDate.Year == doj.Year)
+                attendance = attendance.FindAll(x => x.AttendanceDate.Day >= doj.Day);
 
             if (attendance.Count == 0)
                 return new PayrollWorkingDetail();
@@ -348,7 +351,8 @@ namespace ServiceLayer.Code.PayrollCycle
                 {
                     try
                     {
-                        (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
+                        bool salaryHoldFlag = true;
+                        // (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
                         if (salaryHoldFlag)
                         {
                             TaxDetails presentData = new TaxDetails();
@@ -394,7 +398,7 @@ namespace ServiceLayer.Code.PayrollCycle
                                 var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, empPayroll.CTC);
 
                                 payrollMonthlyDetail.PayableToEmployee -= pTax;
-                                payrollMonthlyDetail.GrossTotal = payrollMonthlyDetail.PayableToEmployee + amount;
+                                payrollMonthlyDetail.GrossTotal = payrollMonthlyDetail.PayableToEmployee; //+ amount;
 
                                 payrollMonthlyDetail.TotalDeduction = presentData.TaxPaid;
 

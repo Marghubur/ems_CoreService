@@ -1548,11 +1548,17 @@ namespace ServiceLayer.Code
 
         public async Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances)
         {
+            if (attendances.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Attendance record not found");
+
             return await UpdateDailyAttendanceService(attendances, ItemStatus.Saved);
         }
 
         public async Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
         {
+            if (attendances.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Attendance record not found");
+
             return await UpdateDailyAttendanceService(attendances, ItemStatus.Submitted);
         }
 
@@ -1560,16 +1566,9 @@ namespace ServiceLayer.Code
         {
             try
             {
-                string Result = string.Empty;
-
-                List<Calendar> _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new
-                {
-                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                });
-
                 attendances = await PrepareAttendanceForUpdate(attendances, status);
 
-                await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, (
+                var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, (
                 from n in attendances
                 select new
                 {
@@ -1596,6 +1595,9 @@ namespace ServiceLayer.Code
                     n.CreatedBy
                 }).ToList(), true);
 
+                if (result != attendances.Count)
+                    throw HiringBellException.ThrowBadRequest("Fail to update attendance request");
+
             }
             catch (Exception e)
             {
@@ -1608,7 +1610,7 @@ namespace ServiceLayer.Code
 
         private async Task<List<DailyAttendance>> PrepareAttendanceForUpdate(List<DailyAttendance> attendances, ItemStatus status)
         {
-            attendances = attendances.OrderBy(x => x.AttendanceId).ToList();
+            attendances = attendances.OrderBy(x => x.AttendanceDate).ToList();
             DateTime startDate = attendances.First().AttendanceDate;
             DateTime endDate = attendances.Last().AttendanceDate;
 
@@ -1624,12 +1626,13 @@ namespace ServiceLayer.Code
 
             List<DailyAttendance> dailyAttendance = Converter.ToList<DailyAttendance>(attendanceDs.Tables[0]);
             ShiftDetail workShift = Converter.ToType<ShiftDetail>(attendanceDs.Tables[1]);
-            return await updateAttendanceRecord(dailyAttendance, workShift, status);
+            return await updateAttendanceRecord(dailyAttendance, attendances, workShift, status);
         }
 
-        private async Task<List<DailyAttendance>> updateAttendanceRecord(List<DailyAttendance> attendances, ShiftDetail shiftDetail, ItemStatus status)
+        private async Task<List<DailyAttendance>> updateAttendanceRecord(List<DailyAttendance> dailyAttendances, List<DailyAttendance> attendances, 
+                                                                        ShiftDetail shiftDetail, ItemStatus status)
         {
-            foreach (var attendance in attendances)
+            foreach (var attendance in dailyAttendances)
             {
                 var attr = attendances.Find(x => x.AttendanceId == attendance.AttendanceId);
                 if (attr != null)
@@ -1660,7 +1663,7 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest($"Attendance not found for date: {attendance.AttendanceDate}");
                 }
             }
-            return attendances;
+            return dailyAttendances;
         }
 
         private bool CheckIsHoliday(DateTime date, List<Calendar> calendars)
@@ -1678,10 +1681,10 @@ namespace ServiceLayer.Code
         {
             // check if from date is holiday
             if (dailyAttendance.IsHoliday)
+            {
                 dailyAttendance.TotalMinutes = shiftDetail.Duration;
-
-            // check if already on leave
-            if (dailyAttendance.IsOnLeave)
+            }
+            else if (dailyAttendance.IsOnLeave) // check if already on leave
             {
                 var leaveType = _db.Get<LeavePlanType>(Procedures.LEAVE_PLAN_TYPE_BY_LEAVEID, new
                 {
@@ -1696,9 +1699,17 @@ namespace ServiceLayer.Code
                 else
                     dailyAttendance.TotalMinutes = 0;
             }
+            else // check shift weekends
+            {
+                var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(dailyAttendance.AttendanceDate, _currentSession.TimeZone);
+                dailyAttendance.IsWeekend = CheckWeekend(shiftDetail, attendanceDate);
+                if (dailyAttendance.IsWeekend)
+                {
+                    dailyAttendance.TotalMinutes = shiftDetail.Duration;
+                    dailyAttendance.AttendanceStatus = (int)DayStatus.Weekend;
+                }
+            }
             // check if from date already applied for leave
-
-            // check shift weekends
 
             return await Task.FromResult(dailyAttendance);
         }

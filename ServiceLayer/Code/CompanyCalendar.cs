@@ -180,7 +180,7 @@ namespace ServiceLayer
             int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
             int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
             totalDays = (decimal)(fullDayHoliday + (halfDayHoliday * 0.5));
-            
+
             return await Task.FromResult(totalDays);
         }
 
@@ -287,11 +287,10 @@ namespace ServiceLayer
                 if (existCalendar != null)
                 {
                     existCalendar.CompanyId = calendar.CompanyId;
-                    existCalendar.StartDate = calendar.StartDate;
-                    existCalendar.EndDate = calendar.EndDate;
                     existCalendar.EventName = calendar.EventName;
                     existCalendar.IsHoliday = calendar.IsHoliday;
                     existCalendar.IsHalfDay = calendar.IsHalfDay;
+                    existCalendar.HolidayDate = calendar.HolidayDate;
                     existCalendar.DescriptionNote = calendar.DescriptionNote;
                     existCalendar.ApplicableFor = calendar.ApplicableFor;
                     existCalendar.Year = calendar.Year;
@@ -300,9 +299,27 @@ namespace ServiceLayer
                     existCalendar.Country = calendar.Country;
                 }
             }
-            existCalendar = calendar;
-            existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-            var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
+            else
+            {
+                existCalendar = calendar;
+            }
+            var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, new
+            {
+                existCalendar.CompanyCalendarId,
+                _currentSession.CurrentUserDetail.CompanyId,
+                existCalendar.EventName,
+                existCalendar.IsHoliday,
+                existCalendar.IsHalfDay,
+                existCalendar.HolidayDate,
+                existCalendar.DescriptionNote,
+                existCalendar.ApplicableFor,
+                existCalendar.Year,
+                existCalendar.IsPublicHoliday,
+                existCalendar.IsCompanyCustomHoliday,
+                existCalendar.Country,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
             if (string.IsNullOrEmpty(value))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
 
@@ -316,7 +333,7 @@ namespace ServiceLayer
         private void ValidateCalender(Calendar calendar)
         {
             if (string.IsNullOrEmpty(calendar.DescriptionNote))
-                throw HiringBellException.ThrowBadRequest("Decription note is null or empty");
+                throw HiringBellException.ThrowBadRequest("Description note is null or empty");
 
             if (string.IsNullOrEmpty(calendar.Country))
                 throw HiringBellException.ThrowBadRequest("Country is null or empty");
@@ -326,14 +343,6 @@ namespace ServiceLayer
 
             if (calendar.CompanyId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid company id");
-
-            if (calendar.StartDate == null)
-                throw HiringBellException.ThrowBadRequest("Start date is null or invalid");
-
-            if (calendar.EndDate == null)
-                throw HiringBellException.ThrowBadRequest("End date is null or invalid");
-            //calendar.StartDate = _timezoneConverter.ToTimeZoneDateTime(calendar.StartDate.ToUniversalTime(), _currentSession.TimeZone);
-            //calendar.EndDate = _timezoneConverter.ToTimeZoneDateTime(calendar.EndDate.ToUniversalTime(), _currentSession.TimeZone);
         }
 
         public List<Calendar> DeleteHolidayService(long CompanyCalendarId)
