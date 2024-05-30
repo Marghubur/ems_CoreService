@@ -280,7 +280,7 @@ namespace ServiceLayer
         {
             var existCalendar = new Calendar();
             ValidateCalender(calendar);
-            var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = calendar.CompanyId });
+            var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
             if (result.Count > 0)
             {
                 existCalendar = result.Find(x => x.CompanyCalendarId == calendar.CompanyCalendarId);
@@ -297,6 +297,10 @@ namespace ServiceLayer
                     existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
                     existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;
                     existCalendar.Country = calendar.Country;
+                }
+                else
+                {
+                    existCalendar = calendar;
                 }
             }
             else
@@ -401,8 +405,7 @@ namespace ServiceLayer
                         if (existCalendar != null)
                         {
                             existCalendar.CompanyId = calendar.CompanyId;
-                            existCalendar.StartDate = calendar.StartDate;
-                            existCalendar.EndDate = calendar.EndDate;
+                            existCalendar.HolidayDate = calendar.HolidayDate;
                             existCalendar.EventName = calendar.EventName;
                             existCalendar.IsHoliday = calendar.IsHoliday;
                             existCalendar.IsHalfDay = calendar.IsHalfDay;
