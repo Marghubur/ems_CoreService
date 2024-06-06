@@ -1,7 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using EMailService.Modal;
+﻿using EMailService.Modal;
 using ModalLayer.Modal.Accounts;
-using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 
@@ -59,6 +57,15 @@ namespace ModalLayer.Modal
         public DateTime CreatedOn { set; get; }
         public long UpdatedBy { set; get; }
         public DateTime UpdatedOn { set; get; }
+        public string ManagerName { set; get; }
+        public string ManagerMobile { set; get; }
+        public string ManagerEmail { set; get; }
+        public string FilePath { set; get; }
+        public string FileExtension { set; get; }
+        public string FileName { set; get; }
+        public int Total { get; set; }
+        public int PageIndex { get; set; }
+        public int TotalDays { get; set; }
     }
 
 

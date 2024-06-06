@@ -509,7 +509,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             if (empCal.previousEmployerDetail != null)
             {
                 totalDeduction += UpdatePreviousEmployerIncome(empCal, completeSalaryBreakups);
-                empCal.expectedAnnualGrossIncome = empCal.CTC / 12 * totalMonths + empCal.previousEmployerDetail.TotalIncome;
+                if (empCal.previousEmployerDetail.TotalIncome > 0)
+                    empCal.expectedAnnualGrossIncome = empCal.CTC / 12 * totalMonths + empCal.previousEmployerDetail.TotalIncome;
             }
 
             // final total taxable amount.

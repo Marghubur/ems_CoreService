@@ -18,10 +18,12 @@ namespace ServiceLayer.Interface
         Task<List<ComplaintOrRequest>> ApproveRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task<List<ComplaintOrRequest>> RejectRaisedAttendanceRequestService(List<ComplaintOrRequest> complaintOrRequests);
         Task GenerateAttendanceService(AttendenceDetail attendenceDetail);
-        Task<List<AttendanceJson>> AdjustAttendanceService(Attendance attendance);
+        Task<DailyAttendance> AdjustAttendanceService(Attendance attendance);
         Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
         Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates);
         Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId);
+        Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances);
         Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
+        Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel);
     }
 }

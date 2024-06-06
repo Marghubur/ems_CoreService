@@ -1164,7 +1164,7 @@ namespace ServiceLayer.Code
                 if (payslipGenerationModal.EmployeeId <= 0)
                     throw new HiringBellException("Invalid employee selected. Please select a valid employee");
 
-                // fetch and all the nessary data from database required to bill generation.
+                // fetch and all the necessary data from database required to bill generation.
                 await PrepareRequestForPayslipGeneration(payslipGenerationModal);
 
                 FileDetail fileDetail = new FileDetail();
@@ -1348,7 +1348,7 @@ namespace ServiceLayer.Code
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
-            var TotalWorkingDays = GetWorkingDays(payslipModal.AttendanceDetail);
+            var TotalWorkingDays = GetWorkingDays(payslipModal.dailyAttendances, payslipModal.leaveRequestNotifications);
             var LossOfPayDays = ActualPayableDays - TotalWorkingDays;
 
             using (FileStream stream = File.Open(templatePath, FileMode.Open))
@@ -1433,32 +1433,50 @@ namespace ServiceLayer.Code
             return html;
         }
 
-        private decimal GetWorkingDays(Attendance AttendanceDetail)
+        private decimal GetWorkingDays(List<DailyAttendance> dailyAttendances, List<LeaveRequestNotification> leaveRequestNotifications)
         {
             decimal totalDays = 0;
-            List<AttendanceDetailJson> attendanceDetailJsons = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(AttendanceDetail.AttendanceDetail);
-            var approvedAttendance = attendanceDetailJsons.FindAll(x => x.PresentDayStatus == (int)ItemStatus.Approved
-                                                                        || x.PresentDayStatus == (int)AttendanceEnum.WeekOff
-                                                                        || x.PresentDayStatus == (int)AttendanceEnum.Holiday);
-            if (approvedAttendance != null || approvedAttendance.Count > 0)
+            dailyAttendances = dailyAttendances.OrderBy(x => x.AttendanceDate).ToList();
+            var fromDate = dailyAttendances.First().AttendanceDate;
+            var toDate = dailyAttendances.Last().AttendanceDate;
+            //var approvedAttendance = dailyAttendances.FindAll(x => x.AttendanceStatus == (int)ItemStatus.Approved
+            //                                                    || x.AttendanceStatus == (int)AttendanceEnum.WeekOff
+            //                                                    || x.AttendanceStatus == (int)AttendanceEnum.Holiday);
+            totalDays = dailyAttendances.Count(x => x.AttendanceStatus == (int)ItemStatus.Approved
+                                                    || x.AttendanceStatus == (int)AttendanceEnum.WeekOff
+                                                    || x.AttendanceStatus == (int)AttendanceEnum.Holiday);
+
+            var leaves = leaveRequestNotifications.Where(x => x.FromDate >= fromDate && x.ToDate <= toDate).ToList();
+            leaves.ForEach(x =>
             {
-                totalDays = approvedAttendance.Count(x => x.SessionType == (int)SessionType.FullDay);
-                totalDays = totalDays + (approvedAttendance.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
-            }
+                if (x.ToDate <= toDate)
+                    totalDays += (decimal)x.ToDate.Subtract(x.FromDate).TotalDays + 1;
+                else
+                    totalDays += (decimal)toDate.Subtract(x.FromDate).TotalDays + 1;
+            });
+
+            //if (approvedAttendance != null || approvedAttendance.Count > 0)
+            //{
+            //    totalDays = approvedAttendance.Count(x => x.SessionType == (int)SessionType.FullDay);
+            //    totalDays = totalDays + (approvedAttendance.Count(x => x.SessionType != (int)SessionType.FullDay) * 0.5m);
+            //}
             return totalDays;
         }
 
         private async Task PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
         {
+            var date = new DateTime(payslipGenerationModal.Year, payslipGenerationModal.Month, 1);
+            var FromDate = _timezoneConverter.ToUtcTime(date);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
             DataSet ds = this.db.FetchDataSet(Procedures.Payslip_Detail, new
             {
                 EmployeeId = payslipGenerationModal.EmployeeId,
-                ForMonth = payslipGenerationModal.Month,
-                ForYear = payslipGenerationModal.Year,
+                FromDate,
+                ToDate,
                 FileRole = ApplicationConstants.CompanyPrimaryLogo
             });
 
-            if (ds == null || ds.Tables.Count != 7)
+            if (ds == null || ds.Tables.Count != 8)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
             if (ds.Tables[0].Rows.Count != 1)
@@ -1498,21 +1516,22 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to get employee role. Please contact to admin.");
 
             payslipGenerationModal.EmployeeRoles = Converter.ToList<EmployeeRole>(ds.Tables[5]);
-            if (ds.Tables[3].Rows.Count != 1)
+            if (ds.Tables[3].Rows.Count == 1)
                 throw new HiringBellException("Fail to get attendance detail. Please contact to admin.");
 
-            payslipGenerationModal.AttendanceDetail = Converter.ToType<Attendance>(ds.Tables[3]);
+            payslipGenerationModal.dailyAttendances = Converter.ToList<DailyAttendance>(ds.Tables[3]);
 
             if (ds.Tables[6].Rows.Count == 0)
                 throw new HiringBellException("Company primary logo not found. Please contact to admin.");
 
             var file = Converter.ToType<Files>(ds.Tables[6]);
-
             payslipGenerationModal.HeaderLogoPath = Path.Combine(
                 _fileLocationDetail.RootPath,
                 file.FilePath,
                 file.FileName
             );
+
+            payslipGenerationModal.leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[7]);
 
             await Task.CompletedTask;
         }

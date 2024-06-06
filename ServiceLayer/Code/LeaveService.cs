@@ -620,7 +620,7 @@ namespace ServiceLayer.Code
 
             lOPAdjustmentDetail.BlockedDates.ForEach(x =>
             {
-                result = _db.Execute<LeaveRequestNotification>(Procedures.Leave_Request_Notification_InsUpdate, new
+                result = _db.Execute<LeaveRequestNotification>(Procedures.LEAVE_REQUEST_NOTIFICATION_DAILY_ATTENDANCE_INSUPDATE, new
                 {
                     LeaveRequestNotificationId = 0,
                     LeaveRequestId = leaveCalculationModal.leaveRequestDetail.LeaveRequestId,
@@ -646,6 +646,7 @@ namespace ServiceLayer.Code
 
                 if (string.IsNullOrEmpty(result))
                     throw new HiringBellException("fail to insert or update leave notification detail");
+
                 leaveDetails.Add(int.Parse(result));
 
                 var leaveTemplateModel = new LeaveTemplateModel
