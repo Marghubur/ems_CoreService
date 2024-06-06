@@ -15,13 +15,14 @@ namespace ModalLayer.Modal
         public FileDetail FileDetail { set; get; }
         public Employee Employee { set; get; }
         public AnnualSalaryBreakup SalaryDetail { get; set; }
-        public Attendance AttendanceDetail { get; set; }
+        public List<DailyAttendance> dailyAttendances { get; set; }
         public TaxDetails TaxDetail { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
         public decimal Gross { get; set; }
         public List<PTaxSlab> PTaxSlabs { get; set; }
         public List<EmployeeRole> EmployeeRoles { get; set; }
-        public List<AnnualSalaryBreakup> AnnualSalaryBreakup {get; set;}
+        public List<AnnualSalaryBreakup> AnnualSalaryBreakup { get; set; }
+        public List<LeaveRequestNotification> leaveRequestNotifications { get; set; }
     }
 }

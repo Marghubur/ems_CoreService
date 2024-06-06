@@ -12,5 +12,7 @@
         public long EmployeeId { get; set; }
         public long RecordId { get; set; }
         public long ClientId { get; set; }
+        public int ForYear { get; set; }
+        public int ForMonth { get; set; }
     }
 }

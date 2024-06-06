@@ -257,7 +257,7 @@ namespace ServiceLayer.Code
 
             decimal HRA1 = calculatedSalaryBreakupDetail.ActualAmount;
             decimal HRA2 = basicComponent.ActualAmount / 2;
-            decimal HRA3 = 0;
+            decimal HRA3 = 0;  // it comes from declaration
             decimal HRAAmount = 0;
 
             if (HRA1 < HRA2 && HRA1 > 0)
@@ -401,23 +401,24 @@ namespace ServiceLayer.Code
             if (component == null)
             {
                 component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
-                if (component != null)
-                {
-                    // Calculate hra and apply on deduction
-                    HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+                if (component == null)
+                    throw HiringBellException.ThrowBadRequest("HRA component not found");
 
-                    if (employeeDeclaration.HRADeatils != null)
-                        totalDeduction = (employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
-                }
+                // Calculate hra and apply on deduction
+                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+
+                if (employeeDeclaration.HRADeatils != null)
+                    totalDeduction = (employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
             }
             else
             {
                 component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
-                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
-                if (component != null)
-                    totalDeduction = component.FinalAmount * totalMonths;
-            }
+                if (component == null)
+                    throw HiringBellException.ThrowBadRequest("HRA component not found");
 
+                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+                totalDeduction = employeeDeclaration.HRADeatils.HRAAmount * totalMonths;
+            }
 
             return totalDeduction;
         }

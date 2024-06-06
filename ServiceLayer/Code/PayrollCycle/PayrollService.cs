@@ -4,16 +4,13 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
-using DocumentFormat.OpenXml.VariantTypes;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
-using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
@@ -105,7 +102,7 @@ namespace ServiceLayer.Code.PayrollCycle
             return payrollEmployeePageData;
         }
 
-        private int GetPresentMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime toDate)
+        private int GetPresentMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime toDate, out decimal paidLeave)
         {
             int days = toDate.Day - 1;
             DateTime fromDate = toDate.AddDays(-days);
@@ -113,24 +110,28 @@ namespace ServiceLayer.Code.PayrollCycle
             var leaves = leaveRequestDetail.Where(x => x.FromDate >= fromDate && x.ToDate <= toDate).ToList();
 
             double leavesCount = 0;
+            paidLeave = 0;
             foreach (var leave in leaves)
             {
-                if (leave.ToDate <= toDate)
+                if (!leave.IsPaidLeave)
                 {
-                    leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays + 1;
+                    if (leave.ToDate <= toDate)
+                        leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays + 1;
+                    else
+                        leavesCount += toDate.Subtract(leave.FromDate).TotalDays + 1;
                 }
                 else
                 {
-                    leavesCount += toDate.Subtract(leave.FromDate).TotalDays + 1;
+                    paidLeave += leave.NumOfDays;
                 }
             }
 
             return Convert.ToInt32(leavesCount);
         }
 
-        private int GetPreviousMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime fromDate)
+        private int GetPreviousMonthLOP(List<LeaveRequestNotification> leaveRequestDetail, DateTime fromDate, out decimal paidLeave)
         {
-            fromDate = fromDate.AddMonths(-1);
+            //fromDate = fromDate.AddMonths(-1);
 
             int days = DateTime.DaysInMonth(fromDate.Year, fromDate.Month);
             days = days - fromDate.Day;
@@ -140,15 +141,19 @@ namespace ServiceLayer.Code.PayrollCycle
             var leaves = leaveRequestDetail.Where(x => x.FromDate > fromDate && x.ToDate <= toDate).ToList();
 
             double leavesCount = 0;
+            paidLeave = 0;
             foreach (var leave in leaves)
             {
-                if (leave.FromDate > fromDate)
+                if (!leave.IsPaidLeave)
                 {
-                    leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays;
+                    if (leave.FromDate > fromDate)
+                        leavesCount += leave.ToDate.Subtract(leave.FromDate).TotalDays;
+                    else
+                        leavesCount += leave.ToDate.Subtract(fromDate).TotalDays;
                 }
                 else
                 {
-                    leavesCount += leave.ToDate.Subtract(fromDate).TotalDays;
+                    paidLeave += leave.NumOfDays;
                 }
             }
 
@@ -225,26 +230,34 @@ namespace ServiceLayer.Code.PayrollCycle
         {
             var attendance = payrollCalculationModal.dailyAttendances.Where(x => x.AttendanceDate.Month == payrollCalculationModal.payrollDate.Month).ToList();
             if (payrollCalculationModal.payrollDate.Month == doj.Month && payrollCalculationModal.payrollDate.Year == doj.Year)
+            {
                 attendance = attendance.FindAll(x => x.AttendanceDate.Day >= doj.Day);
+                payrollCalculationModal.totalDaysInPresentMonth -= (doj.Day - 1);
+            }
 
             // Update date's to be approved after payroll run date
             Parallel.ForEach(attendance.FindAll(x => x.AttendanceDate.Day > payrollRunDay), x =>
             {
-                x.AttendanceStatus = (int)AttendanceEnum.Approved;
+                var isWeekend = CheckWeekend(payrollCalculationModal.shiftDetail, x.AttendanceDate);
+                if (isWeekend)
+                    x.AttendanceStatus = (int)AttendanceEnum.WeekOff;
+                else
+                    x.AttendanceStatus = (int)AttendanceEnum.Approved;
             });
 
+            decimal paidLeave = 0;
             PayrollWorkingDetail payrollWorkingDetail = new PayrollWorkingDetail
             {
-                ApprovedAttendanceMinutes = GetApprovedMinutes(attendance),
+                ApprovedAttendanceMinutes = GetApprovedMinutes(attendance, payrollCalculationModal.isExcludingWeekends),
                 LOPAttendanceMiutes = GetLOPAttendanceMinutes(attendance),
                 WeekOffs = CalculateWeekOffs(attendance, payrollCalculationModal.shiftDetail),
                 Holidays = await _companyCalendar.GetHolidayCountInMonth(
                                                 payrollCalculationModal.payrollDate.Month,
                                                 payrollCalculationModal.payrollDate.Year
                                            ),
-                LOPLeaveMinutes = GetPresentMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate)
+                LOPLeaveMinutes = GetPresentMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate, out paidLeave)
             };
-
+            payrollWorkingDetail.ApprovedAttendanceMinutes += paidLeave * payrollCalculationModal.shiftDetail.Duration;
             return payrollWorkingDetail;
         }
 
@@ -258,13 +271,14 @@ namespace ServiceLayer.Code.PayrollCycle
             if (attendance.Count == 0)
                 return new PayrollWorkingDetail();
 
+            decimal paidLeave = 0;
             return new PayrollWorkingDetail
             {
-                ApprovedAttendanceMinutes = GetApprovedMinutes(attendance),
+                ApprovedAttendanceMinutes = GetApprovedMinutes(attendance, payrollCalculationModal.isExcludingWeekends),
                 LOPAttendanceMiutes = GetLOPAttendanceMinutes(attendance),
                 WeekOffs = CalculateWeekOffs(attendance, payrollCalculationModal.shiftDetail),
                 Holidays = await _companyCalendar.GetHolidayCountInMonth(payrollDate.Month, payrollDate.Year),
-                LOPLeaveMinutes = GetPreviousMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate)
+                LOPLeaveMinutes = GetPreviousMonthLOP(payrollCalculationModal.userLeaveRequests, payrollCalculationModal.payrollDate, out paidLeave)
             };
         }
 
@@ -370,10 +384,9 @@ namespace ServiceLayer.Code.PayrollCycle
                                     employeeId = empPayroll.EmployeeId,
                                     shiftDetail = GetEmployeeShiftDetail(payrollCommonData, empPayroll.WorkShiftId)
                                 };
-
                                 await GetCalculationModal(payrollCommonData, payrollCalculationModal, payrollRunDay, empPayroll.Doj);
 
-                                payrollMonthlyDetail = await GetUpdatedBreakup(payrollCommonData.utcTimePresentDate,
+                                payrollMonthlyDetail = await GetUpdatedBreakup(payrollCommonData.localTimePresentDate,
                                                                                 payrollCalculationModal,
                                                                                 empPayroll,
                                                                                 payrollEmployeePageData.hikeBonusSalaryAdhoc
@@ -722,40 +735,39 @@ namespace ServiceLayer.Code.PayrollCycle
                 throw HiringBellException.ThrowBadRequest("Salary breakup not found. Fail to run payroll.");
 
             AnnualSalaryBreakup presentMonthSalaryDetail = salaryBreakup.Find(x => x.MonthNumber == payrollDate.Month);
-            if (presentMonthSalaryDetail != null)
-            {
-                foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
-                {
-                    //item.ActualAmount = item.FinalAmount;
-                    item.FinalAmount = (item.ActualAmount / payrollCalculationModal.presentMinsNeeded) * payrollCalculationModal.presentActualMins;
-                    switch (item.ComponentId)
-                    {
-                        case ComponentNames.EmployerPF:
-                            payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
-                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                            break;
-                        case ComponentNames.EmployeePF:
-                            payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
-                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                            break;
-                        case ComponentNames.CTCId:
-                        case ComponentNames.GrossId:
-                            break;
-                        default:
-                            payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                            break;
-                    }
-                }
+            if (presentMonthSalaryDetail == null)
+                throw HiringBellException.ThrowBadRequest($"{payrollDate.Month.ToString("MMMM")} month salary detail not found");
 
-                presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
-                var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
-                presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
-                presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
-                presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
-                payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
-                payrollCalculationModal.BonusAmount = presentMonthSalaryDetail.BonusAmount;
+            foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
+            {
+                //item.ActualAmount = item.FinalAmount;
+                item.FinalAmount = (item.ActualAmount / payrollCalculationModal.presentMinsNeeded) * payrollCalculationModal.presentActualMins;
+                switch (item.ComponentId)
+                {
+                    case ComponentNames.EmployerPF:
+                        payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
+                        payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                        break;
+                    case ComponentNames.EmployeePF:
+                        payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
+                        payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                        break;
+                    case ComponentNames.CTCId:
+                    case ComponentNames.GrossId:
+                        break;
+                    default:
+                        payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                        break;
+                }
             }
 
+            presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
+            var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
+            presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payrollCalculationModal, grossAmount);
+            presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
+            presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, empPayroll.EmployeeId, payrollDate);
+            payrollCalculationModal.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
+            payrollCalculationModal.BonusAmount = presentMonthSalaryDetail.BonusAmount;
             empPayroll.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);
             return await Task.FromResult(payrollMonthlyDetail);
         }
@@ -813,6 +825,8 @@ namespace ServiceLayer.Code.PayrollCycle
 
             _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(payrollCommonData.payroll.TimezoneName);
             payrollCommonData.timeZone = _currentSession.TimeZone;
+            if (runDate.Day == 1)
+                runDate = runDate.AddDays(payrollCommonData.payroll.PayCycleDayOfMonth - 1);
 
             payrollCommonData.utcTimePresentDate = _timezoneConverter.ToUtcTime(runDate);
             payrollCommonData.localTimePresentDate = _timezoneConverter.ToTimeZoneDateTime(payrollCommonData.utcTimePresentDate, _currentSession.TimeZone);
@@ -891,6 +905,37 @@ namespace ServiceLayer.Code.PayrollCycle
                 });
             }
             return weekOffCount;
+        }
+
+        private bool CheckWeekend(ShiftDetail shiftDetail, DateTime date)
+        {
+            bool flag = false;
+            switch (date.DayOfWeek)
+            {
+                case DayOfWeek.Monday:
+                    flag = !shiftDetail.IsMon;
+                    break;
+                case DayOfWeek.Tuesday:
+                    flag = !shiftDetail.IsTue;
+                    break;
+                case DayOfWeek.Wednesday:
+                    flag = !shiftDetail.IsWed;
+                    break;
+                case DayOfWeek.Thursday:
+                    flag = !shiftDetail.IsThu;
+                    break;
+                case DayOfWeek.Friday:
+                    flag = !shiftDetail.IsFri;
+                    break;
+                case DayOfWeek.Saturday:
+                    flag = !shiftDetail.IsSat;
+                    break;
+                case DayOfWeek.Sunday:
+                    flag = !shiftDetail.IsSun;
+                    break;
+            }
+
+            return flag;
         }
 
         //private async Task SendEmail(List<string> missingDetail, string presentDate)

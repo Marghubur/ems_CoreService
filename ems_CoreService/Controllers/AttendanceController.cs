@@ -319,6 +319,20 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [HttpPost("getAttendancePage")]
+        public async Task<ApiResponse> getAttendancePage([FromBody] FilterModel filterModel)
+        {
+            try
+            {
+                var result = await _attendanceService.GetAttendancePageService(filterModel);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
+        }
+
         #endregion
     }
 }

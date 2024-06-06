@@ -6,7 +6,6 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -42,7 +41,9 @@ namespace ServiceLayer.Code
             if (employeeId < 0)
                 throw new HiringBellException("Invalid employee id.");
 
-            DateTime now = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone);
+            DateTime date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var FromDate = _timezoneConverter.ToUtcTime(date.AddMonths(-1));
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
             if (itemStatus == ItemStatus.NotGenerated)
                 itemStatus = 0;
 
@@ -50,8 +51,8 @@ namespace ServiceLayer.Code
             {
                 ManagerId = employeeId,
                 StatusId = (int)itemStatus,
-                ForYear = now.Year,
-                ForMonth = now.Month
+                FromDate,
+                ToDate
             });
 
             if (resultSet != null && resultSet.Tables.Count != 3)
@@ -87,83 +88,72 @@ namespace ServiceLayer.Code
 
         public RequestModel GetManagerAndUnAssignedRequestService(long employeeId)
         {
-            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get_by_role");
+            return GetEmployeeRequestedDataService(employeeId, Procedures.LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET_BY_ROLE);
         }
 
         public RequestModel FetchPendingRequestService(long employeeId, ItemStatus itemStatus = ItemStatus.Pending)
         {
-            return GetEmployeeRequestedDataService(employeeId, "sp_leave_timesheet_and_attendance_requests_get", itemStatus);
+            return GetEmployeeRequestedDataService(employeeId, Procedures.LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET, itemStatus);
         }
 
-        public async Task<dynamic> ApproveAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
+        public async Task<dynamic> ApproveAttendanceService(DailyAttendance dailyAttendance, int filterId = ApplicationConstants.Only)
         {
-            await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Approved);
+            await UpdateAttendanceDetail(dailyAttendance, ItemStatus.Approved);
+            Attendance attendance = new Attendance
+            {
+                ForMonth = dailyAttendance.AttendanceDate.Month,
+                ForYear = dailyAttendance.AttendanceDate.Year,
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                PageIndex = dailyAttendance.PageIndex,
+                PresentDayStatus = filterId,
+                EmployeeId = dailyAttendance.EmployeeId,
+                TotalDays = dailyAttendance.TotalDays
+            };
+            return await this.GetAttendenceRequestDataServive(attendance);
+        }
+
+        public async Task<dynamic> RejectAttendanceService(DailyAttendance dailyAttendance, int filterId = ApplicationConstants.Only)
+        {
+            await UpdateAttendanceDetail(dailyAttendance, ItemStatus.Rejected);
             Attendance attendance = new Attendance
             {
                 ForMonth = DateTime.Now.Month,
                 ForYear = DateTime.Now.Year,
                 ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                PageIndex = attendanceDetail.PageIndex,
-                PresentDayStatus = attendanceDetail.PresentDayStatus,
-                EmployeeId = attendanceDetail.EmployeeId,
-                TotalDays = attendanceDetail.TotalDays
+                PageIndex = dailyAttendance.PageIndex,
+                PresentDayStatus = filterId,
+                EmployeeId = dailyAttendance.EmployeeId,
+                TotalDays = dailyAttendance.TotalDays
             };
             return await this.GetAttendenceRequestDataServive(attendance);
         }
 
-        public async Task<dynamic> RejectAttendanceService(Attendance attendanceDetail, int filterId = ApplicationConstants.Only)
-        {
-            await UpdateAttendanceDetail(attendanceDetail, ItemStatus.Rejected);
-            Attendance attendance = new Attendance
-            {
-                ForMonth = DateTime.Now.Month,
-                ForYear = DateTime.Now.Year,
-                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                PageIndex = attendanceDetail.PageIndex,
-                PresentDayStatus = attendanceDetail.PresentDayStatus,
-                EmployeeId = attendanceDetail.EmployeeId,
-                TotalDays = attendanceDetail.TotalDays
-            };
-            return await this.GetAttendenceRequestDataServive(attendance);
-        }
-
-        public async Task UpdateAttendanceDetail(Attendance attendanceDetail, ItemStatus status)
+        public async Task UpdateAttendanceDetail(DailyAttendance dailyAttendance, ItemStatus status)
         {
             try
             {
-                if (attendanceDetail.AttendanceId <= 0)
+                if (dailyAttendance.AttendanceId <= 0)
                     throw new HiringBellException("Invalid attendance day selected");
 
-                if (attendanceDetail.AttendenceDetailId <= 0)
-                    throw new HiringBellException("Invalid attendance day selected");
-
-                var attendance = _db.Get<Attendance>(Procedures.Attendance_Get_ById, new
+                var attendance = _db.Get<DailyAttendance>(Procedures.Attendance_Get_ById, new
                 {
-                    attendanceDetail.AttendanceId
+                    dailyAttendance.AttendanceId
                 });
 
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
 
-                if (attendance.PendingRequestCount > 0)
-                    attendance.PendingRequestCount = --attendance.PendingRequestCount;
-
-                var allAttendance = JsonConvert.DeserializeObject<List<AttendanceJson>>(attendance.AttendanceDetail);
-                var currentAttendance = allAttendance.Find(x => x.AttendenceDetailId == attendanceDetail.AttendenceDetailId);
-                
-                if (currentAttendance == null)
-                    throw HiringBellException.ThrowBadRequest("Unable to update present request. Please contact to admin.");
-
-                _logger.LogInformation("Attendance: " + currentAttendance.AttendanceDay);
-
-                currentAttendance.PresentDayStatus = (int)status;
-                var attrDetailJson = JsonConvert.SerializeObject(allAttendance);
-
+                dailyAttendance.AttendanceStatus = (int)status;
+                dailyAttendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
+                dailyAttendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
+                dailyAttendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
                 var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
                 {
-                    attendanceDetail.AttendanceId,
-                    AttendanceDetail = attrDetailJson,
-                    attendance.PendingRequestCount,
+                    dailyAttendance.AttendanceId,
+                    dailyAttendance.ReviewerId,
+                    dailyAttendance.ReviewerEmail,
+                    dailyAttendance.ReviewerName,
+                    dailyAttendance.AttendanceStatus,
                     _currentSession.CurrentUserDetail.UserId
                 }, true);
 
@@ -177,12 +167,12 @@ namespace ServiceLayer.Code
                     ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = 1,
-                    DeveloperName = attendanceDetail.EmployeeName,
-                    FromDate = attendanceDetail.AttendanceDay,
-                    ManagerName = attendanceDetail.ManagerName,
-                    Message = attendanceDetail.UserComments,
-                    RequestType = attendanceDetail.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                    ToAddress = new List<string> { attendance.Email },
+                    DeveloperName = dailyAttendance.EmployeeName,
+                    FromDate = dailyAttendance.AttendanceDate,
+                    ManagerName = dailyAttendance.ManagerName,
+                    Message = dailyAttendance.Comments,
+                    RequestType = dailyAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                    ToAddress = new List<string> { attendance.EmployeeEmail },
                     kafkaServiceName = KafkaServiceName.Attendance,
                     LocalConnectionString = _currentSession.LocalConnectionString,
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
@@ -210,65 +200,45 @@ namespace ServiceLayer.Code
             if (attendance.ForYear == 0)
                 throw new HiringBellException("Year is invalid");
 
-            var result = _db.GetList<Attendance>(Procedures.Attendance_Requests_By_Filter, new
+            var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1);
+            var FromDate = _timezoneConverter.ToUtcTime(date);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+
+            var result = _db.GetList<DailyAttendance>(Procedures.Attendance_Requests_By_Filter, new
             {
                 attendance.ReportingManagerId,
-                attendance.ForMonth,
-                attendance.ForYear
+                FromDate,
+                ToDate
             });
 
             if (result.Count == 0)
                 return null;
 
-            int index = 1;
-            List<AttendanceDetailJson> attendanceRequest = new List<AttendanceDetailJson>();
             List<AutoCompleteEmployees> autoCompleteEmployees = new List<AutoCompleteEmployees>();
             result.ForEach(x =>
             {
-                if (x.AttendanceDetail == null || x.AttendanceDetail == "[]")
-                    throw new HiringBellException("Attendance detail not found");
-
-                var attendanceDetail = JsonConvert.DeserializeObject<List<AttendanceDetailJson>>(x.AttendanceDetail);
-                if (x.ForMonth == attendance.ForMonth)
-                    attendanceDetail = attendanceDetail.Take(DateTime.Now.Day).ToList<AttendanceDetailJson>();
-
-                attendanceDetail.ForEach(y =>
-                {
-                    y.EmployeeName = x.EmployeeName;
-                    y.Email = x.Email;
-                    y.Mobile = x.Mobile;
-                    y.ManagerMobile = x.ManagerMobile;
-                    y.ManagerEmail = x.ManagerEmail;
-                    y.ManagerName = x.ManagerName;
-                    y.EmployeeId = x.EmployeeId;
-                    y.AttendanceId = x.AttendanceId;
-                    y.RowIndex = index++;
-                    y.FileExtension = x.FileExtension;
-                    y.FileName = x.FileName;
-                    y.FilePath = x.FilePath;
-                });
-                attendanceRequest.AddRange(attendanceDetail);
                 if (autoCompleteEmployees.Find(i => i.value == x.EmployeeId) == null)
                 {
                     autoCompleteEmployees.Add(new AutoCompleteEmployees
                     {
-                        email = x.Email,
+                        email = x.EmployeeEmail,
                         text = x.EmployeeName,
                         value = x.EmployeeId,
                         selected = false
                     });
                 }
             });
-            List<AttendanceDetailJson> filteredAttendance = FilterAndPagingAttendanceRecord(attendance, attendanceRequest);
+            List<DailyAttendance> filteredAttendance = FilterAndPagingAttendanceRecord(attendance, result);
             return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
         }
 
-        private List<AttendanceDetailJson> FilterAndPagingAttendanceRecord(Attendance attendance, List<AttendanceDetailJson> attendanceRequest)
+        private List<DailyAttendance> FilterAndPagingAttendanceRecord(Attendance attendance, List<DailyAttendance> attendanceRequest)
         {
             int recordsPerPage = 10;
             int totalRecord = 0;
+            attendanceRequest = attendanceRequest.OrderBy(x => x.AttendanceDate).ToList();
             if (attendance.PresentDayStatus != 0)
-                attendanceRequest = attendanceRequest.FindAll(x => x.PresentDayStatus == attendance.PresentDayStatus);
+                attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceStatus == attendance.PresentDayStatus);
 
             if (attendance.EmployeeId != 0)
                 attendanceRequest = attendanceRequest.FindAll(x => x.EmployeeId == attendance.EmployeeId);
@@ -276,7 +246,7 @@ namespace ServiceLayer.Code
             if (attendance.TotalDays > 0)
             {
                 DateTime lastDate = DateTime.Now.AddDays(attendance.TotalDays * -1);
-                attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceDay.Subtract(lastDate).TotalDays >= 0);
+                attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceDate.Subtract(lastDate).TotalDays >= 0);
             }
 
             totalRecord = attendanceRequest.Count;

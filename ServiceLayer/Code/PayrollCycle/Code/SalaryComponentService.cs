@@ -1188,7 +1188,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             return formula;
         }
 
-        private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime currentDate, decimal calculatedMontlyGross, bool currentYearMonthFlag)
+        private List<CalculatedSalaryBreakupDetail> ResolveFormula(EmployeeCalculation eCal, DateTime doj,
+                                                                    DateTime startDate, decimal calculatedMontlyGross,
+                                                                    bool currentYearMonthFlag)
         {
             _logger.LogInformation("Starting method: GetComponentsDetail");
 
@@ -1262,16 +1264,12 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
                     if (currentYearMonthFlag)
                     {
-                        int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                        int daysWorked = numberOfDays - eCal.Doj.Day + 1;
+                        int numberOfDays = DateTime.DaysInMonth(startDate.Year, startDate.Month);
+                        int daysWorked = numberOfDays - doj.Day + 1;
                         if (daysWorked <= 0)
-                        {
                             amount = 0;
-                        }
                         else
-                        {
                             amount = amount / numberOfDays * daysWorked;
-                        }
                     }
                 }
                 else
@@ -1429,12 +1427,12 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             _logger.LogInformation("Endning method: GetComponentsDetail");
         }
 
-        private decimal GetExpectedMonthSalary(EmployeeCalculation eCal, DateTime currentDate, decimal monthlyGross)
+        private decimal GetExpectedMonthSalary(DateTime doj, DateTime startDate, decimal monthlyGross)
         {
-            if (eCal.Doj.Year == currentDate.Year && eCal.Doj.Month == currentDate.Month)
+            if (doj.Year == startDate.Year && doj.Month == startDate.Month)
             {
-                int numberOfDays = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                var numberOfDaysInPresentMonth = numberOfDays - eCal.Doj.Day + 1;
+                int numberOfDays = DateTime.DaysInMonth(startDate.Year, startDate.Month);
+                var numberOfDaysInPresentMonth = numberOfDays - doj.Day + 1;
 
                 if (numberOfDaysInPresentMonth <= 0)
                     return 0;
@@ -1467,7 +1465,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
             while (index < 12)
             {
-                calculatedMontlyGross = GetExpectedMonthSalary(eCal, startDate, monthlyGrossIncome);
+                calculatedMontlyGross = GetExpectedMonthSalary(doj, startDate, monthlyGrossIncome);
                 List<CalculatedSalaryBreakupDetail> otherDetails = new List<CalculatedSalaryBreakupDetail>();
 
                 IsJoinedInMiddleOfCalendar = false;
@@ -1482,7 +1480,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 if (_utilityService.CheckIsJoinedInCurrentFinancialYear(eCal.Doj, eCal.companySetting) && eCal.Doj.Month == startDate.Month)
                     currentYearMonthFlag = true;
 
-                calculatedSalaryBreakupDetails = ResolveFormula(eCal, startDate, calculatedMontlyGross, currentYearMonthFlag);
+                calculatedSalaryBreakupDetails = ResolveFormula(eCal, doj, startDate, calculatedMontlyGross, currentYearMonthFlag);
 
                 var calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
                 {

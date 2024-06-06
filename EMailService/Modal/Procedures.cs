@@ -9,6 +9,10 @@
         public static string LEAVE_PLAN_TYPE_BY_LEAVEID = "sp_get_leave_plan_type_by_leaveid";
         public static string DAILY_ATTENDANCE_UPD_WEEKLY = "sp_daily_attendance_upd_weekly";
         public static string DAILY_ATTENDANCE_BET_DATES = "sp_daily_attendance_bet_dates";
+        public static string DAILY_ATTENDANCE_BET_DATES_EMPID = "sp_daily_attendance_bet_dates_EmpId";
+        public static string LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET_BY_ROLE = "sp_leave_timesheet_and_attendance_requests_get_by_role";
+        public static string LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET = "sp_leave_timesheet_and_attendance_requests_get";
+        public static string DAILY_ATTENDANCE_FILTER = "sp_daily_attendance_filter";
 
         /*------------- Leave Request service proceudures -------*/
         public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";
@@ -34,6 +38,7 @@
         public static string EMPLOYEE_SALARY_DETAIL_BY_EMPID_YEAR = "sp_employee_salary_detail_by_empid_year";
         public static string LEAVE_PLAN_SET_DEFAULT = "sp_leave_plan_set_default";
         public static string LEAVE_PLAN_TYPE_GET_BY_IDS_JSON = "sp_leave_plan_type_get_by_ids_json";
+        public static string LEAVE_REQUEST_NOTIFICATION_DAILY_ATTENDANCE_INSUPDATE = "sp_leave_request_notification_daily_attendance_insupdate";
 
         /*-------------- Leave Calculation proceudures ------------*/
         public static string Leave_Type_Detail_Get_By_EmployeeId = "sp_leave_type_detail_get_by_employeeId";

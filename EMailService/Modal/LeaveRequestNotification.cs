@@ -28,5 +28,6 @@ namespace ModalLayer.Modal
         public string LeaveTypeName { get; set; }
         public int AutoActionAfterDays { get; set; }
         public bool IsAutoApprovedEnabled { get; set; }
+        public bool IsPaidLeave { get; set; }
     }
 }
