@@ -1012,8 +1012,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         {
             payrollMonthlyDetail.ForYear = payrollDate.Year;
             payrollMonthlyDetail.ForMonth = payrollDate.Month;
-            payrollMonthlyDetail.PayrollStatus = 16;
-            payrollMonthlyDetail.PaymentRunDate = payrollDate;
+            payrollMonthlyDetail.PayrollStatus = 15;
+            payrollMonthlyDetail.PaymentRunDate = _timezoneConverter.ToUtcTime(payrollDate);
             payrollMonthlyDetail.ExecutedBy = _currentSession.CurrentUserDetail.UserId;
             payrollMonthlyDetail.ExecutedOn = DateTime.Now;
             payrollMonthlyDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
