@@ -143,17 +143,17 @@ namespace ServiceLayer.Code
                 if (attendance == null)
                     throw new HiringBellException("Invalid attendance day selected");
 
-                dailyAttendance.AttendanceStatus = (int)status;
-                dailyAttendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
-                dailyAttendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
-                dailyAttendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
+                attendance.AttendanceStatus = (int)status;
+                attendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
+                attendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
+                attendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
                 var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
                 {
-                    dailyAttendance.AttendanceId,
-                    dailyAttendance.ReviewerId,
-                    dailyAttendance.ReviewerEmail,
-                    dailyAttendance.ReviewerName,
-                    dailyAttendance.AttendanceStatus,
+                    attendance.AttendanceId,
+                    attendance.ReviewerId,
+                    attendance.ReviewerEmail,
+                    attendance.ReviewerName,
+                    attendance.AttendanceStatus,
                     _currentSession.CurrentUserDetail.UserId
                 }, true);
 
@@ -200,9 +200,9 @@ namespace ServiceLayer.Code
             if (attendance.ForYear == 0)
                 throw new HiringBellException("Year is invalid");
 
-            var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1);
+            var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1).AddMonths(-1);
             var FromDate = _timezoneConverter.ToUtcTime(date);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1));
 
             var result = _db.GetList<DailyAttendance>(Procedures.Attendance_Requests_By_Filter, new
             {
