@@ -780,7 +780,7 @@ namespace ServiceLayer.Code
                 if (target != null)
                     x.ComplaintOrRequestId = target.ComplaintOrRequestId;
 
-                x.AttendanceDate = item.AttendanceDate ;
+                x.AttendanceDate = item.AttendanceDate;
                 workTypeId = (int)item.WorkTypeId;
             });
 
@@ -1359,8 +1359,8 @@ namespace ServiceLayer.Code
                     leaves = leaveRequestNotifications.FindAll(i => i.EmployeeId == x.EmployeeId && i.RequestStatusId == (int)ItemStatus.Approved);
 
                 DateTime lastAppliedDate = DateTime.UtcNow.AddDays(-daysLimit);
-                List<DailyAttendance> blockedAttendance = dailyAttendances.FindAll(a => a.EmployeeId == x.EmployeeId 
-                                                                                        && a.AttendanceStatus != (int)ItemStatus.Approved 
+                List<DailyAttendance> blockedAttendance = dailyAttendances.FindAll(a => a.EmployeeId == x.EmployeeId
+                                                                                        && a.AttendanceStatus != (int)ItemStatus.Approved
                                                                                         && a.AttendanceStatus != (int)ItemStatus.Canceled
                                                                                         && !a.IsOnLeave);
                 if (blockedAttendance != null && blockedAttendance.Count > 0)
@@ -1788,7 +1788,7 @@ namespace ServiceLayer.Code
             return await updateAttendanceRecord(dailyAttendance, attendances, workShift, status);
         }
 
-        private async Task<List<DailyAttendance>> updateAttendanceRecord(List<DailyAttendance> dailyAttendances, List<DailyAttendance> attendances, 
+        private async Task<List<DailyAttendance>> updateAttendanceRecord(List<DailyAttendance> dailyAttendances, List<DailyAttendance> attendances,
                                                                         ShiftDetail shiftDetail, ItemStatus status)
         {
             foreach (var attendance in dailyAttendances)
@@ -1875,26 +1875,67 @@ namespace ServiceLayer.Code
 
         public async Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel)
         {
+            if (filterModel.ForMonth == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid month selected");
+
+            if (filterModel.ForYear == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid year selected");
+
             var date = new DateTime(filterModel.ForYear, filterModel.ForMonth, 1);
-            var FromDate = _timezoneConverter.ToUtcTime(date);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
-            filterModel.SearchString = filterModel.SearchString + $" and AttendanceDate between '{FromDate.ToString("yyyy-MM-dd HH:mm:ss")}' and '{ToDate.ToString("yyyy-MM-dd HH:mm:ss")}'";
-            filterModel.PageSize = 300;
-            var dailyAttendances = _db.GetList<DailyAttendance>(Procedures.DAILY_ATTENDANCE_FILTER, new
+            var fromDate = _timezoneConverter.ToUtcTime(date);
+            var toDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
+            return dailyAttendances.OrderBy(x => x.AttendanceDate)
+                                                        .GroupBy(x => x.EmployeeId)
+                                                        .ToDictionary(a => a.Key, a => a.ToList());
+        }
+
+        public async Task<Dictionary<int, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel)
+        {
+            (DateTime fromDate, DateTime toDate) = await BuildDates();
+            var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
+            return dailyAttendances.OrderBy(x => x.AttendanceDate)
+                                    .GroupBy(x => x.WeekOfYear)
+                                    .ToDictionary(a => a.Key, a => a.ToList());
+        }
+
+        private async Task<List<DailyAttendance>> GetFilteredDetailAttendanceService(FilterModel filterModel, DateTime fromDate, DateTime toDate)
+        {
+            if (filterModel.EmployeeId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid user selected");
+
+            filterModel.SearchString = filterModel.SearchString + $" and AttendanceDate between '{fromDate.ToString("yyyy-MM-dd HH:mm:ss")}' and '{toDate.ToString("yyyy-MM-dd HH:mm:ss")}'";
+            (List<DailyAttendance> dailyAttendances, List<LeaveRequestNotification> leaveRequestDetail) = _db.GetList<DailyAttendance, LeaveRequestNotification>(Procedures.DAILY_ATTENDANCE_FILTER, new
             {
                 filterModel.SearchString,
                 filterModel.PageSize,
                 filterModel.PageIndex,
-                filterModel.SortBy
+                filterModel.SortBy,
+                filterModel.EmployeeId
             });
 
             if (dailyAttendances.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found");
 
-            var groupDailyAttendances = dailyAttendances.OrderBy(x => x.AttendanceDate)
-                                                        .GroupBy(x => x.EmployeeId)
-                                                        .ToDictionary(a => a.Key, a => a.ToList());
-            return await Task.FromResult(groupDailyAttendances);
+            if (leaveRequestDetail.Count > 0)
+            {
+                foreach (var item in dailyAttendances)
+                {
+                    var leaveDetail = leaveRequestDetail
+                                        .Find(
+                                                x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays <= 0
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays >= 0
+                                             );
+
+                    if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
+                    {
+                        item.IsOnLeave = true;
+                    }
+                }
+            }
+            return await Task.FromResult(dailyAttendances);
         }
 
         #endregion

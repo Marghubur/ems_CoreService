@@ -333,6 +333,20 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [HttpPost("GetFilteredDetailAttendance")]
+        public async Task<ApiResponse> GetFilteredDetailAttendance([FromBody] FilterModel filterModel)
+        {
+            try
+            {
+                var result = await _attendanceService.GetRecentDailyAttendanceService(filterModel);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
+        }
+
         #endregion
     }
 }

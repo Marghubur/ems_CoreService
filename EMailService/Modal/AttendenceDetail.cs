@@ -37,8 +37,6 @@ namespace ModalLayer.Modal
         public List<AttendanceJson> AttendacneDetails { set; get; }
         public long AttendanceId { set; get; }
         public Employee EmployeeDetail { set; get; }
-
-
         public List<LeaveRequestNotification> LeaveRequestDetail { set; get; }
         public List<DailyAttendance> DailyAttendances { set; get; }
         public List<Project> Projects { get; set; }
