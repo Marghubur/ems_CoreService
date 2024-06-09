@@ -1758,13 +1758,14 @@ namespace ServiceLayer.Code
 
                 if (result != attendances.Count)
                     throw HiringBellException.ThrowBadRequest("Fail to update attendance request");
+
+                return attendances.OrderBy(x => x.AttendanceDate).ToList();
             }
             catch (Exception e)
             {
                 throw HiringBellException.ThrowBadRequest(e.Message);
             }
 
-            return attendances.OrderBy(x => x.AttendanceDate).ToList();
         }
 
         private async Task<List<DailyAttendance>> PrepareAttendanceForUpdate(List<DailyAttendance> attendances, ItemStatus status)
@@ -1793,34 +1794,30 @@ namespace ServiceLayer.Code
         {
             foreach (var attendance in dailyAttendances)
             {
+                if (attendance.AttendanceId == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
+
+                if (attendance.AttendanceDate.Year <= 1900)
+                    throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+
                 var attr = attendances.Find(x => x.AttendanceId == attendance.AttendanceId);
-                if (attr != null)
-                {
-                    if (attendance.AttendanceId == 0)
-                        throw HiringBellException.ThrowBadRequest("Invalid record send for applying.");
-
-                    if (attendance.AttendanceDate.Year <= 1900)
-                        throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
-
-                    attendance.ProjectId = attr.ProjectId;
-                    attendance.TaskId = attr.TaskId;
-                    attendance.TaskType = attr.TaskType;
-                    attendance.LogOn = attr.LogOn;
-                    attendance.LogOff = attr.LogOff;
-                    attendance.TotalMinutes = attr.TotalMinutes;
-                    attendance.Comments = attr.Comments;
-                    attendance.AttendanceStatus = (int)status;
-                    attendance.WorkTypeId = attr.WorkTypeId;
-                    attendance.IsOnLeave = attr.IsOnLeave;
-                    attendance.LeaveId = attr.LeaveId;
-
-                    // check for leave
-                    await this.CheckIsOnPaidLeave(attendance, shiftDetail);
-                }
-                else
-                {
+                if (attr == null)
                     throw HiringBellException.ThrowBadRequest($"Attendance not found for date: {attendance.AttendanceDate}");
-                }
+
+                attendance.ProjectId = attr.ProjectId;
+                attendance.TaskId = attr.TaskId;
+                attendance.TaskType = attr.TaskType;
+                attendance.LogOn = attr.LogOn;
+                attendance.LogOff = attr.LogOff;
+                attendance.TotalMinutes = attr.TotalMinutes;
+                attendance.Comments = attr.Comments;
+                attendance.AttendanceStatus = (int)status;
+                attendance.WorkTypeId = attr.WorkTypeId;
+                attendance.IsOnLeave = attr.IsOnLeave;
+                attendance.LeaveId = attr.LeaveId;
+
+                // check for leave
+                await this.CheckIsOnPaidLeave(attendance, shiftDetail);
             }
             return dailyAttendances;
         }
@@ -1923,10 +1920,10 @@ namespace ServiceLayer.Code
                 {
                     var leaveDetail = leaveRequestDetail
                                         .Find(
-                                                x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date
-                                                        .Subtract(item.AttendanceDate.Date).TotalDays <= 0
-                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date
-                                                        .Subtract(item.AttendanceDate.Date).TotalDays >= 0
+                                                x => x.FromDate.Date
+                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date)).TotalDays <= 0
+                                                    && x.ToDate.Date
+                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date)).TotalDays >= 0
                                              );
 
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
