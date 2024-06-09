@@ -33,7 +33,6 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly ILogger<PayrollService> _logger;
         private readonly ICompanyCalendar _companyCalendar;
         private readonly KafkaNotificationService _kafkaNotificationService;
-
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
             IDeclarationService declarationService,
@@ -391,7 +390,7 @@ namespace ServiceLayer.Code.PayrollCycle
                             // Get and check tax detail
                             PayrollCalculationModal payrollModel = ValidateTaxDetail(payrollCommonData, currentEmployee);
 
-                            if (!payrollModel.PresentTaxDetail.IsPayrollCompleted || reRunFlag)
+                            if ((!payrollModel.PresentTaxDetail.IsPayrollCompleted || reRunFlag) && currentEmployee.EmployeeId == 26)
                             {
                                 PrepareAttendaceCalculationModel(payrollEmployeePageData, payrollCommonData, payrollModel);
                                 payrollModel.DaysInPresentMonth = totalDaysInMonth;
@@ -470,9 +469,9 @@ namespace ServiceLayer.Code.PayrollCycle
             payrollMonthlyDetail.PayableToEmployee -= payrollModel.PresentTaxDetail.TaxPaid;
             payrollMonthlyDetail.PayableToEmployee += payrollModel.ArrearAmount + payrollModel.BonusAmount;
 
-            var pTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, currentEmployee.CTC);
+            payrollMonthlyDetail.ProfessionalTax = GetProfessionalTaxAmount(payrollCommonData.ptaxSlab, payrollCommonData.company, currentEmployee.CTC);
 
-            payrollMonthlyDetail.PayableToEmployee -= pTax;
+            payrollMonthlyDetail.PayableToEmployee -= payrollMonthlyDetail.ProfessionalTax;
             payrollMonthlyDetail.GrossTotal = payrollMonthlyDetail.PayableToEmployee; //+ amount;
 
             payrollMonthlyDetail.TotalDeduction = payrollModel.PresentTaxDetail.TaxPaid;
@@ -785,20 +784,21 @@ namespace ServiceLayer.Code.PayrollCycle
 
             foreach (var item in presentMonthSalaryDetail.SalaryBreakupDetails)
             {
-                //item.ActualAmount = item.FinalAmount;
                 item.FinalAmount = (item.ActualAmount / payroll.MinutesNeededInPresentMonth) * payroll.MinutesInPresentMonth;
                 switch (item.ComponentId)
                 {
-                    case ComponentNames.EmployerPF:
-                        payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
-                        payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                        break;
-                    case ComponentNames.EmployeePF:
-                        payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
-                        payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                        break;
+                    //case ComponentNames.EmployerPF:
+                    //    payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
+                    //    payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                    //    break;
+                    //case ComponentNames.EmployeePF:
+                    //    payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
+                    //    payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
+                    //    break;
                     case ComponentNames.CTCId:
                     case ComponentNames.GrossId:
+                    case ComponentNames.EmployeePF:
+                    case ComponentNames.EmployerPF:
                         break;
                     default:
                         payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
@@ -806,8 +806,10 @@ namespace ServiceLayer.Code.PayrollCycle
                 }
             }
 
+            CalculatePFAmount(presentMonthSalaryDetail, payrollMonthlyDetail);
+
             presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
-            var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).ActualAmount;
+            var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).FinalAmount;
             presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payroll, grossAmount);
             presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, payroll.CurrentEmployee.EmployeeId, payroll.LocalTimePresentDate);
             presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, payroll.CurrentEmployee.EmployeeId, payroll.LocalTimePresentDate);
@@ -817,6 +819,63 @@ namespace ServiceLayer.Code.PayrollCycle
             return await Task.FromResult(payrollMonthlyDetail);
         }
 
+        private void CalculatePFAmount(AnnualSalaryBreakup presentMonthSalaryDetail, PayrollMonthlyDetail payrollMonthlyDetail)
+        {
+            var basicAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.Basic).FinalAmount;
+
+            var employeePFComponent = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.EmployeePF);
+            var formula = GetConvertedFormula(employeePFComponent.Formula, basicAmount);
+            employeePFComponent.FinalAmount = GetConvertedAmount(formula);
+            payrollMonthlyDetail.PFByEmployee = employeePFComponent.FinalAmount;
+            payrollMonthlyDetail.PayableToEmployee += employeePFComponent.FinalAmount;
+
+            var employerPFComponent = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.EmployerPF);
+            formula = GetConvertedFormula(employerPFComponent.Formula, basicAmount);
+            employerPFComponent.FinalAmount = GetConvertedAmount(formula);
+            payrollMonthlyDetail.PFByEmployer = employerPFComponent.FinalAmount;
+            payrollMonthlyDetail.PayableToEmployee += employerPFComponent.FinalAmount;
+        }
+
+        private string GetConvertedFormula(string userFormula, decimal basicAmount)
+        {
+            string formula = userFormula;
+
+            if (!userFormula.Contains("basic", StringComparison.OrdinalIgnoreCase))
+                formula = userFormula;
+
+            var elems = formula.Split(" ");
+            if (elems != null && elems.Length > 0)
+            {
+                if (elems[0].Contains("%"))
+                {
+                    elems[0] = elems[0].Replace("%", "");
+                    if (int.TryParse(elems[0].Trim(), out int value))
+                    {
+                        formula = $"{value}%{basicAmount}";
+                    }
+                }
+                else
+                {
+                    if (int.TryParse(elems[0].Trim(), out int value))
+                    {
+                        formula = value.ToString();
+                    }
+                }
+            }
+
+            return formula;
+        }
+
+        private decimal GetConvertedAmount(string formula)
+        {
+            var expPart = formula.Split("%");
+            if (expPart.Length != 2)
+                return decimal.Parse(formula);
+
+            var percentage = decimal.Parse(expPart[0]);
+            var number = decimal.Parse(expPart[1]);
+            return (percentage * number) / 100;
+        }
 
         private PayrollCommonData GetCommonPayrollData()
         {

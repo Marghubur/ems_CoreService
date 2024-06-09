@@ -1,7 +1,5 @@
 ﻿using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ServiceLayer.Code
 {
@@ -55,8 +53,6 @@ namespace ServiceLayer.Code
                 // from stack apply the operator 
                 else
                 {
-
-
                     int val1 = stack.Pop();
                     int val2 = stack.Pop();
 
