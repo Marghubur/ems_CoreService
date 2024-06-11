@@ -1,9 +1,11 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -66,7 +68,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 }
                 try
                 {
-                    await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
+                    // await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
+                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 }
                 catch
                 {

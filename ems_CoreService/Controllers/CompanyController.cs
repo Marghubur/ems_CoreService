@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.API;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Net;
@@ -198,7 +200,8 @@ namespace OnlineDataBuilder.Controllers
             {
                 // var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Utc);
                 var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Local);
-                await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
+                // await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
+                await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 return BuildResponse(ApplicationConstants.Successfull);
             }
             catch (Exception ex)

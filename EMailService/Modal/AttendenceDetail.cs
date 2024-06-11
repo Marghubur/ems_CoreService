@@ -1,7 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using CoreBottomHalf.Modal;
 using ModalLayer.Modal.Leaves;
-using ModalLayer.Modal.Profile;
 using System;
 using System.Collections.Generic;
 
@@ -9,7 +8,6 @@ namespace ModalLayer.Modal
 {
     public class AttendenceDetail : AttendanceDetailJson
     {
-        public long AttendanceId { set; get; } = 0;
         public long UserId { get; set; }
         public int UserTypeId { get; set; }
         public double BillingHours { get; set; }

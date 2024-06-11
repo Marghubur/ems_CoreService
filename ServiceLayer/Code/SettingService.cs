@@ -8,6 +8,7 @@ using ems_CoreService.Model;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -169,7 +170,8 @@ namespace ServiceLayer.Code
                     if (employeeDeclaration == null)
                         throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
-                    await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                    // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 });
 
             };
@@ -396,7 +398,8 @@ namespace ServiceLayer.Code
                     if (employeeDeclaration == null)
                         throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
-                    await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                    // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 });
 
             };

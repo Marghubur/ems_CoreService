@@ -19,6 +19,7 @@ using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.HostedServiceJobs;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
@@ -136,6 +137,7 @@ namespace ems_CoreService
             services.AddScoped<IWeeklyTimesheetCreationJob, WeeklyTimesheetCreationJob>();
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
+            services.AddScoped<RequestMicroservice>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {

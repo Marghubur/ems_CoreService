@@ -1,5 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.API;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +9,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using System;
 using System.Collections.Generic;
@@ -19,11 +22,11 @@ namespace OnlineDataBuilder.Controllers
     [ApiController]
     public class DeclarationController : BaseController
     {
-        private readonly IDeclarationService _declarationService;
+        // private readonly IDeclarationService _declarationService;
         private readonly HttpContext _httpContext;
-        public DeclarationController(IDeclarationService declarationService, IHttpContextAccessor httpContext)
+        public DeclarationController(IHttpContextAccessor httpContext)
         {
-            _declarationService = declarationService;
+            // _declarationService = declarationService;
             _httpContext = httpContext.HttpContext;
         }
 
@@ -32,7 +35,8 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                var result = await _declarationService.GetEmployeeDeclarationDetail(EmployeeId);
+                // var result = await _declarationService.GetEmployeeDeclarationDetail(EmployeeId);
+                var result = await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -54,7 +58,8 @@ namespace OnlineDataBuilder.Controllers
                     var DeclarationDetail = JsonConvert.DeserializeObject<EmployeeDeclaration>(declaration);
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    var result = await _declarationService.UpdateDeclarationDetail(EmployeeDeclarationId, DeclarationDetail, fileDetail, files);
+                    // var result = await _declarationService.UpdateDeclarationDetail(EmployeeDeclarationId, DeclarationDetail, fileDetail, files);
+                    var result = await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                     return BuildResponse(result, HttpStatusCode.OK);
                 }
 

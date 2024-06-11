@@ -1,8 +1,8 @@
-﻿using Bot.CoreBottomHalf.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using EMailService.Modal;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System.Collections.Generic;

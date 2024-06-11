@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.API;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -83,6 +84,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpDelete("DeactivateClient")]
+
         public ApiResponse DeactivateClient(Employee employee)
         {
             try

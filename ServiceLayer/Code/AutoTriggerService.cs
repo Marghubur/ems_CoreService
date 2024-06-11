@@ -17,12 +17,14 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Net;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -226,7 +228,8 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid run date passed. Please check run date.");
             }
 
-            await _payrollService.RunPayrollCycle(runDate.Value);
+            // await _payrollService.RunPayrollCycle(runDate.Value);
+            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 

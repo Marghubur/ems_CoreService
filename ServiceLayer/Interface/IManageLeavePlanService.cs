@@ -1,8 +1,6 @@
-﻿using ModalLayer.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using ModalLayer.Modal.Leaves;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface

@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal.Accounts;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -179,7 +181,8 @@ namespace OnlineDataBuilder.Controllers
         {
             _logger.LogInformation("Starting payrolljob.");
 
-            await _payrollService.RunPayrollCycle(DateTime.UtcNow);
+            // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
+            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
 
             return await Task.FromResult("Payroll ran successfully");
         }
@@ -198,7 +201,8 @@ namespace OnlineDataBuilder.Controllers
 
         private async Task RunPayrollAsync()
         {
-            await _payrollService.RunPayrollCycle(DateTime.UtcNow);
+            // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
+            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
         }
 
         private async Task RunLeaveAccrualAsync()

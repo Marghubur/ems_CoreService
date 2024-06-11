@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -151,7 +152,7 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                var result = _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, employees);
+                var result = await _manageLeavePlanService.AddUpdateEmpLeavePlanService(leavePlanId, employees);
                 return BuildResponse(result);
             }
             catch (Exception ex)

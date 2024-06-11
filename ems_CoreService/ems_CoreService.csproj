@@ -24,6 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\DeclarationController.cs" />
+    <Compile Remove="Controllers\SalaryComponentController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <_ContentIncludedByDefault Remove="Model\PriceDetail.json" />
   </ItemGroup>
 

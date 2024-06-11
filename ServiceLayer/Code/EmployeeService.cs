@@ -19,6 +19,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -50,6 +51,7 @@ namespace ServiceLayer.Code
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly ITimesheetService _timesheetService;
         private readonly ExcelWriter _excelWriter;
+        private readonly RequestMicroservice _requestMicroservice;
 
         public EmployeeService(IDb db,
             CurrentSession currentSession,
@@ -64,7 +66,8 @@ namespace ServiceLayer.Code
             ILeaveCalculation leaveCalculation,
             IEMailManager eMailManager,
             ITimesheetService timesheetService,
-            ExcelWriter excelWriter)
+            ExcelWriter excelWriter,
+            RequestMicroservice requestMicroservice)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -80,6 +83,7 @@ namespace ServiceLayer.Code
             _eMailManager = eMailManager;
             _timesheetService = timesheetService;
             _excelWriter = excelWriter;
+            _requestMicroservice = requestMicroservice;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -875,22 +879,16 @@ namespace ServiceLayer.Code
                 // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
 
-                var jsonData = JsonConvert.SerializeObject(eCal);
-                string url = "http://localhost:5281/api/ExportEmployeeDeclaration";
-                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-                
-                using var httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("reCalculateFlag", true.ToString());
-                HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(url, content);
-                httpResponseMessage.EnsureSuccessStatusCode();
+                var request = JsonConvert.SerializeObject(eCal);
+                string url = $"http://localhost:5000/api/salarydeclaration/Declaration/SalaryDeclarationCalculation/{true}";
 
-                string response = await httpResponseMessage.Content.ReadAsStringAsync();
-                if (httpResponseMessage.Content.Headers.ContentType.MediaType == "application/json")
+                string response = await _requestMicroservice.PutRequest(MicroserviceRequest.Builder(url, request));
+                if (string.IsNullOrEmpty(response))
                 {
-                    var employeeSalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(response);
+                    throw HiringBellException.ThrowBadRequest("Fail to get salary declaration calculation call");
                 }
 
-
+                eCal = JsonConvert.DeserializeObject<EmployeeCalculation>(response);
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
@@ -1148,7 +1146,8 @@ namespace ServiceLayer.Code
                 }
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+                // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+                await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
@@ -1727,7 +1726,8 @@ namespace ServiceLayer.Code
                 }
                 try
                 {
-                    await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);
+                    // await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);
+                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 }
                 catch
                 {

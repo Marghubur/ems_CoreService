@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Remove="Modal\HikeBonusSalaryAdhoc.cs" />
+    <Compile Remove="Modal\TaxSlabDetail.cs" />
   </ItemGroup>
 
   <ItemGroup>
