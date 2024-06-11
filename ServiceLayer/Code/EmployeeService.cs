@@ -28,6 +28,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Mail;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using File = System.IO.File;
 
@@ -873,7 +874,21 @@ namespace ServiceLayer.Code
                 // call salary_declaration service using httpclient
                 // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
-                HttpClient httpClient = new HttpClient();
+
+                var jsonData = JsonConvert.SerializeObject(eCal);
+                string url = "http://localhost:5281/api/ExportEmployeeDeclaration";
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("reCalculateFlag", true.ToString());
+                HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(url, content);
+                httpResponseMessage.EnsureSuccessStatusCode();
+
+                string response = await httpResponseMessage.Content.ReadAsStringAsync();
+                if (httpResponseMessage.Content.Headers.ContentType.MediaType == "application/json")
+                {
+                    var employeeSalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(response);
+                }
 
 
 
