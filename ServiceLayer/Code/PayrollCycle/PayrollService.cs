@@ -384,13 +384,13 @@ namespace ServiceLayer.Code.PayrollCycle
                     try
                     {
                         bool salaryHoldFlag = true;
-                        // (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
+                        (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
                         if (salaryHoldFlag)
                         {
                             // Get and check tax detail
                             PayrollCalculationModal payrollModel = ValidateTaxDetail(payrollCommonData, currentEmployee);
 
-                            if ((!payrollModel.PresentTaxDetail.IsPayrollCompleted || reRunFlag) && currentEmployee.EmployeeId == 26)
+                            if (!payrollModel.PresentTaxDetail.IsPayrollCompleted || reRunFlag)
                             {
                                 PrepareAttendaceCalculationModel(payrollEmployeePageData, payrollCommonData, payrollModel);
                                 payrollModel.DaysInPresentMonth = totalDaysInMonth;
@@ -576,15 +576,19 @@ namespace ServiceLayer.Code.PayrollCycle
             await Task.CompletedTask;
         }
 
-        private async Task<decimal> GetPreviousMonthArrearAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, long employeeId, DateTime payrollDate)
+        private async Task<decimal> GetPreviousMonthArrearAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, PayrollCalculationModal payroll)
         {
             decimal arrearAmount = 0;
             if (hikeBonusSalaryAdhocs.Count > 0)
             {
-                DateTime previousMonthDate = payrollDate.AddMonths(-1);
+                DateTime previousMonthDate = payroll.LocalTimePresentDate.AddMonths(-1);
 
-                var prevMonthArrearDetail = hikeBonusSalaryAdhocs.Find(x => x.EmployeeId == employeeId && x.ForMonth == previousMonthDate.Month
-                                            && x.ForYear == previousMonthDate.Year && x.IsArrear);
+                var prevMonthArrearDetail = hikeBonusSalaryAdhocs.Find(x => x.EmployeeId == payroll.CurrentEmployee.EmployeeId
+                                                && x.ForMonth == previousMonthDate.Month
+                                                && x.ForYear == previousMonthDate.Year
+                                                && x.IsArrear
+                                            );
+
                 if (prevMonthArrearDetail != null)
                     arrearAmount = prevMonthArrearDetail.Amount;
             }
@@ -606,11 +610,14 @@ namespace ServiceLayer.Code.PayrollCycle
             return await Task.FromResult(amount);
         }
 
-        private async Task<decimal> GetBonusAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, long employeeId, DateTime payrollDate)
+        private async Task<decimal> GetBonusAmount(List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhocs, PayrollCalculationModal payroll)
         {
             decimal amount = 0;
-            var bonusDetail = hikeBonusSalaryAdhocs.FirstOrDefault(x => x.IsBonus && x.EmployeeId == employeeId
-                                                                        && x.ForMonth == payrollDate.Month && x.ForYear == payrollDate.Year);
+            var bonusDetail = hikeBonusSalaryAdhocs.FirstOrDefault(x => x.IsBonus && x.EmployeeId == payroll.CurrentEmployee.EmployeeId
+                                                                        && x.ForMonth == payroll.LocalTimePresentDate.Month
+                                                                        && x.ForYear == payroll.LocalTimePresentDate.Year
+                                                                   );
+
             if (bonusDetail != null)
                 amount = bonusDetail.Amount;
 
@@ -650,9 +657,9 @@ namespace ServiceLayer.Code.PayrollCycle
             decimal amount = 0;
 
             var presnetEmployees = hikeBonusSalaryAdhoc.Where(x => x.EmployeeId == EmployeeId).ToList();
-            var record = presnetEmployees.Find(x => x.EmployeeId == EmployeeId && x.IsSalaryOnHold);
+            var holdRecord = presnetEmployees.Find(x => x.EmployeeId == EmployeeId && x.IsSalaryOnHold);
 
-            if (record != null)
+            if (holdRecord != null)
             {
                 flag = false;
             }
@@ -787,14 +794,6 @@ namespace ServiceLayer.Code.PayrollCycle
                 item.FinalAmount = (item.ActualAmount / payroll.MinutesNeededInPresentMonth) * payroll.MinutesInPresentMonth;
                 switch (item.ComponentId)
                 {
-                    //case ComponentNames.EmployerPF:
-                    //    payrollMonthlyDetail.PFByEmployer = item.FinalAmount;
-                    //    payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                    //    break;
-                    //case ComponentNames.EmployeePF:
-                    //    payrollMonthlyDetail.PFByEmployee = item.FinalAmount;
-                    //    payrollMonthlyDetail.PayableToEmployee += item.FinalAmount;
-                    //    break;
                     case ComponentNames.CTCId:
                     case ComponentNames.GrossId:
                     case ComponentNames.EmployeePF:
@@ -810,28 +809,34 @@ namespace ServiceLayer.Code.PayrollCycle
 
             presentMonthSalaryDetail.IsPayrollExecutedForThisMonth = true;
             var grossAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId).FinalAmount;
+
             presentMonthSalaryDetail.ArrearAmount = -1 * await GetPreviousMonthLOPAmount(payroll, grossAmount);
-            presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, payroll.CurrentEmployee.EmployeeId, payroll.LocalTimePresentDate);
-            presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, payroll.CurrentEmployee.EmployeeId, payroll.LocalTimePresentDate);
+            presentMonthSalaryDetail.ArrearAmount += await GetPreviousMonthArrearAmount(hikeBonusSalaryAdhocs, payroll);
+            presentMonthSalaryDetail.BonusAmount = await GetBonusAmount(hikeBonusSalaryAdhocs, payroll);
+
             payroll.ArrearAmount = presentMonthSalaryDetail.ArrearAmount;
             payroll.BonusAmount = presentMonthSalaryDetail.BonusAmount;
             payroll.CurrentEmployee.CompleteSalaryDetail = JsonConvert.SerializeObject(salaryBreakup);
+
             return await Task.FromResult(payrollMonthlyDetail);
         }
 
         private void CalculatePFAmount(AnnualSalaryBreakup presentMonthSalaryDetail, PayrollMonthlyDetail payrollMonthlyDetail)
         {
             var basicAmount = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.Basic).FinalAmount;
-
             var employeePFComponent = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.EmployeePF);
+
             var formula = GetConvertedFormula(employeePFComponent.Formula, basicAmount);
             employeePFComponent.FinalAmount = GetConvertedAmount(formula);
+
             payrollMonthlyDetail.PFByEmployee = employeePFComponent.FinalAmount;
             payrollMonthlyDetail.PayableToEmployee += employeePFComponent.FinalAmount;
 
             var employerPFComponent = presentMonthSalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.EmployerPF);
+
             formula = GetConvertedFormula(employerPFComponent.Formula, basicAmount);
             employerPFComponent.FinalAmount = GetConvertedAmount(formula);
+
             payrollMonthlyDetail.PFByEmployer = employerPFComponent.FinalAmount;
             payrollMonthlyDetail.PayableToEmployee += employerPFComponent.FinalAmount;
         }
