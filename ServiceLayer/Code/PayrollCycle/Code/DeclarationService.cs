@@ -250,9 +250,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             try
             {
                 DbResult Result = null;
-                List<int> fileIds = new List<int>();
                 if (FileCollection != null && FileCollection.Count > 0)
                 {
+                    List<int> fileIds = new List<int>();
                     if (string.IsNullOrEmpty(declaration.DocumentPath))
                     {
                         declaration.DocumentPath = Path.Combine(
@@ -282,9 +282,9 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
                         fileIds.Add(Convert.ToInt32(Result.statusMessage));
                     }
+                    salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
                 }
 
-                salaryComponent.UploadedFileIds = JsonConvert.SerializeObject(fileIds);
                 declaration.DeclarationDetail = GetDeclarationBasicFields(declaration.SalaryComponentItems);
 
                 Result = await _db.ExecuteAsync(Procedures.Employee_Declaration_Insupd, new
@@ -319,7 +319,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 x.Section,
                 x.MaxLimit,
                 x.ComponentFullName,
-                x.UploadedFileIds
+                UploadedFileIds = string.IsNullOrEmpty(x.UploadedFileIds) ? "[]" : x.UploadedFileIds
             }).ToList();
 
             return JsonConvert.SerializeObject(basicFields);
