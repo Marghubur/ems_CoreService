@@ -20,15 +20,12 @@ using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.HostedServiceJobs;
 using ServiceLayer.Code.Leaves;
-using ServiceLayer.Code.PayrollCycle;
 using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace ems_CoreService
 {
@@ -52,6 +49,7 @@ namespace ems_CoreService
                 return CacheManager.GetInstance(connectionString);
             });
         }
+
         public void RegisterServiceLayerServices(IServiceCollection services)
         {
             services.AddSingleton<IUtilityService, UtilityService>();
@@ -93,9 +91,9 @@ namespace ems_CoreService
             services.AddScoped<IDocumentProcessing, DocumentProcessing>();
             services.AddScoped<HtmlToPdfConverter>();
             services.AddScoped<ISettingService, SettingService>();
-            services.AddScoped<ISalaryComponentService, SalaryComponentService>();
+            // services.AddScoped<ISalaryComponentService, SalaryComponentService>();
             services.AddScoped<ICompanyService, CompanyService>();
-            services.AddScoped<IDeclarationService, DeclarationService>();
+            // services.AddScoped<IDeclarationService, DeclarationService>();
             services.AddScoped<ILeaveService, LeaveService>();
             services.AddScoped<IManageLeavePlanService, ManageLeavePlanService>();
             services.AddScoped<ITimesheetService, TimesheetService>();
@@ -128,10 +126,10 @@ namespace ems_CoreService
             services.AddScoped<ICompanyNotificationService, CompanyNotificationService>();
             services.AddScoped<IServiceRequestService, ServiceRequestService>();
             services.AddScoped<IApprovalChainService, ApprovalChainService>();
-            services.AddScoped<IPayrollService, PayrollService>();
+            // services.AddScoped<IPayrollService, PayrollService>();
             services.AddScoped<IShiftService, ShiftService>();
             services.AddScoped<WorkFlowChain>();
-            services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
+            // services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
             services.AddScoped<ICronJobSettingService, CronJobSettingService>();
             services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();

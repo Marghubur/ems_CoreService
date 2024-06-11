@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
@@ -7,7 +8,6 @@ using ems_CoreService.Model;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -22,16 +22,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
-        private readonly IDeclarationService _declarationService;
+        //private readonly IDeclarationService _declarationService;
         public SettingService(IDb db,
             CurrentSession currentSession,
-            ICommonService commonService,
-            IDeclarationService declarationService)
+            ICommonService commonService
+            //IDeclarationService declarationService
+            )
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
-            _declarationService = declarationService;
+            //_declarationService = declarationService;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)

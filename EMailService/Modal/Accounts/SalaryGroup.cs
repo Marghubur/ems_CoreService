@@ -1,4 +1,5 @@
-﻿using ModalLayer.MarkerInterface;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using ModalLayer.MarkerInterface;
 using System.Collections.Generic;
 
 namespace ModalLayer.Modal.Accounts

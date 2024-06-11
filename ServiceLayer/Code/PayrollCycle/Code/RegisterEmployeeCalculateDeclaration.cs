@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
@@ -13,19 +14,19 @@ namespace ServiceLayer.Code.PayrollCycle.Code
     public class RegisterEmployeeCalculateDeclaration : IRegisterEmployeeCalculateDeclaration
     {
         private readonly IEmployeeService _employeeService;
-        private readonly IDeclarationService _declarationService;
+        // private readonly IDeclarationService _declarationService;
         private readonly ILogger<RegisterEmployeeCalculateDeclaration> _logger;
         private readonly CurrentSession _currentSession;
 
         public RegisterEmployeeCalculateDeclaration(
             IEmployeeService employeeService,
             CurrentSession currentSession,
-            IDeclarationService declarationService,
+            // IDeclarationService declarationService,
             ILogger<RegisterEmployeeCalculateDeclaration> logger)
         {
             _employeeService = employeeService;
             _currentSession = currentSession;
-            _declarationService = declarationService;
+            // _declarationService = declarationService;
             _logger = logger;
         }
 

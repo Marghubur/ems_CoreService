@@ -1,6 +1,5 @@
-﻿using System;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal.Profile
 {

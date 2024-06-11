@@ -37,7 +37,7 @@ namespace ServiceLayer.Code
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
         private readonly ILeaveAccrualJob _leaveAccrualJob;
         private readonly YearEndCalculation _yearEndCalculation;
-        private readonly IPayrollService _payrollService;
+        // private readonly IPayrollService _payrollService;
         private readonly IDb _db;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
@@ -47,8 +47,9 @@ namespace ServiceLayer.Code
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
-            YearEndCalculation yearEndCalculation,
-            IPayrollService payrollService)
+            YearEndCalculation yearEndCalculation
+            //IPayrollService payrollService
+            )
         {
             _logger = logger;
             _masterDatabase = options.Value;
@@ -58,7 +59,7 @@ namespace ServiceLayer.Code
             _db = db;
             _leaveAccrualJob = leaveAccrualJob;
             _yearEndCalculation = yearEndCalculation;
-            _payrollService = payrollService;
+            // _payrollService = payrollService;
         }
 
         public async Task ScheduledJobManager()

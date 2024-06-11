@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomHalf.Utilities.UtilService;
 using BottomhalfCore.DatabaseLayer.Common.Code;
@@ -18,13 +19,13 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
-        private readonly IDeclarationService _declarationService;
+        //private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILogger<EmployeeService> _logger;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
@@ -53,7 +54,7 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             IFileService fileService,
             IConfiguration configuration,
-            IDeclarationService declarationService,
+            // IDeclarationService declarationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
             FileLocationDetail fileLocationDetail,
@@ -70,7 +71,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
-            _declarationService = declarationService;
+            // _declarationService = declarationService;
             _timezoneConverter = timezoneConverter;
             _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
@@ -869,7 +870,12 @@ namespace ServiceLayer.Code
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                 _logger.LogInformation("Leaving form set current time zone");
 
-                await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+                // call salary_declaration service using httpclient
+                // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
+
+                HttpClient httpClient = new HttpClient();
+
+
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new

@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;

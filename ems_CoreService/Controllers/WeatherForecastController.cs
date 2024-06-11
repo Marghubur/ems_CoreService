@@ -33,7 +33,7 @@ namespace OnlineDataBuilder.Controllers
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly ITimesheetService _timesheetService;
         private readonly CurrentSession _currentSession;
-        private readonly IPayrollService _payrollService;
+        // private readonly IPayrollService _payrollService;
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
@@ -43,7 +43,7 @@ namespace OnlineDataBuilder.Controllers
             IDb db,
             ITimesheetService timesheetService,
             ILeaveCalculation leaveCalculation,
-            IPayrollService payrollService,
+            // IPayrollService payrollService,
             CurrentSession currentSession,
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
@@ -53,7 +53,7 @@ namespace OnlineDataBuilder.Controllers
             _logger = logger;
             _eMailManager = eMailManager;
             _db = db;
-            _payrollService = payrollService;
+            // _payrollService = payrollService;
             _timesheetService = timesheetService;
             _attendanceService = attendanceService;
             _leaveCalculation = leaveCalculation;

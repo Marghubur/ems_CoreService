@@ -1,4 +1,4 @@
-﻿using ModalLayer.Modal.Accounts;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using System;
 
 namespace ModalLayer.Modal

@@ -1,5 +1,5 @@
-﻿using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using ModalLayer.Modal;
 using System.Collections.Generic;
 
 namespace ServiceLayer.Interface

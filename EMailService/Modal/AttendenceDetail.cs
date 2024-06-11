@@ -1,4 +1,5 @@
-﻿using CoreBottomHalf.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using CoreBottomHalf.Modal;
 using ModalLayer.Modal.Leaves;
 using ModalLayer.Modal.Profile;
 using System;

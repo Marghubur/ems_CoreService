@@ -19,14 +19,18 @@ namespace OnlineDataBuilder.Controllers
     public class CompanyController : BaseController
     {
         private readonly ICompanyService _companyService;
-        private readonly IPayrollService _payrollService;
+        // private readonly IPayrollService _payrollService;
         private readonly HttpContext _httpContext;
 
-        public CompanyController(ICompanyService companyService, IHttpContextAccessor httpContext, IPayrollService payrollService)
+        public CompanyController(
+            ICompanyService companyService,
+            IHttpContextAccessor httpContext
+            // IPayrollService payrollService
+            )
         {
             _companyService = companyService;
             _httpContext = httpContext.HttpContext;
-            _payrollService = payrollService;
+            // _payrollService = payrollService;
         }
 
         [HttpGet("GetAllCompany")]

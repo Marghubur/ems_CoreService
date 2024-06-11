@@ -5,6 +5,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Code\PayrollCycle\**" />
+    <EmbeddedResource Remove="Code\PayrollCycle\**" />
+    <None Remove="Code\PayrollCycle\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Interface\IPayrollService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Code\PayrollCycle\Code\RegisterEmployeeCalculateDeclaration.cs" />
+    <Compile Include="Code\PayrollCycle\Interface\IRegisterEmployeeCalculateDeclaration.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ems_CommonUtility" Version="1.0.0" />
     <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />

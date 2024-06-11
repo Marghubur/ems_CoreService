@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using ModalLayer.Modal;
 using System;
 
 namespace EMailService.Modal.CronJobs

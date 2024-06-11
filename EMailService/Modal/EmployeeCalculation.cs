@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal.Accounts;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using ModalLayer.Modal.Accounts;
 using System;
 using System.Collections.Generic;
 

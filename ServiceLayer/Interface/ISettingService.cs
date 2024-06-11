@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using ems_CoreService.Model;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;

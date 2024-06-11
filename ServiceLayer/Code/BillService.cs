@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
@@ -17,7 +18,6 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -46,7 +46,7 @@ namespace ServiceLayer.Code
         private readonly ITemplateService _templateService;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IKafkaNotificationService _kafkaNotificationService;
-        private readonly IDeclarationService _declarationService;
+        // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker, IKafkaNotificationService kafkaNotificationService,
-            IDeclarationService declarationService,
+            // IDeclarationService declarationService,
             IOptions<MasterDatabase> options)
         {
             this.db = db;
@@ -75,7 +75,7 @@ namespace ServiceLayer.Code
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
             _kafkaNotificationService = kafkaNotificationService;
-            _declarationService = declarationService;
+            // _declarationService = declarationService;
             _masterDatabase = options.Value;
         }
 
@@ -1252,7 +1252,9 @@ namespace ServiceLayer.Code
                 x.ComponentId != LocalConstants.EESI &&
                 x.IsIncludeInPayslip == true
             );
-            EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
+
+            EmployeeDeclaration employeeDeclaration = null;
+            // EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
 
             // here add condition that it detail will shown or not
             string declarationHTML = String.Empty;

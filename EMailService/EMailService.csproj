@@ -5,6 +5,33 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Modal\Accounts\**" />
+    <EmbeddedResource Remove="Modal\Accounts\**" />
+    <None Remove="Modal\Accounts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Modal\HikeBonusSalaryAdhoc.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Modal\Accounts\BankDetail.cs" />
+    <Compile Include="Modal\Accounts\Company.cs" />
+    <Compile Include="Modal\Accounts\CompanySetting.cs" />
+    <Compile Include="Modal\Accounts\HousePropertyTax.cs" />
+    <Compile Include="Modal\Accounts\OrganizationDetail.cs" />
+    <Compile Include="Modal\Accounts\OrganizationExpenses.cs" />
+    <Compile Include="Modal\Accounts\Payroll.cs" />
+    <Compile Include="Modal\Accounts\PfEsiSetting.cs" />
+    <Compile Include="Modal\Accounts\AnnualSalaryBreakup.cs" />
+    <Compile Include="Modal\Accounts\PreviousEmployementDetail.cs" />
+    <Compile Include="Modal\Accounts\SalaryGroup.cs" />
+    <Compile Include="Modal\Accounts\SalaryStructure.cs" />
+    <Compile Include="Modal\Accounts\TaxDetails.cs" />
+    <Compile Include="Modal\Accounts\TimesheetModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BottomHalf.Utilities" Version="1.0.32" />
     <PackageReference Include="EAGetMail" Version="5.2.5" />
     <PackageReference Include="MailKit" Version="3.4.3" />
