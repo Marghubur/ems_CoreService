@@ -5,6 +5,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
+using ems_CommonUtility.KafkaService.interfaces;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
         private readonly ILogger<LeaveService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
 
@@ -36,7 +37,7 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             ICommonService commonService,
             ILeaveCalculation leaveCalculation,
-            KafkaNotificationService kafkaNotificationService,
+            IKafkaNotificationService kafkaNotificationService,
             ILogger<LeaveService> logger,
             ITimezoneConverter timezoneConverter)
         {

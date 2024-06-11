@@ -10,7 +10,6 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -222,25 +221,6 @@ namespace EMailService.Service
                 throw;
             }
             return ApplicationConstants.Successfull;
-        }
-
-        public string GetBase64StringForImage(string imgPath)
-        {
-            byte[] imageBytes = System.IO.File.ReadAllBytes(imgPath);
-            string base64String = Convert.ToBase64String(imageBytes);
-            return base64String;
-        }
-
-        private AlternateView CreateHtmlMessage(string message, string logoPath)
-        {
-            string path = @"E:\WorkSpace\OnlineDataBuilderServer\OnlineDataBuilder\ApplicationFiles\logos\info_bottomhalf_in\signwithoutStamp.jpeg";
-            LinkedResource Img = new LinkedResource(path, MediaTypeNames.Image.Jpeg);
-            Img.ContentId = "MyImage";
-            string str = message;
-            AlternateView AV =
-            AlternateView.CreateAlternateViewFromString(str, null, MediaTypeNames.Text.Html);
-            AV.LinkedResources.Add(Img);
-            return AV;
         }
     }
 }

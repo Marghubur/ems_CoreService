@@ -4,6 +4,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
+using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -21,13 +22,13 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly ILogger<AttendanceRequestService> _logger;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ILogger<AttendanceRequestService> logger,
-            KafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;

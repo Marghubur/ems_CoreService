@@ -1,4 +1,5 @@
-﻿using EMailService.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using EMailService.Modal;
 using ModalLayer.Modal.Accounts;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,6 @@ namespace ModalLayer.Modal
         // public DateTime DOJ { set; get; }
         public int PendingRequestCount { set; get; }
         public long SubmittedBy { set; get; }
-        public WorkType WorkTypeId { set; get; }
     }
 
 
@@ -123,15 +123,5 @@ namespace ModalLayer.Modal
     public class JoinedAfterPayrollEmployees
     {
         public long EmployeeUid { get; set; }
-    }
-
-    public enum WorkType
-    {
-        EMPTY = 0,
-        WORKFROMHOME = 1,
-        WORKFROMOFFICE = 2,
-        LEAVE = 3,
-        FIRSTHALFDAY = 4,
-        SECONDHALFDAY = 5
     }
 }

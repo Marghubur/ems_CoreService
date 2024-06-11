@@ -7,6 +7,7 @@ using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
+using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -30,7 +31,7 @@ namespace ServiceLayer.Code
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
@@ -38,7 +39,7 @@ namespace ServiceLayer.Code
             ICompanyService companyService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            KafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _companyService = companyService;
@@ -659,7 +660,7 @@ namespace ServiceLayer.Code
                 FromDate = _timezoneConverter.ToTimeZoneDateTime(presentAttendance.AttendanceDay, _currentSession.TimeZone),
                 ManagerName = presentAttendance.ManagerName,
                 Message = presentAttendance.UserComments,
-                RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                RequestType = attendance.WorkTypeId == (int)WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { employee.Email },
                 kafkaServiceName = KafkaServiceName.Attendance,
                 LocalConnectionString = _currentSession.LocalConnectionString,
@@ -1311,7 +1312,7 @@ namespace ServiceLayer.Code
                 FromDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDay, _currentSession.TimeZone),
                 ManagerName = _currentSession.CurrentUserDetail.FullName,
                 Message = workingattendance.Comments,
-                RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                RequestType = attendance.WorkTypeId == (int)WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                 ToAddress = new List<string> { workingattendance.EmployeeEmail },
                 kafkaServiceName = KafkaServiceName.Attendance,
                 LocalConnectionString = _currentSession.LocalConnectionString,

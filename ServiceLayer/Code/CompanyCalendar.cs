@@ -42,7 +42,7 @@ namespace ServiceLayer
         {
             if (_calendars == null)
             {
-                _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _session.CurrentUserDetail.CompanyId });
+                _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _session.CurrentUserDetail.CompanyId });
             }
         }
 

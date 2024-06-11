@@ -62,10 +62,10 @@ namespace ServiceLayer.Code.SendEmail
             string workType = string.Empty;
             switch(attendance.WorkTypeId)
             {
-                case WorkType.WORKFROMHOME:
+                case (int)WorkType.WORKFROMHOME:
                     workType = "Work From Home";
                     break;
-                case WorkType.LEAVE:
+                case (int)WorkType.LEAVE:
                     workType = "Leave Request";
                     break;               
                 default:

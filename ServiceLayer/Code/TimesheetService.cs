@@ -5,6 +5,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
+using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
@@ -22,14 +23,14 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly TimesheetEmailService _timesheetEmailService;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
 
         public TimesheetService(
             IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             TimesheetEmailService timesheetEmailService,
-            KafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -46,8 +47,8 @@ namespace ServiceLayer.Code
             {
                 var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
                 {
-                    TimesheetStartDate = TimesheetStartDate,
-                    TimesheetEndDate = TimesheetEndDate
+                    TimesheetStartDate,
+                    TimesheetEndDate
                 }, true);
             }
             catch

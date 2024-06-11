@@ -3,6 +3,7 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
+using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer.Modal;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -17,12 +18,12 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
 
         public TimesheetRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            KafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _currentSession = currentSession;

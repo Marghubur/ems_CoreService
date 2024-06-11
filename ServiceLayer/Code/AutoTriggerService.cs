@@ -1,4 +1,5 @@
-﻿using Bot.CoreBottomHalf.CommonModal.Enums;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;

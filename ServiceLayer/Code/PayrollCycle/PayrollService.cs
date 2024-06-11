@@ -7,6 +7,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
+using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -32,7 +33,7 @@ namespace ServiceLayer.Code.PayrollCycle
         private readonly IBillService _billService;
         private readonly ILogger<PayrollService> _logger;
         private readonly ICompanyCalendar _companyCalendar;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
         public PayrollService(ITimezoneConverter timezoneConverter,
             IDb db,
             IDeclarationService declarationService,
@@ -41,7 +42,7 @@ namespace ServiceLayer.Code.PayrollCycle
             IBillService billService,
             ILogger<PayrollService> logger,
             ICompanyCalendar companyCalendar,
-            KafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;

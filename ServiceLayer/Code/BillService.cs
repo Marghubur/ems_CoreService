@@ -10,6 +10,7 @@ using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Service;
+using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -44,7 +45,7 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly KafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaNotificationService _kafkaNotificationService;
         private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
 
@@ -57,7 +58,7 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
-            IFileMaker fileMaker, KafkaNotificationService kafkaNotificationService,
+            IFileMaker fileMaker, IKafkaNotificationService kafkaNotificationService,
             IDeclarationService declarationService,
             IOptions<MasterDatabase> options)
         {
