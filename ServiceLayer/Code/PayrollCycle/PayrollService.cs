@@ -383,8 +383,7 @@ namespace ServiceLayer.Code.PayrollCycle
                 {
                     try
                     {
-                        bool salaryHoldFlag = true;
-                        (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(empPayroll.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
+                        (bool salaryHoldFlag, decimal amount) = GetAdhocComponentValue(currentEmployee.EmployeeId, payrollEmployeePageData.hikeBonusSalaryAdhoc);
                         if (salaryHoldFlag)
                         {
                             // Get and check tax detail
