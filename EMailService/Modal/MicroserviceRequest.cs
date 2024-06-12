@@ -1,13 +1,15 @@
-﻿namespace EMailService.Modal
+﻿using Newtonsoft.Json;
+
+namespace EMailService.Modal
 {
     public class MicroserviceRequest
     {
-        public static MicroserviceRequest Builder(string url, string payload)
+        public static MicroserviceRequest Builder(string url, dynamic payload)
         {
             return new MicroserviceRequest
             {
                 Url = url,
-                Payload = payload
+                Payload = JsonConvert.SerializeObject(payload)
             };
         }
 

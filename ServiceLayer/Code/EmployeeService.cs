@@ -11,10 +11,10 @@ using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using ExcelDataReader;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -26,10 +26,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Mail;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using File = System.IO.File;
 
@@ -39,14 +37,13 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
+        private readonly MicroserviceRegistry _microserviceRegistry;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
-        //private readonly IDeclarationService _declarationService;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly ILogger<EmployeeService> _logger;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
-        private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IEMailManager _eMailManager;
         private readonly ILeaveCalculation _leaveCalculation;
         private readonly ITimesheetService _timesheetService;
@@ -57,17 +54,16 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             IFileService fileService,
             IConfiguration configuration,
-            // IDeclarationService declarationService,
             ITimezoneConverter timezoneConverter,
             ILogger<EmployeeService> logger,
             FileLocationDetail fileLocationDetail,
             HtmlToPdfConverter htmlToPdfConverter,
-            IHostingEnvironment hostingEnvironment,
             ILeaveCalculation leaveCalculation,
             IEMailManager eMailManager,
             ITimesheetService timesheetService,
             ExcelWriter excelWriter,
-            RequestMicroservice requestMicroservice)
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -79,11 +75,11 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
-            _hostingEnvironment = hostingEnvironment;
             _eMailManager = eMailManager;
             _timesheetService = timesheetService;
             _excelWriter = excelWriter;
             _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -873,22 +869,9 @@ namespace ServiceLayer.Code
                 }
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                _logger.LogInformation("Leaving form set current time zone");
-
-                // call salary_declaration service using httpclient
-                // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
-
-
-                var request = JsonConvert.SerializeObject(eCal);
-                string url = $"http://localhost:5000/api/salarydeclaration/Declaration/SalaryDeclarationCalculation/{true}";
-
-                string response = await _requestMicroservice.PutRequest(MicroserviceRequest.Builder(url, request));
-                if (string.IsNullOrEmpty(response))
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to get salary declaration calculation call");
-                }
-
-                eCal = JsonConvert.DeserializeObject<EmployeeCalculation>(response);
+                
+                string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
+                var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url, eCal));
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
@@ -1147,7 +1130,9 @@ namespace ServiceLayer.Code
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
                 // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
-                await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+
+                string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
+                var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url, eCal));
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
@@ -1391,10 +1376,11 @@ namespace ServiceLayer.Code
         private string GeneratedPdfOfferLetter(string html, string employeeName)
         {
             var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employee_Offer_Letter");
-            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
 
-            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, folderPath,
+            if (!Directory.Exists(Path.Combine(_fileLocationDetail.RootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_fileLocationDetail.RootPath, folderPath));
+
+            var destinationFilePath = Path.Combine(_fileLocationDetail.RootPath, folderPath,
                employeeName + $".{ApplicationConstants.Pdf}");
             _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
             return folderPath;
@@ -1604,11 +1590,11 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid type selected. Please select a valid type");
 
             var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employees_Excel");
-            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
+            if (!Directory.Exists(Path.Combine(_fileLocationDetail.RootPath, folderPath)))
+                Directory.CreateDirectory(Path.Combine(_fileLocationDetail.RootPath, folderPath));
 
             var filepath = Path.Combine(folderPath, "Employee_Excel" + $".{ApplicationConstants.Excel}");
-            var destinationFilePath = Path.Combine(_hostingEnvironment.ContentRootPath, filepath);
+            var destinationFilePath = Path.Combine(_fileLocationDetail.RootPath, filepath);
 
             if (File.Exists(destinationFilePath))
                 File.Delete(destinationFilePath);

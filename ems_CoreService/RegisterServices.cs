@@ -7,6 +7,7 @@ using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using EMailService.Modal;
 using EMailService.Service;
 using ems_CommonUtility;
 using HtmlService;
@@ -26,6 +27,7 @@ using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 
 namespace ems_CoreService
@@ -141,8 +143,7 @@ namespace ems_CoreService
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
-            services.Configure<Dictionary<string, List<string>>>(o => configuration.GetSection("TaxSection").Bind(o));
-
+            services.Configure<MicroserviceRegistry>(x => configuration.GetSection(nameof(MicroserviceRegistry)).Bind(x));
             services.AddSingleton<FileLocationDetail>(service =>
             {
                 var fileLocationDetail = configuration.GetSection("BillingFolders").Get<FileLocationDetail>();

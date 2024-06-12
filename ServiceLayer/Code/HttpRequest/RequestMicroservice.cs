@@ -1,5 +1,9 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.API;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using EMailService.Modal;
+using ModalLayer.Modal;
+using Newtonsoft.Json;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,39 +12,51 @@ namespace ServiceLayer.Code.HttpRequest
 {
     public class RequestMicroservice(CurrentSession _currentSession)
     {
-        public static async Task<string> PostRequest(MicroserviceRequest microserviceRequest)
+        public static async Task<dynamic> PostRequest(MicroserviceRequest microserviceRequest)
         {
-            //var jsonData = JsonConvert.SerializeObject(eCal);
-            //string url = "http://localhost:5281/api/ExportEmployeeDeclaration";
-
-            var content = new StringContent(microserviceRequest.Payload, Encoding.UTF8, "application/json");
+            var content = new StringContent(microserviceRequest.Payload, Encoding.UTF8, ApplicationConstants.ApplicationJson);
 
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("reCalculateFlag", true.ToString());
             HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(microserviceRequest.Url, content);
             httpResponseMessage.EnsureSuccessStatusCode();
 
-            return await httpResponseMessage.Content.ReadAsStringAsync();
-            //if (httpResponseMessage.Content.Headers.ContentType.MediaType == "application/json")
-            //{
-            //    var employeeSalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(response);
-            //}
+            return null; // await GetResponseBody(httpResponseMessage);
         }
 
-        public async Task<string> PutRequest(MicroserviceRequest microserviceRequest)
-        {
-            var content = new StringContent(microserviceRequest.Payload, Encoding.UTF8, "application/json");
+        public async Task<T> PutRequest<T>(MicroserviceRequest microserviceRequest)
+        {            
+            var content = new StringContent(microserviceRequest.Payload, Encoding.UTF8, ApplicationConstants.ApplicationJson);
 
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
             HttpResponseMessage httpResponseMessage = await httpClient.PutAsync(microserviceRequest.Url, content);
             httpResponseMessage.EnsureSuccessStatusCode();
 
-            return await httpResponseMessage.Content.ReadAsStringAsync();
-            //if (httpResponseMessage.Content.Headers.ContentType.MediaType == "application/json")
-            //{
-            //    var employeeSalaryDetail = JsonConvert.DeserializeObject<EmployeeSalaryDetail>(response);
-            //}
+            return await GetResponseBody<T>(httpResponseMessage);
         }
+
+        private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)
+        {
+            var response = await httpResponseMessage.Content.ReadAsStringAsync();
+            if (httpResponseMessage.Content.Headers.ContentType.MediaType != ApplicationConstants.ApplicationJson)
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+            }
+
+            var apiResponse = JsonConvert.DeserializeObject<MicroserviceResponse<T>>(response);
+            if (apiResponse == null || apiResponse.ResponseBody == null)
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+            }
+
+            return apiResponse.ResponseBody;
+
+        }
+    }
+
+    public class MicroserviceResponse<T>
+    {
+        public T ResponseBody { get; set; }
     }
 }
