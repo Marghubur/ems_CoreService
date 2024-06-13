@@ -26,8 +26,6 @@ using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
-using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 
 namespace ems_CoreService
