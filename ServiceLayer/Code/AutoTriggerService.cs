@@ -41,6 +41,8 @@ namespace ServiceLayer.Code
         private readonly YearEndCalculation _yearEndCalculation;
         // private readonly IPayrollService _payrollService;
         private readonly IDb _db;
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceRegistry;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             IOptions<MasterDatabase> options,
@@ -49,7 +51,10 @@ namespace ServiceLayer.Code
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
-            YearEndCalculation yearEndCalculation
+            YearEndCalculation yearEndCalculation,
+            IOptions<MicroserviceRegistry> microserviceOptions
+,
+            RequestMicroservice requestMicroservice
             //IPayrollService payrollService
             )
         {
@@ -61,6 +66,8 @@ namespace ServiceLayer.Code
             _db = db;
             _leaveAccrualJob = leaveAccrualJob;
             _yearEndCalculation = yearEndCalculation;
+            _microserviceRegistry = microserviceOptions.Value;
+            _requestMicroservice = requestMicroservice;
             // _payrollService = payrollService;
         }
 
@@ -229,7 +236,11 @@ namespace ServiceLayer.Code
             }
 
             // await _payrollService.RunPayrollCycle(runDate.Value);
-            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+            var date = runDate.Value;
+            string url = $"{_microserviceRegistry.RunPayrollCycle}/{true}";
+            await _requestMicroservice.GetRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url));
+
+            // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
             _logger.LogInformation("Payroll cron job ran successfully.");
         }
 

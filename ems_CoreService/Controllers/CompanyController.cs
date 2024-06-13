@@ -193,22 +193,22 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("RunPayroll/{MonthNumber}/{Year}/{ReCalculateFlagId}")]
-        public async Task<ApiResponse> RunPayroll(int MonthNumber, int Year, int ReCalculateFlagId)
-        {
-            try
-            {
-                // var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Utc);
-                var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Local);
-                // await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
-                await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
-                return BuildResponse(ApplicationConstants.Successfull);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, new { MonthNumber = MonthNumber, ReCalculateFlagId = ReCalculateFlagId });
-            }
-        }
+        //[HttpGet("RunPayroll/{MonthNumber}/{Year}/{ReCalculateFlagId}")]
+        //public async Task<ApiResponse> RunPayroll(int MonthNumber, int Year, int ReCalculateFlagId)
+        //{
+        //    try
+        //    {
+        //        // var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Utc);
+        //        var runDate = new DateTime(Year, MonthNumber, 1, 0, 0, 0, DateTimeKind.Local);
+        //        // await _payrollService.RunPayrollCycle(runDate, ReCalculateFlagId == 1);
+        //        await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+        //        return BuildResponse(ApplicationConstants.Successfull);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, new { MonthNumber = MonthNumber, ReCalculateFlagId = ReCalculateFlagId });
+        //    }
+        //}
 
         [HttpGet("getcompanysettingdetail/{companyId}")]
         public async Task<ApiResponse> GetCompanySetting(int companyId)

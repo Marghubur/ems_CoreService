@@ -1713,7 +1713,8 @@ namespace ServiceLayer.Code
                 try
                 {
                     // await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);
-                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+                    string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{emp.EmployeeDeclarationId}";
+                    await _requestMicroservice.PutRequest<string>(MicroserviceRequest.Builder(url, employeeDeclarations));
                 }
                 catch
                 {

@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using ServiceLayer.Code;
 using ServiceLayer.Interface;
-using System.Threading.Tasks;
 
 namespace OnlineDataBuilder
 {

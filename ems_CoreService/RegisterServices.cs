@@ -132,7 +132,7 @@ namespace ems_CoreService
             // services.AddScoped<IPayrollService, PayrollService>();
             services.AddScoped<IShiftService, ShiftService>();
             services.AddScoped<WorkFlowChain>();
-            // services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
+            services.AddScoped<IUploadPayrollDataService, UploadPayrollDataService>();
             services.AddScoped<IPriceService, PriceService>();
             services.AddScoped<ICronJobSettingService, CronJobSettingService>();
             services.AddScoped<IRunLeaveEndYearService, RunLeaveEndYearService>();

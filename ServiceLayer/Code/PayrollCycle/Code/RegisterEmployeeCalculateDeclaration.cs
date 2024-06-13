@@ -3,8 +3,8 @@ using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
@@ -19,17 +19,23 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         // private readonly IDeclarationService _declarationService;
         private readonly ILogger<RegisterEmployeeCalculateDeclaration> _logger;
         private readonly CurrentSession _currentSession;
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
 
         public RegisterEmployeeCalculateDeclaration(
             IEmployeeService employeeService,
             CurrentSession currentSession,
             // IDeclarationService declarationService,
-            ILogger<RegisterEmployeeCalculateDeclaration> logger)
+            ILogger<RegisterEmployeeCalculateDeclaration> logger,
+            IOptions<MicroserviceRegistry> options,
+            RequestMicroservice requestMicroservice)
         {
             _employeeService = employeeService;
             _currentSession = currentSession;
             // _declarationService = declarationService;
             _logger = logger;
+            _microserviceRegistry = options.Value;
+            _requestMicroservice = requestMicroservice;
         }
 
         public async Task<string> UpdateEmployeeService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)
@@ -69,7 +75,11 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 try
                 {
                     // await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
-                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+                    string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{employee.EmployeeDeclarationId}";
+                    await _requestMicroservice.PutRequest<string>(MicroserviceRequest.Builder(url, employeeDeclarations));
+                    
+                    
+                    // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 }
                 catch
                 {

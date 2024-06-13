@@ -13,6 +13,14 @@ namespace EMailService.Modal
             };
         }
 
+        public static MicroserviceRequest Builder(string url)
+        {
+            return new MicroserviceRequest
+            {
+                Url = url
+            };
+        }
+
         public string Url { set; get; }
         public string Payload { set; get; }
     }

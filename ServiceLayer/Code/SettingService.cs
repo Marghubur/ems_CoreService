@@ -5,6 +5,7 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
 using ems_CoreService.Model;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -24,15 +25,22 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
         //private readonly IDeclarationService _declarationService;
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceRegistry;
         public SettingService(IDb db,
             CurrentSession currentSession,
-            ICommonService commonService
+            ICommonService commonService,
+            IOptions<MicroserviceRegistry> options
+,
+            RequestMicroservice requestMicroservice
             //IDeclarationService declarationService
             )
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
+            _microserviceRegistry = options.Value;
+            _requestMicroservice = requestMicroservice;
             //_declarationService = declarationService;
         }
 
@@ -171,7 +179,18 @@ namespace ServiceLayer.Code
                         throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
                     // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
-                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+                    CalculateSalaryDetailModal calculateSalaryDetailModal = new CalculateSalaryDetailModal
+                    {
+                        employeeDeclaration = employeeDeclaration,
+                        EmployeeId = x.EmployeeId,
+                        IsCTCChanged = true,
+                        ReCalculateFlag = true
+                    };
+
+                    string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
+                    await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
+
+                    // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 });
 
             };
@@ -399,7 +418,17 @@ namespace ServiceLayer.Code
                         throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
                     // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
-                    await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+                    CalculateSalaryDetailModal calculateSalaryDetailModal = new CalculateSalaryDetailModal
+                    {
+                        employeeDeclaration = employeeDeclaration,
+                        EmployeeId = x.EmployeeId,
+                        IsCTCChanged = true,
+                        ReCalculateFlag = true
+                    };
+                    string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
+                    await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
+
+                   // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 });
 
             };
