@@ -1,6 +1,4 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.API;
-using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using EMailService.Modal;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -31,6 +29,28 @@ namespace ServiceLayer.Code.HttpRequest
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
             HttpResponseMessage httpResponseMessage = await httpClient.PutAsync(microserviceRequest.Url, content);
+            httpResponseMessage.EnsureSuccessStatusCode();
+
+            return await GetResponseBody<T>(httpResponseMessage);
+        }
+
+        public async Task<T> PotRequest<T>(MicroserviceRequest microserviceRequest)
+        {
+            var content = new StringContent(microserviceRequest.Payload, Encoding.UTF8, ApplicationConstants.ApplicationJson);
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
+            HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(microserviceRequest.Url, content);
+            httpResponseMessage.EnsureSuccessStatusCode();
+
+            return await GetResponseBody<T>(httpResponseMessage);
+        }
+
+        public async Task<T> GetRequest<T>(MicroserviceRequest microserviceRequest)
+        {
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
+            HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(microserviceRequest.Url);
             httpResponseMessage.EnsureSuccessStatusCode();
 
             return await GetResponseBody<T>(httpResponseMessage);
