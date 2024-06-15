@@ -142,20 +142,20 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [Authorize(Roles = Role.Admin)]
-        [HttpPut("UpdateGroupSalaryComponentDetail/{componentId}/{groupId}")]
-        public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromRoute] int groupId, [FromBody] SalaryComponents component)
-        {
-            try
-            {
-                var result = await _settingService.UpdateGroupSalaryComponentDetailService(componentId, groupId, component);
-                return BuildResponse(result);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, new { ComponentId = componentId, GroupId = groupId, Component = component });
-            }
-        }
+        //[Authorize(Roles = Role.Admin)]
+        //[HttpPut("UpdateGroupSalaryComponentDetail/{componentId}/{groupId}")]
+        //public async Task<ApiResponse> UpdateSalaryComponentDetail([FromRoute] string componentId, [FromBody] SalaryComponents component)
+        //{
+        //    try
+        //    {
+        //        var result = await _settingService.UpdateComponentDetailService(componentId, component);
+        //        return BuildResponse(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, new { ComponentId = componentId, Component = component });
+        //    }
+        //}
 
         [Authorize(Roles = Role.Admin)]
         [HttpPut("UpdateSalaryComponentDetail/{componentId}")]

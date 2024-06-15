@@ -4,12 +4,13 @@ using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using ems_CoreService.Model;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -24,16 +25,13 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
-        //private readonly IDeclarationService _declarationService;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
         public SettingService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
-            IOptions<MicroserviceRegistry> options
-,
+            IOptions<MicroserviceRegistry> options,
             RequestMicroservice requestMicroservice
-            //IDeclarationService declarationService
             )
         {
             _db = db;
@@ -41,7 +39,6 @@ namespace ServiceLayer.Code
             _commonService = commonService;
             _microserviceRegistry = options.Value;
             _requestMicroservice = requestMicroservice;
-            //_declarationService = declarationService;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -189,52 +186,10 @@ namespace ServiceLayer.Code
 
                     string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
                     await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
-
-                    // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 });
 
             };
         }
-
-        //private async Task updateComponentByUpdatingPfEsiSetting(PfEsiSetting pfesiSetting)
-        //{
-        //    var ds = _db.GetDataSet("sp_salary_group_and_components_get", new { CompanyId = pfesiSetting.CompanyId });
-
-        //    if (!ds.IsValidDataSet(ds))
-        //        throw HiringBellException.ThrowBadRequest("Invalid result got from salary and group table.");
-
-        //    // var salaryComponents = Converter.ToList<SalaryComponents>(ds.Tables[1]);
-        //    var groups = Converter.ToList<SalaryGroup>(ds.Tables[0]);
-
-        //    foreach (var gp in groups)
-        //    {
-        //        var salaryComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(gp.SalaryComponents);
-
-        //        var component = salaryComponents.Find(x => x.ComponentId == "EPER-PF");
-        //        if (component == null)
-        //            throw HiringBellException.ThrowBadRequest("Employer contribution toward PF component not found. Please contact to admin");
-
-        //        component.DeclaredValue = pfesiSetting.EmployerPFLimit;
-        //        component.EmployerContribution = pfesiSetting.EmployerPFLimit;
-        //        component.Formula = pfesiSetting.EmployerPFLimit.ToString();
-        //        component.IncludeInPayslip = pfesiSetting.IsHidePfEmployer;
-
-        //        component = salaryComponents.Find(x => x.ComponentId == "ECI");
-        //        if (component == null)
-        //            throw HiringBellException.ThrowBadRequest("Employer contribution toward insurance component not found. Please contact to admin");
-
-        //        component.DeclaredValue = pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution;
-        //        component.Formula = (pfesiSetting.EsiEmployerContribution + pfesiSetting.EsiEmployeeContribution).ToString();
-        //        component.IncludeInPayslip = pfesiSetting.IsHideEsiEmployer;
-        //        component.EmployerContribution = pfesiSetting.EsiEmployerContribution;
-        //        component.EmployeeContribution = pfesiSetting.EsiEmployeeContribution;
-
-        //        gp.SalaryComponents = _commonService.GetStringifySalaryGroupData(salaryComponents);
-        //    }
-
-        //    await _db.BulkExecuteAsync("sp_salary_group_insupd", groups, true);
-        //    await Task.CompletedTask;
-        //}
 
         public List<OrganizationDetail> GetOrganizationInfo()
         {
@@ -309,130 +264,129 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public async Task<string> UpdateGroupSalaryComponentDetailService(string componentId, int groupId, SalaryComponents component)
-        {
-            if (groupId <= 0)
-                throw new HiringBellException("Invalid groupId");
+        //public async Task<string> UpdateComponentDetailService(string componentId, SalaryComponents component)
+        //{
+        //    if (groupId <= 0)
+        //        throw new HiringBellException("Invalid groupId");
 
-            if (string.IsNullOrEmpty(componentId))
-                throw new HiringBellException("Invalid component passed.");
+        //    if (string.IsNullOrEmpty(componentId))
+        //        throw new HiringBellException("Invalid component passed.");
 
-            decimal formulavalue = 0;
-            if (component.Formula != ApplicationConstants.AutoCalculation)
-                formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
+        //    decimal formulavalue = 0;
+        //    if (component.Formula != ApplicationConstants.AutoCalculation)
+        //        formulavalue = calculateExpressionUsingInfixDS(component.Formula, 0);
 
-            SalaryGroup salaryGroup = _db.Get<SalaryGroup>(Procedures.Salary_Group_GetById, new { SalaryGroupId = groupId });
-            if (salaryGroup == null)
-                throw new HiringBellException("Unable to get salary group. Please contact admin");
+        //    List<SalaryComponents> components = _db.GetList<SalaryComponents>(Procedures.Salary_Components_Get);
+        //    if (components == null)
+        //        throw new HiringBellException("Unable to get salary components. Please contact admin");
 
-            salaryGroup.GroupComponents = JsonConvert.DeserializeObject<List<SalaryComponents>>(salaryGroup.SalaryComponents);
-            var existingComponent = salaryGroup.GroupComponents.Find(x => x.ComponentId == component.ComponentId);
-            if (existingComponent == null)
-            {
-                salaryGroup.GroupComponents.Add(component);
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(component.Formula))
-                    throw new HiringBellException("Given formula is not correct or unable to submit. Please try again or contact to admin");
+        //    var existingComponent = components.Find(x => x.ComponentId == component.ComponentId);
+        //    if (existingComponent == null)
+        //    {
+        //        components.Add(component);
+        //    }
+        //    else
+        //    {
+        //        if (string.IsNullOrEmpty(component.Formula))
+        //            throw new HiringBellException("Given formula is not correct or unable to submit. Please try again or contact to admin");
 
-                existingComponent.Formula = component.Formula;
-                existingComponent.IncludeInPayslip = component.IncludeInPayslip;
-            }
+        //        existingComponent.Formula = component.Formula;
+        //        existingComponent.IncludeInPayslip = component.IncludeInPayslip;
+        //    }
 
-            salaryGroup.SalaryComponents = _commonService.GetStringifySalaryGroupData(salaryGroup.GroupComponents);
-            var status = await _db.ExecuteAsync(Procedures.Salary_Group_Insupd, new
-            {
-                salaryGroup.SalaryGroupId,
-                salaryGroup.CompanyId,
-                salaryGroup.SalaryComponents,
-                salaryGroup.GroupName,
-                salaryGroup.GroupDescription,
-                salaryGroup.MinAmount,
-                salaryGroup.MaxAmount,
-                AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
+        //    var salaryComponents = _commonService.GetStringifySalaryGroupData(components);
+        //    var status = await _db.ExecuteAsync(Procedures.Salary_Group_Insupd, new
+        //    {
+        //        salaryGroup.SalaryGroupId,
+        //        salaryGroup.CompanyId,
+        //        salaryGroup.SalaryComponents,
+        //        salaryGroup.GroupName,
+        //        salaryGroup.GroupDescription,
+        //        salaryGroup.MinAmount,
+        //        salaryGroup.MaxAmount,
+        //        AdminId = _currentSession.CurrentUserDetail.UserId
+        //    }, true);
 
-            if (!ApplicationConstants.IsExecuted(status.statusMessage))
-                throw new HiringBellException("Fail to update the record.");
+        //    if (!ApplicationConstants.IsExecuted(status.statusMessage))
+        //        throw new HiringBellException("Fail to update the record.");
 
-            await UpdateSalaryDetails(salaryGroup.SalaryGroupId, component);
-            return status.statusMessage;
-        }
+        //    await UpdateSalaryDetails(salaryGroup.SalaryGroupId, component);
+        //    return status.statusMessage;
+        //}
 
-        private async Task UpdateSalaryDetails(int salaryGroupId, SalaryComponents component)
-        {
-            var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Groupid, new { SalaryGroupId = salaryGroupId });
-            if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
-            {
-                employeeSalaryDetail.ForEach(x =>
-                {
-                    List<AnnualSalaryBreakup> annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(x.CompleteSalaryDetail);
-                    if (annualSalaryBreakup != null && annualSalaryBreakup.Count > 0)
-                    {
-                        var remainingMonthSalaryBreakup = annualSalaryBreakup.FindAll(x => !x.IsPayrollExecutedForThisMonth);
-                        if (remainingMonthSalaryBreakup != null && remainingMonthSalaryBreakup.Count > 0)
-                        {
-                            remainingMonthSalaryBreakup.ForEach(i =>
-                            {
-                                var salaryComponent = i.SalaryBreakupDetails.Find(y => y.ComponentId == component.ComponentId);
-                                if (salaryComponent != null)
-                                {
-                                    salaryComponent.Formula = component.Formula;
-                                    salaryComponent.IsIncludeInPayslip = component.IncludeInPayslip;
-                                }
-                            });
+        //private async Task UpdateSalaryDetails(int salaryGroupId, SalaryComponents component)
+        //{
+        //    var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get_By_Groupid, new { SalaryGroupId = salaryGroupId });
+        //    if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
+        //    {
+        //        employeeSalaryDetail.ForEach(x =>
+        //        {
+        //            List<AnnualSalaryBreakup> annualSalaryBreakup = JsonConvert.DeserializeObject<List<AnnualSalaryBreakup>>(x.CompleteSalaryDetail);
+        //            if (annualSalaryBreakup != null && annualSalaryBreakup.Count > 0)
+        //            {
+        //                var remainingMonthSalaryBreakup = annualSalaryBreakup.FindAll(x => !x.IsPayrollExecutedForThisMonth);
+        //                if (remainingMonthSalaryBreakup != null && remainingMonthSalaryBreakup.Count > 0)
+        //                {
+        //                    remainingMonthSalaryBreakup.ForEach(i =>
+        //                    {
+        //                        var salaryComponent = i.SalaryBreakupDetails.Find(y => y.ComponentId == component.ComponentId);
+        //                        if (salaryComponent != null)
+        //                        {
+        //                            salaryComponent.Formula = component.Formula;
+        //                            salaryComponent.IsIncludeInPayslip = component.IncludeInPayslip;
+        //                        }
+        //                    });
 
-                            x.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakup);
-                        }
+        //                    x.CompleteSalaryDetail = JsonConvert.SerializeObject(annualSalaryBreakup);
+        //                }
 
-                    }
-                });
-                var data = (from n in employeeSalaryDetail
-                            select new
-                            {
-                                _currentSession.FinancialStartYear,
-                                n.EmployeeId,
-                                n.CompleteSalaryDetail,
-                                n.TaxDetail,
-                                n.CTC
-                            }).ToList();
+        //            }
+        //        });
+        //        var data = (from n in employeeSalaryDetail
+        //                    select new
+        //                    {
+        //                        _currentSession.FinancialStartYear,
+        //                        n.EmployeeId,
+        //                        n.CompleteSalaryDetail,
+        //                        n.TaxDetail,
+        //                        n.CTC
+        //                    }).ToList();
 
-                var result = await _db.BulkExecuteAsync(Procedures.Employee_Salary_Detail_Upd_Salarydetail, data, true);
-                if (result != employeeSalaryDetail.Count)
-                    throw HiringBellException.ThrowBadRequest("Fail to update salary breakup");
+        //        var result = await _db.BulkExecuteAsync(Procedures.Employee_Salary_Detail_Upd_Salarydetail, data, true);
+        //        if (result != employeeSalaryDetail.Count)
+        //            throw HiringBellException.ThrowBadRequest("Fail to update salary breakup");
 
-                employeeSalaryDetail.ForEach(async x =>
-                {
-                    DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Declaration_Get_ByEmployeeId, new
-                    {
-                        EmployeeId = x.EmployeeId,
-                        UserTypeId = (int)UserType.Compnay
-                    });
+        //        employeeSalaryDetail.ForEach(async x =>
+        //        {
+        //            DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Declaration_Get_ByEmployeeId, new
+        //            {
+        //                EmployeeId = x.EmployeeId,
+        //                UserTypeId = (int)UserType.Compnay
+        //            });
 
-                    if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
-                        throw HiringBellException.ThrowBadRequest("Unable to get the detail");
+        //            if ((resultSet == null || resultSet.Tables.Count == 0) && resultSet.Tables.Count != 2)
+        //                throw HiringBellException.ThrowBadRequest("Unable to get the detail");
 
-                    EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
-                    if (employeeDeclaration == null)
-                        throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
+        //            EmployeeDeclaration employeeDeclaration = Converter.ToType<EmployeeDeclaration>(resultSet.Tables[0]);
+        //            if (employeeDeclaration == null)
+        //                throw new HiringBellException("Employee declaration detail not defined. Please contact to admin.");
 
-                    // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
-                    CalculateSalaryDetailModal calculateSalaryDetailModal = new CalculateSalaryDetailModal
-                    {
-                        employeeDeclaration = employeeDeclaration,
-                        EmployeeId = x.EmployeeId,
-                        IsCTCChanged = true,
-                        ReCalculateFlag = true
-                    };
-                    string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
-                    await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
+        //            // await _declarationService.CalculateSalaryDetail(x.EmployeeId, employeeDeclaration, true, true);
+        //            CalculateSalaryDetailModal calculateSalaryDetailModal = new CalculateSalaryDetailModal
+        //            {
+        //                employeeDeclaration = employeeDeclaration,
+        //                EmployeeId = x.EmployeeId,
+        //                IsCTCChanged = true,
+        //                ReCalculateFlag = true
+        //            };
+        //            string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
+        //            await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
 
-                   // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
-                });
+        //           // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+        //        });
 
-            };
-        }
+        //    };
+        //}
 
         private decimal calculateExpressionUsingInfixDS(string expression, decimal declaredAmount)
         {

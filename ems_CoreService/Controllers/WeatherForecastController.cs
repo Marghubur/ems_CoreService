@@ -1,14 +1,14 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal.Accounts;
-using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -35,7 +35,6 @@ namespace OnlineDataBuilder.Controllers
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly ITimesheetService _timesheetService;
         private readonly CurrentSession _currentSession;
-        // private readonly IPayrollService _payrollService;
         private readonly IAttendanceService _attendanceService;
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;

@@ -246,7 +246,6 @@
         /*--------------  Salary Component Service procedures ------------*/
         public static string Salary_Components_Get = "sp_salary_components_get";
         public static string Salary_Group_GetbyCompanyId = "sp_salary_group_getbyCompanyId";
-        public static string Salary_Group_GetById = "sp_salary_group_getById";
         public static string Salary_Components_Insupd = "sp_salary_components_insupd";
         public static string Salary_Group_Get_If_Exists = "sp_salary_group_get_if_exists";
         public static string Salary_Group_Get_Initial_Components = "sp_salary_group_get_initial_components";

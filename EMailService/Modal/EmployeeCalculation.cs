@@ -25,7 +25,6 @@ namespace ModalLayer.Modal
         public EmployeeSalaryDetail employeeSalaryDetail { set; get; }
         public EmployeeEmailMobileCheck emailMobileCheck { set; get; }
         public List<SalaryComponents> salaryComponents { set; get; }
-        public SalaryGroup salaryGroup { set; get; }
         public CompanySetting companySetting { set; get; }
         public List<SurChargeSlab> surchargeSlabs { set; get; }
         public List<PTaxSlab> ptaxSlab { set; get; }
@@ -45,7 +44,7 @@ namespace ModalLayer.Modal
     public class PayrollCommonData
     {
         public List<SalaryComponents> salaryComponents { set; get; }
-        public List<SalaryGroup> salaryGroups { set; get; }
+        // public List<SalaryGroup> salaryGroups { set; get; }
         public Payroll payroll { set; get; }
         public List<SurChargeSlab> surchargeSlabs { set; get; }
         public List<PTaxSlab> ptaxSlab { set; get; }

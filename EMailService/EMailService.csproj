@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Remove="Modal\HikeBonusSalaryAdhoc.cs" />
+    <Compile Remove="Modal\MicroserviceRequest.cs" />
     <Compile Remove="Modal\TaxSlabDetail.cs" />
   </ItemGroup>
 
@@ -26,7 +27,6 @@
     <Compile Include="Modal\Accounts\PfEsiSetting.cs" />
     <Compile Include="Modal\Accounts\AnnualSalaryBreakup.cs" />
     <Compile Include="Modal\Accounts\PreviousEmployementDetail.cs" />
-    <Compile Include="Modal\Accounts\SalaryGroup.cs" />
     <Compile Include="Modal\Accounts\SalaryStructure.cs" />
     <Compile Include="Modal\Accounts\TaxDetails.cs" />
     <Compile Include="Modal\Accounts\TimesheetModel.cs" />

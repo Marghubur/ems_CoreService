@@ -6,7 +6,6 @@ using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
@@ -107,12 +106,6 @@ namespace ServiceLayer.Code
 
         private async Task RegisterNewEmployee(UploadedPayrollData emp)
         {
-            var salarygroup = _db.Get<SalaryGroup>("sp_salary_group_get_by_ctc", new { emp.CTC });
-            if (salarygroup == null)
-                salarygroup = _db.Get<SalaryGroup>("sp_salary_group_getById", new { SalaryGroupId = 1 });
-            else
-                throw HiringBellException.ThrowBadRequest("Salary group not found. Please contact to admin");
-
             Employee employee = new Employee
             {
                 AadharNo = emp.AadharNo,
@@ -137,7 +130,7 @@ namespace ServiceLayer.Code
                 OrganizationId = _currentSession.CurrentUserDetail.OrganizationId,
                 LeavePlanId = LocalConstants.DefaultLeavePlanId,
                 PayrollGroupId = 0,
-                SalaryGroupId = salarygroup.SalaryGroupId,
+                SalaryGroupId = 0,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
                 NoticePeriodId = 0,
                 FatherName = "NA",

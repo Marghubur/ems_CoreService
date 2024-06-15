@@ -1,5 +1,4 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;
@@ -10,6 +9,8 @@ using EMailService.Modal;
 using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
 using EMailService.Modal.Payroll;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
@@ -17,14 +18,12 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Net;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -32,6 +31,7 @@ namespace ServiceLayer.Code
 {
     public class AutoTriggerService : IAutoTriggerService
     {
+        private readonly IDb _db;
         private readonly ILogger<AutoTriggerService> _logger;
         private readonly MasterDatabase _masterDatabase;
         private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
@@ -39,8 +39,6 @@ namespace ServiceLayer.Code
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
         private readonly ILeaveAccrualJob _leaveAccrualJob;
         private readonly YearEndCalculation _yearEndCalculation;
-        // private readonly IPayrollService _payrollService;
-        private readonly IDb _db;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
 
@@ -52,10 +50,8 @@ namespace ServiceLayer.Code
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
             YearEndCalculation yearEndCalculation,
-            IOptions<MicroserviceRegistry> microserviceOptions
-,
+            IOptions<MicroserviceRegistry> microserviceOptions,
             RequestMicroservice requestMicroservice
-            //IPayrollService payrollService
             )
         {
             _logger = logger;
@@ -225,7 +221,6 @@ namespace ServiceLayer.Code
             }
 
             await _weeklyTimesheetCreationJob.RunDailyTimesheetCreationJob(startDate, endDate, isCronJob);
-            _logger.LogInformation("Timesheet creation cron job ran successfully.");
         }
 
         public async Task RunPayrollJobAsync(DateTime? runDate)
@@ -239,9 +234,6 @@ namespace ServiceLayer.Code
             var date = runDate.Value;
             string url = $"{_microserviceRegistry.RunPayrollCycle}/{true}";
             await _requestMicroservice.GetRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url));
-
-            // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
-            _logger.LogInformation("Payroll cron job ran successfully.");
         }
 
         public async Task RunLeaveYearEndJobAsync(CompanySetting companySetting, LeaveYearEndCalculationKafkaModel data)
@@ -256,7 +248,6 @@ namespace ServiceLayer.Code
             };
 
             await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
-            _logger.LogInformation("Leave year end  cron job ran successfully.");
         }
     }
 }

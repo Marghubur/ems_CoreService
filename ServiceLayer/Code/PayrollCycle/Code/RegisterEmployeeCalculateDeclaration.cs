@@ -1,11 +1,12 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
-using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System.Collections.Generic;
@@ -74,12 +75,8 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 }
                 try
                 {
-                    // await _declarationService.UpdateBulkDeclarationDetail(employee.EmployeeDeclarationId, employeeDeclarations);
                     string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{employee.EmployeeDeclarationId}";
                     await _requestMicroservice.PutRequest<string>(MicroserviceRequest.Builder(url, employeeDeclarations));
-                    
-                    
-                    // await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
                 }
                 catch
                 {

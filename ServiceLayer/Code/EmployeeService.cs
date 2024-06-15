@@ -10,6 +10,8 @@ using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +21,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
-using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -706,7 +707,7 @@ namespace ServiceLayer.Code
                 employeeCalculation.employee.SalaryGroupId
             });
 
-            if (resultSet == null || resultSet.Tables.Count != 9)
+            if (resultSet == null || resultSet.Tables.Count != 8)
                 throw HiringBellException.ThrowBadRequest("Fail to get employee relevent data. Please contact to admin.");
 
             _logger.LogInformation("[GetEmployeeDetail]: Date fetched total table: " + resultSet.Tables.Count);
@@ -756,17 +757,14 @@ namespace ServiceLayer.Code
             // got duplication email, mobile or employee id if any
             EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
 
-            // got duplication email, mobile or employee id if any
-            employeeCalculation.salaryGroup = Converter.ToType<SalaryGroup>(resultSet.Tables[6]);
-
             // getting professional tax detail based on company id
-            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[7]);
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[6]);
 
             if (employeeCalculation.ptaxSlab.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
 
             // getting surcharges slab detail based on company id
-            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[8]);
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[7]);
 
             if (employeeCalculation.surchargeSlabs.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");

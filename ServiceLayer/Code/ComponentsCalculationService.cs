@@ -92,21 +92,6 @@ namespace ServiceLayer.Code
 
         }
 
-        public decimal EmployerProvidentFund(EmployeeDeclaration employeeDeclaration, SalaryGroup salaryGroup, int totalMonths)
-        {
-            _logger.LogInformation("Starting method: EmployerProvidentFund");
-
-            decimal value = 0;
-            SalaryComponents component = null;
-            component = salaryGroup.GroupComponents.Find(x => x.ComponentId == ComponentNames.EmployerPF);
-            if (component != null)
-                value = (component.DeclaredValue / 12) * totalMonths;
-
-            _logger.LogInformation("Leaving method: EmployerProvidentFund");
-            return value;
-
-        }
-
         private decimal CessOnTax(decimal GrossIncomeTax)
         {
             _logger.LogInformation("Starting method: CessOnTax");
