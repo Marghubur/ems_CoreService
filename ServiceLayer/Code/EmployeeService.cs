@@ -869,9 +869,18 @@ namespace ServiceLayer.Code
                 }
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                
+
                 string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
                 var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url, eCal));
+                if (response is null)
+                    throw HiringBellException.ThrowBadRequest("fail to get response");
+
+                eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
+                eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
+                eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
+                eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
+                eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
+                eCal.salaryComponents = response.salaryComponents;
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
@@ -1133,6 +1142,15 @@ namespace ServiceLayer.Code
 
                 string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
                 var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url, eCal));
+                if (response is null)
+                    throw HiringBellException.ThrowBadRequest("fail to get response");
+
+                eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
+                eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
+                eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
+                eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
+                eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
+                eCal.salaryComponents = response.salaryComponents;
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
                 var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new

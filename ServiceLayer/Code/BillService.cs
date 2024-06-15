@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using ServiceLayer.Code.HttpRequest;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -48,6 +49,8 @@ namespace ServiceLayer.Code
         private readonly IKafkaNotificationService _kafkaNotificationService;
         // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
@@ -58,9 +61,12 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
-            IFileMaker fileMaker, IKafkaNotificationService kafkaNotificationService,
+            IFileMaker fileMaker, 
+            IKafkaNotificationService kafkaNotificationService,
             // IDeclarationService declarationService,
-            IOptions<MasterDatabase> options)
+            IOptions<MasterDatabase> options,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> microserviceoptions)
         {
             this.db = db;
             _logger = logger;
@@ -77,6 +83,8 @@ namespace ServiceLayer.Code
             _kafkaNotificationService = kafkaNotificationService;
             // _declarationService = declarationService;
             _masterDatabase = options.Value;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = microserviceoptions.Value;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -1253,8 +1261,9 @@ namespace ServiceLayer.Code
                 x.IsIncludeInPayslip == true
             );
 
-            EmployeeDeclaration employeeDeclaration = null;
             // EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
+            string url = $"{_microserviceRegistry.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
+            EmployeeDeclaration employeeDeclaration = await _requestMicroservice.GetRequest<EmployeeDeclaration>(MicroserviceRequest.Builder(url));
 
             // here add condition that it detail will shown or not
             string declarationHTML = String.Empty;

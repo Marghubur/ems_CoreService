@@ -34,7 +34,6 @@ namespace ServiceLayer.Code.HttpRequest
             httpClient.DefaultRequestHeaders.Add("database", JsonConvert.SerializeObject(dbConfigModal));
             httpClient.DefaultRequestHeaders.Add("companyCode", _currentSession.CompanyCode);
 
-
             HttpResponseMessage httpResponseMessage = await httpClient.PutAsync(microserviceRequest.Url, content);
             httpResponseMessage.EnsureSuccessStatusCode();
 
@@ -47,6 +46,11 @@ namespace ServiceLayer.Code.HttpRequest
 
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
+
+            DbConfigModal dbConfigModal = DiscretConnectionString(_currentSession.LocalConnectionString);
+            httpClient.DefaultRequestHeaders.Add("database", JsonConvert.SerializeObject(dbConfigModal));
+            httpClient.DefaultRequestHeaders.Add("companyCode", _currentSession.CompanyCode);
+
             HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(microserviceRequest.Url, content);
             httpResponseMessage.EnsureSuccessStatusCode();
 
@@ -57,6 +61,11 @@ namespace ServiceLayer.Code.HttpRequest
         {
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
+
+            DbConfigModal dbConfigModal = DiscretConnectionString(_currentSession.LocalConnectionString);
+            httpClient.DefaultRequestHeaders.Add("database", JsonConvert.SerializeObject(dbConfigModal));
+            httpClient.DefaultRequestHeaders.Add("companyCode", _currentSession.CompanyCode);
+
             HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(microserviceRequest.Url);
             httpResponseMessage.EnsureSuccessStatusCode();
 
