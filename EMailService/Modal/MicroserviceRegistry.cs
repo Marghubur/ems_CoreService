@@ -6,5 +6,6 @@
         public string UpdateBulkDeclarationDetail { get; set; }
         public string RunPayrollCycle { get; set; }
         public string CalculateSalaryDetail { get; set; }
+        public string GetEmployeeDeclarationDetailById { get; set; }
     }
 }
