@@ -703,8 +703,6 @@ namespace ServiceLayer.Code
                 employeeCalculation.employee.Mobile,
                 employeeCalculation.employee.Email,
                 employeeCalculation.employee.CompanyId,
-                employeeCalculation.employee.CTC,
-                employeeCalculation.employee.SalaryGroupId
             });
 
             if (resultSet == null || resultSet.Tables.Count != 8)
@@ -733,7 +731,7 @@ namespace ServiceLayer.Code
 
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
 
-            // build and bind compnay setting
+            // build and bind company setting
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
 
             if (employeeCalculation.companySetting.FinancialYear == 0)
@@ -785,7 +783,8 @@ namespace ServiceLayer.Code
 
             if (employeeEmailMobileCheck.MobileCount > 0)
                 throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
-            _logger.LogInformation("Leaving method: GetEmployeeDetail");
+
+            employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
 
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
             return employeeEmailMobileCheck;
@@ -1342,23 +1341,13 @@ namespace ServiceLayer.Code
             if (employee.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please contact to admin");
 
-            if (employee.DOB == null)
+            if (employee?.DOB == null)
                 throw new HiringBellException { UserMessage = "Date of birth is a mandatory field.", FieldName = nameof(employee.DOB), FieldValue = employee.DOB.ToString() };
 
             var mail = new MailAddress(employee.Email);
             bool isValidEmail = mail.Host.Contains(".");
             if (!isValidEmail)
                 throw new HiringBellException { UserMessage = "The email is invalid.", FieldName = nameof(employee.Email), FieldValue = employee.Email.ToString() };
-
-            if (!employee.IsPayrollOnCTC)
-            {
-                if (employee.SalaryGroupId <= 0)
-                    throw HiringBellException.ThrowBadRequest("Please select salary group");
-            }
-            else
-            {
-                employee.SalaryGroupId = 0;
-            }
         }
 
         public async Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter)

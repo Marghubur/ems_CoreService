@@ -96,9 +96,6 @@ namespace ServiceLayer.Code
                         if (employeeEmailMobileCheck.EmailCount > 0)
                             throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
 
-                        if (string.IsNullOrEmpty(e.BaseLocation))
-                            throw HiringBellException.ThrowBadRequest("Base location not found.");
-
                         await RegisterNewEmployee(e);
                     }
                 }
@@ -159,7 +156,6 @@ namespace ServiceLayer.Code
                 IsCTCChanged = false,
                 EmployerPF = emp.EmployerPF,
                 EmployeePF = emp.EmployeePF,
-                BaseLocation = emp.BaseLocation
             };
 
             var Names = emp.EmployeeName.Split(' ');
