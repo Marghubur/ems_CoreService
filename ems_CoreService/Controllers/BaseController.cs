@@ -34,6 +34,7 @@ namespace OnlineDataBuilder.Controllers
             return new HiringBellException(ex.Message, JsonConvert.SerializeObject(request), ex);
         }
 
+        [NonAction]
         public ApiResponse BuildResponse(dynamic Data, HttpStatusCode httpStatusCode = HttpStatusCode.OK, string Resion = null, string Token = null)
         {
             apiResponse.AuthenticationToken = Token;
@@ -43,7 +44,7 @@ namespace OnlineDataBuilder.Controllers
             return apiResponse;
         }
 
-
+        [NonAction]
         public ApiResponse GenerateResponse(HttpStatusCode httpStatusCode, dynamic Data = null)
         {
             apiResponse.HttpStatusCode = httpStatusCode;
