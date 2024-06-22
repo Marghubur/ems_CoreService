@@ -39,5 +39,6 @@ namespace ModalLayer.Modal.Accounts
         public bool IsJoiningBarrierDayPassed { set; get; }
         public int NoticePeriodInProbation { get; set; }
         public int ExcludePayrollFromJoinDate { get; set; }
+        public string StateName { get; set; }
     }
 }

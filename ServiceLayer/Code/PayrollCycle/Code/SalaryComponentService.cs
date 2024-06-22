@@ -1767,38 +1767,38 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         {
             var ResultSet = _db.FetchDataSet(Procedures.Salary_Components_Group_By_Employeeid,
                 new { employeeCalculation.EmployeeId });
-            if (ResultSet == null || ResultSet.Tables.Count != 7)
+            if (ResultSet == null || ResultSet.Tables.Count != 6)
                 throw new HiringBellException("Unbale to get salary detail. Please contact to admin.");
 
-            if (ResultSet.Tables[1].Rows.Count == 0)
+            if (ResultSet.Tables[0].Rows.Count == 0)
                 throw new HiringBellException($"Salary detail not found for employee Id: [{employeeCalculation.EmployeeId}]");
 
-            if (ResultSet.Tables[2].Rows.Count == 0)
+            if (ResultSet.Tables[1].Rows.Count == 0)
                 throw new HiringBellException($"Employee company setting is not defined. Please contact to admin.");
 
-            if (ResultSet.Tables[3].Rows.Count == 0)
+            if (ResultSet.Tables[2].Rows.Count == 0)
                 throw new Exception("Salary component are not defined, unable to perform calculation. Please contact to admin");
 
-            if (ResultSet.Tables[4].Rows.Count == 0)
+            if (ResultSet.Tables[3].Rows.Count == 0)
                 throw new Exception("Surcharge data not found. Please contact to admin");
 
-            if (ResultSet.Tables[5].Rows.Count == 0)
+            if (ResultSet.Tables[4].Rows.Count == 0)
                 throw new Exception("Professional tax data not found. Please contact to admin");
 
-            if (ResultSet.Tables[6].Rows.Count == 0)
+            if (ResultSet.Tables[5].Rows.Count == 0)
                 throw new Exception("Company Shift data not found. Please contact to admin");
 
             employeeCalculation.salaryComponents = ResultSet.Tables[3].ToList<SalaryComponents>();
             employeeCalculation.employeeSalaryDetail = ResultSet.Tables[1].ToType<EmployeeSalaryDetail>();
             employeeCalculation.Doj = employeeCalculation.employeeSalaryDetail.DateOfJoining;
             employeeCalculation.CTC = employeeCalculation.employeeSalaryDetail.CTC;
-            employeeCalculation.salaryGroup = ResultSet.Tables[0].ToType<SalaryGroup>();
+            //employeeCalculation.salaryGroup = ResultSet.Tables[0].ToType<SalaryGroup>();
             employeeCalculation.surchargeSlabs = ResultSet.Tables[4].ToList<SurChargeSlab>();
             employeeCalculation.ptaxSlab = ResultSet.Tables[5].ToList<PTaxSlab>();
             employeeCalculation.shiftDetail = ResultSet.Tables[6].ToType<ShiftDetail>();
 
-            if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
-                employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
+            //if (employeeCalculation.salaryGroup.SalaryGroupId == 1)
+            //    employeeCalculation.employeeDeclaration.DefaultSlaryGroupMessage = $"Salary group for salary {employeeCalculation.CTC} not found. Default salary group for all calculation. For any query please contact to admin.";
 
             employeeCalculation.companySetting = ResultSet.Tables[2].ToType<CompanySetting>();
             employeeCalculation.PayrollStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
@@ -1806,11 +1806,11 @@ namespace ServiceLayer.Code.PayrollCycle.Code
 
             employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
 
-            if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
-                throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
+            //if (string.IsNullOrEmpty(employeeCalculation.salaryGroup.SalaryComponents))
+            //    throw new HiringBellException($"Salary components not found for salary: [{employeeCalculation.employeeSalaryDetail.CTC}]");
 
-            employeeCalculation.salaryGroup.GroupComponents = JsonConvert
-                .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
+            //employeeCalculation.salaryGroup.GroupComponents = JsonConvert
+            //    .DeserializeObject<List<SalaryComponents>>(employeeCalculation.salaryGroup.SalaryComponents);
 
             if (employeeCalculation.employeeDeclaration != null && employeeCalculation.employeeDeclaration.SalaryDetail != null)
                 employeeCalculation.employeeDeclaration.SalaryDetail.CTC = employeeCalculation.CTC;
