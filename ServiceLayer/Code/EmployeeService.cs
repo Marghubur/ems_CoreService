@@ -851,9 +851,7 @@ namespace ServiceLayer.Code
                         _configuration.GetSection("DefaultNewEmployeePassword").Value,
                         _configuration.GetSection("EncryptSecret").Value
                     );
-                }
-                else
-                {
+
                     await GetDeclarationDetail(eCal);
                 }
 
