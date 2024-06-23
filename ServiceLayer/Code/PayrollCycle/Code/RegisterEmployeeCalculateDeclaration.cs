@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -47,6 +48,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             _employeeService.GetEmployeeDetail(employeeCalculation);
+            _employeeService.CreateFinancialStartEndDatetime(employeeCalculation);
 
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = false;

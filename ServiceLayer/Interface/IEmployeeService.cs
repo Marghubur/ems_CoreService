@@ -32,5 +32,6 @@ namespace ServiceLayer.Interface
         Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod);
         EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation);
         Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false);
+        void CreateFinancialStartEndDatetime(EmployeeCalculation employeeCalculation);
     }
 }
