@@ -62,7 +62,7 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
-            IFileMaker fileMaker, 
+            IFileMaker fileMaker,
             IKafkaNotificationService kafkaNotificationService,
             // IDeclarationService declarationService,
             IOptions<MasterDatabase> options,
@@ -1271,87 +1271,37 @@ namespace ServiceLayer.Code
             //declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
 
             var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
-            var textinfo = CultureInfo.CurrentCulture.TextInfo;
             decimal totalYTDAmount = 0;
-            foreach (var item in salaryDetail)
-            {
-                var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth
-                                                                                    && payslipModal.SalaryDetail.PresentMonthDate.Subtract(x.PresentMonthDate).Days >= 0);
-                decimal YTDAmount = 0;
-                YTDSalaryBreakup.ForEach(x =>
-                {
-                    YTDAmount += x.SalaryBreakupDetails.Find(i => i.ComponentId == item.ComponentId).FinalAmount;
-                });
-                salaryDetailsHTML += "<tr>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.ActualAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "</tr>";
-                totalYTDAmount += YTDAmount;
-            }
 
-            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
-            {
-                salaryDetailsHTML += "<tr>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.ArrearAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "</tr>";
-            }
-
-            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
-            {
-                salaryDetailsHTML += "<tr>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Bonus Amount" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.BonusAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "</tr>";
-            }
+            salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
+            salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
+            salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
 
             string employeeContribution = string.Empty;
             decimal totalContribution = 0;
-            var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EEPF);
-            if (employerPF != null && employerPF.IsIncludeInPayslip)
-            {
-                totalContribution += employerPF.FinalAmount;
-                employeeContribution += "<tr>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer PF" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerPF.FinalAmount.ToString("0.00") + "</td>";
-                employeeContribution += "</tr>";
-            }
+            //var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EEPF);
+            //if (employerPF != null && employerPF.IsIncludeInPayslip)
+            //{
+            //    totalContribution += employerPF.FinalAmount;
+            //    employeeContribution += "<tr>";
+            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer PF" + "</td>";
+            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerPF.FinalAmount.ToString("0.00") + "</td>";
+            //    employeeContribution += "</tr>";
+            //}
 
-            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
-            if (employeePF != null && employeePF.IsIncludeInPayslip)
-            {
-                totalContribution += employeePF.FinalAmount;
-                employeeContribution += "<tr>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee PF" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeePF.FinalAmount.ToString("0.00") + "</td>";
-                employeeContribution += "</tr>";
-            }
+            employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
 
-            var employerSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EESI);
-            if (employerSI != null && employerSI.IsIncludeInPayslip)
-            {
-                totalContribution += employerSI.FinalAmount;
-                employeeContribution += "<tr>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer ESI" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerSI.FinalAmount.ToString("0.00") + "</td>";
-                employeeContribution += "</tr>";
-            }
+            //var employerSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EESI);
+            //if (employerSI != null && employerSI.IsIncludeInPayslip)
+            //{
+            //    totalContribution += employerSI.FinalAmount;
+            //    employeeContribution += "<tr>";
+            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer ESI" + "</td>";
+            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerSI.FinalAmount.ToString("0.00") + "</td>";
+            //    employeeContribution += "</tr>";
+            //}
 
-            var employeeSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
-            if (employeeSI != null && employeeSI.IsIncludeInPayslip)
-            {
-                totalContribution += employeeSI.FinalAmount;
-                employeeContribution += "<tr>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee ESI" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeeSI.FinalAmount.ToString("0.00") + "</td>";
-                employeeContribution += "</tr>";
-            }
+            employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
 
             var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount;
@@ -1409,41 +1359,142 @@ namespace ServiceLayer.Code
             }
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
-            {
-                string extension = string.Empty;
-                int lastPosition = payslipModal.HeaderLogoPath.LastIndexOf(".");
-                extension = payslipModal.HeaderLogoPath.Substring(lastPosition + 1);
-                ImageFormat imageFormat = null;
-                if (extension == "png")
-                    imageFormat = ImageFormat.Png;
-                else if (extension == "gif")
-                    imageFormat = ImageFormat.Gif;
-                else if (extension == "bmp")
-                    imageFormat = ImageFormat.Bmp;
-                else if (extension == "jpeg" || extension == "jpg")
-                    imageFormat = ImageFormat.Jpeg;
-                else if (extension == "tiff")
-                {
-                    // Convert tiff to gif.
-                    extension = "gif";
-                    imageFormat = ImageFormat.Gif;
-                }
-                else if (extension == "x-wmf")
-                {
-                    extension = "wmf";
-                    imageFormat = ImageFormat.Wmf;
-                }
+                html = AddCompanyLogo(payslipModal, html);
 
-                string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
-                var fs = new FileStream(payslipModal.HeaderLogoPath, FileMode.Open);
-                using (BinaryReader br = new BinaryReader(fs))
-                {
-                    Byte[] bytes = br.ReadBytes((Int32)fs.Length);
-                    string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
-                    html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
-                }
-            }
             return html;
+        }
+
+        private string AddYTDComponent(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string salaryDetailsHTML = "";
+
+            var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth
+                                                                                && payslipModal.SalaryDetail.PresentMonthDate.Subtract(x.PresentMonthDate).Days >= 0);
+            foreach (var item in salaryDetail)
+            {
+                decimal YTDAmount = 0;
+                YTDSalaryBreakup.ForEach(x =>
+                {
+                    YTDAmount += x.SalaryBreakupDetails.Find(i => i.ComponentId == item.ComponentId).FinalAmount;
+                });
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.ActualAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "</tr>";
+                totalYTDAmount += YTDAmount;
+            }
+
+            decimal arrearAmount = YTDSalaryBreakup.Sum(x => x.ArrearAmount);
+            totalYTDAmount += arrearAmount;
+
+            return salaryDetailsHTML;
+        }
+
+        private string AddEmployeeESI(PayslipGenerationModal payslipModal, string employeeContribution, ref decimal totalContribution)
+        {
+            var employeeESI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeESI != null && employeeESI.IsIncludeInPayslip)
+            {
+                totalContribution += employeeESI.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee ESI" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeeESI.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
+
+            return employeeContribution;
+        }
+
+        private string AddEmployeePfComponent(PayslipGenerationModal payslipModal, string employeeContribution, ref decimal totalContribution)
+        {
+            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePF != null && employeePF.IsIncludeInPayslip)
+            {
+                totalContribution += employeePF.FinalAmount;
+                employeeContribution += "<tr>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee PF" + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeePF.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "</tr>";
+            }
+
+            return employeeContribution;
+        }
+
+        private string AddBonusComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML)
+        {
+            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Bonus Amount" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.BonusAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+
+            return salaryDetailsHTML;
+        }
+
+        private string AddArrearComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML)
+        {
+            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.ArrearAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+
+            return salaryDetailsHTML;
+        }
+
+        private string AddCompanyLogo(PayslipGenerationModal payslipModal, string html)
+        {
+            ImageFormat imageFormat = GetImageFormat(payslipModal.HeaderLogoPath);
+            string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
+
+            var fs = new FileStream(payslipModal.HeaderLogoPath, FileMode.Open);
+            using (BinaryReader br = new BinaryReader(fs))
+            {
+                Byte[] bytes = br.ReadBytes((Int32)fs.Length);
+                string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
+                html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
+            }
+
+            return html;
+        }
+
+        private ImageFormat GetImageFormat(string headerLogoPath)
+        {
+            int lastPosition = headerLogoPath.LastIndexOf(".");
+            string extension = headerLogoPath.Substring(lastPosition + 1);
+            ImageFormat imageFormat = null;
+            if (extension == "png")
+                imageFormat = ImageFormat.Png;
+            else if (extension == "gif")
+                imageFormat = ImageFormat.Gif;
+            else if (extension == "bmp")
+                imageFormat = ImageFormat.Bmp;
+            else if (extension == "jpeg" || extension == "jpg")
+                imageFormat = ImageFormat.Jpeg;
+            else if (extension == "tiff")
+            {
+                // Convert tiff to gif.
+                extension = "gif";
+                imageFormat = ImageFormat.Gif;
+            }
+            else if (extension == "x-wmf")
+            {
+                extension = "wmf";
+                imageFormat = ImageFormat.Wmf;
+            }
+
+            return imageFormat;
         }
 
         private decimal GetWorkingDays(List<DailyAttendance> dailyAttendances, List<LeaveRequestNotification> leaveRequestNotifications)
