@@ -6,7 +6,6 @@ using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
@@ -19,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class UploadPayrollDataService: IUploadPayrollDataService
+    public class UploadPayrollDataService : IUploadPayrollDataService
     {
         private readonly IDb _db;
         private readonly IEmployeeService _employeeService;
@@ -55,52 +54,66 @@ namespace ServiceLayer.Code
         {
             int i = 0;
             int skipIndex = 0;
-            int chunkSize = 2;
+            int chunkSize = 50;
             while (i < uploadedPayrolls.Count)
             {
                 var emps = uploadedPayrolls.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
 
-                var ids = JsonConvert.SerializeObject(emps.Select(x => x.EmployeeId).ToList());
-                var employees = _db.GetList<Employee>("sp_active_employees_by_ids", new { EmployeeIds = ids });
+                //var ids = JsonConvert.SerializeObject(emps.Select(x => x.EmployeeId).ToList());
+                //var employees = _db.GetList<Employee>("sp_active_employees_by_ids", new { EmployeeIds = ids });
 
                 foreach (UploadedPayrollData e in emps)
                 {
-                    var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
+                    //var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
                     if (emps.FindAll(x => x.Email == e.Email).Count > 1)
                         throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is duplicate.");
 
                     if (emps.FindAll(x => x.Mobile == e.Mobile).Count > 1)
                         throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is duplicate.");
 
-                    if (em != null)
+                    //if (em != null)
+                    //{
+                    //    if (e.CTC > 0)
+                    //    {
+                    //        em.CTC = e.CTC;
+                    //        em.IsCTCChanged = true;
+                    //        // await _employeeService.UpdateEmployeeByExcelService(em, null, null);
+                    //        await _registerEmployeeCalculateDeclaration.UpdateEmployeeService(em, null, null);
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
+                    //    {
+                    //        e.Mobile,
+                    //        e.Email
+                    //    });
+
+                    //    if (employeeEmailMobileCheck.MobileCount > 0)
+                    //        throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
+
+                    //    if (employeeEmailMobileCheck.EmailCount > 0)
+                    //        throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
+
+                    //    await RegisterNewEmployee(e);
+                    //}
+
+                    EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
                     {
-                        if (e.CTC > 0)
-                        {
-                            em.CTC = e.CTC;
-                            em.IsCTCChanged = true;
-                            // await _employeeService.UpdateEmployeeByExcelService(em, null, null);
-                            await _registerEmployeeCalculateDeclaration.UpdateEmployeeService(em, null, null);
-                        }
-                    }
-                    else
-                    {
-                        EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
-                        {
-                            e.Mobile,
-                            e.Email
-                        });
+                        e.Mobile,
+                        e.Email
+                    });
 
-                        if (employeeEmailMobileCheck.MobileCount > 0)
-                            throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
+                    if (employeeEmailMobileCheck.MobileCount > 0)
+                        throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
 
-                        if (employeeEmailMobileCheck.EmailCount > 0)
-                            throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
+                    if (employeeEmailMobileCheck.EmailCount > 0)
+                        throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
 
-                        await RegisterNewEmployee(e);
-                    }
+                    await RegisterNewEmployee(e);
                 }
 
-                i++;
+                i += chunkSize;
             }
         }
 
@@ -175,6 +188,7 @@ namespace ServiceLayer.Code
 
         private async Task<List<UploadedPayrollData>> ReadPayrollExcelData(IFormFileCollection files)
         {
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             DataTable dataTable = null;
             List<UploadedPayrollData> uploadedPayrollList = new List<UploadedPayrollData>();
 
@@ -187,6 +201,8 @@ namespace ServiceLayer.Code
                     FileInfo fileInfo = new FileInfo(file.FileName);
                     if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
                     {
+                        ms.Seek(0, SeekOrigin.Begin);
+
                         using (var reader = ExcelReaderFactory.CreateReader(ms))
                         {
                             var result = reader.AsDataSet(new ExcelDataSetConfiguration
@@ -198,8 +214,6 @@ namespace ServiceLayer.Code
                             });
 
                             dataTable = result.Tables[0];
-
-                            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
                             uploadedPayrollList = MapEmployeePayAndInvestment(dataTable);
                         }

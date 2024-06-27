@@ -825,7 +825,7 @@ namespace ServiceLayer.Code
 
             try
             {
-                string EncreptedPassword = string.Empty;
+                string EncryptedPassword = string.Empty;
                 Employee employee = eCal.employee;
                 int empId = Convert.ToInt32(employee.EmployeeUid);
                 eCal.EmployeeId = eCal.employee.EmployeeUid;
@@ -847,7 +847,7 @@ namespace ServiceLayer.Code
 
                 if (IsNewRegistration)
                 {
-                    EncreptedPassword = UtilService.Encrypt(
+                    EncryptedPassword = UtilService.Encrypt(
                         _configuration.GetSection("DefaultNewEmployeePassword").Value,
                         _configuration.GetSection("EncryptSecret").Value
                     );
@@ -858,7 +858,7 @@ namespace ServiceLayer.Code
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
 
                 // make insert or update call for employee
-                string employeeId = InsertUpdateEmployee(eCal, IsNewRegistration, EncreptedPassword, employee, declarationId);
+                string employeeId = InsertUpdateEmployee(eCal, IsNewRegistration, EncryptedPassword, employee, declarationId);
 
                 await EmployeeFileInsertUpdate(eCal, fileCollection, employee, employeeId);
 
@@ -876,7 +876,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private string InsertUpdateEmployee(EmployeeCalculation eCal, bool IsNewRegistration, string EncreptedPassword, Employee employee, long declarationId)
+        private string InsertUpdateEmployee(EmployeeCalculation eCal, bool IsNewRegistration, string EncryptedPassword, Employee employee, long declarationId)
         {
             var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
             {
@@ -917,7 +917,7 @@ namespace ServiceLayer.Code
                 employee.ReportingManagerId,
                 employee.DesignationId,
                 employee.ProfessionalDetail_Json,
-                Password = EncreptedPassword,
+                Password = EncryptedPassword,
                 employee.AccessLevelId,
                 employee.UserTypeId,
                 employee.CTC,
