@@ -1259,6 +1259,7 @@ namespace ServiceLayer.Code
                 x.ComponentId != LocalConstants.EPF &&
                 x.ComponentId != LocalConstants.ESI &&
                 x.ComponentId != LocalConstants.EESI &&
+                x.ComponentId != ComponentNames.ProfessionalTax &&
                 x.IsIncludeInPayslip == true
             );
 
@@ -1279,31 +1280,12 @@ namespace ServiceLayer.Code
 
             string employeeContribution = string.Empty;
             decimal totalContribution = 0;
-            //var employerPF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EEPF);
-            //if (employerPF != null && employerPF.IsIncludeInPayslip)
-            //{
-            //    totalContribution += employerPF.FinalAmount;
-            //    employeeContribution += "<tr>";
-            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer PF" + "</td>";
-            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerPF.FinalAmount.ToString("0.00") + "</td>";
-            //    employeeContribution += "</tr>";
-            //}
-
+            
             employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
-
-            //var employerSI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EESI);
-            //if (employerSI != null && employerSI.IsIncludeInPayslip)
-            //{
-            //    totalContribution += employerSI.FinalAmount;
-            //    employeeContribution += "<tr>";
-            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employer ESI" + "</td>";
-            //    employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employerSI.FinalAmount.ToString("0.00") + "</td>";
-            //    employeeContribution += "</tr>";
-            //}
-
             employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
 
-            var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
+            // var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
+            var pTaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
             var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount;
             var totalActualEarning = salaryDetail.Sum(x => x.ActualAmount);
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? payslipModal.TaxDetail.TaxDeducted : pTaxAmount;
