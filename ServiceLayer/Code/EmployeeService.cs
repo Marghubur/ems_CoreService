@@ -725,7 +725,7 @@ namespace ServiceLayer.Code
             });
 
             if (resultSet == null || resultSet.Tables.Count != 8)
-                throw HiringBellException.ThrowBadRequest("Fail to get employee relevent data. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Fail to get employee relevant data. Please contact to admin.");
 
             _logger.LogInformation("[GetEmployeeDetail]: Date fetched total table: " + resultSet.Tables.Count);
             if (resultSet.Tables[4].Rows.Count != 1)
@@ -739,8 +739,8 @@ namespace ServiceLayer.Code
                 employeeCalculation.Doj = DateTime.UtcNow;
 
             // check if salary group changed
-            if (employeeDetail.SalaryGroupId != employeeCalculation.employee.SalaryGroupId)
-                employeeCalculation.employee.IsCTCChanged = true;
+            //if (employeeDetail.SalaryGroupId != employeeCalculation.employee.SalaryGroupId)
+            //    employeeCalculation.employee.IsCTCChanged = true;
 
             // check and get Declaration object
             employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
@@ -806,6 +806,60 @@ namespace ServiceLayer.Code
             employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
 
             _logger.LogInformation("Leaving method: GetEmployeeDetail");
+            return employeeEmailMobileCheck;
+        }
+
+        private EmployeeEmailMobileCheck GetEmployeesDetail(EmployeeCalculation employeeCalculation)
+        {
+            employeeCalculation.CTC = employeeCalculation.employee.CTC;
+            employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
+
+            DataSet resultSet = _db.FetchDataSet(Procedures.EMPLOYEE_GETBYID_TO_REG_OR_UPD_BY_EXCEL, new
+            {
+                EmployeeId = employeeCalculation.employee.EmployeeUid,
+                employeeCalculation.employee.Mobile,
+                employeeCalculation.employee.Email,
+                employeeCalculation.employee.CompanyId,
+            });
+
+            if (resultSet == null || resultSet.Tables.Count != 4)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee relevant data. Please contact to admin.");
+
+            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+
+            if (employeeDetail.EmployeeUid > 0)
+                employeeCalculation.Doj = employeeDetail.CreatedOn;
+            else
+                employeeCalculation.Doj = DateTime.UtcNow;
+
+            // check and get Declaration object
+            employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
+
+            // check and get employee salary detail object
+            employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2], employeeCalculation.employee);
+
+            // got duplication email, mobile or employee id if any
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[3]);
+
+            if (employeeDetail != null)
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
+            }
+            else
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = -1;
+            }
+
+            if (employeeEmailMobileCheck.EmailCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
+
+            if (employeeEmailMobileCheck.MobileCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
+
+            employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
+
             return employeeEmailMobileCheck;
         }
 
@@ -1726,19 +1780,19 @@ namespace ServiceLayer.Code
             employeeCalculation.previousEmployerDetail = pemp;
         }
 
-        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded)
+        public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded, EmployeeCalculation employeeCalculation)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
 
             int currentRegimeId = string.IsNullOrEmpty(uploaded.Regime) && uploaded.Regime.ToLower().Contains("new")
                 ? ApplicationConstants.NewRegim : ApplicationConstants.OldRegim;
 
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             employeeCalculation.employee = employee;
             _logger.LogInformation("Employee file converted");
 
-            this.GetEmployeeDetail(employeeCalculation);
+            GetEmployeesDetail(employeeCalculation);
 
+            employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
             employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
             employeeCalculation.Doj = employee.DateOfJoining;
             employeeCalculation.IsFirstYearDeclaration = true;

@@ -63,5 +63,20 @@ namespace ems_CoreService.Controllers
                 throw Throw(ex, new { ForYear = forYear, ForMonth = forMonth, DOM = dom });
             }
         }
+
+        //[Authorize(Roles = Role.Admin)]
+        [AllowAnonymous]
+        [HttpGet("MonthlyAttendanceTrigger")]
+        public async Task MonthlyAttendanceTrigger()
+        {
+            try
+            {
+                await _autoTriggerService.RunGenerateAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
     }
 }

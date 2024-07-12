@@ -168,6 +168,8 @@
         public static string EMPLOYEE_NOTICE_PERIOD_INSUPD = "sp_employee_notice_period_insupd";
         public static string EMPLOYEE_NOTICE_PERIOD_GETBY_ID = "sp_employee_notice_period_getby_id";
         public static string EMPLOYEE_PAYROLL_GET_BY_PAGE = "sp_employee_payroll_get_by_page";
+        public static string EMPLOYEE_GETBYID_TO_REG_OR_UPD_BY_EXCEL = "sp_employee_getbyid_to_reg_or_upd_by_excel";
+        public static string EMPLOYEE_REGISTRATION_COMMON_DATA = "sp_employee_registration_common_data";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";

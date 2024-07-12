@@ -1551,6 +1551,29 @@ namespace ServiceLayer.Code
             return await GetMissingAttendanceApprovalRequestService(filter);
         }
 
+        public async Task GenerateMonthlyAttendance()
+        {
+            DateTime lastAttendanceDate = new DateTime(2024, 1, 29);
+            DateTime firstDayOfNextMonth = new DateTime(lastAttendanceDate.Year, lastAttendanceDate.Month, 1).AddMonths(1);
+            DateTime lastDayOfNextMonth = firstDayOfNextMonth.AddMonths(1).AddDays(-1);
+
+            if (lastDayOfNextMonth.DayOfWeek != DayOfWeek.Sunday)
+            {
+                int daysUntilSunday = ((int)DayOfWeek.Sunday - (int)lastDayOfNextMonth.DayOfWeek - 7) % 7;
+                lastDayOfNextMonth = lastDayOfNextMonth.AddDays(daysUntilSunday);
+            }
+            var attendance = new AttendenceDetail
+            {
+                AttendenceFromDay = lastAttendanceDate.AddDays(1),
+                AttendenceToDay = lastDayOfNextMonth,
+                AttendenceStatus = (int)ItemStatus.NotSubmitted
+            };
+
+            await GenerateAttendanceService(attendance);
+
+            await Task.CompletedTask;
+        }
+
 
         #region ATTENDANCE_NEW_CLASS
 

@@ -170,7 +170,6 @@ namespace ServiceLayer.Code
             List<LeavePlanType> leavePlanTypes = default;
             LeaveCalculationModal leaveCalculationModal = await LoadLeaveMasterData();
             leaveCalculationModal.runTillMonthOfPresnetYear = runAccrualModel.RunTillMonthOfPresnetYear;
-
             var offsetindex = 0;
             while (true)
             {
@@ -185,7 +184,7 @@ namespace ServiceLayer.Code
                     }, false);
 
                     if (runAccrualModel.IsSingleRun && employeeAccrualData.Count > 1)
-                        throw HiringBellException.ThrowBadRequest("While running employee accural getting multiple employee detail.");
+                        throw HiringBellException.ThrowBadRequest("While running employee accrual getting multiple employee detail.");
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
                     {
@@ -517,7 +516,6 @@ namespace ServiceLayer.Code
             // call leave quote
             // await _quota.CalculateFinalLeaveQuota(leaveCalculationModal, leavePlanType);
 
-
             // call leave restriction
             _restriction.CheckRestrictionForLeave(leaveCalculationModal, _leavePlanType);
 
@@ -740,6 +738,7 @@ namespace ServiceLayer.Code
         private void CheckForProbationPeriod(LeaveCalculationModal leaveCalculationModal)
         {
             leaveCalculationModal.employeeType = ApplicationConstants.Regular;
+
             if ((leaveCalculationModal.employee.CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays))
                 .Subtract(now).TotalDays > 0)
             {
@@ -747,6 +746,9 @@ namespace ServiceLayer.Code
                 leaveCalculationModal.probationEndDate = leaveCalculationModal.employee
                     .CreatedOn.AddDays(leaveCalculationModal.companySetting.ProbationPeriodInDays);
             }
+
+            if (leaveCalculationModal.employee.CreatedOn.Month == now.Month && leaveCalculationModal.employee.CreatedOn.Year == now.Year)
+                leaveCalculationModal.isCurrentMonthJoinee = true;
         }
 
         private void CheckForNoticePeriod(LeaveCalculationModal leaveCalculationModal)
@@ -808,7 +810,7 @@ namespace ServiceLayer.Code
         {
             var leavePlanType = leaveCalculationModal.leavePlanTypes.Find(x => x.LeavePlanTypeId == leaveRequestModal.LeaveTypeId);
             if (leavePlanType == null)
-                throw HiringBellException.ThrowBadRequest("Fail to get leave plan type detai. Please contact to admin.");
+                throw HiringBellException.ThrowBadRequest("Fail to get leave plan type detail. Please contact to admin.");
 
             ValidateAndGetLeavePlanConfiguration(leavePlanType);
 

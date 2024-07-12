@@ -7,6 +7,7 @@ using EMailService.Modal;
 using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -97,89 +98,99 @@ namespace ServiceLayer.Code
             return GetEmployeeRequestedDataService(employeeId, Procedures.LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET, itemStatus);
         }
 
-        public async Task<dynamic> ApproveAttendanceService(DailyAttendance dailyAttendance, int filterId = ApplicationConstants.Only)
+        public async Task<dynamic> ApproveAttendanceService(List<DailyAttendance> dailyAttendances, int filterId = ApplicationConstants.Only)
         {
-            await UpdateAttendanceDetail(dailyAttendance, ItemStatus.Approved);
+            await UpdateAttendanceDetail(dailyAttendances, ItemStatus.Approved);
+            var attr = dailyAttendances.FirstOrDefault();
+
             Attendance attendance = new Attendance
             {
-                ForMonth = dailyAttendance.AttendanceDate.Month,
-                ForYear = dailyAttendance.AttendanceDate.Year,
+                ForMonth = attr.AttendanceDate.Month,
+                ForYear = attr.AttendanceDate.Year,
                 ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                PageIndex = dailyAttendance.PageIndex,
+                PageIndex = attr.PageIndex,
                 PresentDayStatus = filterId,
-                EmployeeId = dailyAttendance.EmployeeId,
-                TotalDays = dailyAttendance.TotalDays
+                EmployeeId = attr.EmployeeId,
+                TotalDays = attr.TotalDays
             };
+
             return await this.GetAttendenceRequestDataServive(attendance);
         }
 
-        public async Task<dynamic> RejectAttendanceService(DailyAttendance dailyAttendance, int filterId = ApplicationConstants.Only)
+        public async Task<dynamic> RejectAttendanceService(List<DailyAttendance> dailyAttendances, int filterId = ApplicationConstants.Only)
         {
-            await UpdateAttendanceDetail(dailyAttendance, ItemStatus.Rejected);
+            await UpdateAttendanceDetail(dailyAttendances, ItemStatus.Rejected);
+            var attr = dailyAttendances.FirstOrDefault();
+
             Attendance attendance = new Attendance
             {
-                ForMonth = DateTime.Now.Month,
-                ForYear = DateTime.Now.Year,
+                ForMonth = attr.AttendanceDate.Month,
+                ForYear = attr.AttendanceDate.Year,
                 ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                PageIndex = dailyAttendance.PageIndex,
+                PageIndex = attr.PageIndex,
                 PresentDayStatus = filterId,
-                EmployeeId = dailyAttendance.EmployeeId,
-                TotalDays = dailyAttendance.TotalDays
+                EmployeeId = attr.EmployeeId,
+                TotalDays = attr.TotalDays
             };
+
             return await this.GetAttendenceRequestDataServive(attendance);
         }
 
-        public async Task UpdateAttendanceDetail(DailyAttendance dailyAttendance, ItemStatus status)
+        public async Task UpdateAttendanceDetail(List<DailyAttendance> dailyAttendances, ItemStatus status)
         {
             try
             {
-                if (dailyAttendance.AttendanceId <= 0)
-                    throw new HiringBellException("Invalid attendance day selected");
-
-                var attendance = _db.Get<DailyAttendance>(Procedures.Attendance_Get_ById, new
+                foreach (var dailyAttendance in dailyAttendances)
                 {
-                    dailyAttendance.AttendanceId
-                });
+                    if (dailyAttendance.AttendanceId <= 0)
+                        throw new HiringBellException("Invalid attendance day selected");
 
-                if (attendance == null)
-                    throw new HiringBellException("Invalid attendance day selected");
+                    var attendance = _db.Get<DailyAttendance>(Procedures.Attendance_Get_ById, new
+                    {
+                        dailyAttendance.AttendanceId
+                    });
 
-                attendance.AttendanceStatus = (int)status;
-                attendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
-                attendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
-                attendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
-                var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
-                {
-                    attendance.AttendanceId,
-                    attendance.ReviewerId,
-                    attendance.ReviewerEmail,
-                    attendance.ReviewerName,
-                    attendance.AttendanceStatus,
-                    _currentSession.CurrentUserDetail.UserId
-                }, true);
+                    if (attendance == null)
+                        throw new HiringBellException("Invalid attendance day selected");
 
-                if (string.IsNullOrEmpty(Result.statusMessage))
-                {
-                    throw HiringBellException.ThrowBadRequest("Unable to update attendance status");
+                    attendance.AttendanceStatus = (int)status;
+                    attendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
+                    attendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
+                    attendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
+
+                    var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
+                    {
+                        attendance.AttendanceId,
+                        attendance.ReviewerId,
+                        attendance.ReviewerEmail,
+                        attendance.ReviewerName,
+                        attendance.AttendanceStatus,
+                        _currentSession.CurrentUserDetail.UserId
+                    }, true);
+
+                    if (string.IsNullOrEmpty(Result.statusMessage))
+                    {
+                        throw HiringBellException.ThrowBadRequest("Unable to update attendance status");
+                    }
+
+                    AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+                    {
+                        ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                        CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                        DayCount = 1,
+                        DeveloperName = dailyAttendance.EmployeeName,
+                        FromDate = dailyAttendance.AttendanceDate,
+                        ManagerName = dailyAttendance.ManagerName,
+                        Message = dailyAttendance.Comments,
+                        RequestType = dailyAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                        ToAddress = new List<string> { attendance.EmployeeEmail },
+                        kafkaServiceName = KafkaServiceName.Attendance,
+                        LocalConnectionString = _currentSession.LocalConnectionString,
+                        CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                    };
+
+                    await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
                 }
-
-                AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
-                {
-                    ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
-                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = 1,
-                    DeveloperName = dailyAttendance.EmployeeName,
-                    FromDate = dailyAttendance.AttendanceDate,
-                    ManagerName = dailyAttendance.ManagerName,
-                    Message = dailyAttendance.Comments,
-                    RequestType = dailyAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                    ToAddress = new List<string> { attendance.EmployeeEmail },
-                    kafkaServiceName = KafkaServiceName.Attendance,
-                    LocalConnectionString = _currentSession.LocalConnectionString,
-                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                };
-
-                await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
 
                 await Task.CompletedTask;
             }

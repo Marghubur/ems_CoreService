@@ -51,8 +51,10 @@ namespace ServiceLayer
             bool flag = false;
 
             LoadHolidayCalendar();
-            var records = _calendars.FirstOrDefault(x => x.StartDate.Date.Subtract(date.Date).TotalDays <= 0
-                            && x.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
+            //var records = _calendars.FirstOrDefault(x => x.StartDate.Date.Subtract(date.Date).TotalDays <= 0
+            //                && x.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
+
+            var records = _calendars.Find(x => x.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
             if (records != null)
                 flag = true;
 
@@ -97,29 +99,34 @@ namespace ServiceLayer
             return flag;
         }
 
-        public int CountHolidaysBeforDate(DateTime date, ShiftDetail shiftDetail)
+        public int CountHolidaysBeforeDate(DateTime date, ShiftDetail shiftDetail)
         {
             _shiftDetail = shiftDetail;
             int totalDays = 0;
             date = date.AddDays(-1);
 
             LoadHolidayCalendar();
-            var holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
-            while (holiday != null)
-            {
-                while (date.Date.Subtract(holiday.StartDate.Date).TotalDays >= 0)
-                {
-                    // check date is weekoff or not
-                    // if yes do nothing
-                    // else increament
-                    if (!CheckIsWeekend(date))
-                        totalDays++;
+            //var holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
+            //while (holiday != null)
+            //{
+            //    while (date.Date.Subtract(holiday.StartDate.Date).TotalDays >= 0)
+            //    {
+            //        // check date is weekoff or not
+            //        // if yes do nothing
+            //        // else increament
+            //        if (!CheckIsWeekend(date))
+            //            totalDays++;
 
-                    date = date.AddDays(-1);
-                }
+            //        date = date.AddDays(-1);
+            //    }
 
-                holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
-            }
+            //    holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
+            //}
+
+            var holiday = _calendars.Find(i => i.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
+            if (holiday != null && !CheckIsWeekend(date))
+                totalDays++;
+
             return totalDays;
         }
 
@@ -130,22 +137,25 @@ namespace ServiceLayer
             date = date.AddDays(1);
 
             LoadHolidayCalendar();
-            var holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
-            while (holiday != null)
-            {
-                while (date.Date.Subtract(holiday.EndDate.Date).TotalDays <= 0)
-                {
-                    // check date is weekoff or not
-                    // if yes do nothing
-                    // else increament
-                    if (!CheckIsWeekend(date))
-                        totalDays++;
+            //var holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
+            //while (holiday != null)
+            //{
+            //    while (date.Date.Subtract(holiday.EndDate.Date).TotalDays <= 0)
+            //    {
+            //        // check date is weekoff or not
+            //        // if yes do nothing
+            //        // else increament
+            //        if (!CheckIsWeekend(date))
+            //            totalDays++;
 
-                    date = date.AddDays(1);
-                }
+            //        date = date.AddDays(1);
+            //    }
 
-                holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
-            }
+            //    holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
+            //}
+            var holiday = _calendars.Find(i => i.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
+            if (holiday != null && !CheckIsWeekend(date))
+                totalDays++;
 
             return totalDays;
         }
@@ -155,7 +165,8 @@ namespace ServiceLayer
             bool flag = false;
 
             LoadHolidayCalendar();
-            var records = _calendars.Where(x => x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= toDate.Date);
+            //var records = _calendars.Where(x => x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= toDate.Date);
+            var records = _calendars.Where(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0);
             if (records.Any())
                 flag = true;
 
@@ -165,7 +176,8 @@ namespace ServiceLayer
         public async Task<int> GetHolidayBetweenTwoDates(DateTime fromDate, DateTime toDate)
         {
             LoadHolidayCalendar();
-            var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
+            //var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
+            var holidays = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0);
 
             return await Task.FromResult(holidays);
         }
@@ -177,8 +189,12 @@ namespace ServiceLayer
             DateTime toDate = fromDate.AddMonths(1).AddDays(-1);
             LoadHolidayCalendar();
 
-            int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
-            int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
+            //int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
+            //int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
+
+            int fullDayHoliday = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0 && x.IsHalfDay);
+            int halfDayHoliday = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0 && !x.IsHalfDay);
+
             totalDays = (decimal)(fullDayHoliday + (halfDayHoliday * 0.5));
 
             return await Task.FromResult(totalDays);

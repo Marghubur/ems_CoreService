@@ -2,10 +2,12 @@
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
 using System;
@@ -41,7 +43,10 @@ namespace ServiceLayer.Code
             try
             {
                 var uploadedPayrollData = await ReadPayrollExcelData(files);
-                await UpdateEmployeeData(uploadedPayrollData);
+                CheckDuplicateEmailAndMobile(uploadedPayrollData);
+
+                EmployeeCalculation employeeCalculation =  await GetEmployeeRegistrationCommonData();
+                await UpdateEmployeeData(uploadedPayrollData, employeeCalculation);
                 return uploadedPayrollData;
             }
             catch
@@ -50,7 +55,58 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task UpdateEmployeeData(List<UploadedPayrollData> uploadedPayrolls)
+        private void CheckDuplicateEmailAndMobile(List<UploadedPayrollData> uploadedPayrollData)
+        {
+            var duplicateEmails = uploadedPayrollData.Select(x => x.Email).GroupBy(x => x).SelectMany(x => x.Skip(1)).ToList();
+            if (duplicateEmails.Count > 0)
+                throw HiringBellException.ThrowBadRequest($"Duplicate email found");
+
+            var duplicateMobiles = uploadedPayrollData.Select(x => x.Mobile).GroupBy(x => x).SelectMany(x => x.Skip(1)).ToList();
+            if (duplicateMobiles.Count > 0)
+                throw HiringBellException.ThrowBadRequest($"Duplicate email found");
+        }
+
+        private async Task<EmployeeCalculation> GetEmployeeRegistrationCommonData()
+        {
+            var resultSet = _db.FetchDataSet(Procedures.EMPLOYEE_REGISTRATION_COMMON_DATA, new
+            {
+                _currentSession.CurrentUserDetail.CompanyId
+            });
+
+            if (resultSet == null || resultSet.Tables.Count != 4)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee relevant data. Please contact to admin.");
+
+            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+
+            employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[0]);
+            employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[1]);
+
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[2]);
+            if (employeeCalculation.ptaxSlab.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
+
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[3]);
+            if (employeeCalculation.surchargeSlabs.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
+
+            if (employeeCalculation.companySetting.FinancialYear == 0)
+            {
+                if (DateTime.UtcNow.Month < 4)
+                    employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year - 1;
+                else
+                    employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year;
+            }
+
+            if (employeeCalculation.companySetting.DeclarationStartMonth == 0)
+                employeeCalculation.companySetting.DeclarationStartMonth = 4;
+
+            employeeCalculation.PayrollLocalTimeStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
+                employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            return await Task.FromResult(employeeCalculation);
+        }
+
+        private async Task UpdateEmployeeData(List<UploadedPayrollData> uploadedPayrolls, EmployeeCalculation employeeCalculation)
         {
             int i = 0;
             int skipIndex = 0;
@@ -65,11 +121,11 @@ namespace ServiceLayer.Code
                 foreach (UploadedPayrollData e in emps)
                 {
                     //var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
-                    if (emps.FindAll(x => x.Email == e.Email).Count > 1)
-                        throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is duplicate.");
+                    //if (uploadedPayrollData.FindAll(x => x.Email == e.Email).Count > 1)
+                    //    throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is duplicate.");
 
-                    if (emps.FindAll(x => x.Mobile == e.Mobile).Count > 1)
-                        throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is duplicate.");
+                    //if (uploadedPayrollData.FindAll(x => x.Mobile == e.Mobile).Count > 1)
+                    //    throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is duplicate.");
 
                     //if (em != null)
                     //{
@@ -98,26 +154,26 @@ namespace ServiceLayer.Code
                     //    await RegisterNewEmployee(e);
                     //}
 
-                    EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
-                    {
-                        e.Mobile,
-                        e.Email
-                    });
+                    //EmployeeEmailMobileCheck employeeEmailMobileCheck = _db.Get<EmployeeEmailMobileCheck>("sp_employee_email_mobile_duplicate_checked", new
+                    //{
+                    //    e.Mobile,
+                    //    e.Email
+                    //});
 
-                    if (employeeEmailMobileCheck.MobileCount > 0)
-                        throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
+                    //if (employeeEmailMobileCheck.MobileCount > 0)
+                    //    throw HiringBellException.ThrowBadRequest($"Mobile No.: {e.Mobile} of {e.EmployeeName} is already exist.");
 
-                    if (employeeEmailMobileCheck.EmailCount > 0)
-                        throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
+                    //if (employeeEmailMobileCheck.EmailCount > 0)
+                    //    throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
 
-                    await RegisterNewEmployee(e);
+                    await RegisterNewEmployee(e, employeeCalculation);
                 }
 
                 i += chunkSize;
             }
         }
 
-        private async Task RegisterNewEmployee(UploadedPayrollData emp)
+        private async Task RegisterNewEmployee(UploadedPayrollData emp, EmployeeCalculation employeeCalculation)
         {
             Employee employee = new Employee
             {
@@ -183,7 +239,7 @@ namespace ServiceLayer.Code
                 employee.LastName = "NA";
             }
 
-            await _employeeService.RegisterEmployeeByExcelService(employee, emp);
+            await _employeeService.RegisterEmployeeByExcelService(employee, emp, employeeCalculation);
         }
 
         private async Task<List<UploadedPayrollData>> ReadPayrollExcelData(IFormFileCollection files)

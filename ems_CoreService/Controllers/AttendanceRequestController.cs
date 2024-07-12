@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
@@ -50,58 +51,58 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPut("ApprovalAction")]
-        public async Task<ApiResponse> ApprovalAction(DailyAttendance dailyAttendance)
+        public async Task<ApiResponse> ApprovalAction(List<DailyAttendance> dailyAttendances)
         {
             try
             {
-                var result = await _requestService.ApproveAttendanceService(dailyAttendance);
+                var result = await _requestService.ApproveAttendanceService(dailyAttendances);
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, dailyAttendance);
+                throw Throw(ex, dailyAttendances);
             }
         }
 
         [HttpPut("RejectAction")]
-        public async Task<ApiResponse> RejectAction([FromBody] DailyAttendance dailyAttendance)
+        public async Task<ApiResponse> RejectAction([FromBody] List<DailyAttendance> dailyAttendances)
         {
             try
             {
-                var result = await _requestService.RejectAttendanceService(dailyAttendance);
+                var result = await _requestService.RejectAttendanceService(dailyAttendances);
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, dailyAttendance);
+                throw Throw(ex, dailyAttendances);
             }
         }
 
         [HttpPut("ApproveAttendanceRequest/{filterId}")]
-        public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] DailyAttendance dailyAttendance)
+        public async Task<ApiResponse> ApproveAttendanceRequest([FromRoute] int filterId, [FromBody] List<DailyAttendance> dailyAttendances)
         {
             try
             {
-                var result = await _requestService.ApproveAttendanceService(dailyAttendance, filterId);
+                var result = await _requestService.ApproveAttendanceService(dailyAttendances, filterId);
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, new { FilterId = filterId, Attendance = dailyAttendance });
+                throw Throw(ex, new { FilterId = filterId, Attendances = dailyAttendances });
             }
         }
 
         [HttpPut("RejectAttendanceRequest/{filterId}")]
-        public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] DailyAttendance dailyAttendance)
+        public async Task<ApiResponse> RejectAttendanceRequest([FromRoute] int filterId, [FromBody] List<DailyAttendance> dailyAttendances)
         {
             try
             {
-                var result = await _requestService.RejectAttendanceService(dailyAttendance, filterId);
+                var result = await _requestService.RejectAttendanceService(dailyAttendances, filterId);
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, new { FilterId = filterId, Attendance = dailyAttendance });
+                throw Throw(ex, new { FilterId = filterId, Attendances = dailyAttendances });
             }
         }
 
