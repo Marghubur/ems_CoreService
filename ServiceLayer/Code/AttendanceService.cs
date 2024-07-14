@@ -324,8 +324,10 @@ namespace ServiceLayer.Code
             var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
             var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
 
-            attendanceStartDate = _timezoneConverter.ToUtcTime(attendanceStartDate);
-            attendanceEndDate = _timezoneConverter.ToUtcTime(attendanceEndDate);
+            TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
+
+            attendanceStartDate = TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
+            attendanceEndDate = TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
 
             _logger.LogInformation("Before submitting attendace date: " + attendanceStartDate + ".  Given time zone: " + _currentSession.TimeZone);
             await _db.ExecuteAsync("sp_daily_attendance_ins_advance", new
