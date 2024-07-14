@@ -8,6 +8,7 @@ using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
+using ServiceLayer.Code;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -312,6 +313,20 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, leavePlan);
+            }
+        }
+
+        [HttpGet("RunEmployeeLeaveAccrual/{month}/{year}")]
+        [Authorize(Roles = Role.Admin)]
+        public async Task GenerateLeaveAccrual([FromRoute] int month, [FromRoute] int year)
+        {
+            try
+            {
+                await _leaveService.StartAccrualCycleWithDefaultSettingService(year, month, true);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
             }
         }
     }

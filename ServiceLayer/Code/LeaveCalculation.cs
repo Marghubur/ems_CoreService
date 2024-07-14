@@ -154,14 +154,16 @@ namespace ServiceLayer.Code
 
         public async Task StartAccrualCycle(RunAccrualModel runAccrualModel, CompanySetting companySetting)
         {
-            _logger.LogInformation("Start Accrual Cycle");
-
             _currentSession.CurrentUserDetail.CompanyId = companySetting.CompanyId;
             _currentSession.TimeZone = TZConvert.GetTimeZoneInfo(companySetting.TimezoneName);
             await RunAccrualCycle(runAccrualModel);
+        }
 
-            _logger.LogInformation("End Accrual Cycle");
-            await Task.CompletedTask;
+        public async Task StartAccrualCycleWithDefaultSetting(RunAccrualModel runAccrualModel)
+        {
+            _currentSession.CurrentUserDetail.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+            _currentSession.TimeZone = _currentSession.TimeZone;
+            await RunAccrualCycle(runAccrualModel);
         }
 
         public async Task RunAccrualCycle(RunAccrualModel runAccrualModel)

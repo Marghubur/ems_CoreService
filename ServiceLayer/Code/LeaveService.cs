@@ -6,6 +6,7 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
+using EMailService.Modal.Leaves;
 using ems_CommonUtility.KafkaService.interfaces;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
@@ -794,6 +795,18 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Unable to add or update leave plan");
 
             return "Leave plan added successfully";
+        }
+
+        public async Task StartAccrualCycleWithDefaultSettingService(int year, int month, bool runTillDate = false)
+        {
+            RunAccrualModel runAccrualModel = new RunAccrualModel
+            {
+                RunTillMonthOfPresnetYear = runTillDate,
+                EmployeeId = 0,
+                IsSingleRun = false,
+            };
+
+            await _leaveCalculation.StartAccrualCycleWithDefaultSetting(runAccrualModel);
         }
     }
 }

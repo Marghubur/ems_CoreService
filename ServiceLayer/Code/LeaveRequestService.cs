@@ -54,38 +54,9 @@ namespace ServiceLayer.Code
                 RequestStatusId = leaveRequestDetail.RequestStatusId,
                 PageIndex = 1
             };
-            return await GetLeaveRequestNotificationService(leaveRequestNotification);
-        }
 
-        public async Task<List<LeaveRequestNotification>> ApproveAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
-        {
-            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Approved);
-            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
-            {
-                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                EmployeeId = leaveRequestDetail.EmployeeId,
-                FromDate = leaveRequestDetail.LeaveFromDay,
-                ToDate = leaveRequestDetail.LeaveToDay,
-                RequestStatusId = leaveRequestDetail.RequestStatusId,
-                PageIndex = 1
-            };
             return await GetLeaveRequestNotificationService(leaveRequestNotification);
-        }
-
-        public async Task<List<LeaveRequestNotification>> CancelAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
-        {
-            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Rejected);
-            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
-            {
-                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
-                EmployeeId = leaveRequestDetail.EmployeeId,
-                FromDate = leaveRequestDetail.LeaveFromDay,
-                ToDate = leaveRequestDetail.LeaveToDay,
-                RequestStatusId = leaveRequestDetail.RequestStatusId,
-                PageIndex = 1
-            };
-            return await GetLeaveRequestNotificationService(leaveRequestNotification);
-        }   
+        }  
 
         public async Task<List<LeaveRequestNotification>> RejectLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
         {
@@ -322,6 +293,7 @@ namespace ServiceLayer.Code
                 leaveRequestNotification.PageIndex,
                 PageSize = 10
             });
+
             return await Task.FromResult(result);
         }
 
@@ -460,5 +432,40 @@ namespace ServiceLayer.Code
 
             await Task.CompletedTask;
         }
+
+        #region Payroll Configuration Leave Manager
+
+        public async Task<List<LeaveRequestNotification>> ConfigPayrollApproveAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
+        {
+            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Approved);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
+            };
+
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
+        }
+
+        public async Task<List<LeaveRequestNotification>> ConfigPayrollCancelAppliedLeaveService(LeaveRequestDetail leaveRequestDetail)
+        {
+            await ManageLeaveDetails(leaveRequestDetail, ItemStatus.Rejected);
+            LeaveRequestNotification leaveRequestNotification = new LeaveRequestNotification
+            {
+                ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
+                EmployeeId = leaveRequestDetail.EmployeeId,
+                FromDate = leaveRequestDetail.LeaveFromDay,
+                ToDate = leaveRequestDetail.LeaveToDay,
+                RequestStatusId = leaveRequestDetail.RequestStatusId,
+                PageIndex = 1
+            };
+            return await GetLeaveRequestNotificationService(leaveRequestNotification);
+        }
+
+        #endregion
     }
 }

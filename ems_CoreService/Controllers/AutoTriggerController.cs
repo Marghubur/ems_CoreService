@@ -78,19 +78,5 @@ namespace ems_CoreService.Controllers
                 throw Throw(ex);
             }
         }
-
-        [HttpGet("GenerateLeaveAccrual/{month}/{year}")]
-        [Authorize(Roles = Role.Admin)]
-        public async Task GenerateLeaveAccrual([FromRoute] int month, [FromRoute] int year)
-        {
-            try
-            {
-                await _autoTriggerService.ExecuteLeaveAccrualJobAsync(null, null);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex);
-            }
-        }
     }
 }

@@ -9,6 +9,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using ems_CommonUtility.KafkaService.interfaces;
+using Microsoft.Extensions.Logging;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -33,6 +34,7 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly ILogger<AttendanceService> _logger;
 
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
@@ -40,7 +42,8 @@ namespace ServiceLayer.Code
             ICompanyService companyService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            IKafkaNotificationService kafkaNotificationService)
+            IKafkaNotificationService kafkaNotificationService,
+            ILogger<AttendanceService> logger)
         {
             _db = db;
             _companyService = companyService;
@@ -49,6 +52,7 @@ namespace ServiceLayer.Code
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
             _kafkaNotificationService = kafkaNotificationService;
+            _logger = logger;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -314,43 +318,21 @@ namespace ServiceLayer.Code
 
         public async Task GenerateAttendanceService(AttendenceDetail attendenceDetail)
         {
+            _logger.LogInformation("----------------------------------------------------- checking ------------------------------------------------------------");
+            _logger.LogInformation("Submitted attendace date: " + attendenceDetail.AttendenceFromDay + ".  Given time zone: " + _currentSession.TimeZone);
             var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
             var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
+
+            _logger.LogInformation("Before submitting attendace date: " + attendenceDetail.AttendenceFromDay + ".  Given time zone: " + _currentSession.TimeZone);
             await _db.ExecuteAsync("sp_daily_attendance_ins_advance", new
             {
                 FromDate = _timezoneConverter.ToUtcTime(attendanceStartDate),
                 ToDate = _timezoneConverter.ToUtcTime(attendanceEndDate),
                 AttendanceStatus = attendenceDetail.AttendenceStatus
             });
-            //if (attendenceDetail.EmployeeId == 0)
-            //{
-            //    const int chunkSize = 500;
-            //    int pageNumber = 1;
-            //    while (true)
-            //    {
-            //        var employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
-            //        {
-            //            SearchString = "1=1",
-            //            SortBy = string.Empty,
-            //            PageIndex = pageNumber,
-            //            PageSize = chunkSize
-            //        });
-            //        if (employees == null || employees.Count == 0)
-            //        {
-            //            break;
-            //        }
 
-            //        foreach (var employee in employees)
-            //        {
-            //            await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, employee.EmployeeUid, attendenceDetail.AttendenceStatus);
-            //        }
-            //        pageNumber++;
-            //    }
-            //}
-            //else
-            //{
-            //    await GenerateAttendanceForEachEmployee(attendanceStartDate, attendanceEndDate, attendenceDetail.EmployeeId, attendenceDetail.AttendenceStatus);
-            //}
+            _logger.LogInformation("After submitting attendace date: " + _timezoneConverter.ToUtcTime(attendanceStartDate) + ".  Given time zone: " + _currentSession.TimeZone);
+            _logger.LogInformation("----------------------------------------------------- checking ends --------------------------------------------------------");
 
             await Task.CompletedTask;
         }

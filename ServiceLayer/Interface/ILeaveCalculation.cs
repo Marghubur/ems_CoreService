@@ -20,5 +20,6 @@ namespace ServiceLayer.Interface
         Task RunAccrualCycleByEmployee(long EmployeeId);
         Task<LeaveCalculationModal> PrepareCheckLeaveCriteria(LeaveRequestModal leaveRequestModal);
         LeaveRequestNotification GetApprovalChainDetail(LeaveRequestModal leaveRequestModal, out List<string> emails);
+        Task StartAccrualCycleWithDefaultSetting(RunAccrualModel runAccrualModel);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using EMailService.Modal;
+using EMailService.Modal.Leaves;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
@@ -29,5 +30,6 @@ namespace ServiceLayer.Interface
         Leave GetLeaveDetailByEmpIdService(long EmployeeId);
         Task<string> AdjustLOPAsLeaveService(LOPAdjustmentDetail lOPAdjustmentDetail);
         string AddInitialLeavePlanService(LeavePlan leavePlan);
+        Task StartAccrualCycleWithDefaultSettingService(int year, int month, bool runTillDate = false);
     }
 }

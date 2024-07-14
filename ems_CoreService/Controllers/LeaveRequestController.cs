@@ -120,12 +120,12 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPost("ApproveAppliedLeave")]
+        [HttpPost("ConfigPayrollApproveAppliedLeave")]
         public async Task<ApiResponse> ApproveAppliedLeave(LeaveRequestDetail leaveRequestDetail)
         {
             try
             {
-                var result = await _requestService.ApproveAppliedLeaveService(leaveRequestDetail);
+                var result = await _requestService.ConfigPayrollApproveAppliedLeaveService(leaveRequestDetail);
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -134,12 +134,12 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPost("CancelAppliedLeave")]
+        [HttpPost("ConfigPayrollCancelAppliedLeave")]
         public async Task<ApiResponse> CancelAppliedLeave(LeaveRequestDetail leaveRequestDetail)
         {
             try
             {
-                var result = await _requestService.CancelAppliedLeaveService(leaveRequestDetail);
+                var result = await _requestService.ConfigPayrollCancelAppliedLeaveService(leaveRequestDetail);
                 return BuildResponse(result);
             }
             catch (Exception ex)
