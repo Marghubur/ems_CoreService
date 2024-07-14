@@ -324,9 +324,7 @@ namespace ServiceLayer.Code
             var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
             var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
 
-            TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
-
-            attendanceStartDate = TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
+            attendanceStartDate = TimeZoneInfo.ConvertTimeToUtc(attendanceStartDate, _currentSession.TimeZone);
             attendanceEndDate = TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
 
             _logger.LogInformation("Before submitting attendace date: " + attendanceStartDate + ".  Given time zone: " + _currentSession.TimeZone);
