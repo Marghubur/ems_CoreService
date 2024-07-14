@@ -320,10 +320,11 @@ namespace ServiceLayer.Code
         {
             _logger.LogInformation("----------------------------------------------------- checking ------------------------------------------------------------");
             _logger.LogInformation("Submitted attendace date: " + attendenceDetail.AttendenceFromDay + ".  Given time zone: " + _currentSession.TimeZone);
+
             var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
             var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
 
-            _logger.LogInformation("Before submitting attendace date: " + attendenceDetail.AttendenceFromDay + ".  Given time zone: " + _currentSession.TimeZone);
+            _logger.LogInformation("Before submitting attendace date: " + attendanceStartDate + ".  Given time zone: " + _currentSession.TimeZone);
             await _db.ExecuteAsync("sp_daily_attendance_ins_advance", new
             {
                 FromDate = _timezoneConverter.ToUtcTime(attendanceStartDate),
