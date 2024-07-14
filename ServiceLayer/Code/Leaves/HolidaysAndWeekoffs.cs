@@ -82,13 +82,13 @@ namespace ServiceLayer.Code.Leaves
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightAfterLeave)
                         {
-                            holidays = _companyCalendar.CountHolidaysBeforDate(fromDate, leaveCalculationModal.shiftDetail);
+                            holidays = _companyCalendar.CountHolidaysBeforeDate(fromDate, leaveCalculationModal.shiftDetail);
                         }
 
                         else if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.IfHolidayIsRightBeforeAfterOrInBetween)
                         {
                             holidays = await _companyCalendar.GetHolidayBetweenTwoDates(fromDate, toDate);
-                            holidays += _companyCalendar.CountHolidaysBeforDate(fromDate, leaveCalculationModal.shiftDetail);
+                            holidays += _companyCalendar.CountHolidaysBeforeDate(fromDate, leaveCalculationModal.shiftDetail);
                             holidays += _companyCalendar.CountHolidaysAfterDate(toDate, leaveCalculationModal.shiftDetail);
                         }
                     }

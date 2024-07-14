@@ -26,5 +26,6 @@ namespace ServiceLayer.Interface
         Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
         Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel);
         Task<Dictionary<int, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel);
+        Task GenerateMonthlyAttendance();
     }
 }

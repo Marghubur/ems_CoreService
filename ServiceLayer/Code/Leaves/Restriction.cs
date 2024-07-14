@@ -78,8 +78,11 @@ namespace ServiceLayer.Code.Leaves
 
         private void CheckForExistingLeave(LeaveCalculationModal leaveCalculationModal, DateTime fromDate, DateTime toDate)
         {
+            //var item = leaveCalculationModal.lastAppliedLeave
+            //            .Find(x => fromDate >= x.FromDate && toDate <= x.ToDate);
+
             var item = leaveCalculationModal.lastAppliedLeave
-                        .Find(x => leaveCalculationModal.fromDate >= x.FromDate && leaveCalculationModal.toDate <= x.ToDate);
+                        .Find(x => x.FromDate.Date.Subtract(fromDate.Date).TotalDays >=0 && x.ToDate.Date.Subtract(toDate.Date).TotalDays <= 0);
             if (item != null)
                 throw HiringBellException.ThrowBadRequest($"Minimumn " +
                       $"{_leavePlanConfiguration.leavePlanRestriction.GapBetweenTwoConsicutiveLeaveDates} days gap required between any two leaves.");

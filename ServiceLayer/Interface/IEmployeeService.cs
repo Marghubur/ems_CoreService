@@ -20,7 +20,7 @@ namespace ServiceLayer.Interface
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive);
         Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
-        Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp);
+        Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp, EmployeeCalculation employeeCalculation);
         Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);

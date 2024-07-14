@@ -41,6 +41,7 @@ namespace ServiceLayer.Code
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly IAttendanceService _attendanceService;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             IOptions<MasterDatabase> options,
@@ -51,8 +52,8 @@ namespace ServiceLayer.Code
             IDb db,
             YearEndCalculation yearEndCalculation,
             IOptions<MicroserviceRegistry> microserviceOptions,
-            RequestMicroservice requestMicroservice
-            )
+            RequestMicroservice requestMicroservice,
+            IAttendanceService attendanceService)
         {
             _logger = logger;
             _masterDatabase = options.Value;
@@ -64,6 +65,7 @@ namespace ServiceLayer.Code
             _yearEndCalculation = yearEndCalculation;
             _microserviceRegistry = microserviceOptions.Value;
             _requestMicroservice = requestMicroservice;
+            _attendanceService = attendanceService;
             // _payrollService = payrollService;
         }
 
@@ -81,7 +83,7 @@ namespace ServiceLayer.Code
                 BootstrapServers = $"{kafkaConfig.ServiceName}:{kafkaConfig.Port}"
             };
 
-            _logger.LogInformation($"[Kafka] Start listning kafka topic: {kafkaConfig.Topic}");
+            _logger.LogInformation($"[Kafka] Start listening kafka topic: {kafkaConfig.Topic}");
             using (var consumer = new ConsumerBuilder<Null, string>(config).Build())
             {
                 consumer.Subscribe(kafkaConfig.Topic);
@@ -92,7 +94,7 @@ namespace ServiceLayer.Code
                         _logger.LogInformation($"[Kafka] Waiting on topic: {kafkaConfig.Topic}");
                         var message = consumer.Consume();
 
-                        _logger.LogInformation($"[Kafka] Message recieved: {message}");
+                        _logger.LogInformation($"[Kafka] Message received: {message}");
                         if (message != null && !string.IsNullOrEmpty(message.Message.Value))
                         {
                             _logger.LogInformation(message.Message.Value);
@@ -152,6 +154,9 @@ namespace ServiceLayer.Code
                                 LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
                                 await RunLeaveYearEndJobAsync(i, data);
                             });
+                            break;
+                        case KafkaServiceName.NewRegistration:
+                            companySettings.ForEach(async i => await RunGenerateAttendanceAsync());
                             break;
                     }
                 }
@@ -248,6 +253,11 @@ namespace ServiceLayer.Code
             };
 
             await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
+        }
+
+        public async Task RunGenerateAttendanceAsync()
+        {
+            await _attendanceService.GenerateMonthlyAttendance();
         }
     }
 }

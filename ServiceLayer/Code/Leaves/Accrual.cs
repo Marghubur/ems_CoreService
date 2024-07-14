@@ -123,11 +123,22 @@ namespace ServiceLayer.Code.Leaves
             }
             else
             {
-                availableLeaves = leavePlanType.AvailableLeave;
+                if (leaveCalculationModal.isCurrentMonthJoinee)
+                    availableLeaves = await CalculateLeaveForNewJoinee(now, availableLeaves);
+                else
+                    availableLeaves = leavePlanType.AvailableLeave;
             }
             _logger.LogInformation("Method: CalculateLeaveAccrual end");
 
             return await Task.FromResult(availableLeaves);
+        }
+
+        private async Task<decimal> CalculateLeaveForNewJoinee(DateTime date, decimal availableLeaves)
+        {
+            decimal eachMonthLeave = availableLeaves / 12;
+            int remainingMonth = 12 - date.Month;
+
+            return await Task.FromResult(remainingMonth * eachMonthLeave);
         }
 
         public async Task<decimal> CalculateLeaveAccrualTillMonth(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
@@ -169,7 +180,8 @@ namespace ServiceLayer.Code.Leaves
                         date = date.AddMonths(1);
                     }
                 }
-            } else
+            }
+            else
             {
                 availableLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit;
             }
@@ -229,29 +241,29 @@ namespace ServiceLayer.Code.Leaves
         }
 
         // step - 4
-        private async Task<bool> CheckAccrualEligibility()
-        {
-            _logger.LogInformation("Method: CheckAccrualEligibility started");
-            bool flag = false;
-            DateTime accrualStartDate = _leaveCalculationModal.employee.CreatedOn;
-            if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterJoining)
-            {
-                var daysAfterJoining = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterJoining;
-                accrualStartDate = accrualStartDate.AddDays((double)daysAfterJoining);
-            }
-            else if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterProbationEnds)
-            {
-                var daysProbationEnds = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterProbationEnds;
-                daysProbationEnds += _leaveCalculationModal.companySetting.ProbationPeriodInDays;
-                accrualStartDate = accrualStartDate.AddDays((double)daysProbationEnds);
-            }
+        //private async Task<bool> CheckAccrualEligibility()
+        //{
+        //    _logger.LogInformation("Method: CheckAccrualEligibility started");
+        //    bool flag = false;
+        //    DateTime accrualStartDate = _leaveCalculationModal.employee.CreatedOn;
+        //    if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterJoining)
+        //    {
+        //        var daysAfterJoining = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterJoining;
+        //        accrualStartDate = accrualStartDate.AddDays((double)daysAfterJoining);
+        //    }
+        //    else if (_leavePlanConfiguration.leaveAccrual.IsAccrualStartsAfterProbationEnds)
+        //    {
+        //        var daysProbationEnds = _leavePlanConfiguration.leaveAccrual.AccrualDaysAfterProbationEnds;
+        //        daysProbationEnds += _leaveCalculationModal.companySetting.ProbationPeriodInDays;
+        //        accrualStartDate = accrualStartDate.AddDays((double)daysProbationEnds);
+        //    }
 
-            if (now.Date.Subtract(accrualStartDate.Date).TotalDays >= 0)
-                flag = true;
+        //    if (now.Date.Subtract(accrualStartDate.Date).TotalDays >= 0)
+        //        flag = true;
 
-            _logger.LogInformation("Method: CheckAccrualEligibility end");
-            return await Task.FromResult(flag);
-        }
+        //    _logger.LogInformation("Method: CheckAccrualEligibility end");
+        //    return await Task.FromResult(flag);
+        //}
 
         #region HALF YEARLY ACCRUAL CALCULATION
 
@@ -311,18 +323,18 @@ namespace ServiceLayer.Code.Leaves
             {
                 case ApplicationConstants.InProbationPeriod:
                     // step - 4
-                    if (_leavePlanConfiguration.leaveAccrual.IsVaryOnProbationOrExprience)
-                    {
-                        if (await CheckAccrualEligibility())
-                            availableLeaves = MonthlyAccrualInProbation();
-                        else
-                            return availableLeaves;
-                    }
-                    else
-                    {
-                        availableLeaves = MonthlyAccrualInProbation();
-                    }
-
+                    //if (_leavePlanConfiguration.leaveAccrual.IsVaryOnProbationOrExprience)
+                    //{
+                    //    if (await CheckAccrualEligibility())
+                    //        availableLeaves = MonthlyAccrualInProbation();
+                    //    else
+                    //        return availableLeaves;
+                    //}
+                    //else
+                    //{
+                    //    availableLeaves = MonthlyAccrualInProbation();
+                    //}
+                    availableLeaves = MonthlyAccrualInProbation();
                     break;
                 case ApplicationConstants.InNoticePeriod:
                     availableLeaves = MonthlyAccrualInNotice(perMonthLeaves);

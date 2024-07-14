@@ -413,8 +413,8 @@ namespace ServiceLayer.Code
             if (leaveRequestModal?.LeaveFromDay == null || leaveRequestModal?.LeaveToDay == null)
                 throw new HiringBellException("Invalid From and To date passed.");
 
-            if (DateTime.UtcNow.Date.Subtract(leaveRequestModal.LeaveFromDay.Date).TotalDays > 0)
-                throw new HiringBellException("You don't take any action on past date leave");
+            //if (DateTime.UtcNow.Date.Subtract(leaveRequestModal.LeaveFromDay.Date).TotalDays > 0)
+            //    throw new HiringBellException("You don't take any action on past date leave");
         }
 
         public async Task<dynamic> ApplyLeaveService(LeaveRequestModal leaveRequestModal, IFormFileCollection fileCollection, List<Files> fileDetail)

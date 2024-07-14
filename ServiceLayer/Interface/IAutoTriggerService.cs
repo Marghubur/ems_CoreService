@@ -11,5 +11,6 @@ namespace ServiceLayer.Interface
         Task RunTimesheetJobAsync(CompanySetting companySetting, DateTime startDate, DateTime? endDate, bool isCronJob);
         Task RunPayrollJobAsync(DateTime? runDate);
         Task ScheduledJobManager();
+        Task RunGenerateAttendanceAsync();
     }
 }
