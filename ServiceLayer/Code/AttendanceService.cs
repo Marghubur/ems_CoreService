@@ -318,16 +318,11 @@ namespace ServiceLayer.Code
 
         public async Task GenerateAttendanceService(AttendenceDetail attendenceDetail)
         {
-            _logger.LogInformation("----------------------------------------------------- checking ------------------------------------------------------------");
-            _logger.LogInformation("Submitted attendace date: " + attendenceDetail.AttendenceFromDay + ".  Given time zone: " + _currentSession.TimeZone);
-
             var attendanceStartDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceFromDay, _currentSession.TimeZone);
             var attendanceEndDate = _timezoneConverter.ToTimeZoneDateTime((DateTime)attendenceDetail.AttendenceToDay, _currentSession.TimeZone);
 
-            _logger.LogInformation("Before submitting attendace date: " + attendanceStartDate + ".  Given time zone: " + _currentSession.TimeZone);
-
-            attendanceStartDate = TimeZoneInfo.ConvertTimeToUtc(attendanceStartDate, _currentSession.TimeZone);
-            attendanceEndDate = TimeZoneInfo.ConvertTimeToUtc(attendanceEndDate, _currentSession.TimeZone);
+            attendanceStartDate = _timezoneConverter.ToUtcTime(attendanceStartDate, _currentSession.TimeZone);
+            attendanceEndDate = _timezoneConverter.ToUtcTime(attendanceEndDate, _currentSession.TimeZone);
 
             await _db.ExecuteAsync("sp_daily_attendance_ins_advance", new
             {
@@ -335,9 +330,6 @@ namespace ServiceLayer.Code
                 ToDate = attendanceEndDate,
                 AttendanceStatus = attendenceDetail.AttendenceStatus
             });
-
-            _logger.LogInformation("After submitting attendace date: " + attendanceStartDate + ".  Given time zone: " + _currentSession.TimeZone);
-            _logger.LogInformation("----------------------------------------------------- checking ends --------------------------------------------------------");
 
             await Task.CompletedTask;
         }
@@ -1316,8 +1308,8 @@ namespace ServiceLayer.Code
         {
             List<LOPAdjustmentDetail> lOPAdjustmentDetails = new List<LOPAdjustmentDetail>();
             var date = new DateTime(year, month, 1);
-            var FromDate = _timezoneConverter.ToUtcTime(date);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1), _currentSession.TimeZone);
 
             var ds = _db.GetDataSet(Procedures.Leave_And_Lop_Get, new
             {
@@ -1891,8 +1883,8 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid year selected");
 
             var date = new DateTime(filterModel.ForYear, filterModel.ForMonth, 1);
-            var fromDate = _timezoneConverter.ToUtcTime(date);
-            var toDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var fromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+            var toDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1), _currentSession.TimeZone);
             var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
             return dailyAttendances.OrderBy(x => x.AttendanceDate)
                                                         .GroupBy(x => x.EmployeeId)
@@ -1933,9 +1925,9 @@ namespace ServiceLayer.Code
                     var leaveDetail = leaveRequestDetail
                                         .Find(
                                                 x => x.FromDate.Date
-                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date)).TotalDays <= 0
+                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date, _currentSession.TimeZone)).TotalDays <= 0
                                                     && x.ToDate.Date
-                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date)).TotalDays >= 0
+                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date, _currentSession.TimeZone)).TotalDays >= 0
                                              );
 
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)

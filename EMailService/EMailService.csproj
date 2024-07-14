@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BottomHalf.Utilities" Version="1.0.32" />
+    <PackageReference Include="BottomHalf.Utilities" Version="1.0.40" />
     <PackageReference Include="EAGetMail" Version="5.2.5" />
     <PackageReference Include="MailKit" Version="3.4.3" />
   </ItemGroup>

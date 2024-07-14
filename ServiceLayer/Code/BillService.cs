@@ -1512,8 +1512,8 @@ namespace ServiceLayer.Code
         private async Task PrepareRequestForPayslipGeneration(PayslipGenerationModal payslipGenerationModal)
         {
             var date = new DateTime(payslipGenerationModal.Year, payslipGenerationModal.Month, 1);
-            var FromDate = _timezoneConverter.ToUtcTime(date);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1), _currentSession.TimeZone);
             DataSet ds = this.db.FetchDataSet(Procedures.Payslip_Detail, new
             {
                 EmployeeId = payslipGenerationModal.EmployeeId,

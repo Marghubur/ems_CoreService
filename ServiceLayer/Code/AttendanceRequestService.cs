@@ -44,8 +44,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid employee id.");
 
             DateTime date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var FromDate = _timezoneConverter.ToUtcTime(date.AddMonths(-1));
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1));
+            var FromDate = _timezoneConverter.ToUtcTime(date.AddMonths(-1), _currentSession.TimeZone);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(1).AddDays(-1), _currentSession.TimeZone);
             if (itemStatus == ItemStatus.NotGenerated)
                 itemStatus = 0;
 
@@ -213,8 +213,8 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Year is invalid");
 
             var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1).AddMonths(-1);
-            var FromDate = _timezoneConverter.ToUtcTime(date);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1));
+            var FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1), _currentSession.TimeZone);
 
             var result = _db.GetList<DailyAttendance>(Procedures.Attendance_Requests_By_Filter, new
             {
