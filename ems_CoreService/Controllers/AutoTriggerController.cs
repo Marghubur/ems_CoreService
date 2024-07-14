@@ -20,9 +20,9 @@ namespace ems_CoreService.Controllers
             _autoTriggerService = autoTriggerService;
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpGet("triggerLeaveAccrual")]
-        // [Authorize(Roles = Role.Admin)]
+        [Authorize(Roles = Role.Admin)]
         public async Task LeaveAccrualTriggerLeave()
         {
             try
@@ -64,14 +64,28 @@ namespace ems_CoreService.Controllers
             }
         }
 
-        //[Authorize(Roles = Role.Admin)]
-        [AllowAnonymous]
+        [Authorize(Roles = Role.Admin)]
+        //[AllowAnonymous]
         [HttpGet("MonthlyAttendanceTrigger")]
         public async Task MonthlyAttendanceTrigger()
         {
             try
             {
                 await _autoTriggerService.RunGenerateAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [HttpGet("GenerateLeaveAccrual/{month}/{year}")]
+        [Authorize(Roles = Role.Admin)]
+        public async Task GenerateLeaveAccrual([FromRoute] int month, [FromRoute] int year)
+        {
+            try
+            {
+                await _autoTriggerService.ExecuteLeaveAccrualJobAsync(null, null);
             }
             catch (Exception ex)
             {
