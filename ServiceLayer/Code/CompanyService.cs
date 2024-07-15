@@ -444,6 +444,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.IsJoiningBarrierDayPassed = companySetting.IsJoiningBarrierDayPassed;
                 companySettingDetail.NoticePeriodInProbation = companySetting.NoticePeriodInProbation;
                 companySettingDetail.ExcludePayrollFromJoinDate = companySetting.ExcludePayrollFromJoinDate;
+                companySettingDetail.TimeDifferences = companySetting.TimeDifferences;
             }
 
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
@@ -463,6 +464,7 @@ namespace ServiceLayer.Code
                 companySetting.IsJoiningBarrierDayPassed,
                 companySettingDetail.NoticePeriodInProbation,
                 companySettingDetail.ExcludePayrollFromJoinDate,
+                companySetting.TimeDifferences,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -582,7 +584,7 @@ namespace ServiceLayer.Code
                 companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
 
             if (companySettingDetail == null)
-                throw HiringBellException.ThrowBadRequest("COmpany setting not found. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin");
 
 
             companySettingDetail.DeclarationStartMonth = companySetting.DeclarationStartMonth;
@@ -606,11 +608,12 @@ namespace ServiceLayer.Code
                 companySetting.IsJoiningBarrierDayPassed,
                 companySettingDetail.NoticePeriodInProbation,
                 companySettingDetail.ExcludePayrollFromJoinDate,
+                companySettingDetail.TimeDifferences,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
             if (!ApplicationConstants.IsExecuted(status.statusMessage))
-                throw new HiringBellException("Fail to update company setting detail. CompnayId: ",
+                throw new HiringBellException("Fail to update company setting detail. CompanyId: ",
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
 
