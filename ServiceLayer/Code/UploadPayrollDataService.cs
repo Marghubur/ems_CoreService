@@ -45,7 +45,7 @@ namespace ServiceLayer.Code
                 var uploadedPayrollData = await ReadPayrollExcelData(files);
                 CheckDuplicateEmailAndMobile(uploadedPayrollData);
 
-                EmployeeCalculation employeeCalculation =  await GetEmployeeRegistrationCommonData();
+                EmployeeCalculation employeeCalculation = await GetEmployeeRegistrationCommonData();
                 await UpdateEmployeeData(uploadedPayrollData, employeeCalculation);
                 return uploadedPayrollData;
             }
@@ -166,7 +166,19 @@ namespace ServiceLayer.Code
                     //if (employeeEmailMobileCheck.EmailCount > 0)
                     //    throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
 
-                    await RegisterNewEmployee(e, employeeCalculation);
+                    EmployeeCalculation empCalc = new EmployeeCalculation
+                    {
+                        salaryComponents = employeeCalculation.salaryComponents,
+                        companySetting = employeeCalculation.companySetting,
+                        ptaxSlab = employeeCalculation.ptaxSlab,
+                        surchargeSlabs = employeeCalculation.surchargeSlabs,
+                        PayrollLocalTimeStartDate = employeeCalculation.PayrollLocalTimeStartDate,
+                    };
+
+                    empCalc.companySetting.DeclarationStartMonth = employeeCalculation.companySetting.DeclarationStartMonth;
+                    empCalc.companySetting.FinancialYear = employeeCalculation.companySetting.FinancialYear;
+
+                    await RegisterNewEmployee(e, empCalc);
                 }
 
                 i += chunkSize;
