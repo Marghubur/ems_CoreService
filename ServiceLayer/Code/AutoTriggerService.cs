@@ -122,41 +122,28 @@ namespace ServiceLayer.Code
             {
                 try
                 {
-                    List<CompanySetting> companySettings = await LoadCompanySettings(x);
+                    CompanySetting companySettings = await LoadCompanySettings(x);
 
                     // execute jobs
                     switch (kafkaPayload.kafkaServiceName)
                     {
                         case KafkaServiceName.MonthlyLeaveAccrualJob:
-                            companySettings.ForEach(async i =>
-                            {
-                                LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
-                                try
-                                {
-                                    await ExecuteLeaveAccrualJobAsync(i, leaveAccrualKafkaModel);
-                                }
-                                catch (Exception e)
-                                {
-                                    _logger.LogError(e.Message);
-                                }
-                            });
+                            LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
+                            await ExecuteLeaveAccrualJobAsync(companySettings, leaveAccrualKafkaModel);
                             break;
                         case KafkaServiceName.WeeklyTimesheetJob:
-                            companySettings.ForEach(async i => await RunTimesheetJobAsync(i, DateTime.UtcNow, null, true));
+                            await RunTimesheetJobAsync(companySettings, DateTime.UtcNow, null, true);
                             break;
                         case KafkaServiceName.MonthlyPayrollJob:
                             PayrollMonthlyDetail payrollMonthlyDetail = JsonConvert.DeserializeObject<PayrollMonthlyDetail>(kafkaPayload.Message);
-                            companySettings.ForEach(async i => await RunPayrollJobAsync(payrollMonthlyDetail.PaymentRunDate));
+                            await RunPayrollJobAsync(payrollMonthlyDetail.PaymentRunDate);
                             break;
                         case KafkaServiceName.YearEndLeaveProcessingJob:
-                            companySettings.ForEach(async i =>
-                            {
-                                LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
-                                await RunLeaveYearEndJobAsync(i, data);
-                            });
+                            LeaveYearEndCalculationKafkaModel data = JsonConvert.DeserializeObject<LeaveYearEndCalculationKafkaModel>(kafkaPayload.Message);
+                            await RunLeaveYearEndJobAsync(companySettings, data);
                             break;
                         case KafkaServiceName.NewRegistration:
-                            companySettings.ForEach(async i => await RunGenerateAttendanceAsync());
+                            await RunGenerateAttendanceAsync();
                             break;
                     }
                 }
@@ -173,10 +160,10 @@ namespace ServiceLayer.Code
             await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
         }
 
-        private async Task<List<CompanySetting>> LoadCompanySettings(DbConfigModal x)
+        private async Task<CompanySetting> LoadCompanySettings(DbConfigModal x)
         {
             _db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};");
-            List<CompanySetting> companySettings = _db.GetList<CompanySetting>(Procedures.Company_Setting_Get_All);
+            CompanySetting companySettings = _db.Get<CompanySetting>(Procedures.Company_Setting_Get_All);
 
             return await Task.FromResult(companySettings);
         }

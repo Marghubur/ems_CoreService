@@ -39,6 +39,8 @@ namespace OnlineDataBuilder.Controllers
         private readonly ILeaveRequestService _leaveRequestService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IRunLeaveEndYearService _runLeaveEndYearService;
+        private readonly RequestMicroservice _requestMicroservice;
+
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -49,7 +51,8 @@ namespace OnlineDataBuilder.Controllers
             IAttendanceService attendanceService,
             ILeaveRequestService leaveRequestService,
             FileLocationDetail fileLocationDetail,
-            IRunLeaveEndYearService runLeaveEndYearService)
+            IRunLeaveEndYearService runLeaveEndYearService,
+            RequestMicroservice requestMicroservice)
         {
             _logger = logger;
             _eMailManager = eMailManager;
@@ -62,6 +65,7 @@ namespace OnlineDataBuilder.Controllers
             _leaveRequestService = leaveRequestService;
             _fileLocationDetail = fileLocationDetail;
             _runLeaveEndYearService = runLeaveEndYearService;
+            _requestMicroservice = requestMicroservice;
         }
 
         [HttpPut("testError/{id}")]
@@ -181,7 +185,7 @@ namespace OnlineDataBuilder.Controllers
             _logger.LogInformation("Starting payrolljob.");
 
             // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
-            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+            await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
 
             return await Task.FromResult("Payroll ran successfully");
         }
@@ -201,7 +205,7 @@ namespace OnlineDataBuilder.Controllers
         private async Task RunPayrollAsync()
         {
             // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
-            await RequestMicroservice.PostRequest(MicroserviceRequest.Builder("", null));
+            await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
         }
 
         private async Task RunLeaveAccrualAsync()

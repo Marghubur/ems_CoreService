@@ -181,7 +181,7 @@ namespace ServiceLayer.Code
                     };
 
                     string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
-                    await _requestMicroservice.PotRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
+                    await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder(url, calculateSalaryDetailModal));
                 });
 
             };
