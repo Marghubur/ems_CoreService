@@ -237,7 +237,7 @@ namespace ServiceLayer.Code
 
             // await _payrollService.RunPayrollCycle(runDate.Value);
             var date = runDate.Value;
-            string url = $"{_microserviceRegistry.RunPayrollCycle}/{true}";
+            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
             await _requestMicroservice.GetRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url));
         }
 
