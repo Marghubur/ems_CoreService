@@ -1925,9 +1925,9 @@ namespace ServiceLayer.Code
                     var leaveDetail = leaveRequestDetail
                                         .Find(
                                                 x => x.FromDate.Date
-                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date, _currentSession.TimeZone)).TotalDays <= 0
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays <= 0
                                                     && x.ToDate.Date
-                                                        .Subtract(_timezoneConverter.ToUtcTime(item.AttendanceDate.Date, _currentSession.TimeZone)).TotalDays >= 0
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays >= 0
                                              );
 
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
