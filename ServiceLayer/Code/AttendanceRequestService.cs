@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
@@ -7,11 +8,13 @@ using EMailService.Modal;
 using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using OpenXmlPowerTools;
+using ModalLayer.Modal.Accounts;
+using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -105,8 +108,8 @@ namespace ServiceLayer.Code
 
             Attendance attendance = new Attendance
             {
-                ForMonth = attr.AttendanceDate.Month,
-                ForYear = attr.AttendanceDate.Year,
+                ForMonth = DateTime.Now.Month,
+                ForYear = DateTime.Now.Year,
                 ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
                 PageIndex = attr.PageIndex,
                 PresentDayStatus = filterId,
@@ -114,7 +117,7 @@ namespace ServiceLayer.Code
                 TotalDays = attr.TotalDays
             };
 
-            return await this.GetAttendenceRequestDataServive(attendance);
+            return await this.GetAttendanceRequestDataService(attendance);
         }
 
         public async Task<dynamic> RejectAttendanceService(List<DailyAttendance> dailyAttendances, int filterId = ApplicationConstants.Only)
@@ -124,8 +127,8 @@ namespace ServiceLayer.Code
 
             Attendance attendance = new Attendance
             {
-                ForMonth = attr.AttendanceDate.Month,
-                ForYear = attr.AttendanceDate.Year,
+                ForMonth = DateTime.Now.Month,
+                ForYear = DateTime.Now.Year,
                 ReportingManagerId = _currentSession.CurrentUserDetail.UserId,
                 PageIndex = attr.PageIndex,
                 PresentDayStatus = filterId,
@@ -133,7 +136,7 @@ namespace ServiceLayer.Code
                 TotalDays = attr.TotalDays
             };
 
-            return await this.GetAttendenceRequestDataServive(attendance);
+            return await this.GetAttendanceRequestDataService(attendance);
         }
 
         public async Task UpdateAttendanceDetail(List<DailyAttendance> dailyAttendances, ItemStatus status)
@@ -153,10 +156,7 @@ namespace ServiceLayer.Code
                     if (attendance == null)
                         throw new HiringBellException("Invalid attendance day selected");
 
-                    attendance.AttendanceStatus = (int)status;
-                    attendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
-                    attendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
-                    attendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
+                    await updateDailyAttendanceData(status, attendance, dailyAttendance.UserComment);
 
                     var Result = await _db.ExecuteAsync(Procedures.Attendance_Update_Request, new
                     {
@@ -165,6 +165,7 @@ namespace ServiceLayer.Code
                         attendance.ReviewerEmail,
                         attendance.ReviewerName,
                         attendance.AttendanceStatus,
+                        attendance.Comments,
                         _currentSession.CurrentUserDetail.UserId
                     }, true);
 
@@ -181,7 +182,7 @@ namespace ServiceLayer.Code
                         DeveloperName = dailyAttendance.EmployeeName,
                         FromDate = dailyAttendance.AttendanceDate,
                         ManagerName = dailyAttendance.ManagerName,
-                        Message = dailyAttendance.Comments,
+                        Message = dailyAttendance.UserComment,
                         RequestType = dailyAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
                         ToAddress = new List<string> { attendance.EmployeeEmail },
                         kafkaServiceName = KafkaServiceName.Attendance,
@@ -201,8 +202,37 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<dynamic> GetAttendenceRequestDataServive(Attendance attendance)
+        private async Task updateDailyAttendanceData(ItemStatus status, DailyAttendance attendance, string comment)
         {
+            attendance.AttendanceStatus = (int)status;
+            attendance.ReviewerId = _currentSession.CurrentUserDetail.UserId;
+            attendance.ReviewerEmail = _currentSession.CurrentUserDetail.EmailId;
+            attendance.ReviewerName = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName;
+
+            if (status == ItemStatus.Rejected)
+            {
+                var existingComments = new List<AttendanceComment>();
+                AttendanceComment attendanceComment = new AttendanceComment
+                {
+                    EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                    Email = _currentSession.CurrentUserDetail.EmailId,
+                    Name = _currentSession.CurrentUserDetail.FirstName + " " + _currentSession.CurrentUserDetail.LastName,
+                    Comment = comment
+                };
+
+                if (!string.IsNullOrEmpty(attendanceComment.Comment) && attendanceComment.Comment == "[]")
+                    existingComments = JsonConvert.DeserializeObject<List<AttendanceComment>>(attendance.Comments);
+
+                existingComments.Add(attendanceComment);
+                attendance.Comments = JsonConvert.SerializeObject(existingComments);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        public async Task<dynamic> GetAttendanceRequestDataService(Attendance attendance)
+        {
+            bool isWeeklyAttendance = true;
             if (attendance.ReportingManagerId == 0)
                 throw new HiringBellException("Invalid reporting manager");
 
@@ -212,20 +242,35 @@ namespace ServiceLayer.Code
             if (attendance.ForYear == 0)
                 throw new HiringBellException("Year is invalid");
 
-            var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1).AddMonths(-1);
-            var FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
-            var ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1), _currentSession.TimeZone);
+            DateTime FromDate, ToDate;
+            GetAttendanceFromAndToDate(attendance, out FromDate, out ToDate);
 
             var result = _db.GetList<DailyAttendance>(Procedures.Attendance_Requests_By_Filter, new
             {
                 attendance.ReportingManagerId,
                 FromDate,
-                ToDate
+                ToDate,
+                AttendanceStatus = attendance.PresentDayStatus
             });
 
             if (result.Count == 0)
                 return null;
 
+            List<AutoCompleteEmployees> autoCompleteEmployees = GetEmployeeAutoComplete(result);
+            if (isWeeklyAttendance)
+            {
+                var filteredAttendance = FilterAndPagingWeeklyAttendanceRecord(attendance, result);
+                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+            }
+            else
+            {
+                var filteredAttendance = FilterAndPagingDailyAttendanceRecord(attendance, result);
+                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+            }
+        }
+
+        private List<AutoCompleteEmployees> GetEmployeeAutoComplete(List<DailyAttendance> result)
+        {
             List<AutoCompleteEmployees> autoCompleteEmployees = new List<AutoCompleteEmployees>();
             result.ForEach(x =>
             {
@@ -240,14 +285,69 @@ namespace ServiceLayer.Code
                     });
                 }
             });
-            List<DailyAttendance> filteredAttendance = FilterAndPagingAttendanceRecord(attendance, result);
-            return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+            return autoCompleteEmployees;
         }
 
-        private List<DailyAttendance> FilterAndPagingAttendanceRecord(Attendance attendance, List<DailyAttendance> attendanceRequest)
+        private void GetAttendanceFromAndToDate(Attendance attendance, out DateTime FromDate, out DateTime ToDate)
+        {
+            FromDate = default;
+            ToDate = default;
+
+            if (attendance.TotalDays > 0)
+            {
+                var currentDate = DateTime.Now;
+                var date = new DateTime(currentDate.Year, currentDate.Month, 1);
+                ToDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+                FromDate = ToDate.AddDays(-1 * attendance.TotalDays);
+            }
+            else
+            {
+                var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1).AddMonths(-1);
+                FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
+                ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1), _currentSession.TimeZone);
+            }
+        }
+
+        private List<DailyAttendance> FilterAndPagingDailyAttendanceRecord(Attendance attendance, List<DailyAttendance> attendanceRequest)
         {
             int recordsPerPage = 10;
             int totalRecord = 0;
+            attendanceRequest = FilterAttendanceRecord(attendance, attendanceRequest);
+
+            totalRecord = attendanceRequest.Count;
+            if (attendance.PageIndex > 0)
+                attendanceRequest = attendanceRequest.Skip((attendance.PageIndex - 1) * recordsPerPage).Take(recordsPerPage).ToList();
+
+            attendanceRequest.ForEach(i => i.Total = totalRecord);
+            return attendanceRequest;
+        }
+
+        private Dictionary<long, List<DailyAttendance>> FilterAndPagingWeeklyAttendanceRecord(Attendance attendance, List<DailyAttendance> attendanceRequest)
+        {
+            int recordsPerPage = 10;
+            attendanceRequest = FilterAttendanceRecord(attendance, attendanceRequest);
+
+            Dictionary<long, List<DailyAttendance>> attendanceGroupedRequest = default;
+            if (attendance.PageIndex > 0)
+            {
+                var groupRecord = attendanceRequest.GroupBy(x => x.EmployeeId).SelectMany(i => i.OrderBy(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone))
+                .GroupBy(r => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(_timezoneConverter.ToTimeZoneDateTime(r.AttendanceDate, _currentSession.TimeZone), CalendarWeekRule.FirstDay, DayOfWeek.Monday)));
+                var currentPageAttendance = groupRecord.Skip((attendance.PageIndex - 1) * recordsPerPage).Take(recordsPerPage);
+                attendanceGroupedRequest = currentPageAttendance.ToDictionary(x => x.First().AttendanceId, x => x.ToList());
+                foreach (var record in attendanceGroupedRequest)
+                {
+                    record.Value.ForEach(x =>
+                    {
+                        x.Total = groupRecord.Count();
+                    });
+                }
+            }
+
+            return attendanceGroupedRequest;
+        }
+
+        private List<DailyAttendance> FilterAttendanceRecord(Attendance attendance, List<DailyAttendance> attendanceRequest)
+        {
             attendanceRequest = attendanceRequest.OrderBy(x => x.AttendanceDate).ToList();
             if (attendance.PresentDayStatus != 0)
                 attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceStatus == attendance.PresentDayStatus);
@@ -261,11 +361,6 @@ namespace ServiceLayer.Code
                 attendanceRequest = attendanceRequest.FindAll(x => x.AttendanceDate.Subtract(lastDate).TotalDays >= 0);
             }
 
-            totalRecord = attendanceRequest.Count;
-            if (attendance.PageIndex > 0)
-                attendanceRequest = attendanceRequest.Skip((attendance.PageIndex - 1) * recordsPerPage).Take(recordsPerPage).ToList();
-
-            attendanceRequest.ForEach(i => i.Total = totalRecord);
             return attendanceRequest;
         }
 

@@ -32,7 +32,7 @@ namespace ModalLayer.Modal.Accounts
         public bool IsUseInternationalWeekDays { set; get; } = true;
         public List<DayOfWeek> OfficialWeekOffDays { set; get; }
         public bool IsAccrualLeaveForNoticePeriodOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.
-        public bool IsAccrualLeaveForProbationPeriondOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.
+        public bool IsAccrualLeaveForProbationPeriodOnly { set; get; } // override all rule and allow leave for 2 or 3 months (define as per rule) leaves only.
         public int AttendanceSubmissionLimit { set; get; } = 2;
         public int LeaveAccrualRunCronDayOfMonth { set; get; }
         public string TimezoneName { set; get; }
@@ -41,5 +41,6 @@ namespace ModalLayer.Modal.Accounts
         public int ExcludePayrollFromJoinDate { get; set; }
         public string TimeDifferences { get; set; }
         public string StateName { get; set; }
+        public bool IsWeeklyAttendance { get; set; } = true;
     }
 }

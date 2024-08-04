@@ -60,6 +60,7 @@ namespace ModalLayer.Modal
         public int Total { get; set; }
         public int PageIndex { get; set; }
         public int TotalDays { get; set; }
+        public string UserComment { get; set; }
     }
 
 
