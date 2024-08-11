@@ -1059,7 +1059,7 @@ namespace ServiceLayer.Code
         private async Task GetDeclarationDetail(EmployeeCalculation eCal)
         {
             string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url, eCal));
+            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(_microserviceRequestBuilder.Build(url, eCal));
             if (response is null)
                 throw HiringBellException.ThrowBadRequest("fail to get response");
 
