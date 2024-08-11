@@ -135,6 +135,7 @@ namespace ems_CoreService
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
+            services.AddScoped<MicroserviceRequestBuilder>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
