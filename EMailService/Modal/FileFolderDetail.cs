@@ -1,13 +1,17 @@
-﻿namespace ModalLayer.Modal
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Microsoft.AspNetCore.Http;
+
+namespace FileManagerService.Model
 {
     public class FileFolderDetail
     {
-        public string FolderName { set; get; }
-        public string FileName { set; get; }
-        public string Location { set; get; }
-        public string IsFolder { set; get; }
-        public string FileExtension { set; get; }
-        public FileSystemType fileSystemType { set; get; }
-        public string CreatedOn { set; get; }
+        public string FolderPath { get; set; }
+        public List<Files> File { get; set; }
+        public IFormFileCollection FormFiles { get; set; }
+        public string OldFileName { get; set; }
+        public List<string> FileIds { get; set; }
+        public string Procedure { get; set; }
+        public int UserTypeId { get; set; }
+        public long UserId { get; set; }
     }
 }
