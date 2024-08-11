@@ -4,14 +4,15 @@ using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using DocMaker.ExcelMaker;
-using DocMaker.PdfService;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -21,6 +22,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -31,35 +34,35 @@ namespace ServiceLayer.Code
         private readonly IDb db;
         private readonly IFileService _fileService;
         private readonly CommonFilterService _commonFilterService;
-        private readonly ITimesheetService _timesheetService;
-        private readonly IFileMaker _iFileMaker;
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<OnlineDocumentService> _logger;
-        private readonly ExcelWriter _excelWriter;
         private readonly ITimezoneConverter _timezoneConverter;
-        public OnlineDocumentService(IDb db, IFileService fileService,
-            IFileMaker iFileMaker,
-            ExcelWriter excelWriter,
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
+
+        public OnlineDocumentService(IDb db,
+            IFileService fileService,
             ILogger<OnlineDocumentService> logger,
             CommonFilterService commonFilterService,
-            ITimesheetService timesheetService,
             CurrentSession currentSession,
             FileLocationDetail fileLocationDetail,
-            IBillService billService, ITimezoneConverter timezoneConverter)
+            IBillService billService,
+            ITimezoneConverter timezoneConverter,
+            IOptions<MicroserviceRegistry> microserviceOptions,
+            RequestMicroservice requestMicroservice)
         {
             this.db = db;
-            _excelWriter = excelWriter;
             _logger = logger;
             _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
-            _iFileMaker = iFileMaker;
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
-            _timesheetService = timesheetService;
             _timezoneConverter = timezoneConverter;
+            _microserviceRegistry = microserviceOptions.Value;
+            _requestMicroservice = requestMicroservice;
         }
 
         public string InsertOnlineDocument(CreatePageModel createPageModel)
@@ -237,7 +240,7 @@ namespace ServiceLayer.Code
 
                 DateTime firstDateOfMonth = new DateTime(generateBillFileDetail.ForYear, monthNumber, 1);
                 DateTime lastDateOfMonth = firstDateOfMonth.AddMonths(1).AddDays(-1);
-                
+
                 var Result = this.db.GetDataSet(Procedures.ExistingBill_GetById, new
                 {
                     AdminId = _currentSession.CurrentUserDetail.UserId,
@@ -266,7 +269,7 @@ namespace ServiceLayer.Code
                         var startDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, firstDateOfMonth);
                         var endDate = _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, lastDateOfMonth);
 
-                        currentMonthTimesheet = currentMonthTimesheet.Where(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) >= startDate 
+                        currentMonthTimesheet = currentMonthTimesheet.Where(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) >= startDate
                                                                           && _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.PresentDate) <= endDate).ToList();
                     }
                 }
@@ -606,7 +609,7 @@ namespace ServiceLayer.Code
             Files file = fileDetail.FirstOrDefault();
             try
             {
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     if (FileCollection.Count > 0 && fileDetail.Count > 0)
                     {
@@ -648,7 +651,15 @@ namespace ServiceLayer.Code
                             });
 
                             //string FolderPath = _fileLocationDetail.UserFolder;
-                            List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
+                            string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                            FileFolderDetail fileFolderDetail = new FileFolderDetail
+                            {
+                                FolderPath = ownerPath,
+                                FileDetail = fileDetail,
+                                OldFileName = file.UserId.ToString(),
+                            };
+                            List<Files> files = await SendFileWithData<List<Files>>(FileCollection, fileFolderDetail, url);
+                            //List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
                             if (files != null && files.Count > 0)
                             {
                                 Result = InsertFileDetails(fileDetail);
@@ -705,6 +716,147 @@ namespace ServiceLayer.Code
             //dataSet.Tables.Add(table);
 
             return this.db.GetDataSet(ApplicationConstants.InserUserFileDetail, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
+        }
+
+        private async Task<T> SendFileWithData<T>(IFormFileCollection files, dynamic fileFolderDetail, string url)
+        {
+            using (var client = new HttpClient())
+            {
+                // Create the MultipartFormDataContent
+                var content = new MultipartFormDataContent();
+
+                // Add files to the request
+                foreach (var file in files)
+                {
+                    var fileContent = new StreamContent(file.OpenReadStream());
+                    fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
+                    content.Add(fileContent, "files", file.FileName);
+                }
+
+                // Add additional data to the request
+                var jsonData = JsonConvert.SerializeObject(fileFolderDetail);
+                content.Add(new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json"), "data");
+
+                client.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
+                DbConfigModal dbConfigModal = DiscretConnectionString(_currentSession.LocalConnectionString);
+                client.DefaultRequestHeaders.Add("database", JsonConvert.SerializeObject(dbConfigModal));
+                client.DefaultRequestHeaders.Add("companyCode", _currentSession.CompanyCode);
+
+                try
+                {
+                    var response = await client.PostAsync(url, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return await GetResponseBody<T>(response);
+                    }
+                    else
+                    {
+                        throw new HiringBellException("Invalid response");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(ex.Message);
+                }
+                // Send the request
+            }
+        }
+
+        private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)
+        {
+            try
+            {
+                string response = await httpResponseMessage.Content.ReadAsStringAsync();
+                if (httpResponseMessage.Content.Headers.ContentType.MediaType != "application/json")
+                {
+                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+                }
+
+                MicroserviceResponse<T> apiResponse = JsonConvert.DeserializeObject<MicroserviceResponse<T>>(response);
+                if (apiResponse == null || apiResponse.ResponseBody == null)
+                {
+                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+                }
+
+                return apiResponse.ResponseBody;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private DbConfigModal DiscretConnectionString(string cs)
+        {
+            DbConfigModal dbConfigModal = new DbConfigModal();
+            string[] array = cs.Split(';');
+            if (array.Length > 1)
+            {
+                string[] array2 = array;
+                foreach (string text in array2)
+                {
+                    string[] array3 = text.Split('=');
+                    if (array3[0].ToLower() == "OrganizationCode".ToLower())
+                    {
+                        dbConfigModal.OrganizationCode = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Code".ToLower())
+                    {
+                        dbConfigModal.Code = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Schema".ToLower())
+                    {
+                        dbConfigModal.Schema = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "DatabaseName".ToLower())
+                    {
+                        dbConfigModal.DatabaseName = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Server".ToLower())
+                    {
+                        dbConfigModal.Server = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Port".ToLower())
+                    {
+                        dbConfigModal.Port = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Database".ToLower())
+                    {
+                        dbConfigModal.Database = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "user id")
+                    {
+                        dbConfigModal.UserId = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "Password".ToLower())
+                    {
+                        dbConfigModal.Password = array3[1];
+                    }
+                    else if (array3[0].ToLower() == "connection timeout")
+                    {
+                        dbConfigModal.ConnectionTimeout = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
+                    }
+                    else if (array3[0].ToLower() == "connection lifetime")
+                    {
+                        dbConfigModal.ConnectionLifetime = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
+                    }
+                    else if (array3[0].ToLower() == "min pool size")
+                    {
+                        dbConfigModal.MinPoolSize = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
+                    }
+                    else if (array3[0].ToLower() == "max pool size")
+                    {
+                        dbConfigModal.MaxPoolSize = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
+                    }
+                    else if (array3[0].ToLower() == "Pooling".ToLower())
+                    {
+                        dbConfigModal.Pooling = array3[1] != null && Convert.ToBoolean(array3[1]);
+                    }
+                }
+            }
+
+            return dbConfigModal;
         }
     }
 }
