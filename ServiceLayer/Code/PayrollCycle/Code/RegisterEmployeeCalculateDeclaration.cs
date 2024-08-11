@@ -78,7 +78,13 @@ namespace ServiceLayer.Code.PayrollCycle.Code
                 try
                 {
                     string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{employee.EmployeeDeclarationId}";
-                    await _requestMicroservice.PutRequest<string>(MicroserviceRequest.Builder(url, employeeDeclarations));
+                    await _requestMicroservice.PutRequest<string>(MicroserviceRequest.Builder(
+                        url,
+                        employeeDeclarations,
+                        _currentSession.Authorization,
+                        _currentSession.CompanyCode,
+                        null
+                        ));
                 }
                 catch
                 {

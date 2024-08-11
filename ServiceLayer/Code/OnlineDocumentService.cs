@@ -10,6 +10,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
 using ems_CommonUtility.MicroserviceHttpRequest;
 using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -650,7 +651,6 @@ namespace ServiceLayer.Code
                                 }
                             });
 
-                            //string FolderPath = _fileLocationDetail.UserFolder;
                             string url = $"{_microserviceRegistry.SaveApplicationFile}";
                             FileFolderDetail fileFolderDetail = new FileFolderDetail
                             {
@@ -658,8 +658,20 @@ namespace ServiceLayer.Code
                                 FileDetail = fileDetail,
                                 OldFileName = file.UserId.ToString(),
                             };
-                            List<Files> files = await SendFileWithData<List<Files>>(FileCollection, fileFolderDetail, url);
-                            //List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
+
+                            var microserviceRequest = MicroserviceRequest.Builder(url);
+                            microserviceRequest
+                            .SetFiles(FileCollection)
+                            .SetPayload(fileFolderDetail)
+                            .SetConnectionString(_currentSession.LocalConnectionString)
+                            .SetCompanyCode(_currentSession.CompanyCode)
+                            .SetToken(_currentSession.Authorization);
+
+
+
+                            //List<Files> files = await SendFileWithData<List<Files>>(FileCollection, fileFolderDetail, url);
+                            List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
                             if (files != null && files.Count > 0)
                             {
                                 Result = InsertFileDetails(fileDetail);
@@ -716,51 +728,6 @@ namespace ServiceLayer.Code
             //dataSet.Tables.Add(table);
 
             return this.db.GetDataSet(ApplicationConstants.InserUserFileDetail, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
-        }
-
-        private async Task<T> SendFileWithData<T>(IFormFileCollection files, dynamic fileFolderDetail, string url)
-        {
-            using (var client = new HttpClient())
-            {
-                // Create the MultipartFormDataContent
-                var content = new MultipartFormDataContent();
-
-                // Add files to the request
-                foreach (var file in files)
-                {
-                    var fileContent = new StreamContent(file.OpenReadStream());
-                    fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
-                    content.Add(fileContent, "files", file.FileName);
-                }
-
-                // Add additional data to the request
-                var jsonData = JsonConvert.SerializeObject(fileFolderDetail);
-                content.Add(new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json"), "data");
-
-                client.DefaultRequestHeaders.Add("Authorization", _currentSession.Authorization);
-                DbConfigModal dbConfigModal = DiscretConnectionString(_currentSession.LocalConnectionString);
-                client.DefaultRequestHeaders.Add("database", JsonConvert.SerializeObject(dbConfigModal));
-                client.DefaultRequestHeaders.Add("companyCode", _currentSession.CompanyCode);
-
-                try
-                {
-                    var response = await client.PostAsync(url, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return await GetResponseBody<T>(response);
-                    }
-                    else
-                    {
-                        throw new HiringBellException("Invalid response");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
-                // Send the request
-            }
         }
 
         private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)

@@ -1,12 +1,13 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace FileManagerService.Model
 {
     public class FileFolderDetail
     {
         public string FolderPath { get; set; }
-        public List<Files> File { get; set; }
+        public List<Files> FileDetail { get; set; }
         public IFormFileCollection FormFiles { get; set; }
         public string OldFileName { get; set; }
         public List<string> FileIds { get; set; }
