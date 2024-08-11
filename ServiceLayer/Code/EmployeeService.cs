@@ -731,12 +731,7 @@ namespace ServiceLayer.Code
             if (resultSet.Tables[4].Rows.Count != 1)
                 throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin.");
 
-            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
-
-            if (employeeDetail.EmployeeUid > 0)
-                employeeCalculation.Doj = employeeDetail.CreatedOn;
-            else
-                employeeCalculation.Doj = DateTime.UtcNow;
+            ConvertAndGetEmployeeDetails(employeeCalculation, resultSet);
 
             // check if salary group changed
             //if (employeeDetail.SalaryGroupId != employeeCalculation.employee.SalaryGroupId)
@@ -751,6 +746,68 @@ namespace ServiceLayer.Code
             employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
 
             // build and bind company setting
+            BuildAndBindCompanySetting(employeeCalculation, resultSet);
+
+            // getting professional tax detail based on company id
+            GetProTaxAndSurchargeByCompId(employeeCalculation, resultSet);
+
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = GetEmployeeEmailMobileCheck(employeeCalculation, resultSet);
+
+            employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
+
+            _logger.LogInformation("Leaving method: GetEmployeeDetail");
+            return employeeEmailMobileCheck;
+        }
+
+        private void ConvertAndGetEmployeeDetails(EmployeeCalculation employeeCalculation, DataSet resultSet)
+        {
+            Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
+
+            if (employeeDetail.EmployeeUid > 0)
+                employeeCalculation.Doj = employeeDetail.CreatedOn;
+            else
+                employeeCalculation.Doj = DateTime.UtcNow;
+
+            if (employeeDetail != null)
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
+            }
+            else
+            {
+                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
+                employeeCalculation.employee.EmpProfDetailUid = -1;
+            }
+        }
+
+        private EmployeeEmailMobileCheck GetEmployeeEmailMobileCheck(EmployeeCalculation employeeCalculation, DataSet resultSet)
+        {
+            // got duplication email, mobile or employee id if any
+            EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
+            if (employeeEmailMobileCheck.EmailCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
+
+            if (employeeEmailMobileCheck.MobileCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
+            return employeeEmailMobileCheck;
+        }
+
+        private void GetProTaxAndSurchargeByCompId(EmployeeCalculation employeeCalculation, DataSet resultSet)
+        {
+            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[6]);
+
+            if (employeeCalculation.ptaxSlab.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
+
+            // getting surcharges slab detail based on company id
+            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[7]);
+
+            if (employeeCalculation.surchargeSlabs.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
+        }
+
+        private void BuildAndBindCompanySetting(EmployeeCalculation employeeCalculation, DataSet resultSet)
+        {
             employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
 
             if (employeeCalculation.companySetting.FinancialYear == 0)
@@ -770,43 +827,6 @@ namespace ServiceLayer.Code
                 employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
 
             employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
-
-            // got duplication email, mobile or employee id if any
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
-
-            // getting professional tax detail based on company id
-            employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[6]);
-
-            if (employeeCalculation.ptaxSlab.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
-
-            // getting surcharges slab detail based on company id
-            employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[7]);
-
-            if (employeeCalculation.surchargeSlabs.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
-
-            if (employeeDetail != null)
-            {
-                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-                employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
-            }
-            else
-            {
-                employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-                employeeCalculation.employee.EmpProfDetailUid = -1;
-            }
-
-            if (employeeEmailMobileCheck.EmailCount > 0)
-                throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
-
-            if (employeeEmailMobileCheck.MobileCount > 0)
-                throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
-
-            employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
-
-            _logger.LogInformation("Leaving method: GetEmployeeDetail");
-            return employeeEmailMobileCheck;
         }
 
         private EmployeeEmailMobileCheck GetEmployeesDetail(EmployeeCalculation employeeCalculation)
@@ -1861,7 +1881,7 @@ namespace ServiceLayer.Code
         {
             int i = 0;
             int skipIndex = 0;
-            int chunkSize = 2;
+            int chunkSize = 50;
             while (i < employeeData.Count)
             {
                 var emps = employeeData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
@@ -1918,6 +1938,7 @@ namespace ServiceLayer.Code
                         FileInfo fileInfo = new FileInfo(file.FileName);
                         if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
                         {
+                            ms.Seek(0, SeekOrigin.Begin);
                             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
                             using (var reader = ExcelReaderFactory.CreateReader(ms))
                             {
@@ -1985,22 +2006,37 @@ namespace ServiceLayer.Code
                                     switch (TypeName)
                                     {
                                         case nameof(Boolean):
-                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, default(bool));
                                             break;
                                         case nameof(Int32):
-                                            x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, 0);
                                             break;
                                         case nameof(Int64):
-                                            x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToInt64(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, 0);
                                             break;
                                         case nameof(Decimal):
-                                            x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, Convert.ToDecimal(dr[x.Name]));
+                                            else
+                                                x.SetValue(t, Decimal.Zero);
                                             break;
                                         case nameof(String):
-                                            x.SetValue(t, dr[x.Name].ToString());
+                                            if (dr[x.Name] != DBNull.Value)
+                                                x.SetValue(t, dr[x.Name].ToString());
+                                            else
+                                                x.SetValue(t, string.Empty);
                                             break;
                                         case nameof(DateTime):
-                                            if (dr[x.Name].ToString() != null)
+                                            if (dr[x.Name] == DBNull.Value || dr[x.Name].ToString() != null)
                                             {
                                                 date = Convert.ToDateTime(dr[x.Name].ToString());
                                                 date = DateTime.SpecifyKind(date, DateTimeKind.Utc);

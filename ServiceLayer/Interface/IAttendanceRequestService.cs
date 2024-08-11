@@ -12,6 +12,6 @@ namespace ServiceLayer.Interface
         Task<dynamic> RejectAttendanceService(List<DailyAttendance> dailyAttendances, int filterId = ApplicationConstants.Only);
         RequestModel GetRequestPageData(long employeeId, int filterId);
         List<Attendance> ReAssigneAttendanceService(AttendenceDetail attendanceDetail);
-        Task<dynamic> GetAttendenceRequestDataServive(Attendance attendance);
+        Task<dynamic> GetAttendanceRequestDataService(Attendance attendance);
     }
 }

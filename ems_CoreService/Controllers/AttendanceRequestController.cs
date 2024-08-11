@@ -125,7 +125,7 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                var result = await _requestService.GetAttendenceRequestDataServive(attendance);
+                var result = await _requestService.GetAttendanceRequestDataService(attendance);
                 return BuildResponse(result);
             }
             catch (Exception ex)
