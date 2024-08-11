@@ -185,7 +185,7 @@ namespace OnlineDataBuilder.Controllers
             _logger.LogInformation("Starting payrolljob.");
 
             // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
-            await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
+            //await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
 
             return await Task.FromResult("Payroll ran successfully");
         }
@@ -205,7 +205,7 @@ namespace OnlineDataBuilder.Controllers
         private async Task RunPayrollAsync()
         {
             // await _payrollService.RunPayrollCycle(DateTime.UtcNow);
-            await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
+            //await _requestMicroservice.PostRequest<string>(MicroserviceRequest.Builder("", null));
         }
 
         private async Task RunLeaveAccrualAsync()
