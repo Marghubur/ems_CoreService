@@ -24,5 +24,7 @@
         public static int DefaultLeavePlanId = 1;
         public static int DefaultSalaryGroupId = 1;
         public static int DefaultDesignation = 25;
+
+        public static string EmstumFileService = "emstum";
     }
 }

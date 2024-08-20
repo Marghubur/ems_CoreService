@@ -1,4 +1,5 @@
 ﻿using EMailService.Modal;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -25,7 +26,9 @@ namespace ServiceLayer.Interface
         Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances);
         Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
         Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel);
-        Task<Dictionary<int, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel);
+        Task<Dictionary<long, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel);
         Task GenerateMonthlyAttendance();
+        Task UploadMonthlyAttendanceExcelService(IFormFileCollection files);
+        Task UploadDailyBiometricAttendanceExcelService(IFormFileCollection files);
     }
 }

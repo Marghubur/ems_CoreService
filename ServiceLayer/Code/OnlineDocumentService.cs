@@ -651,27 +651,28 @@ namespace ServiceLayer.Code
                                 }
                             });
 
-                            string url = $"{_microserviceRegistry.SaveApplicationFile}";
-                            FileFolderDetail fileFolderDetail = new FileFolderDetail
-                            {
-                                FolderPath = ownerPath,
-                                FileDetail = fileDetail,
-                                OldFileName = file.UserId.ToString(),
-                            };
+                            // ---- save document in by another microservice call ------
+                            //string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                            //FileFolderDetail fileFolderDetail = new FileFolderDetail
+                            //{
+                            //    FolderPath = ownerPath,
+                            //    FileDetail = fileDetail,
+                            //    OldFileName = file.UserId.ToString(),
+                            //    ServiceName = LocalConstants.EmstumFileService
+                            //};
 
-                            var microserviceRequest = MicroserviceRequest.Builder(url);
-                            microserviceRequest
-                            .SetFiles(FileCollection)
-                            .SetPayload(fileFolderDetail)
-                            .SetConnectionString(_currentSession.LocalConnectionString)
-                            .SetCompanyCode(_currentSession.CompanyCode)
-                            .SetToken(_currentSession.Authorization);
+                            //var microserviceRequest = MicroserviceRequest.Builder(url);
+                            //microserviceRequest
+                            //.SetFiles(FileCollection)
+                            //.SetPayload(fileFolderDetail)
+                            //.SetConnectionString(_currentSession.LocalConnectionString)
+                            //.SetCompanyCode(_currentSession.CompanyCode)
+                            //.SetToken(_currentSession.Authorization);
 
+                            //List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+                            
 
-
-                            //List<Files> files = await SendFileWithData<List<Files>>(FileCollection, fileFolderDetail, url);
-                            List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-
+                            List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
                             if (files != null && files.Count > 0)
                             {
                                 Result = InsertFileDetails(fileDetail);
@@ -728,102 +729,6 @@ namespace ServiceLayer.Code
             //dataSet.Tables.Add(table);
 
             return this.db.GetDataSet(ApplicationConstants.InserUserFileDetail, new { InsertFileJsonData = JsonConvert.SerializeObject(fileInfo) });
-        }
-
-        private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)
-        {
-            try
-            {
-                string response = await httpResponseMessage.Content.ReadAsStringAsync();
-                if (httpResponseMessage.Content.Headers.ContentType.MediaType != "application/json")
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
-                }
-
-                MicroserviceResponse<T> apiResponse = JsonConvert.DeserializeObject<MicroserviceResponse<T>>(response);
-                if (apiResponse == null || apiResponse.ResponseBody == null)
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
-                }
-
-                return apiResponse.ResponseBody;
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private DbConfigModal DiscretConnectionString(string cs)
-        {
-            DbConfigModal dbConfigModal = new DbConfigModal();
-            string[] array = cs.Split(';');
-            if (array.Length > 1)
-            {
-                string[] array2 = array;
-                foreach (string text in array2)
-                {
-                    string[] array3 = text.Split('=');
-                    if (array3[0].ToLower() == "OrganizationCode".ToLower())
-                    {
-                        dbConfigModal.OrganizationCode = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Code".ToLower())
-                    {
-                        dbConfigModal.Code = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Schema".ToLower())
-                    {
-                        dbConfigModal.Schema = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "DatabaseName".ToLower())
-                    {
-                        dbConfigModal.DatabaseName = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Server".ToLower())
-                    {
-                        dbConfigModal.Server = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Port".ToLower())
-                    {
-                        dbConfigModal.Port = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Database".ToLower())
-                    {
-                        dbConfigModal.Database = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "user id")
-                    {
-                        dbConfigModal.UserId = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "Password".ToLower())
-                    {
-                        dbConfigModal.Password = array3[1];
-                    }
-                    else if (array3[0].ToLower() == "connection timeout")
-                    {
-                        dbConfigModal.ConnectionTimeout = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
-                    }
-                    else if (array3[0].ToLower() == "connection lifetime")
-                    {
-                        dbConfigModal.ConnectionLifetime = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
-                    }
-                    else if (array3[0].ToLower() == "min pool size")
-                    {
-                        dbConfigModal.MinPoolSize = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
-                    }
-                    else if (array3[0].ToLower() == "max pool size")
-                    {
-                        dbConfigModal.MaxPoolSize = ((array3[1] != null) ? Convert.ToInt32(array3[1]) : 0);
-                    }
-                    else if (array3[0].ToLower() == "Pooling".ToLower())
-                    {
-                        dbConfigModal.Pooling = array3[1] != null && Convert.ToBoolean(array3[1]);
-                    }
-                }
-            }
-
-            return dbConfigModal;
         }
     }
 }

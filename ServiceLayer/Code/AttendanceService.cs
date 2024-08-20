@@ -9,8 +9,8 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using ems_CommonUtility.KafkaService.interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
@@ -18,6 +18,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -35,7 +36,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IKafkaNotificationService _kafkaNotificationService;
         private readonly ILogger<AttendanceService> _logger;
-
+        private readonly ICommonService _commonService;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -43,7 +44,8 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
             IKafkaNotificationService kafkaNotificationService,
-            ILogger<AttendanceService> logger)
+            ILogger<AttendanceService> logger,
+            ICommonService commonService)
         {
             _db = db;
             _companyService = companyService;
@@ -53,6 +55,7 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
             _kafkaNotificationService = kafkaNotificationService;
             _logger = logger;
+            _commonService = commonService;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -536,7 +539,7 @@ namespace ServiceLayer.Code
 
             }
 
-            attendanceDetailBuildModal.calendars = Converter.ToList<Calendar>(Result.Tables[2]);
+            attendanceDetailBuildModal.calendars = Converter.ToList<ModalLayer.Calendar>(Result.Tables[2]);
             return attendanceDetailBuildModal;
         }
 
@@ -1826,7 +1829,7 @@ namespace ServiceLayer.Code
             return dailyAttendances;
         }
 
-        private bool CheckIsHoliday(DateTime date, List<Calendar> calendars)
+        private bool CheckIsHoliday(DateTime date, List<ModalLayer.Calendar> calendars)
         {
             bool flag = false;
 
@@ -1891,13 +1894,23 @@ namespace ServiceLayer.Code
                                                         .ToDictionary(a => a.Key, a => a.ToList());
         }
 
-        public async Task<Dictionary<int, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel)
+        public async Task<Dictionary<long, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel)
         {
             (DateTime fromDate, DateTime toDate) = await BuildDates();
             var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
-            return dailyAttendances.OrderBy(x => x.AttendanceDate)
-                                    .GroupBy(x => x.WeekOfYear)
-                                    .ToDictionary(a => a.Key, a => a.ToList());
+            var groupRecord = dailyAttendances.OrderBy(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone))
+                .GroupBy(r => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(_timezoneConverter.ToTimeZoneDateTime(r.AttendanceDate, _currentSession.TimeZone), CalendarWeekRule.FirstDay, DayOfWeek.Monday));
+
+            var attendanceGroupedRequest = groupRecord.ToDictionary(x => x.First().AttendanceId, x => x.ToList());
+            foreach (var record in attendanceGroupedRequest)
+            {
+                record.Value.ForEach(x =>
+                {
+                    x.Total = groupRecord.Count();
+                });
+            }
+
+            return attendanceGroupedRequest;
         }
 
         private async Task<List<DailyAttendance>> GetFilteredDetailAttendanceService(FilterModel filterModel, DateTime fromDate, DateTime toDate)
@@ -1939,6 +1952,237 @@ namespace ServiceLayer.Code
             return await Task.FromResult(dailyAttendances);
         }
 
+        public async Task UploadMonthlyAttendanceExcelService(IFormFileCollection files)
+        {
+            var attendanceData = await _commonService.ReadExcelData(files);
+            var monthlyRecord = GetMonthlyAttendanceRecord(attendanceData);
+            List<DailyAttendance> attendances = GenerateMonthlyAttendanceRecord(monthlyRecord);
+
+            await UploadBulkDailyAttendanceDetail(attendances);
+        }
+
+        private List<MonthlyAttendanceDetail> GetMonthlyAttendanceRecord(DataTable dataTable)
+        {
+            List<MonthlyAttendanceDetail> monthlyAttendanceDetail = new List<MonthlyAttendanceDetail>();
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var attendance = new MonthlyAttendanceDetail
+                {
+                    EmployeeId = long.Parse(row["EmployeeId"].ToString()),
+                    Name = row["Name"].ToString(),
+                    MonthYear = DateTime.SpecifyKind(Convert.ToDateTime(row["MonthYear"].ToString()), DateTimeKind.Unspecified)
+                };
+
+                int daysInMonth = DateTime.DaysInMonth(attendance.MonthYear.Year, attendance.MonthYear.Month);
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    string dayColumnName = day.ToString();
+                    if (dataTable.Columns.Contains(dayColumnName))
+                    {
+                        var dayValue = row[dayColumnName].ToString();
+                        attendance.DailyData.Add(day, dayValue);
+                    }
+                }
+
+                monthlyAttendanceDetail.Add(attendance);
+            }
+
+            return monthlyAttendanceDetail;
+        }
+
+        private List<DailyAttendance> GenerateMonthlyAttendanceRecord(List<MonthlyAttendanceDetail> monthlyAttendanceDetails)
+        {
+            List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
+
+            monthlyAttendanceDetails.ForEach(x =>
+            {
+                if (x.EmployeeId == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee id");
+
+                if (x.MonthYear == null)
+                    throw HiringBellException.ThrowBadRequest("Invalid Month year");
+
+                foreach (var item in x.DailyData)
+                {
+                    var attendanceDate = new DateTime(x.MonthYear.Year, x.MonthYear.Month, item.Key, 0, 0, 0, DateTimeKind.Unspecified);
+                    var dailyAttendance = new DailyAttendance
+                    {
+                        EmployeeId = x.EmployeeId,
+                        EmployeeName = x.Name,
+                        TotalMinutes = 480,
+                        LogOff = "00:00:00",
+                        LogOn = "00:00:00",
+                        Comments = "[]",
+                        AttendanceStatus = GetAttendanceDayStatus(item.Value),
+                        WorkTypeId = WorkType.WORKFROMOFFICE,
+                        WeekOfYear = ISOWeek.GetWeekOfYear(attendanceDate),
+                        AttendanceDate = _timezoneConverter.ToUtcTime(attendanceDate, _currentSession.TimeZone),
+                        IsOnLeave = false,
+                        LeaveId = 0
+                    };
+
+                    dailyAttendances.Add(dailyAttendance);
+                }
+            });
+
+            return dailyAttendances;
+        }
+
+        private int GetAttendanceDayStatus(string value)
+        {
+            int status = 0;
+            if (string.IsNullOrEmpty(value))
+                status = (int)AttendanceEnum.WeekOff;
+            else if (value.Equals("p", StringComparison.OrdinalIgnoreCase))
+                status = (int)AttendanceEnum.Approved;
+            else if (value.Equals("a", StringComparison.OrdinalIgnoreCase))
+                status = (int)AttendanceEnum.NotSubmitted;
+
+            return status;
+        }
+
+        private async Task UploadBulkDailyAttendanceDetail(List<DailyAttendance> attendances)
+        {
+            var records = (from n in attendances
+                           select new
+                           {
+                               n.AttendanceId,
+                               n.EmployeeId,
+                               n.EmployeeName,
+                               n.EmployeeEmail,
+                               n.ReviewerId,
+                               n.ReviewerName,
+                               n.ReviewerEmail,
+                               n.ProjectId,
+                               n.TaskId,
+                               n.TaskType,
+                               n.LogOn,
+                               n.LogOff,
+                               n.TotalMinutes,
+                               n.Comments,
+                               n.AttendanceStatus,
+                               n.WeekOfYear,
+                               n.AttendanceDate,
+                               WorkTypeId = (int)n.WorkTypeId,
+                               n.IsOnLeave,
+                               n.LeaveId,
+                               AdminId = _currentSession.CurrentUserDetail.UserId
+                           }).ToList();
+
+            var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INSERT, records, true);
+
+            if (result != records.Count)
+                throw HiringBellException.ThrowBadRequest("Fail to insert the record");
+        }
+
+        public async Task UploadDailyBiometricAttendanceExcelService(IFormFileCollection files)
+        {
+            var dailyAttendanceData = await _commonService.ReadExcelData(files);
+            var attendanceRecord = GetDailyAttendanceRecord(dailyAttendanceData);
+            List<DailyAttendance> attendances = GenerateDailyAttendanceRecord(attendanceRecord);
+
+            await UploadBulkDailyAttendanceDetail(attendances);
+        }
+
+        private List<DailyAttendance> GenerateDailyAttendanceRecord(List<DailyBiometricAttendance> dailyBiometricAttendances)
+        {
+            List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
+
+            dailyBiometricAttendances.ForEach(x =>
+            {
+                if (x.EmployeeId == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee id");
+
+                if (x.Date == null)
+                    throw HiringBellException.ThrowBadRequest("Invalid date passed");
+
+                var dailyAttendance = new DailyAttendance
+                {
+                    EmployeeId = x.EmployeeId,
+                    EmployeeName = x.Name,
+                    TotalMinutes = x.TotalWorkingMinutes,
+                    LogOff = ConvertPunchTime(x.Punch_Out),
+                    LogOn = ConvertPunchTime(x.Punch_In),
+                    Comments = "[]",
+                    AttendanceStatus = (int)AttendanceEnum.Approved,
+                    WorkTypeId = WorkType.WORKFROMOFFICE,
+                    WeekOfYear = ISOWeek.GetWeekOfYear(x.Date),
+                    AttendanceDate = _timezoneConverter.ToUtcTime(x.Date, _currentSession.TimeZone),
+                    IsOnLeave = false,
+                    LeaveId = 0
+                };
+
+                dailyAttendances.Add(dailyAttendance);
+            });
+
+            return dailyAttendances;
+        }
+
+        private string ConvertPunchTime(string punchTime)
+        {
+            TimeSpan timeSpan = TimeSpan.Parse(punchTime);
+            return timeSpan.ToString(@"hh\:mm\:ss");
+        }
+
+        private int GetWorkingMinute(string punchIn, string punchOut)
+        {
+            TimeSpan startTime = TimeSpan.Parse(punchIn);
+            TimeSpan endTime = TimeSpan.Parse(punchOut);
+
+            return (int)(endTime - startTime).TotalMinutes;
+        }
+
+        private List<DailyBiometricAttendance> GetDailyAttendanceRecord(DataTable dataTable)
+        {
+            var dailyBiometricAttendances = new List<DailyBiometricAttendance>();
+            var headers = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName).ToList();
+            var punchColumnsIndex = new List<int>();
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var headerValue = headers[i].ToString();
+                if (headerValue.Contains("Punch_In", StringComparison.OrdinalIgnoreCase) || headerValue.Contains("Punch_Out", StringComparison.OrdinalIgnoreCase))
+                    punchColumnsIndex.Add(i);
+            }
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var dailyBiometricAttendance = new DailyBiometricAttendance
+                {
+                    EmployeeId = long.Parse(row["EmployeeId"].ToString()),
+                    Name = row["Name"].ToString(),
+                    Date = DateTime.SpecifyKind(Convert.ToDateTime(row["Date"].ToString()), DateTimeKind.Unspecified)
+                };
+
+                for (int j = 0; j < punchColumnsIndex.Count; j += 2)
+                {
+                    if (j + 1 >= punchColumnsIndex.Count)
+                        break;
+
+                    int punchInIndex = punchColumnsIndex[j];
+                    int punchOutIndex = punchColumnsIndex[j + 1];
+
+                    var punchInValue = row[punchInIndex].ToString();
+                    var punchOutValue = row[punchOutIndex].ToString();
+
+                    dailyBiometricAttendance.PunchTimes.Add(new PunchTime
+                    {
+                        Punch_In = punchInValue,
+                        Punch_Out = punchOutValue
+                    });
+
+                    dailyBiometricAttendance.TotalWorkingMinutes += GetWorkingMinute(punchInValue, punchOutValue);
+                }
+
+                dailyBiometricAttendance.Punch_In = dailyBiometricAttendance.PunchTimes[0].Punch_In;
+                dailyBiometricAttendance.Punch_Out = dailyBiometricAttendance.PunchTimes.Last().Punch_Out;
+
+
+                dailyBiometricAttendances.Add(dailyBiometricAttendance);
+            }
+
+            return dailyBiometricAttendances;
+        }
         #endregion
     }
 }

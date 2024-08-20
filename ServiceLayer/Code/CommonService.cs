@@ -1,13 +1,21 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -99,5 +107,227 @@ namespace ServiceLayer.Code
                 ComponentCatagoryId = x.ComponentCatagoryId
             }));
         }
+
+        public async Task<DataTable> ReadExcelData(IFormFileCollection files)
+        {
+            DataTable dataTable = null;
+
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    foreach (IFormFile file in files)
+                    {
+                        await file.CopyToAsync(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        FileInfo fileInfo = new FileInfo(file.FileName);
+                        if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
+                        {
+                            ms.Seek(0, SeekOrigin.Begin);
+                            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                            using (var reader = ExcelReaderFactory.CreateReader(ms))
+                            {
+                                var result = reader.AsDataSet(new ExcelDataSetConfiguration
+                                {
+                                    ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                                    {
+                                        UseHeaderRow = true
+                                    }
+                                });
+
+                                dataTable = result.Tables[0];
+                            }
+                        }
+                        else
+                        {
+                            throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return dataTable;
+        }
+
+        public async Task<List<T>> ReadExcelData<T>(IFormFileCollection files)
+        {
+            DataTable dataTable = null;
+            List<T> data = new List<T>();
+
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    foreach (IFormFile file in files)
+                    {
+                        await file.CopyToAsync(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        FileInfo fileInfo = new FileInfo(file.FileName);
+                        if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
+                        {
+                            ms.Seek(0, SeekOrigin.Begin);
+                            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                            using (var reader = ExcelReaderFactory.CreateReader(ms))
+                            {
+                                var result = reader.AsDataSet(new ExcelDataSetConfiguration
+                                {
+                                    ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                                    {
+                                        UseHeaderRow = true
+                                    }
+                                });
+
+                                dataTable = result.Tables[0];
+
+                                data = MappedDate<T>(dataTable);
+                            }
+                        }
+                        else
+                        {
+                            throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return data;
+        }
+
+        private List<T> MappedDate<T>(DataTable table)
+        {
+            DateTime defaultDate = new DateTime(1976, 1, 1);
+            List<T> items = new List<T>();
+
+            try
+            {
+                List<PropertyInfo> props = typeof(T).GetProperties().ToList();
+                List<string> fieldNames = ValidateHeaders(table, props); // Ensure headers are validated.
+
+                foreach (DataRow dr in table.Rows)
+                {
+                    T t = (T)Activator.CreateInstance(typeof(T)); ;
+
+                    foreach (var prop in props)
+                    {
+                        if (table.Columns.Contains(prop.Name))
+                        {
+                            object value = dr[prop.Name];
+
+                            if (value == DBNull.Value)
+                            {
+                                value = prop.PropertyType.IsValueType ? Activator.CreateInstance(prop.PropertyType) : null;
+                            }
+
+                            try
+                            {
+                                string typeName = prop.PropertyType.Name;
+                                switch (typeName)
+                                {
+                                    case nameof(System.Boolean):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, default(bool));
+                                        else if (value.ToString().Equals("True", StringComparison.OrdinalIgnoreCase) || value.ToString().Equals("yes", StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, true);
+                                        else
+                                            prop.SetValue(t, false);
+                                        break;
+                                    case nameof(Int32):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, 0);
+                                        else if (value.ToString().Equals(nameof(ItemStatus.Submitted), StringComparison.OrdinalIgnoreCase) || value.ToString().Equals(nameof(ItemStatus.Pending), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)ItemStatus.Submitted);
+                                        else if (value.ToString().Equals(nameof(ItemStatus.Approved), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)ItemStatus.Approved);
+                                        else if (value.ToString().Equals(nameof(ItemStatus.Rejected), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)ItemStatus.Rejected);
+                                        else if (value.ToString().Equals(nameof(AttendanceEnum.WeekOff), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)AttendanceEnum.WeekOff);
+                                        else if (value.ToString().Equals(nameof(AttendanceEnum.Holiday), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)AttendanceEnum.Holiday);
+                                        else if (value.ToString().Equals(nameof(AttendanceEnum.NotSubmitted), StringComparison.OrdinalIgnoreCase))
+                                            prop.SetValue(t, (int)AttendanceEnum.NotSubmitted);
+                                        else
+                                            prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
+                                        break;
+                                    case nameof(Int64):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, 0);
+                                        else
+                                            prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
+                                        break;
+                                    case nameof(Decimal):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, decimal.Zero);
+                                        else
+                                            prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
+                                        break;
+                                    case nameof(System.String):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, string.Empty);
+                                        else
+                                            prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
+                                        break;
+                                    case nameof(DateTime):
+                                        if (value == null || value == "")
+                                            prop.SetValue(t, defaultDate);
+                                        else
+                                        {
+                                            DateTime date = Convert.ToDateTime(value);
+                                            prop.SetValue(t, DateTime.SpecifyKind(date, DateTimeKind.Unspecified));
+                                        }
+                                        break;
+                                    default:
+                                        prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
+                                        break;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new InvalidOperationException($"Error setting property {prop.Name} with value {value}.", ex);
+                            }
+                        }
+                    }
+
+                    items.Add(t);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error mapping data.", ex);
+            }
+
+            return items;
+        }
+
+
+        private List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
+        {
+            List<string> columnList = new List<string>();
+
+            foreach (DataColumn column in table.Columns)
+            {
+                if (!column.ColumnName.ToLower().Contains("column"))
+                {
+                    if (!columnList.Contains(column.ColumnName))
+                    {
+                        columnList.Add(column.ColumnName);
+                    }
+                    else
+                    {
+                        throw HiringBellException.ThrowBadRequest($"Multiple header found \"{column.ColumnName}\" field.");
+                    }
+                }
+            }
+
+            return columnList;
+        } 
     }
 }
