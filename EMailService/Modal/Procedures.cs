@@ -66,6 +66,8 @@
         public static string Work_Shifts_Getby_Empid = "sp_work_shifts_getby_empid";
         public static string Leave_And_Lop_Get = "sp_leave_and_lop_get";
         public static string Complaint_Or_Request_Update_Status = "sp_complaint_or_request_update_status";
+        public static string DAILY_ATTENDANCE_INSERT = "sp_daily_attendance_insert";
+
 
         /*--------------  Authentication Service procedures ------------*/
         public static string AuthenticationToken_VerifyAndGet = "SP_AuthenticationToken_VerifyAndGet";
@@ -306,11 +308,6 @@
         public static string Timesheet_Upd_By_Id = "sp_timesheet_upd_by_id";
         public static string Timesheet_Requests_By_Filter = "sp_timesheet_requests_by_filter";
 
-        /*--------------  Timesheet Service procedures ------------*/
-        public static string Employee_Timesheet_Get = "sp_employee_timesheet_get";
-        public static string Employee_Timesheet_Getby_Empid = "sp_employee_timesheet_getby_empid";
-        public static string EmployeeBillDetail_ById = "sp_EmployeeBillDetail_ById";
-
         /*--------------  User Service procedures ------------*/
         public static string Professionaldetail_Insupd = "sp_professionaldetail_insupd";
         public static string Professionaldetail_Get_Byid = "sp_professionaldetail_get_byid";
@@ -325,5 +322,15 @@
         public static string CONTACT_US_INSUPD = "sp_contact_us_insupd";
         public static string TRAIL_REQUEST_INSUPD = "sp_trail_request_insupd";
         public static string TRAIL_REQUEST_GETBY_EMAIL_PHONE = "sp_trail_request_getby_email_phone";
+
+        /*--------------  Timesheet Service procedures ------------*/
+        public static string Employee_Timesheet_Get = "sp_employee_timesheet_get";
+        public static string Employee_Timesheet_Getby_Empid = "sp_employee_timesheet_getby_empid";
+        public static string EmployeeBillDetail_ById = "sp_EmployeeBillDetail_ById";
+        public static string EMPLOYEE_TIMESHEET_FILTER = "sp_employee_timesheet_filter";
+        public static string TIMESHEET_RUNWEEKLY_DATA = "sp_timesheet_runweekly_data";
+        public static string EMPLOYEE_TIMESHEET_SHIFT_GETBY_TIMESHEETID = "sp_employee_timesheet_shift_getby_timesheetId";
+        public static string WORK_SHIFTS_BY_CLIENTID = "sp_work_shifts_by_clientId";
+        public static string TIMESHEET_INSUPD = "sp_timesheet_insupd";
     }
 }

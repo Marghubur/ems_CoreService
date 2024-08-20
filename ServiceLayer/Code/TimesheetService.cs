@@ -46,7 +46,7 @@ namespace ServiceLayer.Code
         {
             try
             {
-                var counts = await _db.ExecuteAsync("sp_timesheet_runweekly_data", new
+                var counts = await _db.ExecuteAsync(Procedures.TIMESHEET_RUNWEEKLY_DATA, new
                 {
                     TimesheetStartDate,
                     TimesheetEndDate
@@ -83,10 +83,10 @@ namespace ServiceLayer.Code
             else if (timesheetDetail.TimesheetStatus == (int)ItemStatus.Approved)
                 filter.SearchString += $"and TimesheetStatus = {timesheetDetail.TimesheetStatus}";
 
-            var Result = _db.GetList<TimesheetDetail>("sp_employee_timesheet_filter", new
+            var Result = _db.GetList<TimesheetDetail>(Procedures.EMPLOYEE_TIMESHEET_FILTER, new
             {
                 filter.SearchString,
-                filter.PageIndex,
+                timesheetDetail.PageIndex,
                 filter.PageSize,
                 filter.SortBy
             });
@@ -162,9 +162,9 @@ namespace ServiceLayer.Code
             if (TimesheetId <= 0)
                 throw new HiringBellException("Invalid Timesheet id passed.");
 
-            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>("sp_employee_timesheet_shift_getby_timesheetId", new
+            (TimesheetDetail timesheet, ShiftDetail shiftDetail) = _db.Get<TimesheetDetail, ShiftDetail>(Procedures.EMPLOYEE_TIMESHEET_SHIFT_GETBY_TIMESHEETID, new
             {
-                TimesheetId = TimesheetId
+                TimesheetId
             });
 
             if (shiftDetail == null)
@@ -204,7 +204,7 @@ namespace ServiceLayer.Code
                 ActualBurnedMinutes += i.ActualBurnedMinutes;
             });
 
-            var result = _db.Execute<TimesheetDetail>(ApplicationConstants.InsertUpdateTimesheet, new
+            var result = _db.Execute<TimesheetDetail>(Procedures.TIMESHEET_INSUPD, new
             {
                 timeSheetDetail.TimesheetId,
                 timeSheetDetail.EmployeeId,
@@ -237,7 +237,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(Procedures.WORK_SHIFTS_BY_CLIENTID, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
             timesheetDetail.IsSubmitted = true;
@@ -261,7 +261,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(Procedures.WORK_SHIFTS_BY_CLIENTID, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.IsSubmitted = false;
             timesheetDetail.IsSaved = true;
@@ -280,7 +280,7 @@ namespace ServiceLayer.Code
             if (timesheetDetail.ClientId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid data submitted. Client id is not valid.");
 
-            ShiftDetail shiftDetail = _db.Get<ShiftDetail>("sp_work_shifts_by_clientId", new { ClientId = timesheetDetail.ClientId });
+            ShiftDetail shiftDetail = _db.Get<ShiftDetail>(Procedures.WORK_SHIFTS_BY_CLIENTID, new { ClientId = timesheetDetail.ClientId });
 
             timesheetDetail.TimesheetStatus = (int)ItemStatus.Submitted;
             var result = this.UpdateOrInsertTimesheetDetail(timesheetDetail, shiftDetail);

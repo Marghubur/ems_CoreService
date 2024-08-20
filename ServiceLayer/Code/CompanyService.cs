@@ -539,7 +539,7 @@ namespace ServiceLayer.Code
             }, true);
 
             if (string.IsNullOrEmpty(result.statusMessage))
-                throw new HiringBellException("Fail to insert or udpate file data.");
+                throw new HiringBellException("Fail to insert or update file data.");
 
             var fileList = _db.GetList<Files>(Procedures.Company_Files_Get_Byid, new { CompanyId = uploadedFileDetail.CompanyId });
             return fileList;

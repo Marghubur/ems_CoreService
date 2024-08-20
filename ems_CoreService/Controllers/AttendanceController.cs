@@ -4,6 +4,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,16 +28,19 @@ namespace OnlineDataBuilder.Controllers
         private readonly ProducerConfig _producerConfig;
         private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly ILogger<AttendanceController> _logger;
+        private readonly HttpContext _httpContext;
 
         public AttendanceController(IAttendanceService attendanceService,
             ProducerConfig producerConfig,
             IOptions<List<KafkaServiceConfig>> options,
-            ILogger<AttendanceController> logger)
+            ILogger<AttendanceController> logger,
+            IHttpContextAccessor httpContext)
         {
             _attendanceService = attendanceService;
             _producerConfig = producerConfig;
             _kafkaServiceConfig = options.Value;
             _logger = logger;
+            _httpContext = httpContext.HttpContext;
         }
 
         [HttpPost("GetAttendanceByUserId")]
@@ -344,6 +348,39 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, filterModel);
+            }
+        }
+
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadMonthlyAttendanceExcel")]
+        public async Task<ApiResponse> UploadMonthlyAttendanceExcel()
+        {
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                await _attendanceService.UploadMonthlyAttendanceExcelService(file);
+                return BuildResponse("file uploaded");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadDailyBiometricAttendanceExcel")]
+        public async Task<ApiResponse> UploadDailyBiometricAttendanceExcel()
+        {
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                await _attendanceService.UploadDailyBiometricAttendanceExcelService(file);
+                return BuildResponse("file uploaded");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
             }
         }
 

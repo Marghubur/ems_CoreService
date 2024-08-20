@@ -956,7 +956,7 @@ namespace ServiceLayer.Code
             });
 
             if (approvalChainDetail == null || approvalChainDetail.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Approval chain deatails not found. Please contact to admin");
+                throw HiringBellException.ThrowBadRequest("Approval chain details not found. Please contact to admin");
 
             if (employeeWithRoles == null || employeeWithRoles.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Reportee details not found. Please contact to admin");

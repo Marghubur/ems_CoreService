@@ -1227,7 +1227,7 @@ namespace ServiceLayer.Code
 
 
             _logger.LogInformation($"Logo Path: {payslipModal.HeaderLogoPath}");
-            if (!File.Exists(payslipModal.HeaderLogoPath))
+            if (!payslipModal.HeaderLogoPath.Contains("https://") && !File.Exists(payslipModal.HeaderLogoPath))
                 throw new HiringBellException("Logo image not found. Please contact to admin.");
 
             await Task.CompletedTask;
@@ -1265,7 +1265,15 @@ namespace ServiceLayer.Code
 
             // EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
             string url = $"{_microserviceRegistry.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
-            EmployeeDeclaration employeeDeclaration = await _requestMicroservice.GetRequest<EmployeeDeclaration>(MicroserviceRequest.Builder(url));
+            MicroserviceRequest microserviceRequest = new MicroserviceRequest
+            {
+                Url = url,
+                CompanyCode = _currentSession.CompanyCode,
+                Token = _currentSession.Authorization,
+                Database = _requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString)
+            };
+
+            EmployeeDeclaration employeeDeclaration = await _requestMicroservice.GetRequest<EmployeeDeclaration>(microserviceRequest);
 
             // here add condition that it detail will shown or not
             string declarationHTML = String.Empty;
@@ -1280,7 +1288,7 @@ namespace ServiceLayer.Code
 
             string employeeContribution = string.Empty;
             decimal totalContribution = 0;
-            
+
             employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
             employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
 
@@ -1341,7 +1349,7 @@ namespace ServiceLayer.Code
             }
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
-                html = AddCompanyLogo(payslipModal, html);
+                html = await AddCompanyLogo(payslipModal, html);
 
             return html;
         }
@@ -1435,20 +1443,28 @@ namespace ServiceLayer.Code
             return salaryDetailsHTML;
         }
 
-        private string AddCompanyLogo(PayslipGenerationModal payslipModal, string html)
+        private async Task<string> AddCompanyLogo(PayslipGenerationModal payslipModal, string html)
         {
-            ImageFormat imageFormat = GetImageFormat(payslipModal.HeaderLogoPath);
-            string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
-
-            var fs = new FileStream(payslipModal.HeaderLogoPath, FileMode.Open);
-            using (BinaryReader br = new BinaryReader(fs))
+            if (payslipModal.HeaderLogoPath.Contains("https://"))
             {
-                Byte[] bytes = br.ReadBytes((Int32)fs.Length);
-                string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
-                html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
+                html = html.Replace("[[COMPANYLOGO_PATH]]", $"{payslipModal.HeaderLogoPath}");
+            }
+            else
+            {
+                ImageFormat imageFormat = GetImageFormat(payslipModal.HeaderLogoPath);
+                string encodeStart = $@"data:image/{imageFormat.ToString().ToLower()};base64";
+
+                var fs = new FileStream(payslipModal.HeaderLogoPath, FileMode.Open);
+                using (BinaryReader br = new BinaryReader(fs))
+                {
+                    Byte[] bytes = br.ReadBytes((Int32)fs.Length);
+                    string base64String = Convert.ToBase64String(bytes, 0, bytes.Length);
+
+                    html = html.Replace("[[COMPANYLOGO_PATH]]", $"{encodeStart}, {base64String}");
+                }
             }
 
-            return html;
+            return await Task.FromResult(html);
         }
 
         private ImageFormat GetImageFormat(string headerLogoPath)
@@ -1571,16 +1587,24 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Company primary logo not found. Please contact to admin.");
 
             var file = Converter.ToType<Files>(ds.Tables[6]);
-            payslipGenerationModal.HeaderLogoPath = Path.Combine(
-                _fileLocationDetail.RootPath,
-                file.FilePath,
-                file.FileName
-            );
+            if (file != null)
+            {
+                payslipGenerationModal.HeaderLogoPath = Path.Combine(
+                    _fileLocationDetail.RootPath,
+                    file.FilePath,
+                    file.FileName
+                );
+            }
+            else
+            {
+                payslipGenerationModal.HeaderLogoPath = "https://www.emstum.com/assets/images/logo.png";
+            }
 
             payslipGenerationModal.leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[7]);
 
             await Task.CompletedTask;
         }
+
         private void GetPayslipFileDetail(PayslipGenerationModal payslipModal, FileDetail fileDetail, string fileExtension)
         {
             fileDetail.Status = 0;
