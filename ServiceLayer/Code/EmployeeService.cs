@@ -50,7 +50,6 @@ namespace ServiceLayer.Code
         private readonly ITimesheetService _timesheetService;
         private readonly ExcelWriter _excelWriter;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceRequestBuilder _microserviceRequestBuilder;
         public EmployeeService(IDb db,
             CurrentSession currentSession,
             IFileService fileService,
@@ -64,8 +63,7 @@ namespace ServiceLayer.Code
             ITimesheetService timesheetService,
             ExcelWriter excelWriter,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options,
-            MicroserviceRequestBuilder microserviceRequestBuilder)
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -82,7 +80,6 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _requestMicroservice = requestMicroservice;
             _microserviceRegistry = options.Value;
-            _microserviceRequestBuilder = microserviceRequestBuilder;
         }
 
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
@@ -938,8 +935,8 @@ namespace ServiceLayer.Code
 
                 await EmployeeFileInsertUpdate(eCal, fileCollection, employee, employeeId);
 
-                if (!isEmpByExcel)
-                    await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
+                //if (!isEmpByExcel)
+                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
 
                 return employeeId;
             }
@@ -1061,7 +1058,16 @@ namespace ServiceLayer.Code
         private async Task GetDeclarationDetail(EmployeeCalculation eCal)
         {
             string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(_microserviceRequestBuilder.Build(url, eCal));
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(eCal)
+            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+
+            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
             if (response is null)
                 throw HiringBellException.ThrowBadRequest("fail to get response");
 
@@ -1272,7 +1278,15 @@ namespace ServiceLayer.Code
                 // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
                 string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-                var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(_microserviceRequestBuilder.Build(url, eCal));
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetPayload(eCal)
+                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
                 if (response is null)
                     throw HiringBellException.ThrowBadRequest("fail to get response");
 
@@ -1854,7 +1868,15 @@ namespace ServiceLayer.Code
                 {
                     // await _declarationService.UpdateBulkDeclarationDetail(emp.EmployeeDeclarationId, employeeDeclarations);
                     string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{emp.EmployeeDeclarationId}";
-                    await _requestMicroservice.PutRequest<string>(_microserviceRequestBuilder.Build(url, employeeDeclarations));
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetPayload(employeeDeclarations)
+                    .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    await _requestMicroservice.PutRequest<string>(microserviceRequest);
                 }
                 catch
                 {

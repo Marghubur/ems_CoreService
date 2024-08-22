@@ -26,18 +26,15 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
-        private readonly MicroserviceRequestBuilder _microserviceRequestBuilder;
         public SettingService(IDb db,
             CurrentSession currentSession,
             IOptions<MicroserviceRegistry> options,
-            RequestMicroservice requestMicroservice,
-            MicroserviceRequestBuilder microserviceRequestBuilder)
+            RequestMicroservice requestMicroservice)
         {
             _db = db;
             _currentSession = currentSession;
             _microserviceRegistry = options.Value;
             _requestMicroservice = requestMicroservice;
-            _microserviceRequestBuilder = microserviceRequestBuilder;
         }
 
         public string AddUpdateComponentService(SalaryComponents salaryComponents)
@@ -184,7 +181,14 @@ namespace ServiceLayer.Code
                     };
 
                     string url = $"{_microserviceRegistry.CalculateSalaryDetail}";
-                    await _requestMicroservice.PostRequest<string>(_microserviceRequestBuilder.Build(url, calculateSalaryDetailModal));
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetPayload(calculateSalaryDetailModal)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    await _requestMicroservice.PostRequest<string>(microserviceRequest);
                 });
 
             };
