@@ -1897,6 +1897,7 @@ namespace ServiceLayer.Code
         public async Task<Dictionary<long, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel)
         {
             (DateTime fromDate, DateTime toDate) = await BuildDates();
+            fromDate = fromDate.AddDays(-1);
             var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
             var groupRecord = dailyAttendances.OrderBy(x => _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone))
                 .GroupBy(r => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(_timezoneConverter.ToTimeZoneDateTime(r.AttendanceDate, _currentSession.TimeZone), CalendarWeekRule.FirstDay, DayOfWeek.Monday));
