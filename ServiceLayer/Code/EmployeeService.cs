@@ -25,6 +25,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
@@ -2000,6 +2001,7 @@ namespace ServiceLayer.Code
             DateTime date = DateTime.Now;
             DateTime defaultDate = Convert.ToDateTime("1976-01-01");
             List<Employee> items = new List<Employee>();
+            string[] dateFormats = { "MM/dd/yyyy", "dd-MM-yyyy", "yyyy/MM/dd", "yyyy-MM-dd", "dd-MMM-yyyy" };
 
             try
             {
@@ -2031,7 +2033,16 @@ namespace ServiceLayer.Code
                                     {
                                         case nameof(Boolean):
                                             if (dr[x.Name] != DBNull.Value)
-                                                x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            {
+                                                if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, true);
+                                                else if (dr[x.Name].ToString().Equals("No", StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, false);
+                                                else if (dr[x.Name].ToString().Equals("Any", StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, false);
+                                                else
+                                                    x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            }
                                             else
                                                 x.SetValue(t, default(bool));
                                             break;
@@ -2062,7 +2073,13 @@ namespace ServiceLayer.Code
                                         case nameof(DateTime):
                                             if (dr[x.Name] == DBNull.Value || dr[x.Name].ToString() != null)
                                             {
-                                                date = Convert.ToDateTime(dr[x.Name].ToString());
+                                                if (DateTime.TryParseExact(dr[x.Name].ToString(), dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateOfBirth))
+                                                    date = dateOfBirth;
+                                                else if (DateTime.TryParse(dr[x.Name].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out dateOfBirth))
+                                                    date = dateOfBirth;
+                                                else
+                                                    date = Convert.ToDateTime(dr[x.Name].ToString());
+
                                                 date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                                                 x.SetValue(t, date);
                                             }

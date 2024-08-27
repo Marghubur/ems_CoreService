@@ -78,6 +78,7 @@
         public static string Filedetail_Insupd = "sp_filedetail_insupd";
         public static string Gstdetail_Insupd = "sp_gstdetail_insupd";
         public static string Payslip_Detail = "sp_payslip_detail";
+        public static string SENDINGBILL_EMAIL_GET_DETAIL = "sp_sendingbill_email_get_detail";
 
         /*--------------  Clients Service procedures ------------*/
         public static string Client_ById = "SP_Client_ById";

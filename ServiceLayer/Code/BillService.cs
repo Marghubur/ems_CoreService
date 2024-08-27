@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -392,10 +393,11 @@ namespace ServiceLayer.Code
                 StartDate = billGenerationModal.TimesheetDetail.TimesheetStartDate,
                 EndDate = billGenerationModal.TimesheetDetail.TimesheetEndDate,
                 BillTypeUid = 1,
-                CompanyId = 1
+                CompanyId = 1,
+                FileRole = ApplicationConstants.CompanyPrimaryLogo
             });
 
-            if (ds == null || ds.Tables.Count != 6)
+            if (ds == null || ds.Tables.Count != 7)
                 throw new HiringBellException("Fail to get billing detail. Please contact to admin.");
 
             billGenerationModal.ResultSet = ds;
@@ -480,12 +482,6 @@ namespace ServiceLayer.Code
 
             if (!File.Exists(billModal.PdfTemplatePath))
                 throw new HiringBellException("PDF template not found. Please contact to admin.");
-
-            billModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath,
-                _fileLocationDetail.LogoPath, "logo.png");
-
-            if (!File.Exists(billModal.HeaderLogoPath))
-                throw new HiringBellException("Logo image not found. Please contact to admin.");
 
             await Task.CompletedTask;
         }
@@ -669,6 +665,7 @@ namespace ServiceLayer.Code
                 billModal.FileDetail = fileDetail;
 
                 // store template logo and file locations
+                GetCompanyLogo(billModal, resultSet);
                 await CaptureFileFolderLocations(billModal);
                 this.CleanOldFiles(fileDetail);
 
@@ -700,6 +697,26 @@ namespace ServiceLayer.Code
             {
                 _logger.LogError(ex.Message);
                 throw new HiringBellException(ex.Message, ex);
+            }
+        }
+
+        private void GetCompanyLogo(BillGenerationModal billModal, DataSet resultSet)
+        {
+            var file = Converter.ToType<Files>(resultSet.Tables[6]);
+            if (file != null)
+            {
+                billModal.HeaderLogoPath = Path.Combine(
+                    _fileLocationDetail.RootPath,
+                    file.FilePath,
+                    file.FileName
+                );
+                if (!File.Exists(billModal.HeaderLogoPath))
+                    billModal.HeaderLogoPath = "https://www.emstum.com/assets/images/logo.png";
+
+            }
+            else
+            {
+                billModal.HeaderLogoPath = "https://www.emstum.com/assets/images/logo.png";
             }
         }
 
@@ -1092,7 +1109,7 @@ namespace ServiceLayer.Code
 
         public async Task<string> SendBillToClientService(GenerateBillFileDetail generateBillFileDetail)
         {
-            var resultSet = db.FetchDataSet("sp_sendingbill_email_get_detail", new
+            var resultSet = db.FetchDataSet(Procedures.SENDINGBILL_EMAIL_GET_DETAIL, new
             {
                 generateBillFileDetail.SenderId,
                 generateBillFileDetail.ClientId,
@@ -1100,7 +1117,7 @@ namespace ServiceLayer.Code
                 generateBillFileDetail.EmployeeId
             });
 
-            if (resultSet != null && resultSet.Tables.Count == 3)
+            if (resultSet != null && resultSet.Tables.Count == 2)
             {
                 var file = Converter.ToList<FileDetail>(resultSet.Tables[0]);
                 var employee = Converter.ToType<Employee>(resultSet.Tables[1]);
