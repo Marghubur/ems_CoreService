@@ -426,7 +426,7 @@ namespace ServiceLayer
                             existCalendar.IsHoliday = calendar.IsHoliday;
                             existCalendar.IsHalfDay = calendar.IsHalfDay;
                             existCalendar.DescriptionNote = calendar.DescriptionNote;
-                            existCalendar.ApplicableFor = calendar.ApplicableFor;
+                            existCalendar.ApplicableFor = 1;
                             existCalendar.Year = calendar.Year;
                             existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
                             existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;

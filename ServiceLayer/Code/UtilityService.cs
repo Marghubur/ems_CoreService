@@ -59,7 +59,7 @@ namespace ServiceLayer.Code
 
                                 dataTable = result.Tables[0];
 
-                                components = MappedEmployee<T>(dataTable);
+                                components = MappedData<T>(dataTable);
                             }
                         }
                         else
@@ -77,7 +77,7 @@ namespace ServiceLayer.Code
             return components;
         }
 
-        public static List<T> MappedEmployee<T>(DataTable table)
+        public static List<T> MappedData<T>(DataTable table)
         {
             string TypeName = string.Empty;
             DateTime date = DateTime.Now;
@@ -114,7 +114,12 @@ namespace ServiceLayer.Code
                                     switch (TypeName)
                                     {
                                         case nameof(Boolean):
-                                            x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
+                                            if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
+                                                x.SetValue(t, true);
+                                            else if (dr[x.Name].ToString().Equals("No", StringComparison.OrdinalIgnoreCase))
+                                                x.SetValue(t, false);
+                                            else
+                                                x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
                                             break;
                                         case nameof(Int32):
                                             x.SetValue(t, Convert.ToInt32(dr[x.Name]));
