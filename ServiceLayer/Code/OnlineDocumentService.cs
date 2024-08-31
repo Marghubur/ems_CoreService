@@ -652,27 +652,27 @@ namespace ServiceLayer.Code
                             });
 
                             // ---- save document in by another microservice call ------
-                            //string url = $"{_microserviceRegistry.SaveApplicationFile}";
-                            //FileFolderDetail fileFolderDetail = new FileFolderDetail
-                            //{
-                            //    FolderPath = ownerPath,
-                            //    FileDetail = fileDetail,
-                            //    OldFileName = file.UserId.ToString(),
-                            //    ServiceName = LocalConstants.EmstumFileService
-                            //};
+                            string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                            FileFolderDetail fileFolderDetail = new FileFolderDetail
+                            {
+                                FolderPath = ownerPath,
+                                FileDetail = fileDetail,
+                                OldFileName = file.UserId.ToString(),
+                                ServiceName = LocalConstants.EmstumFileService
+                            };
 
-                            //var microserviceRequest = MicroserviceRequest.Builder(url);
-                            //microserviceRequest
-                            //.SetFiles(FileCollection)
-                            //.SetPayload(fileFolderDetail)
-                            //.SetConnectionString(_currentSession.LocalConnectionString)
-                            //.SetCompanyCode(_currentSession.CompanyCode)
-                            //.SetToken(_currentSession.Authorization);
+                            var microserviceRequest = MicroserviceRequest.Builder(url);
+                            microserviceRequest
+                            .SetFiles(FileCollection)
+                            .SetPayload(fileFolderDetail)
+                            .SetConnectionString(_currentSession.LocalConnectionString)
+                            .SetCompanyCode(_currentSession.CompanyCode)
+                            .SetToken(_currentSession.Authorization);
 
-                            //List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-                            
+                            List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
-                            List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
+
+                            // List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
                             if (files != null && files.Count > 0)
                             {
                                 Result = InsertFileDetails(fileDetail);
