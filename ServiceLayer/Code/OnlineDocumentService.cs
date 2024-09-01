@@ -614,6 +614,7 @@ namespace ServiceLayer.Code
                 {
                     var ownerPath = string.Empty;
                     string userEmail = null;
+                        _logger.LogInformation("Calling to microservice..................  1");
                     if (file.UserTypeId == UserType.Employee)
                     {
                         var employee = this.db.Get<Employee>(Procedures.Employees_ById, new
@@ -633,6 +634,7 @@ namespace ServiceLayer.Code
                         ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
                     }
 
+                    _logger.LogInformation("Calling to microservice..................  2");
                     if (!string.IsNullOrEmpty(userEmail))
                     {
                         fileDetail.ForEach(item =>
@@ -647,6 +649,7 @@ namespace ServiceLayer.Code
                             }
                         });
 
+                    _logger.LogInformation("Calling to microservice..................  3");
                         // ---- save document in by another microservice call ------
                         string url = $"{_microserviceRegistry.SaveApplicationFile}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
