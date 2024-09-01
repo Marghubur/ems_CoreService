@@ -153,6 +153,7 @@ namespace ems_CoreService
                     PaysliplTemplate = fileLocationDetail.PaysliplTemplate,
                     DocumentFolder = fileLocationDetail.Location,
                     UserFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.User),
+                    User = fileLocationDetail.User,
                     BillFolder = Path.Combine(fileLocationDetail.Location, fileLocationDetail.BillsPath),
                     LogoPath = Path.Combine(fileLocationDetail.Location, fileLocationDetail.LogoPath)
                 };

@@ -625,14 +625,14 @@ namespace ServiceLayer.Code
                             });
 
                             userEmail = employee.Email;
-                            ownerPath = Path.Combine(_fileLocationDetail.UserFolder, file.FilePath);
+                            ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
                         }
                         else if (file.UserTypeId == UserType.Client)
                         {
                             //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
                             //userEmail = userDetail.EmailId;
                             userEmail = file.Email;
-                            ownerPath = Path.Combine(_fileLocationDetail.UserFolder, file.FilePath);
+                            ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
                         }
 
                         if (!string.IsNullOrEmpty(userEmail))
@@ -645,8 +645,6 @@ namespace ServiceLayer.Code
                                 }
                                 else
                                 {
-                                    item.ParentFolder = Path.Combine(_fileLocationDetail.Location, item.ParentFolder);
-                                    item.ParentFolder = item.ParentFolder;
                                     item.Email = userEmail;
                                 }
                             });
@@ -687,7 +685,8 @@ namespace ServiceLayer.Code
             }
             catch (Exception ex)
             {
-                throw ex;
+                _logger.LogError(ex.Message, ex);
+                throw;
             }
 
             return Result;
