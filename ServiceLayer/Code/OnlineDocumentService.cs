@@ -614,7 +614,6 @@ namespace ServiceLayer.Code
                 {
                     var ownerPath = string.Empty;
                     string userEmail = null;
-                        _logger.LogInformation("Calling to microservice..................  1");
                     if (file.UserTypeId == UserType.Employee)
                     {
                         var employee = this.db.Get<Employee>(Procedures.Employees_ById, new
@@ -634,7 +633,6 @@ namespace ServiceLayer.Code
                         ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
                     }
 
-                    _logger.LogInformation("Calling to microservice..................  2");
                     if (!string.IsNullOrEmpty(userEmail))
                     {
                         fileDetail.ForEach(item =>
@@ -649,13 +647,11 @@ namespace ServiceLayer.Code
                             }
                         });
 
-                    _logger.LogInformation("Calling to microservice..................  3");
                         // ---- save document in by another microservice call ------
                         string url = $"{_microserviceRegistry.SaveApplicationFile}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
                             FolderPath = ownerPath,
-                            FileDetail = fileDetail,
                             OldFileName = file.UserId.ToString(),
                             ServiceName = LocalConstants.EmstumFileService
                         };
@@ -671,7 +667,7 @@ namespace ServiceLayer.Code
                         _logger.LogInformation("Calling to microservice..................");
                         List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
-                        // List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
+                        _logger.LogInformation("File server successfully");
                         if (files != null && files.Count > 0)
                         {
                             Result = InsertFileDetails(fileDetail);
