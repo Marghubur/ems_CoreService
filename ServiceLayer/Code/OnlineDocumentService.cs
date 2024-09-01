@@ -610,78 +610,75 @@ namespace ServiceLayer.Code
             Files file = fileDetail.FirstOrDefault();
             try
             {
-                await Task.Run(async () =>
+                if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
-                    if (FileCollection.Count > 0 && fileDetail.Count > 0)
+                    var ownerPath = string.Empty;
+                    string userEmail = null;
+                    if (file.UserTypeId == UserType.Employee)
                     {
-                        var ownerPath = string.Empty;
-                        string userEmail = null;
-                        if (file.UserTypeId == UserType.Employee)
+                        var employee = this.db.Get<Employee>(Procedures.Employees_ById, new
                         {
-                            var employee = this.db.Get<Employee>(Procedures.Employees_ById, new
-                            {
-                                EmployeeId = file.UserId,
-                                IsActive = 1,
-                            });
+                            EmployeeId = file.UserId,
+                            IsActive = 1,
+                        });
 
-                            userEmail = employee.Email;
-                            ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
-                        }
-                        else if (file.UserTypeId == UserType.Client)
+                        userEmail = employee.Email;
+                        ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
+                    }
+                    else if (file.UserTypeId == UserType.Client)
+                    {
+                        //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
+                        //userEmail = userDetail.EmailId;
+                        userEmail = file.Email;
+                        ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
+                    }
+
+                    if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        fileDetail.ForEach(item =>
                         {
-                            //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
-                            //userEmail = userDetail.EmailId;
-                            userEmail = file.Email;
-                            ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
-                        }
-
-                        if (!string.IsNullOrEmpty(userEmail))
-                        {
-                            fileDetail.ForEach(item =>
+                            if (string.IsNullOrEmpty(item.ParentFolder))
                             {
-                                if (string.IsNullOrEmpty(item.ParentFolder))
-                                {
-                                    item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                                }
-                                else
-                                {
-                                    item.Email = userEmail;
-                                }
-                            });
-
-                            // ---- save document in by another microservice call ------
-                            string url = $"{_microserviceRegistry.SaveApplicationFile}";
-                            FileFolderDetail fileFolderDetail = new FileFolderDetail
-                            {
-                                FolderPath = ownerPath,
-                                FileDetail = fileDetail,
-                                OldFileName = file.UserId.ToString(),
-                                ServiceName = LocalConstants.EmstumFileService
-                            };
-
-                            var microserviceRequest = MicroserviceRequest.Builder(url);
-                            microserviceRequest
-                            .SetFiles(FileCollection)
-                            .SetPayload(fileFolderDetail)
-                            .SetConnectionString(_currentSession.LocalConnectionString)
-                            .SetCompanyCode(_currentSession.CompanyCode)
-                            .SetToken(_currentSession.Authorization);
-
-                            List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-
-
-                            // List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
-                            if (files != null && files.Count > 0)
-                            {
-                                Result = InsertFileDetails(fileDetail);
+                                item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
                             }
-                        }
-                        else
+                            else
+                            {
+                                item.Email = userEmail;
+                            }
+                        });
+
+                        // ---- save document in by another microservice call ------
+                        string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                        FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
-                            throw new Exception("Invalid user detail.");
+                            FolderPath = ownerPath,
+                            FileDetail = fileDetail,
+                            OldFileName = file.UserId.ToString(),
+                            ServiceName = LocalConstants.EmstumFileService
+                        };
+
+                        var microserviceRequest = MicroserviceRequest.Builder(url);
+                        microserviceRequest
+                        .SetFiles(FileCollection)
+                        .SetPayload(fileFolderDetail)
+                        .SetConnectionString(_currentSession.LocalConnectionString)
+                        .SetCompanyCode(_currentSession.CompanyCode)
+                        .SetToken(_currentSession.Authorization);
+
+                        List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
+
+                        // List<Files> files = _fileService.SaveFile(ownerPath, fileDetail, FileCollection, file.UserId.ToString());
+                        if (files != null && files.Count > 0)
+                        {
+                            Result = InsertFileDetails(fileDetail);
                         }
                     }
-                });
+                    else
+                    {
+                        throw new Exception("Invalid user detail.");
+                    }
+                }
             }
             catch (Exception ex)
             {
