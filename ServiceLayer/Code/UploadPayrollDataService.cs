@@ -361,7 +361,9 @@ namespace ServiceLayer.Code
                                     switch (TypeName)
                                     {
                                         case nameof(Boolean):
-                                            if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
+                                            if (dr[x.Name] == DBNull.Value)
+                                                x.SetValue(t, false);
+                                            else if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
                                                 x.SetValue(t, true);
                                             else if (dr[x.Name].ToString().Equals("No", StringComparison.OrdinalIgnoreCase))
                                                 x.SetValue(t, false);
