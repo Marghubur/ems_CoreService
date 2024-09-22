@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal.Payroll;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
 
@@ -25,5 +26,6 @@ namespace ModalLayer.Modal
         public List<EmployeeRole> EmployeeRoles { get; set; }
         public List<AnnualSalaryBreakup> AnnualSalaryBreakup { get; set; }
         public List<LeaveRequestNotification> leaveRequestNotifications { get; set; }
+        public PayrollMonthlyDetail PayrollMonthlyDetail { get; set; }
     }
 }

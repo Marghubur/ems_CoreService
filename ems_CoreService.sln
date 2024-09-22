@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceLayer", "ServiceLaye
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EMailService", "EMailService\EMailService.csproj", "{8136160C-CC35-47E6-8723-B16AE8D2F3C2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ems_CoreService", "ems_CoreService\ems_CoreService.csproj", "{6D090ABC-7231-424A-B40C-21D988C2D1AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ems_CoreService", "ems_CoreService\ems_CoreService.csproj", "{84F2214D-B096-4FCD-BB27-D1894D927556}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{8136160C-CC35-47E6-8723-B16AE8D2F3C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8136160C-CC35-47E6-8723-B16AE8D2F3C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8136160C-CC35-47E6-8723-B16AE8D2F3C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6D090ABC-7231-424A-B40C-21D988C2D1AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D090ABC-7231-424A-B40C-21D988C2D1AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D090ABC-7231-424A-B40C-21D988C2D1AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D090ABC-7231-424A-B40C-21D988C2D1AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84F2214D-B096-4FCD-BB27-D1894D927556}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84F2214D-B096-4FCD-BB27-D1894D927556}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84F2214D-B096-4FCD-BB27-D1894D927556}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84F2214D-B096-4FCD-BB27-D1894D927556}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1343,19 +1343,20 @@ namespace ServiceLayer.Code
                     leaves = leaveRequestNotifications.FindAll(i => i.EmployeeId == x.EmployeeId && i.RequestStatusId == (int)ItemStatus.Approved);
 
                 DateTime lastAppliedDate = DateTime.UtcNow.AddDays(-daysLimit);
-                List<DailyAttendance> blockedAttendance = dailyAttendances.FindAll(a => a.EmployeeId == x.EmployeeId
-                                                                                        && a.AttendanceStatus != (int)ItemStatus.Approved
-                                                                                        && a.AttendanceStatus != (int)ItemStatus.Canceled
-                                                                                        && !a.IsOnLeave);
-                if (blockedAttendance != null && blockedAttendance.Count > 0)
+                List<DailyAttendance> lopAttendnace = dailyAttendances.FindAll(a => a.EmployeeId == x.EmployeeId
+                                                                                        && !a.IsOnLeave
+                                                                                        && ((a.AttendanceStatus == (int)ItemStatus.Approved && a.TotalMinutes == 0)
+                                                                                        || (a.AttendanceStatus != (int)ItemStatus.Approved
+                                                                                        && a.AttendanceStatus != (int)ItemStatus.Canceled)));
+                if (lopAttendnace != null && lopAttendnace.Count > 0)
                 {
                     lOPAdjustmentDetails.Add(new LOPAdjustmentDetail
                     {
-                        ActualLOP = blockedAttendance.Count,
+                        ActualLOP = lopAttendnace.Count,
                         Email = x.EmployeeEmail,
                         EmployeeId = x.EmployeeId,
                         EmployeeName = x.EmployeeName,
-                        BlockedDates = blockedAttendance.Select(i => i.AttendanceDate).ToList()
+                        BlockedDates = lopAttendnace.Select(i => i.AttendanceDate).ToList()
                     });
                 }
             });
