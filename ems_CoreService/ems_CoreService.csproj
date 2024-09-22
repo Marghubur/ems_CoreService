@@ -9,21 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
-    <Compile Remove="ExceptionFiles\**" />
-    <Compile Remove="ServerLogs\**" />
-    <Content Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
-    <Content Remove="ExceptionFiles\**" />
-    <Content Remove="ServerLogs\**" />
-    <EmbeddedResource Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
-    <EmbeddedResource Remove="ExceptionFiles\**" />
-    <EmbeddedResource Remove="ServerLogs\**" />
-    <None Remove="Controllers\WeatherForecastController.cs~RFeb641fc.TMP\**" />
-    <None Remove="ExceptionFiles\**" />
-    <None Remove="ServerLogs\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="Controllers\DeclarationController.cs" />
     <Compile Remove="Controllers\SalaryComponentController.cs" />
   </ItemGroup>
