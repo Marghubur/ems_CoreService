@@ -44,8 +44,6 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("RegisterClient/{IsUpdating}")]
         public async Task<ApiResponse> RegisterClient(bool isUpdating)
         {
-            //    var Result = await _clientsService.RegisterClient(client, isUpdating);
-            //    return BuildResponse(Result, HttpStatusCode.OK);
             try
             {
                 StringValues Client = default(string);

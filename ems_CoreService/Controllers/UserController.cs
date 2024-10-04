@@ -116,30 +116,30 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPost("UploadDeclaration/{UserId}/{UserTypeId}")]
-        public async Task<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
-        {
-            UserDetail UserInfo = null;
-            try
-            {
-                StringValues userDetail = default(string);
-                _httpContext.Request.Form.TryGetValue("UserDetail", out userDetail);
-                _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
-                if (userDetail.Count > 0)
-                {
-                    UserInfo = JsonConvert.DeserializeObject<UserDetail>(userDetail);
-                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                    IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    var result = await _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, fileDetail, files);
-                    return BuildResponse(result, HttpStatusCode.OK);
-                }
-                return BuildResponse("No files found", HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, UserInfo);
-            }
-        }
+        //[HttpPost("UploadDeclaration/{UserId}/{UserTypeId}")]
+        //public async Task<ApiResponse> UploadDeclaration(string UserId, int UserTypeId)
+        //{
+        //    UserDetail UserInfo = null;
+        //    try
+        //    {
+        //        StringValues userDetail = default(string);
+        //        _httpContext.Request.Form.TryGetValue("UserDetail", out userDetail);
+        //        _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+        //        if (userDetail.Count > 0)
+        //        {
+        //            UserInfo = JsonConvert.DeserializeObject<UserDetail>(userDetail);
+        //            List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
+        //            IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
+        //            var result = await _userService.UploadDeclaration(UserId, UserTypeId, UserInfo, fileDetail, files);
+        //            return BuildResponse(result, HttpStatusCode.OK);
+        //        }
+        //        return BuildResponse("No files found", HttpStatusCode.OK);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, UserInfo);
+        //    }
+        //}
 
         [HttpGet("GetEmployeeAndChients")]
         public async Task<IResponse<ApiResponse>> GetEmployeeAndChients()

@@ -1570,7 +1570,6 @@ namespace ServiceLayer.Code
 
         private async Task<AttendanceConfig> GetAttendanceConfiData(long EmployeeId)
         {
-            AttendanceConfig attendanceConfig = new AttendanceConfig();
             var ds = await _db.GetDataSetAsync("sp_daily_attendance_config_data", new
             {
                 EmployeeId
@@ -1582,35 +1581,60 @@ namespace ServiceLayer.Code
             if (ds.Tables[0].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Employee detail not found.");
 
-            attendanceConfig.Projects = Converter.ToList<Project>(ds.Tables[1]);
-            attendanceConfig.EmployeeDetail = Converter.ToType<Employee>(ds.Tables[0]);
+            var weekDates = getCurrentWeekStartEndDate();
 
-            await GenerateWeeks(attendanceConfig);
+            AttendanceConfig attendanceConfig = new AttendanceConfig
+            {
+                EmployeeDetail = Converter.ToType<Employee>(ds.Tables[0]),
+                Projects = Converter.ToList<Project>(ds.Tables[1]),
+                Weeks = await GenerateWeeks(),
+                AttendanceWithClientDetail = await GetDailyAttendanceByUserIdService(weekDates)
+            };
 
             return attendanceConfig;
         }
 
-        private async Task GenerateWeeks(AttendanceConfig attendanceConfig)
+        private WeekDates getCurrentWeekStartEndDate()
+        {
+            DateTime today = DateTime.UtcNow;
+
+            int daysToSubtract = today.DayOfWeek - DayOfWeek.Monday;
+            if (daysToSubtract < 0)
+                daysToSubtract += 7;
+
+            DateTime weekStart = today.AddDays(-daysToSubtract);
+            DateTime weekEnd = weekStart.AddDays(6);
+
+            WeekDates weekDates = new WeekDates
+            {
+                StartDate = weekStart,
+                EndDate = weekEnd
+            };
+
+            return weekDates;
+        }
+
+        private async Task<List<WeekDates>> GenerateWeeks()
         {
             (DateTime FromDate, DateTime ToDate) = await BuildDates();
 
             if (ToDate.Date.Subtract(FromDate.Date).TotalDays < 0)
                 throw HiringBellException.ThrowBadRequest("Invalid date calculation for week generation. Please contact to admin.");
 
-            attendanceConfig.Weeks = new List<WeekDates>();
+            var attendanceWeeks = new List<WeekDates>();
             DateTime startDate = FromDate;
             DateTime movingDate = FromDate;
 
-            int i = 0;
+            int weekIndex = GetWeekIndex(startDate);
             while (movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
             {
                 if (movingDate.DayOfWeek == DayOfWeek.Sunday)
                 {
-                    attendanceConfig.Weeks.Add(new WeekDates
+                    attendanceWeeks.Add(new WeekDates
                     {
                         StartDate = startDate,
                         EndDate = movingDate,
-                        WeekIndex = ++i
+                        WeekIndex = weekIndex++
                     });
 
                     startDate = movingDate.AddDays(1);
@@ -1619,9 +1643,17 @@ namespace ServiceLayer.Code
                 movingDate = movingDate.AddDays(1);
             }
 
-            attendanceConfig.Weeks = attendanceConfig.Weeks.OrderByDescending(x => x.WeekIndex).ToList();
+            attendanceWeeks = attendanceWeeks.OrderByDescending(x => x.WeekIndex).ToList();
 
-            await Task.CompletedTask;
+            return await Task.FromResult(attendanceWeeks);
+        }
+
+        private int GetWeekIndex(DateTime date)
+        {
+            var firstDayOfYear = new DateTime(date.Year, 1, 1);
+            var startOfWeek = firstDayOfYear.AddDays(-(int)firstDayOfYear.DayOfWeek + (int)DayOfWeek.Monday);
+
+            return (int)((date - startOfWeek).TotalDays / 7) + 1;
         }
 
         public async Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates)
@@ -1895,7 +1927,7 @@ namespace ServiceLayer.Code
                                                         .ToDictionary(a => a.Key, a => a.ToList());
         }
 
-        public async Task<Dictionary<long, List<DailyAttendance>>> GetRecentDailyAttendanceService(FilterModel filterModel)
+        public async Task<Dictionary<long, List<DailyAttendance>>> GetRecentWeeklyAttendanceService(FilterModel filterModel)
         {
             (DateTime fromDate, DateTime toDate) = await BuildDates();
             fromDate = fromDate.AddDays(-1);
@@ -1913,6 +1945,19 @@ namespace ServiceLayer.Code
             }
 
             return attendanceGroupedRequest;
+        }
+
+        public async Task<List<DailyAttendance>> GetRecentDailyAttendanceService(FilterModel filterModel)
+        {
+            DateTime toDate = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day);
+
+            DateTime fromDate = toDate.AddMonths(-1);
+            fromDate = fromDate.AddDays(1);
+            //fromDate = _timezoneConverter.FirstDayOfPresentWeek(fromDate, _currentSession.TimeZone);
+
+            var dailyAttendances = await GetFilteredDetailAttendanceService(filterModel, fromDate, toDate);
+
+            return dailyAttendances;
         }
 
         private async Task<List<DailyAttendance>> GetFilteredDetailAttendanceService(FilterModel filterModel, DateTime fromDate, DateTime toDate)

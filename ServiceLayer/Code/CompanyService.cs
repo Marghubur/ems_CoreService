@@ -3,11 +3,14 @@ using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -22,12 +25,22 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-        public CompanyService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession)
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
+        public CompanyService(
+            IDb db,
+            FileLocationDetail fileLocationDetail,
+            IFileService fileService,
+            CurrentSession currentSession,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
         public List<OrganizationDetail> GetAllCompany()
         {
@@ -102,7 +115,7 @@ namespace ServiceLayer.Code
         public dynamic GetCompanyById(int CompanyId)
         {
             OrganizationDetail result = _db.Get<OrganizationDetail>(Procedures.Company_GetById, new { CompanyId });
-            List<Files> files = _db.GetList<Files>(Procedures.UserFiles_GetBy_OwnerId, new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
+            List<FileDetail> files = _db.GetList<FileDetail>(Procedures.UserFiles_GetBy_OwnerId, new { FileOwnerId = CompanyId, UserTypeId = (int)UserType.Compnay });
             return new { OrganizationDetail = result, Files = files };
         }
 
@@ -117,143 +130,160 @@ namespace ServiceLayer.Code
             return organizationDetail;
         }
 
-        public async Task<OrganizationDetail> InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        //public async Task<OrganizationDetail> InsertUpdateOrganizationDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
+        //{
+        //    OrganizationDetail company = new OrganizationDetail();
+        //    if (string.IsNullOrEmpty(companyInfo.Email))
+        //        throw new HiringBellException("Invalid organization email.");
+
+        //    if (string.IsNullOrEmpty(companyInfo.CompanyName))
+        //        throw new HiringBellException("Invalid company name.");
+
+        //    var ResultSet = _db.FetchDataSet(Procedures.Organization_Detail_Get);
+        //    if (ResultSet.Tables.Count != 2)
+        //        throw new HiringBellException("Unable to get organization detail.");
+
+        //    company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
+        //    if (ResultSet.Tables[1].Rows.Count > 0)
+        //        companyInfo.Files = Converter.ToType<Files>(ResultSet.Tables[1]);
+        //    else
+        //        companyInfo.Files = new Files();
+
+        //    if (company != null)
+        //    {
+        //        company.OrganizationName = companyInfo.OrganizationName;
+        //        company.OrgEmail = companyInfo.OrgEmail;
+        //        company.OrgFax = companyInfo.OrgFax;
+        //        company.OrgMobileNo = companyInfo.OrgMobileNo;
+        //        company.OrgPrimaryPhoneNo = companyInfo.OrgPrimaryPhoneNo;
+        //        company.OrgSecondaryPhoneNo = companyInfo.OrgSecondaryPhoneNo;
+        //        company.CompanyName = companyInfo.CompanyName;
+        //        company.CompanyDetail = companyInfo.CompanyDetail;
+        //        company.FirstAddress = companyInfo.FirstAddress;
+        //        company.SecondAddress = companyInfo.SecondAddress;
+        //        company.ThirdAddress = companyInfo.ThirdAddress;
+        //        company.ForthAddress = companyInfo.ForthAddress;
+        //        company.Email = companyInfo.Email;
+        //        company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
+        //        company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
+        //        company.Fax = companyInfo.Fax;
+        //        company.FirstEmail = companyInfo.FirstEmail;
+        //        company.SecondEmail = companyInfo.SecondEmail;
+        //        company.ThirdEmail = companyInfo.ThirdEmail;
+        //        company.ForthEmail = companyInfo.ForthEmail;
+        //        company.Pincode = companyInfo.Pincode;
+        //        company.FileId = companyInfo.FileId;
+        //        company.MobileNo = companyInfo.MobileNo;
+        //        company.City = companyInfo.City;
+        //        company.Country = companyInfo.Country;
+        //        company.FullAddress = companyInfo.FullAddress;
+        //        company.GSTNo = companyInfo.GSTNo;
+        //        company.InCorporationDate = companyInfo.InCorporationDate;
+        //        company.LegalDocumentPath = companyInfo.LegalDocumentPath;
+        //        company.LegalEntity = companyInfo.LegalEntity;
+        //        company.PANNo = companyInfo.PANNo;
+        //        company.SectorType = companyInfo.SectorType;
+        //        company.State = companyInfo.State;
+        //        company.TradeLicenseNo = companyInfo.TradeLicenseNo;
+        //        company.TypeOfBusiness = companyInfo.TypeOfBusiness;
+        //        company.AccountNo = companyInfo.AccountNo;
+        //        company.BankName = companyInfo.BankName;
+        //        company.Branch = companyInfo.Branch;
+        //        company.IFSC = companyInfo.IFSC;
+        //        company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
+        //        if (string.IsNullOrEmpty(companyInfo.FixedComponentsId))
+        //            companyInfo.FixedComponentsId = "[]";
+        //        company.FixedComponentsId = companyInfo.FixedComponentsId;
+        //        company.BranchCode = companyInfo.BranchCode;
+        //        company.OpeningDate = companyInfo.OpeningDate;
+        //        company.ClosingDate = companyInfo.ClosingDate;
+        //        company.IsPrimaryAccount = true;
+        //        company.AdminId = _currentSession.CurrentUserDetail.UserId;
+        //    }
+        //    else
+        //    {
+        //        company = companyInfo;
+        //        company.IsPrimaryCompany = true;
+        //        company.FixedComponentsId = "[]";
+        //        company.IsPrimaryAccount = true;
+        //    }
+
+        //    var status = _db.Execute<OrganizationDetail>(Procedures.Organization_Intupd, company, true);
+
+        //    if (string.IsNullOrEmpty(status))
+        //        throw new HiringBellException("Fail to insert or update.");
+
+        //    if (fileCollection.Count == 1)
+        //        await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Organization);
+
+        //    // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
+
+        //    return await Task.FromResult(this.GetOrganizationDetailService());
+        //}
+
+        private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection, int userType, int itemStatusId = 0)
         {
-            OrganizationDetail company = new OrganizationDetail();
-            if (string.IsNullOrEmpty(companyInfo.Email))
-                throw new HiringBellException("Invalid organization email.");
+            //try
+            //{
+            var path = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, $"{fileCollection[0].Name}");
 
-            if (string.IsNullOrEmpty(companyInfo.CompanyName))
-                throw new HiringBellException("Invalid company name.");
+            //if (File.Exists(companyLogo))
+            //    File.Delete(companyLogo);
+            //else
+            //{
+            //    FileDetail fileDetailWSig = new FileDetail();
+            //    fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, companyLogo);
+            //}
 
-            var ResultSet = _db.FetchDataSet(Procedures.Organization_Detail_Get);
-            if (ResultSet.Tables.Count != 2)
-                throw new HiringBellException("Unable to get organization detail.");
+            //var files = fileCollection.Select(x => new Files
+            //{
+            //    FileUid = userType == (int)UserType.Compnay ? companyInfo.FileId : companyInfo.Files.FileId,
+            //    FileName = x.Name,
+            //    Email = companyInfo.Email,
+            //    FileExtension = string.Empty
+            //}).ToList<Files>();
+            //_fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (companyInfo.OrganizationId).ToString());
 
-            company = Converter.ToType<OrganizationDetail>(ResultSet.Tables[0]);
-            if (ResultSet.Tables[1].Rows.Count > 0)
-                companyInfo.Files = Converter.ToType<Files>(ResultSet.Tables[1]);
-            else
-                companyInfo.Files = new Files();
-
-            if (company != null)
+            var url = $"{_microserviceRegistry.SaveApplicationFile}";
+            FileFolderDetail fileFolderDetail = new FileFolderDetail
             {
-                company.OrganizationName = companyInfo.OrganizationName;
-                company.OrgEmail = companyInfo.OrgEmail;
-                company.OrgFax = companyInfo.OrgFax;
-                company.OrgMobileNo = companyInfo.OrgMobileNo;
-                company.OrgPrimaryPhoneNo = companyInfo.OrgPrimaryPhoneNo;
-                company.OrgSecondaryPhoneNo = companyInfo.OrgSecondaryPhoneNo;
-                company.CompanyName = companyInfo.CompanyName;
-                company.CompanyDetail = companyInfo.CompanyDetail;
-                company.FirstAddress = companyInfo.FirstAddress;
-                company.SecondAddress = companyInfo.SecondAddress;
-                company.ThirdAddress = companyInfo.ThirdAddress;
-                company.ForthAddress = companyInfo.ForthAddress;
-                company.Email = companyInfo.Email;
-                company.PrimaryPhoneNo = companyInfo.PrimaryPhoneNo;
-                company.SecondaryPhoneNo = companyInfo.SecondaryPhoneNo;
-                company.Fax = companyInfo.Fax;
-                company.FirstEmail = companyInfo.FirstEmail;
-                company.SecondEmail = companyInfo.SecondEmail;
-                company.ThirdEmail = companyInfo.ThirdEmail;
-                company.ForthEmail = companyInfo.ForthEmail;
-                company.Pincode = companyInfo.Pincode;
-                company.FileId = companyInfo.FileId;
-                company.MobileNo = companyInfo.MobileNo;
-                company.City = companyInfo.City;
-                company.Country = companyInfo.Country;
-                company.FullAddress = companyInfo.FullAddress;
-                company.GSTNo = companyInfo.GSTNo;
-                company.InCorporationDate = companyInfo.InCorporationDate;
-                company.LegalDocumentPath = companyInfo.LegalDocumentPath;
-                company.LegalEntity = companyInfo.LegalEntity;
-                company.PANNo = companyInfo.PANNo;
-                company.SectorType = companyInfo.SectorType;
-                company.State = companyInfo.State;
-                company.TradeLicenseNo = companyInfo.TradeLicenseNo;
-                company.TypeOfBusiness = companyInfo.TypeOfBusiness;
-                company.AccountNo = companyInfo.AccountNo;
-                company.BankName = companyInfo.BankName;
-                company.Branch = companyInfo.Branch;
-                company.IFSC = companyInfo.IFSC;
-                company.IsPrimaryCompany = companyInfo.IsPrimaryCompany;
-                if (string.IsNullOrEmpty(companyInfo.FixedComponentsId))
-                    companyInfo.FixedComponentsId = "[]";
-                company.FixedComponentsId = companyInfo.FixedComponentsId;
-                company.BranchCode = companyInfo.BranchCode;
-                company.OpeningDate = companyInfo.OpeningDate;
-                company.ClosingDate = companyInfo.ClosingDate;
-                company.IsPrimaryAccount = true;
-                company.AdminId = _currentSession.CurrentUserDetail.UserId;
-            }
-            else
-            {
-                company = companyInfo;
-                company.IsPrimaryCompany = true;
-                company.FixedComponentsId = "[]";
-                company.IsPrimaryAccount = true;
-            }
+                FolderPath = path,
+                OldFileName = new List<string> { companyInfo.OldFileName },
+                ServiceName = LocalConstants.EmstumFileService
+            };
 
-            var status = _db.Execute<OrganizationDetail>(Procedures.Organization_Intupd, company, true);
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetFiles(fileCollection)
+            .SetPayload(fileFolderDetail)
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
 
-            if (string.IsNullOrEmpty(status))
-                throw new HiringBellException("Fail to insert or update.");
+            var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
-            if (fileCollection.Count == 1)
-                await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Organization);
+            var fileInfo = (from n in files
+                            select new
+                            {
+                                FileId = companyInfo.FileId,
+                                FileOwnerId = userType == (int)UserType.Compnay ? companyInfo.CompanyId : companyInfo.OrganizationId,
+                                FileName = n.FileName,
+                                FilePath = n.FilePath,
+                                FileExtension = n.FileExtension,
+                                UserTypeId = userType,
+                                ItemStatusId = itemStatusId,
+                                AdminId = _currentSession.CurrentUserDetail.UserId
+                            }).ToList();
 
-            // _cacheManager.ReLoad(CacheTable.Company, Converter.ToDataTable<OrganizationDetail>(organizationDetails));
+            var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
+            //}
+            //catch
+            //{
+            //    if (File.Exists(companyLogo))
+            //        File.Delete(companyLogo);
 
-            return await Task.FromResult(this.GetOrganizationDetailService());
-        }
-
-        private async Task UpdateOrganizationLogo(OrganizationDetail companyInfo, IFormFileCollection fileCollection, int userType)
-        {
-            string companyLogo = String.Empty;
-            try
-            {
-                if (fileCollection.Count > 0)
-                    companyLogo = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, fileCollection[0].Name);
-
-                if (File.Exists(companyLogo))
-                    File.Delete(companyLogo);
-                else
-                {
-                    FileDetail fileDetailWSig = new FileDetail();
-                    fileDetailWSig.DiskFilePath = Path.Combine(_fileLocationDetail.RootPath, companyLogo);
-                }
-
-                var files = fileCollection.Select(x => new Files
-                {
-                    FileUid = userType == (int)UserType.Compnay ? companyInfo.FileId : companyInfo.Files.FileId,
-                    FileName = x.Name,
-                    Email = companyInfo.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (companyInfo.OrganizationId).ToString());
-
-                var fileInfo = (from n in files
-                                select new
-                                {
-                                    FileId = n.FileUid,
-                                    FileOwnerId = userType == (int)UserType.Compnay ? companyInfo.CompanyId : companyInfo.OrganizationId,
-                                    FileName = n.FileName,
-                                    FilePath = n.FilePath,
-                                    FileExtension = n.FileExtension,
-                                    UserTypeId = userType,
-                                    AdminId = _currentSession.CurrentUserDetail.UserId
-                                }).ToList();
-
-                var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
-            }
-            catch
-            {
-                if (File.Exists(companyLogo))
-                    File.Delete(companyLogo);
-
-                throw;
-            }
+            //    throw;
+            //}
 
             await Task.CompletedTask;
         }
@@ -301,7 +331,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Fail to insert or update.");
 
             if (fileCollection.Count > 0)
-                await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Compnay);
+                await UpdateOrganizationLogo(companyInfo, fileCollection, (int)UserType.Compnay, LocalConstants.Profile);
 
             return company;
         }
@@ -445,6 +475,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.NoticePeriodInProbation = companySetting.NoticePeriodInProbation;
                 companySettingDetail.ExcludePayrollFromJoinDate = companySetting.ExcludePayrollFromJoinDate;
                 companySettingDetail.TimeDifferences = companySetting.TimeDifferences;
+                companySettingDetail.AttendanceType = companySetting.AttendanceType;
             }
 
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
@@ -465,6 +496,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.NoticePeriodInProbation,
                 companySettingDetail.ExcludePayrollFromJoinDate,
                 companySetting.TimeDifferences,
+                companySettingDetail.AttendanceType,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -508,22 +540,35 @@ namespace ServiceLayer.Code
 
         public async Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection)
         {
-            string _folderPath = String.Empty;
+            string FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "logo");
 
-            string FolderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles);
+            //var files = fileCollection.Select(x => new Files
+            //{
+            //    FileUid = uploadedFileDetail.FileId,
+            //    FileName = x.Name,
+            //    Email = uploadedFileDetail.Email,
+            //    FileExtension = string.Empty
+            //}).ToList<Files>();
 
-            if (string.IsNullOrEmpty(FolderPath))
-                throw new HiringBellException("Invalid file path has been given. Please contact to admin.");
+            //_fileService.SaveFileToLocation(FolderPath, files, fileCollection);
 
-            var files = fileCollection.Select(x => new Files
+            var url = $"{_microserviceRegistry.SaveApplicationFile}";
+            FileFolderDetail fileFolderDetail = new FileFolderDetail
             {
-                FileUid = uploadedFileDetail.FileId,
-                FileName = x.Name,
-                Email = uploadedFileDetail.Email,
-                FileExtension = string.Empty
-            }).ToList<Files>();
+                FolderPath = FolderPath,
+                OldFileName = null,
+                ServiceName = LocalConstants.EmstumFileService
+            };
 
-            _fileService.SaveFileToLocation(FolderPath, files, fileCollection);
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetFiles(fileCollection)
+            .SetPayload(fileFolderDetail)
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
             Files fileDetail = files.First();
             var result = await _db.ExecuteAsync(Procedures.Company_Files_Insupd, new
@@ -609,6 +654,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.NoticePeriodInProbation,
                 companySettingDetail.ExcludePayrollFromJoinDate,
                 companySettingDetail.TimeDifferences,
+                companySettingDetail.AttendanceType,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 

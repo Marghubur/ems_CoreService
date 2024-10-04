@@ -342,6 +342,20 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
+                var result = await _attendanceService.GetRecentWeeklyAttendanceService(filterModel);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
+        }
+
+        [HttpPost("GetRecentDailyAttendance")]
+        public async Task<ApiResponse> GetRecentDailyAttendance([FromBody] FilterModel filterModel)
+        {
+            try
+            {
                 var result = await _attendanceService.GetRecentDailyAttendanceService(filterModel);
                 return BuildResponse(result, HttpStatusCode.OK);
             }

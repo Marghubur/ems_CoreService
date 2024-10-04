@@ -1,7 +1,5 @@
 ﻿using ems_CommonUtility.Middlewares;
-using MailKit;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +17,7 @@ namespace ems_CoreService
             {
                 FileProvider = new PhysicalFileProvider(
                   Path.Combine(Directory.GetCurrentDirectory())),
-                RequestPath = "/Files"
+                RequestPath = "/bts/resources/applications"
             });           
 
             app.UseMiddleware<ExceptionHandlerMiddleware>();

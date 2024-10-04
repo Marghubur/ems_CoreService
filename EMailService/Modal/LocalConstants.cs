@@ -26,5 +26,10 @@
         public static int DefaultDesignation = 25;
 
         public static string EmstumFileService = "emstum";
+
+        public static int Profile = 1;
+        public static int Document = 2;
+        public static int Resume = 3;
+        public static int LeaveAttachment = 4;
     }
 }

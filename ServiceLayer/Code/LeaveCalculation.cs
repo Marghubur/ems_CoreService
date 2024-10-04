@@ -6,8 +6,12 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
 using EMailService.Modal.Leaves;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -45,6 +49,8 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<LeaveCalculation> _logger;
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceRegistry;
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -57,7 +63,9 @@ namespace ServiceLayer.Code
             ICompanyCalendar companyCalendar,
             IFileService fileService,
             FileLocationDetail fileLocationDetail,
-            ILogger<LeaveCalculation> logger)
+            ILogger<LeaveCalculation> logger,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -72,6 +80,8 @@ namespace ServiceLayer.Code
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _logger = logger;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
@@ -914,24 +924,39 @@ namespace ServiceLayer.Code
             List<int> fileIds = new List<int>();
             if (fileCollection != null && fileCollection.Count > 0)
             {
-                var documentPath = Path.Combine(
-                    _fileLocationDetail.UserFolder,
-                    employee.Email,
-                ApplicationConstants.LeaveAttachmentPath
-                );
+                var documentPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{nameof(UserType.Employee)}_{employee.EmployeeId}");
                 // save file to server filesystem
-                _fileService.SaveFileToLocation(documentPath, fileDetail, fileCollection);
+                //_fileService.SaveFileToLocation(documentPath, fileDetail, fileCollection);
 
-                foreach (var n in fileDetail)
+                var url = $"{_microserviceRegistry.SaveApplicationFile}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
+                {
+                    FolderPath = documentPath,
+                    OldFileName = null,
+                    ServiceName = LocalConstants.EmstumFileService
+                };
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetFiles(fileCollection)
+                .SetPayload(fileFolderDetail)
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
+                foreach (var n in files)
                 {
                     Result = await _db.ExecuteAsync(Procedures.Userfiledetail_Upload, new
                     {
                         FileId = n.FileUid,
                         FileOwnerId = employee.EmployeeUid,
-                        FilePath = documentPath,
+                        FilePath = n.FilePath,
                         FileName = n.FileName,
                         FileExtension = n.FileExtension,
                         UserTypeId = (int)UserType.Employee,
+                        ItemStatusId = LocalConstants.LeaveAttachment,
                         AdminId = _currentSession.CurrentUserDetail.UserId
                     }, true);
 

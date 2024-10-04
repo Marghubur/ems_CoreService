@@ -75,28 +75,28 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [Authorize(Roles = Role.Admin)]
-        [HttpPost("InsertUpdateOrganizationDetail")]
-        public async Task<ApiResponse> InsertUpdateOrganizationDetail()
-        {
-            try
-            {
-                StringValues compnyinfo = default(string);
-                OrganizationDetail org = null;
-                _httpContext.Request.Form.TryGetValue("OrganizationInfo", out compnyinfo);
-                if (compnyinfo.Count > 0)
-                {
-                    OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
-                    IFormFileCollection files = _httpContext.Request.Form.Files;
-                    org = await _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
-                }
-                return BuildResponse(org);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex);
-            }
-        }
+        //[Authorize(Roles = Role.Admin)]
+        //[HttpPost("InsertUpdateOrganizationDetail")]
+        //public async Task<ApiResponse> InsertUpdateOrganizationDetail()
+        //{
+        //    try
+        //    {
+        //        StringValues compnyinfo = default(string);
+        //        OrganizationDetail org = null;
+        //        _httpContext.Request.Form.TryGetValue("OrganizationInfo", out compnyinfo);
+        //        if (compnyinfo.Count > 0)
+        //        {
+        //            OrganizationDetail organizationSettings = JsonConvert.DeserializeObject<OrganizationDetail>(compnyinfo);
+        //            IFormFileCollection files = _httpContext.Request.Form.Files;
+        //            org = await _companyService.InsertUpdateOrganizationDetailService(organizationSettings, files);
+        //        }
+        //        return BuildResponse(org);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex);
+        //    }
+        //}
 
         [HttpPost("UpdateCompanyDetails")]
         public async Task<ApiResponse> UpdateCompanyDetails()

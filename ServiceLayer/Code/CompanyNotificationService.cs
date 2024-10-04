@@ -2,7 +2,11 @@
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -11,6 +15,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -21,18 +26,23 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
-
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
         public CompanyNotificationService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             FileLocationDetail fileLocationDetail,
-            IFileService fileService)
+            IFileService fileService,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         public DataSet GetDepartmentsAndRolesService()
@@ -81,7 +91,7 @@ namespace ServiceLayer.Code
                 oldNotification.Departments = "[]";
 
             oldNotification.AdminId = _currentSession.CurrentUserDetail.UserId;
-            ExecuteCompanyNotification(oldNotification, files, FileCollection);
+            Task.Run(() => ExecuteCompanyNotification(oldNotification, files, FileCollection));
 
             FilterModel filterModel = new FilterModel
             {
@@ -89,7 +99,8 @@ namespace ServiceLayer.Code
             };
             return this.GetNotificationRecordService(filterModel);
         }
-        private void ExecuteCompanyNotification(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
+
+        private async Task ExecuteCompanyNotification(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
         {
             try
             {
@@ -98,20 +109,38 @@ namespace ServiceLayer.Code
                 if (FileCollection.Count > 0)
                 {
                     // save file to server filesystem
-                    var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "Notification");
-                    _fileService.SaveFile(folderPath, files, FileCollection, notification.CompanyId.ToString());
+                    var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "Notification");
+                    //_fileService.SaveFile(folderPath, files, FileCollection, notification.CompanyId.ToString());
 
-                    foreach (var n in files)
+                    var url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    {
+                        FolderPath = folderPath,
+                        OldFileName = null,
+                        ServiceName = LocalConstants.EmstumFileService
+                    };
+
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetFiles(FileCollection)
+                    .SetPayload(fileFolderDetail)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    var savefiles = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
+                    for (int i = 0; i < savefiles.Count; i++)
                     {
                         Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
                         {
-                            CompanyFileId = n.FileUid,
-                            CompanyId = notification.CompanyId,
-                            FilePath = n.FilePath,
-                            FileName = n.FileName,
-                            FileExtension = n.FileExtension,
-                            FileDescription = n.FileDescription,
-                            FileRole = n.FileRole,
+                            CompanyFileId = files[i].FileUid,
+                            notification.CompanyId,
+                            savefiles[i].FilePath,
+                            savefiles[i].FileName,
+                            savefiles[i].FileExtension,
+                            savefiles[i].FileDescription,
+                            savefiles[i].FileRole,
                             UserTypeId = (int)UserType.Compnay,
                             AdminId = _currentSession.CurrentUserDetail.UserId
                         }, true);
@@ -121,6 +150,27 @@ namespace ServiceLayer.Code
 
                         fileIds.Add(Convert.ToInt32(Result));
                     }
+
+                    //foreach (var n in files)
+                    //{
+                    //    Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
+                    //    {
+                    //        CompanyFileId = n.FileUid,
+                    //        CompanyId = notification.CompanyId,
+                    //        FilePath = n.FilePath,
+                    //        FileName = n.FileName,
+                    //        FileExtension = n.FileExtension,
+                    //        FileDescription = n.FileDescription,
+                    //        FileRole = n.FileRole,
+                    //        UserTypeId = (int)UserType.Compnay,
+                    //        AdminId = _currentSession.CurrentUserDetail.UserId
+                    //    }, true);
+
+                    //    if (string.IsNullOrEmpty(Result))
+                    //        throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+
+                    //    fileIds.Add(Convert.ToInt32(Result));
+                    //}
                 }
                 if (notification.FileIds != null)
                 {
