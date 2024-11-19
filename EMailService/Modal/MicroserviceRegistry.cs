@@ -10,5 +10,6 @@
         public string SaveApplicationFile { get; set; }
         public string CreateFolder { get; set; }
         public string DeleteFiles { get; set; }
+        public string ConvertHtmlToPdf { get; set; }
     }
 }
