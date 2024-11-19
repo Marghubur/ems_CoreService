@@ -28,6 +28,7 @@ namespace ModalLayer.Modal.Accounts
         public string Fax { get; set; }
         public int Pincode { get; set; }
         public long FileId { set; get; }
+        public string OldFileName { get; set; }
         public string LegalDocumentPath { set; get; }
         public string LegalEntity { set; get; }
         public string TypeOfBusiness { set; get; }

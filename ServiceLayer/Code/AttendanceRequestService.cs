@@ -303,6 +303,15 @@ namespace ServiceLayer.Code
             else
             {
                 var date = new DateTime(attendance.ForYear, attendance.ForMonth, 1).AddMonths(-1);
+                if (date.DayOfWeek != DayOfWeek.Monday)
+                {
+                    int days = (int)date.DayOfWeek - (int)DayOfWeek.Monday;
+                    if (days < 0)
+                        days += 7;
+
+                    date = date.AddDays(-days);
+                }
+
                 FromDate = _timezoneConverter.ToUtcTime(date, _currentSession.TimeZone);
                 ToDate = _timezoneConverter.ToUtcTime(date.AddMonths(2).AddDays(-1), _currentSession.TimeZone);
             }

@@ -18,6 +18,7 @@ namespace ModalLayer.Modal.Profile
         public string Email { get; set; }
         public string Mobile { get; set; }
         public long FileId { get; set; }
+        public string OldFileName { get; set; }
         public string ProfessionalDetailJson { get; set; }
         public OtherDetail OtherDetails { get; set; }
         public List<SkillDetail> Skills { get; set; } = new List<SkillDetail>();

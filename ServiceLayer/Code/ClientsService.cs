@@ -4,7 +4,11 @@ using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -24,18 +28,23 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
         public ClientsService(IDb db,
             CommonFilterService commonFilterService,
             CurrentSession currentSession,
             IFileService fileService,
-            FileLocationDetail fileLocationDetail)
+            FileLocationDetail fileLocationDetail,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _commonFilterService = commonFilterService;
             _currentSession = currentSession;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
         public List<Organization> GetClients(FilterModel filterModel)
         {
@@ -117,29 +126,46 @@ namespace ServiceLayer.Code
 
                 if (fileCollection.Count > 0)
                 {
-                    var files = fileCollection.Select(x => new Files
-                    {
-                        FileUid = client.FileId,
-                        FileName = fileCollection[0].Name,
-                        Email = client.Email,
-                        FileExtension = string.Empty
-                    }).ToList<Files>();
+                    //var files = fileCollection.Select(x => new Files
+                    //{
+                    //    FileUid = client.FileId,
+                    //    FileName = fileCollection[0].Name,
+                    //    Email = client.Email,
+                    //    FileExtension = string.Empty
+                    //}).ToList<Files>();
 
-                    var ownerFolderPath = Path.Combine(_fileLocationDetail.UserFolder, $"{UserType.Client}_{organization.ClientId}");
-                    _fileService.SaveFile(ownerFolderPath, files, fileCollection, client.OldFileName);
+                    var ownerFolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{UserType.Client}_{organization.ClientId}");
+                    //_fileService.SaveFile(ownerFolderPath, files, fileCollection, client.OldFileName);
+                    string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    {
+                        FolderPath = ownerFolderPath,
+                        OldFileName = new List<string> { client.OldFileName },
+                        ServiceName = LocalConstants.EmstumFileService
+                    };
+
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetFiles(fileCollection)
+                    .SetPayload(fileFolderDetail)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                     var fileInfo = (from n in files
                                     select new
                                     {
-                                        FileId = n.FileUid,
+                                        FileId = client.FileId,
                                         FileOwnerId = organization.ClientId,
                                         FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Client,
+                                        ItemStatusId = LocalConstants.Profile,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
-
 
                     var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
                 }

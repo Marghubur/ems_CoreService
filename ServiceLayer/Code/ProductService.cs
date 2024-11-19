@@ -2,7 +2,11 @@
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -11,6 +15,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
@@ -20,13 +25,22 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-
-        public ProductService(IDb db, FileLocationDetail fileLocationDetail, IFileService fileService, CurrentSession currentSession)
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        public ProductService(
+            IDb db, 
+            FileLocationDetail fileLocationDetail, 
+            IFileService fileService, 
+            CurrentSession currentSession,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         public dynamic GetAllProductsService(FilterModel filterModel)
@@ -47,7 +61,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public dynamic ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
+        public async Task<dynamic> ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
         {
             validateProduct(product);
             var oldproduct = _db.Get<Product>(Procedures.Prdoduct_Getby_Id, new { ProductId = product.ProductId });
@@ -69,7 +83,9 @@ namespace ServiceLayer.Code
                 oldproduct.PurchasePrice = product.PurchasePrice;
             }
             oldproduct.AdminId = _currentSession.CurrentUserDetail.UserId;
-            ExecuteCompanyNotification(oldproduct, files, fileCollection);
+
+            await ExecuteProductDetail(oldproduct, files, fileCollection);
+
             FilterModel filterModel = new FilterModel
             {
                 SearchString = $"1=1 and CompanyId={product.CompanyId}"
@@ -100,7 +116,7 @@ namespace ServiceLayer.Code
 
         }
 
-        private void ExecuteCompanyNotification(Product product, List<Files> files, IFormFileCollection FileCollection)
+        private async Task ExecuteProductDetail(Product product, List<Files> files, IFormFileCollection FileCollection)
         {
             try
             {
@@ -109,8 +125,26 @@ namespace ServiceLayer.Code
                 if (FileCollection.Count > 0)
                 {
                     // save file to server filesystem
-                    var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "products");
-                    _fileService.SaveFile(folderPath, files, FileCollection, product.ProductId.ToString());
+                    var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
+                    //_fileService.SaveFile(folderPath, files, FileCollection, product.ProductId.ToString());
+
+                    string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    {
+                        FolderPath = folderPath,
+                        OldFileName = null,
+                        ServiceName = LocalConstants.EmstumFileService
+                    };
+
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetFiles(FileCollection)
+                    .SetPayload(fileFolderDetail)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                     foreach (var n in files)
                     {

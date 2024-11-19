@@ -13,6 +13,7 @@ using EMailService.Service;
 using ems_CommonUtility.MicroserviceHttpRequest;
 using ems_CommonUtility.Model;
 using ExcelDataReader;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -1029,26 +1030,45 @@ namespace ServiceLayer.Code
             eCal.EmployeeId = Convert.ToInt64(employeeId);
             if (fileCollection != null && fileCollection.Count > 0)
             {
-                var files = fileCollection.Select(x => new Files
+                //var files = fileCollection.Select(x => new Files
+                //{
+                //    FileUid = employee.FileId,
+                //    FileName = fileCollection[0].Name,
+                //    Email = employee.Email,
+                //    FileExtension = string.Empty
+                //}).ToList<Files>();
+
+
+                var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
+                //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+
+                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
-                    FileUid = employee.FileId,
-                    FileName = fileCollection[0].Name,
-                    Email = employee.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
+                    FolderPath = ownerPath,
+                    OldFileName = new List<string> { employee.OldFileName },
+                    ServiceName = LocalConstants.EmstumFileService
+                };
 
-                var ownerPath = Path.Combine(_fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
-                _fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetFiles(fileCollection)
+                .SetPayload(fileFolderDetail)
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
 
+                List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
                 var fileInfo = (from n in files
                                 select new
                                 {
-                                    FileId = n.FileUid,
+                                    FileId = employee.FileId,
                                     FileOwnerId = eCal.EmployeeId,
                                     FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
                                     UserTypeId = (int)UserType.Employee,
+                                    ItemStatusId = LocalConstants.Profile,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
@@ -1370,26 +1390,45 @@ namespace ServiceLayer.Code
                 eCal.EmployeeId = Convert.ToInt64(employeeId);
                 if (fileCollection.Count > 0)
                 {
-                    var files = fileCollection.Select(x => new Files
-                    {
-                        FileUid = employee.FileId,
-                        FileName = fileCollection[0].Name,
-                        Email = employee.Email,
-                        FileExtension = string.Empty
-                    }).ToList<Files>();
+                    //var files = fileCollection.Select(x => new Files
+                    //{
+                    //    FileUid = employee.FileId,
+                    //    FileName = fileCollection[0].Name,
+                    //    Email = employee.Email,
+                    //    FileExtension = string.Empty
+                    //}).ToList<Files>();
 
-                    var ownerPath = Path.Combine(_fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
-                    _fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+                    var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
+                    //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+
+                    url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    {
+                        FolderPath = ownerPath,
+                        OldFileName = new List<string> { employee.OldFileName },
+                        ServiceName = LocalConstants.EmstumFileService
+                    };
+
+                    microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetFiles(fileCollection)
+                    .SetPayload(fileFolderDetail)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                     var fileInfo = (from n in files
                                     select new
                                     {
-                                        FileId = n.FileUid,
+                                        FileId = employee.FileId,
                                         FileOwnerId = eCal.EmployeeId,
                                         FileName = n.FileName,
                                         FilePath = n.FilePath,
                                         FileExtension = n.FileExtension,
                                         UserTypeId = (int)UserType.Employee,
+                                        ItemStatusId = LocalConstants.Profile,
                                         AdminId = _currentSession.CurrentUserDetail.UserId
                                     }).ToList();
 

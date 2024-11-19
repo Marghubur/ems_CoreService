@@ -23,8 +23,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -581,9 +579,29 @@ namespace ServiceLayer.Code
             {
                 if (FileCollection.Count > 0 && fileDetail.Count > 0)
                 {
-                    string FolderPath = Path.Combine(_fileLocationDetail.Location,
+                    string FolderPath = Path.Combine(_currentSession.CompanyCode,
                         createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
-                    List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
+                    //List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
+
+                    var url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    {
+                        FolderPath = FolderPath,
+                        OldFileName = null,
+                        ServiceName = LocalConstants.EmstumFileService
+                    };
+
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetFiles(FileCollection)
+                    .SetPayload(fileFolderDetail)
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
+
                     if (files != null && files.Count > 0)
                     {
                         Parallel.ForEach(files, item =>
@@ -623,36 +641,36 @@ namespace ServiceLayer.Code
                         });
 
                         userEmail = employee.Email;
-                        ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
+                        ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, file.FilePath);
                     }
                     else if (file.UserTypeId == UserType.Client)
                     {
                         //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
                         //userEmail = userDetail.EmailId;
                         userEmail = file.Email;
-                        ownerPath = Path.Combine(_fileLocationDetail.User, file.FilePath);
+                        ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, file.FilePath);
                     }
 
                     if (!string.IsNullOrEmpty(userEmail))
                     {
-                        fileDetail.ForEach(item =>
-                        {
-                            if (string.IsNullOrEmpty(item.ParentFolder))
-                            {
-                                item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                            }
-                            else
-                            {
-                                item.Email = userEmail;
-                            }
-                        });
+                        //fileDetail.ForEach(item =>
+                        //{
+                        //    if (string.IsNullOrEmpty(item.ParentFolder))
+                        //    {
+                        //        item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
+                        //    }
+                        //    else
+                        //    {
+                        //        item.Email = userEmail;
+                        //    }
+                        //});
 
                         // ---- save document in by another microservice call ------
                         string url = $"{_microserviceRegistry.SaveApplicationFile}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
                             FolderPath = ownerPath,
-                            OldFileName = file.UserId.ToString(),
+                            OldFileName = new List<string> { $"{file.UserId}" },
                             ServiceName = LocalConstants.EmstumFileService
                         };
 
@@ -670,7 +688,7 @@ namespace ServiceLayer.Code
                         _logger.LogInformation("File server successfully");
                         if (files != null && files.Count > 0)
                         {
-                            Result = InsertFileDetails(fileDetail);
+                            Result = InsertFileDetails(files, file.UserId);
                         }
                     }
                     else
@@ -703,19 +721,19 @@ namespace ServiceLayer.Code
             return Result;
         }
 
-        public DataSet InsertFileDetails(List<Files> fileDetail)
+        public DataSet InsertFileDetails(List<Files> fileDetail, long fileOwnerId)
         {
             var fileInfo = (from n in fileDetail.AsEnumerable()
                             select new
                             {
                                 FileId = n.FileUid,
-                                FileOwnerId = n.UserId,
+                                FileOwnerId = fileOwnerId,
                                 FileName = n.FileName,
                                 FilePath = n.FilePath,
-                                ParentFolder = n.ParentFolder,
+                                ParentFolder = string.IsNullOrEmpty(n.ParentFolder) ? string.Empty : n.ParentFolder,
                                 FileExtension = n.FileExtension,
                                 StatusId = 0,
-                                UserTypeId = (int)n.UserTypeId,
+                                UserTypeId = (int)UserType.Employee,
                                 AdminId = 1
                             });
 

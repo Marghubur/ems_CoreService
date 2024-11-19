@@ -1,10 +1,15 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
@@ -26,6 +31,8 @@ namespace ServiceLayer.Code
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceRegistry;
 
         public UserService(
             IDb db,
@@ -33,8 +40,9 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             IHostingEnvironment hostingEnvironment,
             CurrentSession currentSession,
-            IEmployeeService employeeService
-            )
+            IEmployeeService employeeService,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _db = db;
             _fileService = fileService;
@@ -42,6 +50,8 @@ namespace ServiceLayer.Code
             _hostingEnvironment = hostingEnvironment;
             _currentSession = currentSession;
             _employeeService = employeeService;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
@@ -76,27 +86,48 @@ namespace ServiceLayer.Code
             }
 
             int IsProfileImageRequest = 0;
+
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
-                var files = FileCollection.Select(x => new Files
+                //var files = FileCollection.Select(x => new Files
+                //{
+                //    FileUid = professionalUser.FileId,
+                //    FileName = x.Name,
+                //    Email = professionalUser.Email,
+                //    FileExtension = string.Empty
+                //}).ToList<Files>();
+                //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+
+                var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
+                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
-                    FileUid = professionalUser.FileId,
-                    FileName = x.Name,
-                    Email = professionalUser.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+                    FolderPath = ownerPath,
+                    OldFileName = new List<string> { professionalUser.OldFileName },
+                    ServiceName = LocalConstants.EmstumFileService
+                };
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetFiles(FileCollection)
+                .SetPayload(fileFolderDetail)
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                 var fileInfo = (from n in files
                                 select new
                                 {
-                                    FileId = n.FileUid,
+                                    FileId = professionalUser.FileId,
                                     FileOwnerId = professionalUser.EmployeeId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
                                     UserTypeId = UserTypeId,
+                                    ItemStatusId = LocalConstants.Profile,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
@@ -110,31 +141,50 @@ namespace ServiceLayer.Code
         public async Task<Files> UploadResume(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
         {
             if (Int32.Parse(userId) <= 0)
-            {
-                throw new HiringBellException("");
-            }
+                throw HiringBellException.ThrowBadRequest("Invalid user");
 
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
-                var files = FileCollection.Select(x => new Files
+                //var files = FileCollection.Select(x => new Files
+                //{
+                //    FileUid = professionalUser.FileId,
+                //    FileName = x.Name,
+                //    Email = professionalUser.Email,
+                //    FileExtension = string.Empty
+                //}).ToList<Files>();
+
+                //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+
+                var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
+                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
-                    FileUid = professionalUser.FileId,
-                    FileName = x.Name,
-                    Email = professionalUser.Email,
-                    FileExtension = string.Empty
-                }).ToList<Files>();
-                _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
+                    FolderPath = ownerPath,
+                    OldFileName = new List<string> { professionalUser.OldFileName },
+                    ServiceName = LocalConstants.EmstumFileService
+                };
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetFiles(FileCollection)
+                .SetPayload(fileFolderDetail)
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                 var fileInfo = (from n in files
                                 select new
                                 {
-                                    FileId = n.FileUid,
+                                    FileId = professionalUser.FileId,
                                     FileOwnerId = professionalUser.EmployeeId,
                                     FileName = n.FileName,
                                     FilePath = n.FilePath,
                                     FileExtension = n.FileExtension,
                                     UserTypeId = UserTypeId,
+                                    ItemStatusId = LocalConstants.Resume,
                                     AdminId = _currentSession.CurrentUserDetail.UserId
                                 }).ToList();
 
@@ -145,37 +195,37 @@ namespace ServiceLayer.Code
             return file;
         }
 
-        public async Task<string> UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> files)
-        {
-            string result = string.Empty;
-            if (Int32.Parse(UserId) <= 0)
-                throw new HiringBellException("Invalid UserId");
+        //public async Task<string> UploadDeclaration(string UserId, int UserTypeId, UserDetail userDetail, IFormFileCollection FileCollection, List<Files> files)
+        //{
+        //    string result = string.Empty;
+        //    if (Int32.Parse(UserId) <= 0)
+        //        throw new HiringBellException("Invalid UserId");
 
-            if (UserTypeId <= 0)
-                throw new HiringBellException("Invalid UserTypeId");
+        //    if (UserTypeId <= 0)
+        //        throw new HiringBellException("Invalid UserTypeId");
 
-            // Files file = new Files();
-            if (FileCollection.Count > 0)
-            {
-                _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, UserId);
-                var fileInfo = (from n in files
-                                select new
-                                {
-                                    FileId = n.FileUid,
-                                    FileOwnerId = UserId,
-                                    FileName = n.FileName,
-                                    FilePath = n.FilePath,
-                                    FileExtension = n.FileExtension,
-                                    UserTypeId = UserTypeId,
-                                    AdminId = _currentSession.CurrentUserDetail.UserId
-                                }).ToList();
+        //    // Files file = new Files();
+        //    if (FileCollection.Count > 0)
+        //    {
+        //        _fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, UserId);
+        //        var fileInfo = (from n in files
+        //                        select new
+        //                        {
+        //                            FileId = n.FileUid,
+        //                            FileOwnerId = UserId,
+        //                            FileName = n.FileName,
+        //                            FilePath = n.FilePath,
+        //                            FileExtension = n.FileExtension,
+        //                            UserTypeId = UserTypeId,
+        //                            AdminId = _currentSession.CurrentUserDetail.UserId
+        //                        }).ToList();
 
-                int insertedCount = await _db.BulkExecuteAsync("", fileInfo, true);
-                if (insertedCount == 1)
-                    result = "Declaration Uploaded Successfully.";
-            }
-            return result;
-        }
+        //        int insertedCount = await _db.BulkExecuteAsync("", fileInfo, true);
+        //        if (insertedCount == 1)
+        //            result = "Declaration Uploaded Successfully.";
+        //    }
+        //    return result;
+        //}
 
         public ProfileDetail GetUserDetail(long EmployeeId)
         {

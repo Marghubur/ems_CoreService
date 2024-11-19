@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using CoreBottomHalf.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
@@ -112,6 +113,7 @@ namespace ModalLayer.Modal
         public Employee EmployeeDetail { set; get; }
         public List<Project> Projects { get; set; }
         public List<WeekDates> Weeks { get; set; }
+        public AttendanceWithClientDetail AttendanceWithClientDetail { get; set; }
     }
 
     public class WeekDates

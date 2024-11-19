@@ -111,11 +111,11 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("CreateFolder")]
-        public IResponse<ApiResponse> CreateFolder(Files file)
+        public async Task<ApiResponse> CreateFolder(Files file)
         {
             try
             {
-                var result = _fileService.CreateFolder(file);
+                var result = await _fileService.CreateFolder(file);
                 return BuildResponse(result, System.Net.HttpStatusCode.OK);
             }
             catch (Exception ex)

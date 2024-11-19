@@ -15,6 +15,7 @@ using EMailService.Service;
 using ems_CommonUtility.KafkaService.interfaces;
 using ems_CommonUtility.MicroserviceHttpRequest;
 using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -1071,7 +1072,9 @@ namespace ServiceLayer.Code
             if (fileDetail.Count > 0)
             {
                 string FolderPath = Path.Combine(_fileLocationDetail.Location, $"GSTFile_{createPageModel.Billno}");
-                List<Files> files = fileService.SaveFile(FolderPath, fileDetail, FileCollection, "0");
+                //List<Files> files = fileService.SaveFile(FolderPath, fileDetail, FileCollection, "0");
+
+                List<Files> files = new List<Files>();
                 if (files != null && files.Count > 0)
                 {
                     if (files != null && files.Count > 0)
@@ -1260,7 +1263,31 @@ namespace ServiceLayer.Code
 
             var destinationFilePath = Path.Combine(payslipModal.FileDetail.DiskFilePath,
                 payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
-            _htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
+
+            var Email = payslipModal.Employee.Email.Replace("@", "_").Replace(".", "_");
+
+            HtmlToPdfConvertorModal htmlToPdfConvertorModal = new HtmlToPdfConvertorModal
+            {
+                HTML = html,
+                ServiceName = LocalConstants.EmstumFileService,
+                FileName = payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}",
+                FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, Email)
+            };
+
+            string url = $"{_microserviceRegistry.ConvertHtmlToPdf}";
+
+            MicroserviceRequest microserviceRequest = new MicroserviceRequest
+            {
+                Url = url,
+                CompanyCode = _currentSession.CompanyCode,
+                Token = _currentSession.Authorization,
+                Database = _requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString),
+                Payload = JsonConvert.SerializeObject(htmlToPdfConvertorModal)
+            };
+
+            payslipModal.FileDetail.FilePath = await _requestMicroservice.PostRequest<string>(microserviceRequest);
+
+            //_htmlToPdfConverter.ConvertToPdf(html, destinationFilePath);
 
             await Task.CompletedTask;
         }
@@ -1632,7 +1659,7 @@ namespace ServiceLayer.Code
             {
                 var Email = payslipModal.Employee.Email.Replace("@", "_").Replace(".", "_");
                 string FolderLocation = Path.Combine(_fileLocationDetail.UserFolder, Email);
-                string FileName = payslipModal.Employee.FirstName + "_" + payslipModal.Employee.LastName + "_" +
+                string FileName = payslipModal.Employee.FirstName.Replace(" ", "_") + "_" + payslipModal.Employee.LastName.Replace(" ", "_") + "_" +
                               "Payslip" + "_" + payslipModal.SalaryDetail.MonthName + "_" + payslipModal.Year;
 
                 string folderPath = Path.Combine(Directory.GetCurrentDirectory(), FolderLocation);

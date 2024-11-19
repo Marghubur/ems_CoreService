@@ -2,9 +2,12 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ems_CommonUtility.MicroserviceHttpRequest;
+using ems_CommonUtility.Model;
+using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -12,6 +15,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CoreServiceLayer.Implementation
 {
@@ -20,11 +24,23 @@ namespace CoreServiceLayer.Implementation
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
-        public FileService(IHostingEnvironment hostingEnvironment, IDb db, FileLocationDetail fileLocationDetail)
+        private readonly CurrentSession _currentSession;
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly RequestMicroservice _requestMicroservice;
+        public FileService(
+            IHostingEnvironment hostingEnvironment,
+            IDb db,
+            FileLocationDetail fileLocationDetail,
+            CurrentSession currentSession,
+            RequestMicroservice requestMicroservice,
+            IOptions<MicroserviceRegistry> options)
         {
             _hostingEnvironment = hostingEnvironment;
             _fileLocationDetail = fileLocationDetail;
             _db = db;
+            _currentSession = currentSession;
+            _requestMicroservice = requestMicroservice;
+            _microserviceRegistry = options.Value;
         }
 
         public int DeleteFiles(List<Files> files)
@@ -32,18 +48,36 @@ namespace CoreServiceLayer.Implementation
             int deleteCount = 0;
             if (files.Count > 0)
             {
-                foreach (var file in files)
+                string url = $"{_microserviceRegistry.DeleteFiles}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
-                    if (Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath)))
-                    {
-                        string ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath, file.FileName);
-                        if (File.Exists(ActualPath))
-                        {
-                            File.Delete(ActualPath);
-                            deleteCount++;
-                        }
-                    }
-                }
+                    FolderPath = files.First().FilePath,
+                    ServiceName = LocalConstants.EmstumFileService,
+                    DeletableFiles = files.Select(x => x.FileName).ToList()
+                };
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetPayload(fileFolderDetail)
+                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                Task.Run(() => _requestMicroservice.PostRequest<string>(microserviceRequest));
+
+                //foreach (var file in files)
+                //{
+                //    if (Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath)))
+                //    {
+                //        string ActualPath = Path.Combine(_hostingEnvironment.ContentRootPath, file.FilePath, file.FileName);
+                //        if (File.Exists(ActualPath))
+                //        {
+                //            File.Delete(ActualPath);
+                //            deleteCount++;
+                //        }
+                //    }
+                //}
             }
             return deleteCount;
         }
@@ -251,36 +285,38 @@ namespace CoreServiceLayer.Implementation
             return Result;
         }
 
-        public DataSet CreateFolder(Files fileDetail)
+        public async Task<DataSet> CreateFolder(Files fileDetail)
         {
             bool isLocationFound = false;
-            string actualFolderPath = string.Empty;
+            //string actualFolderPath = string.Empty;
             DataSet dataSet = null;
             if (fileDetail != null)
             {
-                fileDetail.FilePath = fileDetail.FilePath;
+                //fileDetail.FilePath = fileDetail.FilePath;
                 if (string.IsNullOrEmpty(fileDetail.ParentFolder))
-                    fileDetail.ParentFolder = _fileLocationDetail.UserFolder;
+                    fileDetail.ParentFolder = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User);
                 else
-                    fileDetail.ParentFolder = Path.Combine(_fileLocationDetail.UserFolder, fileDetail.ParentFolder);
+                    fileDetail.ParentFolder = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, fileDetail.ParentFolder);
 
-                fileDetail.ParentFolder = fileDetail.ParentFolder;
+                //fileDetail.ParentFolder = fileDetail.ParentFolder;
                 if (!string.IsNullOrEmpty(fileDetail.FilePath))
                 {
                     switch (fileDetail.SystemFileType)
                     {
                         case FileSystemType.User:
                             isLocationFound = true;
-                            fileDetail.FilePath = Path.Combine(
-                                    _fileLocationDetail.UserFolder,
-                                    fileDetail.FilePath
-                                );
+                            fileDetail.FilePath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, fileDetail.FilePath);
 
-                            fileDetail.FilePath = fileDetail.FilePath;
-                            actualFolderPath = Path.Combine(
-                                        _hostingEnvironment.ContentRootPath,
-                                        fileDetail.FilePath
-                                    );
+                            //fileDetail.FilePath = Path.Combine(
+                            //        _fileLocationDetail.UserFolder,
+                            //        fileDetail.FilePath
+                            //    );
+
+                            //fileDetail.FilePath = fileDetail.FilePath;
+                            //actualFolderPath = Path.Combine(
+                            //            _hostingEnvironment.ContentRootPath,
+                            //            fileDetail.FilePath
+                            //        );
                             break;
                         case FileSystemType.Bills:
                             break;
@@ -288,20 +324,42 @@ namespace CoreServiceLayer.Implementation
 
                     if (isLocationFound)
                     {
-                        if (!Directory.Exists(actualFolderPath))
-                            Directory.CreateDirectory(actualFolderPath);
+                        //if (!Directory.Exists(actualFolderPath))
+                        //    Directory.CreateDirectory(actualFolderPath);
+
+                        string url = $"{_microserviceRegistry.CreateFolder}";
+                        FileFolderDetail fileFolderDetail = new FileFolderDetail
+                        {
+                            FolderPath = fileDetail.FilePath,
+                            ServiceName = LocalConstants.EmstumFileService
+                        };
+
+                        var microserviceRequest = MicroserviceRequest.Builder(url);
+                        microserviceRequest
+                        .SetPayload(fileFolderDetail)
+                        .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                        .SetConnectionString(_currentSession.LocalConnectionString)
+                        .SetCompanyCode(_currentSession.CompanyCode)
+                        .SetToken(_currentSession.Authorization);
+
+                        fileDetail.FilePath = await _requestMicroservice.PostRequest<string>(microserviceRequest);
+                        int lastIndex = fileDetail.FilePath.LastIndexOf('\\');
+                        if (lastIndex != -1)
+                            fileDetail.ParentFolder = fileDetail.FilePath.Substring(0, lastIndex);
 
                         List<Files> files = new List<Files>
-                        {
-                            fileDetail
-                        };
+                            {
+                                fileDetail
+                            };
 
                         this.InsertFileDetails(files, ApplicationConstants.InserUserFileDetail);
                         dataSet = this.GetUserFilesById(fileDetail.UserId, (int)fileDetail.UserTypeId);
+
                     }
                 }
             }
-            return dataSet;
+
+            return await Task.FromResult(dataSet);
         }
 
         public Tuple<string, bool> InsertFileDetails(List<Files> fileDetail, string procedure)
