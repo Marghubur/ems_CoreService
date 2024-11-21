@@ -29,6 +29,7 @@ using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -1224,23 +1225,45 @@ namespace ServiceLayer.Code
 
         private async Task CapturePayslipFileFolderLocations(PayslipGenerationModal payslipModal)
         {
-            payslipModal.PayslipTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
-                        _fileLocationDetail.Location,
-                        Path.Combine(_fileLocationDetail.HtmlTemplatePath),
-                        _fileLocationDetail.PaysliplTemplate
-                    );
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    var payslipPath = Path.Combine(_fileLocationDetail.HtmlTemplatePath, _fileLocationDetail.PaysliplTemplate);
+                    var url = $"https://www.bottomhalf.in/bts/resources/applications/ems/{payslipPath}";
 
-            if (!File.Exists(payslipModal.PayslipTemplatePath))
-                throw HiringBellException.ThrowBadRequest("Payslip template not found. Please contact to admin.");
+                    HttpResponseMessage response = await client.GetAsync(url);
 
-            payslipModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
-                _fileLocationDetail.Location,
-                Path.Combine(_fileLocationDetail.HtmlTemplatePath),
-                _fileLocationDetail.PaysliplTemplate
-            );
+                    if (response.IsSuccessStatusCode)
+                        payslipModal.PdfTemplateHTML = await response.Content.ReadAsStringAsync();
+                    else
+                        Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
 
-            if (!File.Exists(payslipModal.PdfTemplatePath))
-                throw HiringBellException.ThrowBadRequest("PDF template not found. Please contact to admin.");
+                    client.Dispose();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            //payslipModal.PayslipTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+            //            _fileLocationDetail.Location,
+            //            Path.Combine(_fileLocationDetail.HtmlTemplatePath),
+            //            _fileLocationDetail.PaysliplTemplate
+            //        );
+
+            //if (!File.Exists(payslipModal.PayslipTemplatePath))
+            //    throw HiringBellException.ThrowBadRequest("Payslip template not found. Please contact to admin.");
+
+            //payslipModal.PdfTemplatePath = Path.Combine(_fileLocationDetail.RootPath,
+            //    _fileLocationDetail.Location,
+            //    Path.Combine(_fileLocationDetail.HtmlTemplatePath),
+            //    _fileLocationDetail.PaysliplTemplate
+            //);
+
+            //if (!File.Exists(payslipModal.PdfTemplatePath))
+            //    throw HiringBellException.ThrowBadRequest("PDF template not found. Please contact to admin.");
 
             if (!payslipModal.HeaderLogoPath.Contains("https://") && !File.Exists(payslipModal.HeaderLogoPath))
             {
@@ -1348,12 +1371,7 @@ namespace ServiceLayer.Code
 
             var LossOfPayDays = payslipModal.PayrollMonthlyDetail.LOP;
 
-            using (FileStream stream = File.Open(templatePath, FileMode.Open))
-            {
-                StreamReader reader = new StreamReader(stream);
-                html = reader.ReadToEnd();
-
-                html = html.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
+            html = payslipModal.PdfTemplateHTML.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
                 Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
                 Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
@@ -1390,7 +1408,6 @@ namespace ServiceLayer.Code
                 Replace("[[TotalActualEarnings]]", totalActualEarning.ToString("0.00")).
                 Replace("[[TotalYTD]]", totalYTDAmount.ToString("0.00")).
                 Replace("[[EmployeeDeclaration]]", declarationHTML);
-            }
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
                 html = await AddCompanyLogo(payslipModal, html);
@@ -1679,6 +1696,7 @@ namespace ServiceLayer.Code
                 throw ex;
             }
         }
+
         private string NumberToWords(decimal amount)
         {
             try
@@ -1695,6 +1713,7 @@ namespace ServiceLayer.Code
                 throw new HiringBellException(e.Message);
             }
         }
+
         private String ConvertNumber(Int64 i)
         {
             String[] units = { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
