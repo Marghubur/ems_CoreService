@@ -28,7 +28,7 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
         private readonly RequestMicroservice _requestMicroservice;
@@ -38,7 +38,7 @@ namespace ServiceLayer.Code
             IDb db,
             IFileService fileService,
             FileLocationDetail fileLocationDetail,
-            IHostingEnvironment hostingEnvironment,
+            IWebHostEnvironment hostingEnvironment,
             CurrentSession currentSession,
             IEmployeeService employeeService,
             RequestMicroservice requestMicroservice,

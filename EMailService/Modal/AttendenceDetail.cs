@@ -103,7 +103,7 @@ namespace ModalLayer.Modal
         public DateTime presentDate { set; get; }
         public List<Calendar> calendars { set; get; }
         public ShiftDetail shiftDetail { set; get; }
-        public LeaveDetail leaveDetail { set; get; }
+        public List<LeaveRequestNotification> leaveDetails { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
         public List<Project> projects { get; set; }
     }

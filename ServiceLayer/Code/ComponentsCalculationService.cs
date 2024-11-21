@@ -224,47 +224,47 @@ namespace ServiceLayer.Code
 
         }
 
-        public void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
-        {
-            _logger.LogInformation("Starting method: HRAComponent");
+        //public void HRAComponent(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails)
+        //{
+        //    _logger.LogInformation("Starting method: HRAComponent");
 
-            var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
-            if (calculatedSalaryBreakupDetail == null)
-            {
-                calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
-                {
-                    ActualAmount = 0
-                };
-            }
+        //    var calculatedSalaryBreakupDetail = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.HRA);
+        //    if (calculatedSalaryBreakupDetail == null)
+        //    {
+        //        calculatedSalaryBreakupDetail = new CalculatedSalaryBreakupDetail
+        //        {
+        //            ActualAmount = 0
+        //        };
+        //    }
 
-            var basicComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
-            if (basicComponent == null)
-                throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
+        //    var basicComponent = calculatedSalaryBreakupDetails.Find(x => x.ComponentId.ToUpper() == ComponentNames.Basic);
+        //    if (basicComponent == null)
+        //        throw new HiringBellException("Invalid gross amount not found. Please contact to admin.");
 
-            decimal HRA1 = calculatedSalaryBreakupDetail.ActualAmount;
-            decimal HRA2 = basicComponent.ActualAmount / 2;
-            decimal HRA3 = 0;  // it comes from declaration
-            decimal HRAAmount = 0;
+        //    decimal HRA1 = calculatedSalaryBreakupDetail.ActualAmount;
+        //    decimal HRA2 = basicComponent.ActualAmount / 2;
+        //    decimal HRA3 = 0;  // it comes from declaration
+        //    decimal HRAAmount = 0;
 
-            if (HRA1 < HRA2 && HRA1 > 0)
-                HRAAmount = HRA1;
-            else
-                HRAAmount = HRA2;
+        //    if (HRA1 < HRA2 && HRA1 > 0)
+        //        HRAAmount = HRA1;
+        //    else
+        //        HRAAmount = HRA2;
 
-            var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == ComponentNames.HRA);
-            if (hraComponent != null && hraComponent.DeclaredValue > 0)
-            {
-                decimal declaredValue = hraComponent.DeclaredValue;
-                HRA3 = declaredValue - (basicComponent.ActualAmount * .1M);
+        //    var hraComponent = employeeDeclaration.SalaryComponentItems.Find(x => x.ComponentId == ComponentNames.HRA);
+        //    if (hraComponent != null && hraComponent.DeclaredValue > 0)
+        //    {
+        //        decimal declaredValue = hraComponent.DeclaredValue;
+        //        HRA3 = declaredValue - (basicComponent.ActualAmount * .1M);
 
-                if (HRA3 > 0 && HRA3 < HRAAmount)
-                    HRAAmount = HRA3;
-            }
+        //        if (HRA3 > 0 && HRA3 < HRAAmount)
+        //            HRAAmount = HRA3;
+        //    }
 
-            employeeDeclaration.HRADeatils = new EmployeeHRA { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
-            _logger.LogInformation("Leaving method: HRAComponent");
+        //    employeeDeclaration.HRADeatils = new EmployeeHRA { HRA1 = HRA1, HRA2 = HRA2, HRA3 = HRA3, HRAAmount = HRAAmount };
+        //    _logger.LogInformation("Leaving method: HRAComponent");
 
-        }
+        //}
 
         public void BuildTaxDetail(long EmployeeId, EmployeeDeclaration employeeDeclaration, EmployeeSalaryDetail salaryBreakup)
         {
@@ -377,37 +377,37 @@ namespace ServiceLayer.Code
             return totalDeduction;
         }
 
-        public decimal HRACalculation(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails, int totalMonths)
-        {
-            _logger.LogInformation("Starting method: HRA component calculation");
+        //public decimal HRACalculation(EmployeeDeclaration employeeDeclaration, List<CalculatedSalaryBreakupDetail> calculatedSalaryBreakupDetails, int totalMonths)
+        //{
+        //    _logger.LogInformation("Starting method: HRA component calculation");
 
-            decimal totalDeduction = 0;
+        //    decimal totalDeduction = 0;
 
-            var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
-            if (component == null)
-            {
-                component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
-                if (component == null)
-                    throw HiringBellException.ThrowBadRequest("HRA component not found");
+        //    var component = calculatedSalaryBreakupDetails.Find(x => x.Formula == ApplicationConstants.AutoCalculation);
+        //    if (component == null)
+        //    {
+        //        component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
+        //        if (component == null)
+        //            throw HiringBellException.ThrowBadRequest("HRA component not found");
 
-                // Calculate hra and apply on deduction
-                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+        //        // Calculate hra and apply on deduction
+        //        HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
 
-                if (employeeDeclaration.HRADeatils != null)
-                    totalDeduction = (employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
-            }
-            else
-            {
-                component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
-                if (component == null)
-                    throw HiringBellException.ThrowBadRequest("HRA component not found");
+        //        if (employeeDeclaration.HRADeatils != null)
+        //            totalDeduction = (employeeDeclaration.HRADeatils.HRAAmount * totalMonths);
+        //    }
+        //    else
+        //    {
+        //        component = calculatedSalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.HRA);
+        //        if (component == null)
+        //            throw HiringBellException.ThrowBadRequest("HRA component not found");
 
-                HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
-                totalDeduction = employeeDeclaration.HRADeatils.HRAAmount * totalMonths;
-            }
+        //        HRAComponent(employeeDeclaration, calculatedSalaryBreakupDetails);
+        //        totalDeduction = employeeDeclaration.HRADeatils.HRAAmount * totalMonths;
+        //    }
 
-            return totalDeduction;
-        }
+        //    return totalDeduction;
+        //}
 
         public decimal HousePropertyComponent(EmployeeDeclaration employeeDeclaration)
         {

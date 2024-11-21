@@ -13,9 +13,6 @@ namespace ModalLayer.Modal
         public string Title { set; get; }
         public string TitleDescription { set; get; }
         public int Status { set; get; } = 2;
-        public bool IsAutoExpiredEnabled { set; get; } = true;
-        public int AutoExpireAfterDays { set; get; }
-        public int NoOfApprovalLevel { get; set; }
         public bool IsSilentListner { set; get; }
         public string ListnerDetail { set; get; }
         public long CreatedBy { set; get; }

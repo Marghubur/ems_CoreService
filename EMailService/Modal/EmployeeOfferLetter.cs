@@ -9,7 +9,7 @@ namespace ModalLayer.Modal
         public string Email { set; get; }
         public string Designation { set; get; }
         public int CTC { get; set; }
-        public new int CompanyId { set; get; }
+        public int CompanyId { set; get; }
         public DateTime JoiningDate { get; set; }
     }
 }

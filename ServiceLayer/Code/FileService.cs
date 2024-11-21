@@ -21,14 +21,14 @@ namespace CoreServiceLayer.Implementation
 {
     public class FileService : IFileService
     {
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly MicroserviceRegistry _microserviceRegistry;
         private readonly RequestMicroservice _requestMicroservice;
         public FileService(
-            IHostingEnvironment hostingEnvironment,
+            IWebHostEnvironment hostingEnvironment,
             IDb db,
             FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,

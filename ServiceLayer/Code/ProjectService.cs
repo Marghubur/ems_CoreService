@@ -19,8 +19,8 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IHostingEnvironment _hostingEnvironment;
-        public ProjectService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment)
+        private readonly IWebHostEnvironment _hostingEnvironment;
+        public ProjectService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IWebHostEnvironment hostingEnvironment)
         {
             _db = db;
             _currentSession = currentSession;

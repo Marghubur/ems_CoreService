@@ -2017,10 +2017,10 @@ namespace ServiceLayer.Code
                 {
                     EmployeeId = long.Parse(row["EmployeeId"].ToString()),
                     Name = row["Name"].ToString(),
-                    MonthYear = DateTime.SpecifyKind(Convert.ToDateTime(row["MonthYear"].ToString()), DateTimeKind.Unspecified)
+                    Month = Int32.Parse(row["Month"].ToString()),
                 };
 
-                int daysInMonth = DateTime.DaysInMonth(attendance.MonthYear.Year, attendance.MonthYear.Month);
+                int daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, attendance.Month);
                 for (int day = 1; day <= daysInMonth; day++)
                 {
                     string dayColumnName = day.ToString();
@@ -2046,43 +2046,84 @@ namespace ServiceLayer.Code
                 if (x.EmployeeId == 0)
                     throw HiringBellException.ThrowBadRequest("Invalid employee id");
 
-                if (x.MonthYear == null)
-                    throw HiringBellException.ThrowBadRequest("Invalid Month year");
+                if (x.Month == null)
+                    throw HiringBellException.ThrowBadRequest("Invalid Month");
 
-                foreach (var item in x.DailyData)
+                DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, out List<DailyAttendance> attendanceDetails);
+
+                foreach (var item in attendanceDetails)
                 {
-                    var attendanceDate = new DateTime(x.MonthYear.Year, x.MonthYear.Month, item.Key, 0, 0, 0, DateTimeKind.Unspecified);
-                    var dailyAttendance = new DailyAttendance
+                    var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
+                    if (attedanceDate.Month == x.Month)
                     {
-                        EmployeeId = x.EmployeeId,
-                        EmployeeName = x.Name,
-                        TotalMinutes = 480,
-                        LogOff = "00:00:00",
-                        LogOn = "00:00:00",
-                        Comments = "[]",
-                        AttendanceStatus = GetAttendanceDayStatus(item.Value),
-                        WorkTypeId = WorkType.WORKFROMOFFICE,
-                        WeekOfYear = ISOWeek.GetWeekOfYear(attendanceDate),
-                        AttendanceDate = _timezoneConverter.ToUtcTime(attendanceDate, _currentSession.TimeZone),
-                        IsOnLeave = false,
-                        LeaveId = 0
-                    };
+                        x.DailyData.TryGetValue(attedanceDate.Day, out string value);
+                        item.WorkTypeId = WorkType.WORKFROMOFFICE;
+                        item.AttendanceStatus = GetAttendanceDayStatus(value, dailyAttendanceBuilder, attedanceDate);
 
-                    dailyAttendances.Add(dailyAttendance);
-                }
+                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(item.AttendanceDate.Date).TotalDays <= 0
+                                                                                        && i.ToDate.Date.Subtract(item.AttendanceDate.Date).TotalDays >= 0);
+
+                        if (leaveDetail != null)
+                        {
+                            item.IsOnLeave = true;
+                            item.LeaveId = leaveDetail.LeaveTypeId;
+                        }
+                    }
+                };
+
+                dailyAttendances.AddRange(attendanceDetails);
             });
 
             return dailyAttendances;
         }
 
-        private int GetAttendanceDayStatus(string value)
+        private DailyAttendanceBuilder GetDailyAttendanceDetail(long employeeId, int month, out List<DailyAttendance> dailyAttendances)
+        {
+            dailyAttendances = new List<DailyAttendance>();
+            DailyAttendanceBuilder dailyAttendanceBuilder = new DailyAttendanceBuilder();
+
+            var fromDate = new DateTime(DateTime.UtcNow.Year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
+            var toDate = new DateTime(DateTime.UtcNow.Year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddMonths(1);
+            var Result = _db.FetchDataSet(Procedures.DAILY_ATTENDANCE_GET, new
+            {
+                EmployeeId = employeeId,
+                FromDate = fromDate,
+                ToDate = toDate,
+                _currentSession.CurrentUserDetail.CompanyId,
+            });
+
+            if (Result.Tables.Count != 5)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
+
+            if (Result.Tables[3].Rows.Count != 1)
+                throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
+
+            dailyAttendanceBuilder.shiftDetail = Converter.ToType<ShiftDetail>(Result.Tables[3]);
+            dailyAttendances = Converter.ToList<DailyAttendance>(Result.Tables[0]);
+
+            if (!ApplicationConstants.ContainSingleRow(Result.Tables[1]))
+                throw new HiringBellException("Err!! fail to get employee detail. Plaese contact to admin.");
+
+            dailyAttendanceBuilder.employee = Converter.ToType<Employee>(Result.Tables[1]);
+            dailyAttendanceBuilder.leaveDetails = Converter.ToList<LeaveRequestNotification>(Result.Tables[4]);
+            dailyAttendanceBuilder.calendars = Converter.ToList<ModalLayer.Calendar>(Result.Tables[2]);
+
+            return dailyAttendanceBuilder;
+        }
+
+        private int GetAttendanceDayStatus(string value, DailyAttendanceBuilder dailyAttendanceBuilder, DateTime attedanceDate)
         {
             int status = 0;
-            if (string.IsNullOrEmpty(value))
+            var isHoliday = dailyAttendanceBuilder.calendars.Any() == true && CheckIsHoliday(attedanceDate, dailyAttendanceBuilder.calendars);
+            var isWeekend = CheckWeekend(dailyAttendanceBuilder.shiftDetail, attedanceDate);
+
+            if (isWeekend)
                 status = (int)AttendanceEnum.WeekOff;
+            else if (isHoliday)
+                status = (int)AttendanceEnum.Holiday;
             else if (value.Equals("p", StringComparison.OrdinalIgnoreCase))
                 status = (int)AttendanceEnum.Approved;
-            else if (value.Equals("a", StringComparison.OrdinalIgnoreCase))
+            else
                 status = (int)AttendanceEnum.NotSubmitted;
 
             return status;
@@ -2113,10 +2154,10 @@ namespace ServiceLayer.Code
                                WorkTypeId = (int)n.WorkTypeId,
                                n.IsOnLeave,
                                n.LeaveId,
-                               AdminId = _currentSession.CurrentUserDetail.UserId
+                               CreatedBy = _currentSession.CurrentUserDetail.UserId
                            }).ToList();
 
-            var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INSERT, records, true);
+            var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, records, true);
 
             if (result != records.Count)
                 throw HiringBellException.ThrowBadRequest("Fail to insert the record");
@@ -2133,36 +2174,46 @@ namespace ServiceLayer.Code
 
         private List<DailyAttendance> GenerateDailyAttendanceRecord(List<DailyBiometricAttendance> dailyBiometricAttendances)
         {
-            List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
+            var firstBiometricAttendance = dailyBiometricAttendances.First();
+            DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(firstBiometricAttendance.EmployeeId, firstBiometricAttendance.Date.Month, out List<DailyAttendance> attendanceDetails);
 
-            dailyBiometricAttendances.ForEach(x =>
+            foreach (var item in attendanceDetails)
             {
-                if (x.EmployeeId == 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid employee id");
-
-                if (x.Date == null)
-                    throw HiringBellException.ThrowBadRequest("Invalid date passed");
-
-                var dailyAttendance = new DailyAttendance
+                var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
+                var currentBiometricAttendance = dailyBiometricAttendances.Find(x => x.Date.Date.Subtract(attedanceDate.Date).TotalDays == 0);
+                if (firstBiometricAttendance.Date.Month == attedanceDate.Month)
                 {
-                    EmployeeId = x.EmployeeId,
-                    EmployeeName = x.Name,
-                    TotalMinutes = x.TotalWorkingMinutes,
-                    LogOff = ConvertPunchTime(x.Punch_Out),
-                    LogOn = ConvertPunchTime(x.Punch_In),
-                    Comments = "[]",
-                    AttendanceStatus = (int)AttendanceEnum.Approved,
-                    WorkTypeId = WorkType.WORKFROMOFFICE,
-                    WeekOfYear = ISOWeek.GetWeekOfYear(x.Date),
-                    AttendanceDate = _timezoneConverter.ToUtcTime(x.Date, _currentSession.TimeZone),
-                    IsOnLeave = false,
-                    LeaveId = 0
-                };
+                    if (currentBiometricAttendance != null)
+                    {
+                        string value = currentBiometricAttendance.TotalWorkingMinutes > 0 ? "p" : "";
 
-                dailyAttendances.Add(dailyAttendance);
-            });
+                        item.TotalMinutes = currentBiometricAttendance.TotalWorkingMinutes;
+                        item.LogOn = currentBiometricAttendance.Punch_In;
+                        item.LogOff = currentBiometricAttendance.Punch_Out;
+                        item.WorkTypeId = WorkType.WORKFROMOFFICE;
+                        item.AttendanceStatus = GetAttendanceDayStatus(value, dailyAttendanceBuilder, attedanceDate);
+                    }
+                    else
+                    {
+                        item.TotalMinutes = 0;
+                        item.LogOn = "00:00:00";
+                        item.LogOff = "00:00:00";
+                        item.WorkTypeId = WorkType.WORKFROMOFFICE;
+                        item.AttendanceStatus = (int)AttendanceEnum.NotSubmitted;
+                    }
 
-            return dailyAttendances;
+                    var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(x => x.FromDate.Date.Subtract(item.AttendanceDate.Date).TotalDays <= 0
+                                                                                    && x.ToDate.Date.Subtract(item.AttendanceDate.Date).TotalDays >= 0);
+
+                    if (leaveDetail != null)
+                    {
+                        item.IsOnLeave = true;
+                        item.LeaveId = leaveDetail.LeaveTypeId;
+                    }
+                }
+            };
+
+            return attendanceDetails;
         }
 
         private string ConvertPunchTime(string punchTime)

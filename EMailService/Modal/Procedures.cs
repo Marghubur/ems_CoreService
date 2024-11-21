@@ -67,7 +67,7 @@
         public static string Leave_And_Lop_Get = "sp_leave_and_lop_get";
         public static string Complaint_Or_Request_Update_Status = "sp_complaint_or_request_update_status";
         public static string DAILY_ATTENDANCE_INSERT = "sp_daily_attendance_insert";
-
+        public static string DAILY_ATTENDANCE_GET = "sp_daily_attendance_get";
 
         /*--------------  Authentication Service procedures ------------*/
         public static string AuthenticationToken_VerifyAndGet = "SP_AuthenticationToken_VerifyAndGet";

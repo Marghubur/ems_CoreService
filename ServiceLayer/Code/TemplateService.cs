@@ -1,6 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using BottomhalfCore.Services.Code;
 using EMailService.Service;
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
@@ -20,11 +19,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
 
-        public TemplateService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IHostingEnvironment hostingEnvironment, ICompanyService companyService, IEMailManager eMailManager)
+        public TemplateService(
+            IDb db, 
+            CurrentSession currentSession, 
+            FileLocationDetail fileLocationDetail, 
+            IWebHostEnvironment hostingEnvironment, 
+            ICompanyService companyService, 
+            IEMailManager eMailManager)
         {
             _db = db;
             _currentSession = currentSession;
