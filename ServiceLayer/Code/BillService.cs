@@ -1407,7 +1407,8 @@ namespace ServiceLayer.Code
                 Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
                 Replace("[[TotalActualEarnings]]", totalActualEarning.ToString("0.00")).
                 Replace("[[TotalYTD]]", totalYTDAmount.ToString("0.00")).
-                Replace("[[EmployeeDeclaration]]", declarationHTML);
+                Replace("[[EmployeeDeclaration]]", declarationHTML)
+                .Replace("[[CompanyLegalName]]", payslipModal.Company.CompanyName);
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
                 html = await AddCompanyLogo(payslipModal, html);
