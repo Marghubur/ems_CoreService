@@ -1,4 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
@@ -171,6 +173,21 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, SurchargeSlabId);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadEmployeeExcel")]
+        public async Task<ApiResponse> UploadEmployeeExcel([FromForm] IFormFile file)
+        {
+            try
+            {
+                await _taxRegimeService.ReadProfessionalTaxDataService(file);
+                return BuildResponse("file found");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
             }
         }
     }

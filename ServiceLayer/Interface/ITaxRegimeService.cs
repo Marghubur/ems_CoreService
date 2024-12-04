@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using Microsoft.AspNetCore.Http;
+using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,5 +18,6 @@ namespace ServiceLayer.Interface
         Task<List<SurChargeSlab>> AddUpdateSurchargeService(List<SurChargeSlab> surChargeSlabs);
         List<SurChargeSlab> GetAllSurchargeService();
         string DeleteSurchargeSlabService(long SurchargeSlabId);
+        Task<string> ReadProfessionalTaxDataService(IFormFile files);
     }
 }

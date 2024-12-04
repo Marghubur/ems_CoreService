@@ -25,6 +25,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -586,20 +587,20 @@ namespace ServiceLayer.Code
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
 
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            employeeCalculation.employee = employee;
-            _logger.LogInformation("Employee file converted");
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            employeeCalculation.Doj = employee.DateOfJoining;
-            employeeCalculation.IsFirstYearDeclaration = true;
+            //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            //employeeCalculation.employee = employee;
+            //_logger.LogInformation("Employee file converted");
+            //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+            //employeeCalculation.Doj = employee.DateOfJoining;
+            //employeeCalculation.IsFirstYearDeclaration = true;
 
-            CreateFinancialStartEndDatetime(employeeCalculation);
+            //CreateFinancialStartEndDatetime(employeeCalculation);
 
-            if (employeeEmailMobileCheck.EmployeeCount > 0)
-                throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
+            //if (employeeEmailMobileCheck.EmployeeCount > 0)
+            //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
-            await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
+            await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
 
             _logger.LogInformation("Leaving method: RegisterEmployeeService");
             return ApplicationConstants.Successfull;
@@ -607,19 +608,19 @@ namespace ServiceLayer.Code
 
         public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
         {
-            EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            employeeCalculation.employee = employee;
-            EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-            employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            employeeCalculation.Doj = DateTime.UtcNow;
-            employeeCalculation.IsFirstYearDeclaration = true;
+            //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+            //employeeCalculation.employee = employee;
+            //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+            //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+            //employeeCalculation.Doj = DateTime.UtcNow;
+            //employeeCalculation.IsFirstYearDeclaration = true;
 
-            CreateFinancialStartEndDatetime(employeeCalculation);
+            //CreateFinancialStartEndDatetime(employeeCalculation);
 
-            if (employeeEmailMobileCheck.EmployeeCount > 0)
-                throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
+            //if (employeeEmailMobileCheck.EmployeeCount > 0)
+            //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
-            await BulkRegistration(employeeCalculation, fileCollection);
+            await BulkRegistration(employee, fileCollection);
         }
 
         public void CreateFinancialStartEndDatetime(EmployeeCalculation employeeCalculation)
@@ -1226,13 +1227,13 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(basicFields);
         }
 
-        private async Task BulkRegistration(EmployeeCalculation eCal, IFormFileCollection fileCollection)
+        private async Task BulkRegistration(Employee employee, IFormFileCollection fileCollection)
         {
             try
             {
-                Employee employee = eCal.employee;
-                eCal.Doj = employee.DateOfJoining;
-                eCal.EmployeeId = eCal.employee.EmployeeUid;
+                //Employee employee = eCal.employee;
+                //eCal.Doj = employee.DateOfJoining;
+                //eCal.EmployeeId = eCal.employee.EmployeeUid;
 
                 this.ValidateEmployee(employee);
                 this.ValidateEmployeeDetails(employee);
@@ -1291,8 +1292,8 @@ namespace ServiceLayer.Code
 
                     employee.EmployeeId = id + 1;
                     employee.EmployeeUid = employee.EmployeeId;
-                    eCal.EmployeeId = employee.EmployeeId;
-                    eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
+                    //eCal.EmployeeId = employee.EmployeeId;
+                    //eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
                 }
 
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
@@ -1301,7 +1302,8 @@ namespace ServiceLayer.Code
                 string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
                 var microserviceRequest = MicroserviceRequest.Builder(url);
                 microserviceRequest
-                .SetPayload(eCal)
+                //.SetPayload(eCal)
+                .SetPayload(employee.EmployeeId)
                 .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                 .SetConnectionString(_currentSession.LocalConnectionString)
                 .SetCompanyCode(_currentSession.CompanyCode)
@@ -1310,6 +1312,8 @@ namespace ServiceLayer.Code
                 var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
                 if (response is null)
                     throw HiringBellException.ThrowBadRequest("fail to get response");
+
+                var eCal = response;
 
                 eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
                 eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
@@ -2172,6 +2176,109 @@ namespace ServiceLayer.Code
             }
 
             return columnList;
+        }
+
+        //------------------ Overloading Method -----------------------------------
+
+        public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, bool isEmpByExcel = false)
+        {
+            bool IsNewRegistration = false;
+            long employeeUid = 0;
+
+            try
+            {
+                string EncryptedPassword = string.Empty;
+                var empId = Convert.ToInt32(employee.EmployeeUid);
+
+                // validate employee
+                ValidateEmployee(employee);
+
+                // validate employee detail
+                ValidateEmployeeDetails(employee);
+
+                await ManagerProfessionalDetail(employee);
+
+                await AssignReportingManager(employee);
+
+                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+
+                // prepare for new insert of employee
+                IsNewRegistration = await PrepareEmployeeInsertData(employee);
+
+                employeeUid = employee.EmployeeUid;
+
+                var eCal = new EmployeeCalculation();
+
+                if (IsNewRegistration)
+                {
+                    EncryptedPassword = UtilService.Encrypt(
+                        _configuration.GetSection("DefaultNewEmployeePassword").Value,
+                        _configuration.GetSection("EncryptSecret").Value
+                    );
+
+                    await GetDeclarationDetail(employeeUid);
+                }
+
+                long declarationId = CheckUpdateDeclarationComponents(eCal);
+
+                // make insert or update call for employee
+                string employeeId = InsertUpdateEmployee(eCal, IsNewRegistration, EncryptedPassword, employee, declarationId);
+
+                await EmployeeFileInsertUpdate(eCal, fileCollection, employee, employeeId);
+
+                //if (!isEmpByExcel)
+                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
+
+                return employeeId;
+            }
+            catch
+            {
+                if (IsNewRegistration && employeeUid > 0)
+                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { employeeUid }, false);
+
+                throw;
+            }
+        }
+
+        private async Task<bool> PrepareEmployeeInsertData(Employee employee)
+        {
+            bool IsNewRegistration = false;
+            if (employee.AccessLevelId != (int)RolesName.Admin)
+                employee.UserTypeId = (int)RolesName.User;
+
+            if (string.IsNullOrEmpty(employee.NewSalaryDetail))
+                employee.NewSalaryDetail = "[]";
+
+            employee.EmployeeId = employee.EmployeeUid;
+            if (employee.EmployeeUid == 0)
+            {
+                // create employee record
+                employee.EmployeeId = await RegisterNewEmployee(employee, employee.DateOfJoining);
+                IsNewRegistration = true;
+
+                employee.EmployeeUid = employee.EmployeeId;
+            }
+
+            return await Task.FromResult(IsNewRegistration);
+        }
+
+        private async Task<EmployeeCalculation> GetDeclarationDetail(long employeeId)
+        {
+            string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(employeeId)
+            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+
+            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
+            if (response is null)
+                throw HiringBellException.ThrowBadRequest("fail to get response");
+
+            return response;
         }
     }
 }

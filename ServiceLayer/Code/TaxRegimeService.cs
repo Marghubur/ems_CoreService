@@ -1,12 +1,17 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
@@ -298,12 +303,12 @@ namespace ServiceLayer.Code
                 }
                 var slabs = (from n in oldsurcharge
                              select new
-                              {
-                                  n.SurchargeSlabId,
-                                  n.MinSurcahrgeSlab,
-                                  n.MaxSurchargeSlab,
-                                  n.SurchargeRatePercentage
-                              }).ToList();
+                             {
+                                 n.SurchargeSlabId,
+                                 n.MinSurcahrgeSlab,
+                                 n.MaxSurchargeSlab,
+                                 n.SurchargeRatePercentage
+                             }).ToList();
 
                 var status = await _db.BulkExecuteAsync(Procedures.Surcharge_Slab_Insupd, slabs, true);
                 return this.GetAllSurchargeService();
@@ -312,7 +317,7 @@ namespace ServiceLayer.Code
             {
                 throw;
             }
-        } 
+        }
         public List<SurChargeSlab> GetAllSurchargeService()
         {
             var result = _db.GetList<SurChargeSlab>(Procedures.Surcharge_Slab_Getall);
@@ -336,7 +341,7 @@ namespace ServiceLayer.Code
             int i = 0;
             while (i < surChargeSlabs.Count)
             {
-                if (surChargeSlabs[i].MinSurcahrgeSlab > surChargeSlabs[i].MaxSurchargeSlab && (i+1 != surChargeSlabs.Count))
+                if (surChargeSlabs[i].MinSurcahrgeSlab > surChargeSlabs[i].MaxSurchargeSlab && (i + 1 != surChargeSlabs.Count))
                     throw new HiringBellException("Invalid surcharge slab enter");
 
                 if (i > 0)
@@ -346,6 +351,79 @@ namespace ServiceLayer.Code
                 }
                 i++;
             }
+        }
+
+        public async Task<string> ReadProfessionalTaxDataService(IFormFile files)
+        {
+            try
+            {
+                var uploadedEmployeeData = await ReadPTaxSlabExcel(files);
+                var allSlabs = (from n in uploadedEmployeeData
+                                select new
+                                {
+                                    n.PtaxSlabId,
+                                    n.StateName,
+                                    n.MinIncome,
+                                    n.MaxIncome,
+                                    n.TaxAmount,
+                                    n.Gender,
+                                }).ToList();
+
+                var status = await _db.BulkExecuteAsync(Procedures.Ptax_Slab_Insupd, allSlabs, true);
+                if (status != uploadedEmployeeData.Count)
+                    throw HiringBellException.ThrowBadRequest("Fail to uploda ptab slab detail");
+
+                return "Professional tax slap uploaded successfully";
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private async Task<List<PTaxSlab>> ReadPTaxSlabExcel(IFormFile file)
+        {
+            DataTable dataTable = null;
+            List<PTaxSlab> pTaxSlabs = new List<PTaxSlab>();
+
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    FileInfo fileInfo = new FileInfo(file.FileName);
+                    if (fileInfo.Extension == ".xlsx" || fileInfo.Extension == ".xls")
+                    {
+                        ms.Seek(0, SeekOrigin.Begin);
+                        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                        using (var reader = ExcelReaderFactory.CreateReader(ms))
+                        {
+                            var result = reader.AsDataSet(new ExcelDataSetConfiguration
+                            {
+                                ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                                {
+                                    UseHeaderRow = true
+                                }
+                            });
+
+                            dataTable = result.Tables[0];
+
+                            pTaxSlabs = dataTable.ToList<PTaxSlab>();
+                        }
+                    }
+                    else
+                    {
+                        throw HiringBellException.ThrowBadRequest("Please select a valid excel file");
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return pTaxSlabs;
         }
     }
 }
