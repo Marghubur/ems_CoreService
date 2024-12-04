@@ -583,6 +583,12 @@ namespace ServiceLayer.Code
             return await RegisterOrUpdateEmployeeDetail(employeeCalculation, fileCollection);
         }
 
+        /// <summary>
+        /// This service will be used to register new employee and Employee object must contain complete information of the present employee
+        /// </summary>
+        /// <param name="employee"></param>
+        /// <param name="fileCollection"></param>
+        /// <returns></returns>
         public async Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
             _logger.LogInformation("Starting method: RegisterEmployeeService");
@@ -2180,7 +2186,7 @@ namespace ServiceLayer.Code
 
         //------------------ Overloading Method -----------------------------------
 
-        public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, bool isEmpByExcel = false)
+        public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection)
         {
             bool IsNewRegistration = false;
             long employeeUid = 0;
@@ -2216,7 +2222,7 @@ namespace ServiceLayer.Code
                         _configuration.GetSection("EncryptSecret").Value
                     );
 
-                    await GetDeclarationDetail(employeeUid);
+                    eCal = await GetDeclarationDetail(employeeUid);
                 }
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
