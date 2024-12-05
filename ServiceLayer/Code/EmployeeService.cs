@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
+using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -613,19 +614,19 @@ namespace ServiceLayer.Code
 
         //public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
         //{
-            //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            //employeeCalculation.employee = employee;
-            //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-            //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            //employeeCalculation.Doj = DateTime.UtcNow;
-            //employeeCalculation.IsFirstYearDeclaration = true;
+        //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
+        //employeeCalculation.employee = employee;
+        //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
+        //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
+        //employeeCalculation.Doj = DateTime.UtcNow;
+        //employeeCalculation.IsFirstYearDeclaration = true;
 
-            //CreateFinancialStartEndDatetime(employeeCalculation);
+        //CreateFinancialStartEndDatetime(employeeCalculation);
 
-            //if (employeeEmailMobileCheck.EmployeeCount > 0)
-            //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
+        //if (employeeEmailMobileCheck.EmployeeCount > 0)
+        //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
-            // await BulkRegistration(employee, fileCollection);
+        // await BulkRegistration(employee, fileCollection);
         // }
 
         public void CreateFinancialStartEndDatetime(EmployeeCalculation employeeCalculation)
@@ -1852,7 +1853,7 @@ namespace ServiceLayer.Code
         //    return await Task.FromResult(status);
         //}
 
-        private void SetupPreviousEmployerIncome(EmployeeCalculation employeeCalculation, UploadedPayrollData uploaded)
+        private async Task SetupPreviousEmployerIncome(EmployeeCalculation employeeCalculation, UploadedPayrollData uploaded)
         {
             var pemp = new PreviousEmployerDetail
             {
@@ -1861,6 +1862,39 @@ namespace ServiceLayer.Code
                 ProfessionalTax = uploaded.PR_EPER_PT,
                 TDS = uploaded.PR_EPER_TDS
             };
+
+            // save this value into database
+            var item = new List<object> {
+                new PreviousEmployementDetail {
+                    PreviousEmpDetailId = 0,
+                    EmployeeId = employeeCalculation.EmployeeId,
+                    Month = "NA",
+                    MonthNumber = 0,
+                    Year = DateTime.UtcNow.Year,
+                    Gross = uploaded.PR_EPER_TotalIncome,
+                    Basic = 0,
+                    HouseRent = 0,
+                    EmployeePR = 0,
+                    ESI = 0,
+                    LWF = 0,
+                    LWFEmp = 0,
+                    Professional = uploaded.PR_EPER_PT,
+                    IncomeTax = uploaded.PR_EPER_TDS,
+                    OtherTax = 0,
+                    DeclarationFor80C = uploaded.PR_EPER_PF_80C,
+                    OtherTaxable = 0,
+                    CreatedBy = _currentSession.CurrentUserDetail.UserId,
+                    UpdatedBy = _currentSession.CurrentUserDetail.UserId,
+                    CreatedOn = DateTime.UtcNow,
+                    UpdatedOn = DateTime.UtcNow
+                }
+            };
+
+            var result = await _db.BatchInsetUpdate<PreviousEmployementDetail>(item);
+            if (string.IsNullOrEmpty(result))
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert or update previous employement details");
+            }
 
             employeeCalculation.previousEmployerDetail = pemp;
         }
@@ -1886,7 +1920,7 @@ namespace ServiceLayer.Code
             CreateFinancialStartEndDatetime(employeeCalculation);
 
             SetupPreviousEmployerIncome(employeeCalculation, uploaded);
-            var result = await RegisterOrUpdateEmployeeDetail(employeeCalculation, null, true);
+            var result = await RegisterOrUpdateEmployeeDetail(employee, null);
 
             if (!string.IsNullOrEmpty(result))
             {
@@ -1910,6 +1944,7 @@ namespace ServiceLayer.Code
                             EmployeeId = emp.EmployeeUid,
                             EmployeeDeclarationId = emp.EmployeeDeclarationId
                         };
+
                         employeeDeclarations.Add(employeeDeclaration);
                     }
                 }
