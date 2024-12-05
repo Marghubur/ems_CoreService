@@ -25,7 +25,6 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -612,8 +611,8 @@ namespace ServiceLayer.Code
             return ApplicationConstants.Successfull;
         }
 
-        public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
-        {
+        //public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
+        //{
             //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
             //employeeCalculation.employee = employee;
             //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
@@ -626,8 +625,8 @@ namespace ServiceLayer.Code
             //if (employeeEmailMobileCheck.EmployeeCount > 0)
             //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
 
-            await BulkRegistration(employee, fileCollection);
-        }
+            // await BulkRegistration(employee, fileCollection);
+        // }
 
         public void CreateFinancialStartEndDatetime(EmployeeCalculation employeeCalculation)
         {
@@ -1233,223 +1232,223 @@ namespace ServiceLayer.Code
             return JsonConvert.SerializeObject(basicFields);
         }
 
-        private async Task BulkRegistration(Employee employee, IFormFileCollection fileCollection)
-        {
-            try
-            {
-                //Employee employee = eCal.employee;
-                //eCal.Doj = employee.DateOfJoining;
-                //eCal.EmployeeId = eCal.employee.EmployeeUid;
+        //private async Task BulkRegistration(Employee employee, IFormFileCollection fileCollection)
+        //{
+        //    try
+        //    {
+        //        //Employee employee = eCal.employee;
+        //        //eCal.Doj = employee.DateOfJoining;
+        //        //eCal.EmployeeId = eCal.employee.EmployeeUid;
 
-                this.ValidateEmployee(employee);
-                this.ValidateEmployeeDetails(employee);
-                int empId = Convert.ToInt32(employee.EmployeeUid);
+        //        this.ValidateEmployee(employee);
+        //        this.ValidateEmployeeDetails(employee);
+        //        int empId = Convert.ToInt32(employee.EmployeeUid);
 
-                var professionalDetail = new EmployeeProfessionDetail
-                {
-                    AadharNo = employee.AadharNo,
-                    AccountNumber = employee.AccountNumber,
-                    BankName = employee.BankName,
-                    BranchName = employee.BranchName,
-                    CreatedBy = employee.EmployeeUid,
-                    CreatedOn = employee.CreatedOn,
-                    Domain = employee.Domain,
-                    Email = employee.Email,
-                    EmployeeUid = employee.EmployeeUid,
-                    EmpProfDetailUid = employee.EmpProfDetailUid,
-                    ExperienceInYear = employee.ExperienceInYear,
-                    FirstName = employee.FirstName,
-                    IFSCCode = employee.IFSCCode,
-                    LastCompanyName = employee.LastCompanyName,
-                    LastName = employee.LastName,
-                    Mobile = employee.Mobile,
-                    PANNo = employee.PANNo,
-                    SecomdaryMobile = employee.SecondaryMobile,
-                    Specification = employee.Specification,
-                };
+        //        var professionalDetail = new EmployeeProfessionDetail
+        //        {
+        //            AadharNo = employee.AadharNo,
+        //            AccountNumber = employee.AccountNumber,
+        //            BankName = employee.BankName,
+        //            BranchName = employee.BranchName,
+        //            CreatedBy = employee.EmployeeUid,
+        //            CreatedOn = employee.CreatedOn,
+        //            Domain = employee.Domain,
+        //            Email = employee.Email,
+        //            EmployeeUid = employee.EmployeeUid,
+        //            EmpProfDetailUid = employee.EmpProfDetailUid,
+        //            ExperienceInYear = employee.ExperienceInYear,
+        //            FirstName = employee.FirstName,
+        //            IFSCCode = employee.IFSCCode,
+        //            LastCompanyName = employee.LastCompanyName,
+        //            LastName = employee.LastName,
+        //            Mobile = employee.Mobile,
+        //            PANNo = employee.PANNo,
+        //            SecomdaryMobile = employee.SecondaryMobile,
+        //            Specification = employee.Specification,
+        //        };
 
-                await AssignReportingManager(employee);
+        //        await AssignReportingManager(employee);
 
-                employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
-
-
-                string EncreptedPassword = UtilService.Encrypt(
-                    _configuration.GetSection("DefaultNewEmployeePassword").Value,
-                    _configuration.GetSection("EncryptSecret").Value
-                );
-
-                if (employee.AccessLevelId != (int)RolesName.Admin)
-                    employee.UserTypeId = (int)RolesName.User;
-
-                if (string.IsNullOrEmpty(employee.NewSalaryDetail))
-                    employee.NewSalaryDetail = "[]";
-
-                employee.EmployeeUid = employee.EmployeeId;
-                if (employee.EmployeeUid == 0)
-                {
-                    // create employee record
-                    var result = _db.Execute(Procedures.Employee_LastId, new { IsActive = true }, true);
-                    if (string.IsNullOrEmpty(result.statusMessage))
-                        throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
-
-                    long id = Convert.ToInt64(result.statusMessage);
-                    if (id <= 0)
-                        throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
-
-                    employee.EmployeeId = id + 1;
-                    employee.EmployeeUid = employee.EmployeeId;
-                    //eCal.EmployeeId = employee.EmployeeId;
-                    //eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
-                }
-
-                _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-                // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
-
-                string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-                var microserviceRequest = MicroserviceRequest.Builder(url);
-                microserviceRequest
-                //.SetPayload(eCal)
-                .SetPayload(employee.EmployeeId)
-                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
-                .SetConnectionString(_currentSession.LocalConnectionString)
-                .SetCompanyCode(_currentSession.CompanyCode)
-                .SetToken(_currentSession.Authorization);
-
-                var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
-                if (response is null)
-                    throw HiringBellException.ThrowBadRequest("fail to get response");
-
-                var eCal = response;
-
-                eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
-                eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
-                eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
-                eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
-                eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
-                eCal.salaryComponents = response.salaryComponents;
-
-                long declarationId = CheckUpdateDeclarationComponents(eCal);
-                var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
-                {
-                    employee.EmployeeUid,
-                    employee.OrganizationId,
-                    employee.FirstName,
-                    employee.LastName,
-                    employee.Mobile,
-                    employee.Email,
-                    employee.LeavePlanId,
-                    employee.PayrollGroupId,
-                    employee.SalaryGroupId,
-                    employee.CompanyId,
-                    employee.NoticePeriodId,
-                    employee.SecondaryMobile,
-                    employee.FatherName,
-                    employee.MotherName,
-                    employee.SpouseName,
-                    employee.Gender,
-                    employee.State,
-                    employee.City,
-                    employee.Pincode,
-                    employee.Address,
-                    employee.PANNo,
-                    employee.AadharNo,
-                    employee.AccountNumber,
-                    employee.BankName,
-                    employee.BranchName,
-                    employee.IFSCCode,
-                    employee.Domain,
-                    employee.Specification,
-                    employee.ExprienceInYear,
-                    employee.LastCompanyName,
-                    employee.IsPermanent,
-                    employee.ActualPackage,
-                    employee.FinalPackage,
-                    employee.TakeHomeByCandidate,
-                    employee.ReportingManagerId,
-                    employee.DesignationId,
-                    employee.ProfessionalDetail_Json,
-                    Password = EncreptedPassword,
-                    employee.AccessLevelId,
-                    employee.UserTypeId,
-                    employee.CTC,
-                    eCal.employeeSalaryDetail.GrossIncome,
-                    eCal.employeeSalaryDetail.NetSalary,
-                    eCal.employeeSalaryDetail.CompleteSalaryDetail,
-                    eCal.employeeSalaryDetail.TaxDetail,
-                    employee.DOB,
-                    RegistrationDate = employee.DateOfJoining,
-                    EmployeeDeclarationId = declarationId,
-                    DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
-                    employee.WorkShiftId,
-                    IsPending = false,
-                    employee.NewSalaryDetail,
-                    employee.PFNumber,
-                    employee.PFJoinDate,
-                    employee.UniversalAccountNumber,
-                    AdminId = _currentSession.CurrentUserDetail.UserId
-                },
-                    true
-                );
+        //        employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
 
 
-                if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin.");
-                }
+        //        string EncreptedPassword = UtilService.Encrypt(
+        //            _configuration.GetSection("DefaultNewEmployeePassword").Value,
+        //            _configuration.GetSection("EncryptSecret").Value
+        //        );
 
-                eCal.EmployeeId = Convert.ToInt64(employeeId);
-                if (fileCollection.Count > 0)
-                {
-                    //var files = fileCollection.Select(x => new Files
-                    //{
-                    //    FileUid = employee.FileId,
-                    //    FileName = fileCollection[0].Name,
-                    //    Email = employee.Email,
-                    //    FileExtension = string.Empty
-                    //}).ToList<Files>();
+        //        if (employee.AccessLevelId != (int)RolesName.Admin)
+        //            employee.UserTypeId = (int)RolesName.User;
 
-                    var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
-                    //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+        //        if (string.IsNullOrEmpty(employee.NewSalaryDetail))
+        //            employee.NewSalaryDetail = "[]";
 
-                    url = $"{_microserviceRegistry.SaveApplicationFile}";
-                    FileFolderDetail fileFolderDetail = new FileFolderDetail
-                    {
-                        FolderPath = ownerPath,
-                        OldFileName = new List<string> { employee.OldFileName },
-                        ServiceName = LocalConstants.EmstumFileService
-                    };
+        //        employee.EmployeeUid = employee.EmployeeId;
+        //        if (employee.EmployeeUid == 0)
+        //        {
+        //            // create employee record
+        //            var result = _db.Execute(Procedures.Employee_LastId, new { IsActive = true }, true);
+        //            if (string.IsNullOrEmpty(result.statusMessage))
+        //                throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
 
-                    microserviceRequest = MicroserviceRequest.Builder(url);
-                    microserviceRequest
-                    .SetFiles(fileCollection)
-                    .SetPayload(fileFolderDetail)
-                    .SetConnectionString(_currentSession.LocalConnectionString)
-                    .SetCompanyCode(_currentSession.CompanyCode)
-                    .SetToken(_currentSession.Authorization);
+        //            long id = Convert.ToInt64(result.statusMessage);
+        //            if (id <= 0)
+        //                throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
 
-                    var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+        //            employee.EmployeeId = id + 1;
+        //            employee.EmployeeUid = employee.EmployeeId;
+        //            //eCal.EmployeeId = employee.EmployeeId;
+        //            //eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
+        //        }
 
-                    var fileInfo = (from n in files
-                                    select new
-                                    {
-                                        FileId = employee.FileId,
-                                        FileOwnerId = eCal.EmployeeId,
-                                        FileName = n.FileName,
-                                        FilePath = n.FilePath,
-                                        FileExtension = n.FileExtension,
-                                        UserTypeId = (int)UserType.Employee,
-                                        ItemStatusId = LocalConstants.Profile,
-                                        AdminId = _currentSession.CurrentUserDetail.UserId
-                                    }).ToList();
+        //        _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
+        //        // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
 
-                    var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
-                }
-            }
-            catch
-            {
-                throw;
-            }
-        }
+        //        string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
+        //        var microserviceRequest = MicroserviceRequest.Builder(url);
+        //        microserviceRequest
+        //        //.SetPayload(eCal)
+        //        .SetPayload(employee.EmployeeId)
+        //        .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+        //        .SetConnectionString(_currentSession.LocalConnectionString)
+        //        .SetCompanyCode(_currentSession.CompanyCode)
+        //        .SetToken(_currentSession.Authorization);
+
+        //        var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
+        //        if (response is null)
+        //            throw HiringBellException.ThrowBadRequest("fail to get response");
+
+        //        var eCal = response;
+
+        //        eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
+        //        eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
+        //        eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
+        //        eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
+        //        eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
+        //        eCal.salaryComponents = response.salaryComponents;
+
+        //        long declarationId = CheckUpdateDeclarationComponents(eCal);
+        //        var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
+        //        {
+        //            employee.EmployeeUid,
+        //            employee.OrganizationId,
+        //            employee.FirstName,
+        //            employee.LastName,
+        //            employee.Mobile,
+        //            employee.Email,
+        //            employee.LeavePlanId,
+        //            employee.PayrollGroupId,
+        //            employee.SalaryGroupId,
+        //            employee.CompanyId,
+        //            employee.NoticePeriodId,
+        //            employee.SecondaryMobile,
+        //            employee.FatherName,
+        //            employee.MotherName,
+        //            employee.SpouseName,
+        //            employee.Gender,
+        //            employee.State,
+        //            employee.City,
+        //            employee.Pincode,
+        //            employee.Address,
+        //            employee.PANNo,
+        //            employee.AadharNo,
+        //            employee.AccountNumber,
+        //            employee.BankName,
+        //            employee.BranchName,
+        //            employee.IFSCCode,
+        //            employee.Domain,
+        //            employee.Specification,
+        //            employee.ExprienceInYear,
+        //            employee.LastCompanyName,
+        //            employee.IsPermanent,
+        //            employee.ActualPackage,
+        //            employee.FinalPackage,
+        //            employee.TakeHomeByCandidate,
+        //            employee.ReportingManagerId,
+        //            employee.DesignationId,
+        //            employee.ProfessionalDetail_Json,
+        //            Password = EncreptedPassword,
+        //            employee.AccessLevelId,
+        //            employee.UserTypeId,
+        //            employee.CTC,
+        //            eCal.employeeSalaryDetail.GrossIncome,
+        //            eCal.employeeSalaryDetail.NetSalary,
+        //            eCal.employeeSalaryDetail.CompleteSalaryDetail,
+        //            eCal.employeeSalaryDetail.TaxDetail,
+        //            employee.DOB,
+        //            RegistrationDate = employee.DateOfJoining,
+        //            EmployeeDeclarationId = declarationId,
+        //            DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
+        //            employee.WorkShiftId,
+        //            IsPending = false,
+        //            employee.NewSalaryDetail,
+        //            employee.PFNumber,
+        //            employee.PFJoinDate,
+        //            employee.UniversalAccountNumber,
+        //            AdminId = _currentSession.CurrentUserDetail.UserId
+        //        },
+        //            true
+        //        );
+
+
+        //        if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
+        //        {
+        //            throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin.");
+        //        }
+
+        //        eCal.EmployeeId = Convert.ToInt64(employeeId);
+        //        if (fileCollection.Count > 0)
+        //        {
+        //            //var files = fileCollection.Select(x => new Files
+        //            //{
+        //            //    FileUid = employee.FileId,
+        //            //    FileName = fileCollection[0].Name,
+        //            //    Email = employee.Email,
+        //            //    FileExtension = string.Empty
+        //            //}).ToList<Files>();
+
+        //            var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
+        //            //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
+
+        //            url = $"{_microserviceRegistry.SaveApplicationFile}";
+        //            FileFolderDetail fileFolderDetail = new FileFolderDetail
+        //            {
+        //                FolderPath = ownerPath,
+        //                OldFileName = new List<string> { employee.OldFileName },
+        //                ServiceName = LocalConstants.EmstumFileService
+        //            };
+
+        //            microserviceRequest = MicroserviceRequest.Builder(url);
+        //            microserviceRequest
+        //            .SetFiles(fileCollection)
+        //            .SetPayload(fileFolderDetail)
+        //            .SetConnectionString(_currentSession.LocalConnectionString)
+        //            .SetCompanyCode(_currentSession.CompanyCode)
+        //            .SetToken(_currentSession.Authorization);
+
+        //            var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+
+        //            var fileInfo = (from n in files
+        //                            select new
+        //                            {
+        //                                FileId = employee.FileId,
+        //                                FileOwnerId = eCal.EmployeeId,
+        //                                FileName = n.FileName,
+        //                                FilePath = n.FilePath,
+        //                                FileExtension = n.FileExtension,
+        //                                UserTypeId = (int)UserType.Employee,
+        //                                ItemStatusId = LocalConstants.Profile,
+        //                                AdminId = _currentSession.CurrentUserDetail.UserId
+        //                            }).ToList();
+
+        //            var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        throw;
+        //    }
+        //}
 
         private void ValidateEmployeeDetails(Employee employee)
         {
@@ -1816,42 +1815,42 @@ namespace ServiceLayer.Code
             return await Task.FromResult(filepath);
         }
 
-        public async Task<string> UploadEmployeeExcelService(List<Employee> employees, IFormFileCollection formFiles)
-        {
-            string status = string.Empty;
-            if (employees.Count > 0)
-            {
-                foreach (var x in employees)
-                {
-                    if (!string.IsNullOrEmpty(x.FirstName))
-                    {
-                        if (x.CTC < 1000)
-                            x.CTC = 1000;
+        //public async Task<string> UploadEmployeeExcelService(List<Employee> employees, IFormFileCollection formFiles)
+        //{
+        //    string status = string.Empty;
+        //    if (employees.Count > 0)
+        //    {
+        //        foreach (var x in employees)
+        //        {
+        //            if (!string.IsNullOrEmpty(x.FirstName))
+        //            {
+        //                if (x.CTC < 1000)
+        //                    x.CTC = 1000;
 
-                        x.DesignationId = 13;
-                        if (string.IsNullOrEmpty(x.LastName))
-                            x.LastName = "NA";
+        //                x.DesignationId = 13;
+        //                if (string.IsNullOrEmpty(x.LastName))
+        //                    x.LastName = "NA";
 
-                        x.FirstName = x.FirstName.ToUpper();
-                        x.LastName = x.LastName.ToUpper();
+        //                x.FirstName = x.FirstName.ToUpper();
+        //                x.LastName = x.LastName.ToUpper();
 
-                        try
-                        {
-                            await EmployeeBulkRegistrationService(x, formFiles);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex.Message);
-                        }
-                    }
-                }
+        //                try
+        //                {
+        //                    await EmployeeBulkRegistrationService(x, formFiles);
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    _logger.LogError(ex.Message);
+        //                }
+        //            }
+        //        }
 
-                status = "success";
-                return status;
-            }
+        //        status = "success";
+        //        return status;
+        //    }
 
-            return await Task.FromResult(status);
-        }
+        //    return await Task.FromResult(status);
+        //}
 
         private void SetupPreviousEmployerIncome(EmployeeCalculation employeeCalculation, UploadedPayrollData uploaded)
         {
@@ -2270,17 +2269,16 @@ namespace ServiceLayer.Code
 
         private async Task<EmployeeCalculation> GetDeclarationDetail(Employee employee)
         {
-            string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
+            string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{employee.EmployeeId}/{employee.CTC}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
-            .SetPayload(employee)
             .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
             .SetToken(_currentSession.Authorization);
 
 
-            var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
+            var response = await _requestMicroservice.GetRequest<EmployeeCalculation>(microserviceRequest);
             if (response is null)
                 throw HiringBellException.ThrowBadRequest("fail to get response");
 
