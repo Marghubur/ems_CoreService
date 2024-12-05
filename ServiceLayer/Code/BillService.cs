@@ -1387,7 +1387,7 @@ namespace ServiceLayer.Code
                 Replace("[[BankIFSC]]", payslipModal.Employee.IFSCCode).
                 Replace("[[Bank Account]]", payslipModal.Employee.AccountNumber).
                 Replace("[[PAN]]", payslipModal.Employee.PANNo).
-                Replace("[[UAN]]", payslipModal.Employee.UniversalAccountNumber).
+                Replace("[[UAN]]", payslipModal.Employee.UAN).
                 Replace("[[PFNumber]]", payslipModal.Employee.PFNumber).
                 Replace("[[ActualPayableDays]]", ActualPayableDays.ToString()).
                 Replace("[[TotalWorkingDays]]", TotalWorkingDays.ToString()).

@@ -1016,8 +1016,8 @@ namespace ServiceLayer.Code
                 employee.NewSalaryDetail,
                 IsNewRegistration,
                 employee.PFNumber,
-                employee.PFJoinDate,
-                employee.UniversalAccountNumber,
+                PFJoinDate = employee.PFAccountCreationDate,
+                UniversalAccountNumber = employee.UAN,
                 employee.SalaryDetailId,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             },
@@ -1384,8 +1384,8 @@ namespace ServiceLayer.Code
                     IsPending = false,
                     employee.NewSalaryDetail,
                     employee.PFNumber,
-                    employee.PFJoinDate,
-                    employee.UniversalAccountNumber,
+                    PFJoinDate = employee.PFAccountCreationDate,
+                    UniversalAccountNumber = employee.UAN,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                     true
