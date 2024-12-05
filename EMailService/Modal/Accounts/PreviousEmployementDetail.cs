@@ -8,7 +8,7 @@ namespace ModalLayer.Modal.Accounts
     {
         [Key]
         public long PreviousEmpDetailId { get; set; }
-        public int EmployeeId { get; set; }
+        public long EmployeeId { get; set; }
         public string Month { get; set; }
         public int MonthNumber { get; set; }
         public decimal Gross { get; set; }
@@ -21,6 +21,7 @@ namespace ModalLayer.Modal.Accounts
         public decimal Professional { get; set; }
         public decimal IncomeTax { get; set; }
         public decimal OtherTax { get; set; }
+        public decimal DeclarationFor80C { get; set; }
         public decimal OtherTaxable { get; set; }
         public int Year { get; set; }
     }
