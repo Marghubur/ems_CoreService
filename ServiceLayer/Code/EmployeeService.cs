@@ -2222,7 +2222,7 @@ namespace ServiceLayer.Code
                         _configuration.GetSection("EncryptSecret").Value
                     );
 
-                    eCal = await GetDeclarationDetail(employeeUid);
+                    eCal = await GetDeclarationDetail(employee);
                 }
 
                 long declarationId = CheckUpdateDeclarationComponents(eCal);
@@ -2268,12 +2268,12 @@ namespace ServiceLayer.Code
             return await Task.FromResult(IsNewRegistration);
         }
 
-        private async Task<EmployeeCalculation> GetDeclarationDetail(long employeeId)
+        private async Task<EmployeeCalculation> GetDeclarationDetail(Employee employee)
         {
             string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
-            .SetPayload(employeeId)
+            .SetPayload(employee)
             .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
