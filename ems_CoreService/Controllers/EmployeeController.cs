@@ -161,7 +161,7 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw Throw(ex, new { EmployeeId = EmployeeId, IsActive = IsActive });
+                throw Throw(ex, new { EmployeeId, IsActive });
             }
         }
 
