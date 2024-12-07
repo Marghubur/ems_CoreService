@@ -1,14 +1,13 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
-using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
-using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -26,19 +25,19 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly ILogger<AttendanceRequestService> _logger;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ILogger<AttendanceRequestService> logger,
-            IKafkaNotificationService kafkaNotificationService)
+            IKafkaProducerService kafkaProducerService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _logger = logger;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure, ItemStatus itemStatus = ItemStatus.Pending)
@@ -190,7 +189,7 @@ namespace ServiceLayer.Code
                         CompanyId = _currentSession.CurrentUserDetail.CompanyId
                     };
 
-                    await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+                    await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
                 }
 
                 await Task.CompletedTask;

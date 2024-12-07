@@ -1,3 +1,7 @@
+using bt_lib_common_services.Configserver;
+using bt_lib_common_services.KafkaService.code;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using ems_CoreService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -54,6 +58,14 @@ namespace OnlineDataBuilder
 
             // register common utility for web config services
             _registerService.RegisterCommonUtility(services);
+
+            // Subscribe the kafka service
+            services.AddSingleton<IKafkaConsumerService>(x =>
+                new KafkaConsumerService(
+                    KafkaTopicNames.DAILY_JOBS_MANAGER,
+                    FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).Result
+                )
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

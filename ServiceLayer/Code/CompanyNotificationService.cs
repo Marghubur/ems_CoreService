@@ -1,9 +1,9 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using EMailService.Modal;
-using ems_CommonUtility.MicroserviceHttpRequest;
-using ems_CommonUtility.Model;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -130,7 +130,7 @@ namespace ServiceLayer.Code
 
                     var savefiles = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
-                    for (int i = 0; i < savefiles.Count; i++)
+                    for (int i = 0; i < savefiles.Count(); i++)
                     {
                         Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
                         {

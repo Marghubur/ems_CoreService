@@ -5,13 +5,13 @@ using BottomHalf.Utilities.UtilService;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
-using ems_CommonUtility.MicroserviceHttpRequest;
-using ems_CommonUtility.Model;
 using ExcelDataReader;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +33,7 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Threading.Tasks;
 using File = System.IO.File;
+using PreviousEmployementDetail = Bot.CoreBottomHalf.CommonModal.PreviousEmployementDetail;
 
 namespace ServiceLayer.Code
 {

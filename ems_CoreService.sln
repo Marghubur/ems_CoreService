@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EMailService", "EMailServic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ems_CoreService", "ems_CoreService\ems_CoreService.csproj", "{84F2214D-B096-4FCD-BB27-D1894D927556}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ems_CommonUtility", "..\ems_CommonUtility\ems_CommonUtility\ems_CommonUtility.csproj", "{E5DB174B-0279-455C-AD6D-A1E8206BAD91}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,10 +27,6 @@ Global
 		{84F2214D-B096-4FCD-BB27-D1894D927556}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84F2214D-B096-4FCD-BB27-D1894D927556}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84F2214D-B096-4FCD-BB27-D1894D927556}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E5DB174B-0279-455C-AD6D-A1E8206BAD91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E5DB174B-0279-455C-AD6D-A1E8206BAD91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E5DB174B-0279-455C-AD6D-A1E8206BAD91}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E5DB174B-0279-455C-AD6D-A1E8206BAD91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

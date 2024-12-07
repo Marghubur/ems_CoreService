@@ -232,7 +232,7 @@ namespace ServiceLayer.Code
                                 switch (typeName)
                                 {
                                     case nameof(System.Boolean):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, default(bool));
                                         else if (value.ToString().Equals("True", StringComparison.OrdinalIgnoreCase) || value.ToString().Equals("yes", StringComparison.OrdinalIgnoreCase))
                                             prop.SetValue(t, true);
@@ -240,7 +240,7 @@ namespace ServiceLayer.Code
                                             prop.SetValue(t, false);
                                         break;
                                     case nameof(Int32):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, 0);
                                         else if (value.ToString().Equals(nameof(ItemStatus.Submitted), StringComparison.OrdinalIgnoreCase) || value.ToString().Equals(nameof(ItemStatus.Pending), StringComparison.OrdinalIgnoreCase))
                                             prop.SetValue(t, (int)ItemStatus.Submitted);
@@ -258,25 +258,25 @@ namespace ServiceLayer.Code
                                             prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
                                         break;
                                     case nameof(Int64):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, 0);
                                         else
                                             prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
                                         break;
                                     case nameof(Decimal):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, decimal.Zero);
                                         else
                                             prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
                                         break;
                                     case nameof(System.String):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, string.Empty);
                                         else
                                             prop.SetValue(t, Convert.ChangeType(value, prop.PropertyType));
                                         break;
                                     case nameof(DateTime):
-                                        if (value == null || value == "")
+                                        if (value == null || value.ToString() == "")
                                             prop.SetValue(t, defaultDate);
                                         else
                                         {
