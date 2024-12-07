@@ -5,6 +5,10 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.KafkaService.code;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -12,9 +16,6 @@ using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using EMailService.Service;
-using ems_CommonUtility.KafkaService.interfaces;
-using ems_CommonUtility.MicroserviceHttpRequest;
-using ems_CommonUtility.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -49,7 +50,7 @@ namespace ServiceLayer.Code
         private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
         // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
         private readonly MicroserviceRegistry _microserviceRegistry;
@@ -65,7 +66,7 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker,
-            IKafkaNotificationService kafkaNotificationService,
+            IKafkaProducerService kafkaProducerService,
             // IDeclarationService declarationService,
             IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
@@ -83,7 +84,7 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
             // _declarationService = declarationService;
             _masterDatabase = options.Value;
             _requestMicroservice = requestMicroservice;
@@ -1159,7 +1160,7 @@ namespace ServiceLayer.Code
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
-                await _kafkaNotificationService.SendEmailNotification(billingTemplateModel);
+                await _kafkaProducerService.SendEmailNotification(billingTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             }
 
             return ApplicationConstants.Successfull;
@@ -1387,7 +1388,7 @@ namespace ServiceLayer.Code
                 Replace("[[BankIFSC]]", payslipModal.Employee.IFSCCode).
                 Replace("[[Bank Account]]", payslipModal.Employee.AccountNumber).
                 Replace("[[PAN]]", payslipModal.Employee.PANNo).
-                Replace("[[UAN]]", payslipModal.Employee.UniversalAccountNumber).
+                Replace("[[UAN]]", payslipModal.Employee.UAN).
                 Replace("[[PFNumber]]", payslipModal.Employee.PFNumber).
                 Replace("[[ActualPayableDays]]", ActualPayableDays.ToString()).
                 Replace("[[TotalWorkingDays]]", TotalWorkingDays.ToString()).

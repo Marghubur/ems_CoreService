@@ -5,13 +5,13 @@ using BottomHalf.Utilities.UtilService;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
-using ems_CommonUtility.MicroserviceHttpRequest;
-using ems_CommonUtility.Model;
 using ExcelDataReader;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
@@ -21,7 +21,6 @@ using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
-using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -34,6 +33,7 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Threading.Tasks;
 using File = System.IO.File;
+using PreviousEmployementDetail = Bot.CoreBottomHalf.CommonModal.PreviousEmployementDetail;
 
 namespace ServiceLayer.Code
 {
@@ -1016,8 +1016,8 @@ namespace ServiceLayer.Code
                 employee.NewSalaryDetail,
                 IsNewRegistration,
                 employee.PFNumber,
-                employee.PFJoinDate,
-                employee.UniversalAccountNumber,
+                employee.PFAccountCreationDate,
+                employee.UAN,
                 employee.SalaryDetailId,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             },

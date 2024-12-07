@@ -4,9 +4,10 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
-using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Code.SendEmail;
@@ -24,20 +25,20 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly TimesheetEmailService _timesheetEmailService;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
 
         public TimesheetService(
             IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             TimesheetEmailService timesheetEmailService,
-            IKafkaNotificationService kafkaNotificationService)
+            IKafkaProducerService kafkaProducerService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _timesheetEmailService = timesheetEmailService;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
         }
 
         #region NEW CODE
@@ -248,7 +249,7 @@ namespace ServiceLayer.Code
 
             TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = await GetTemplate(timesheetDetail);
             timesheetApprovalTemplateModel.LocalConnectionString = _currentSession.LocalConnectionString;
-            await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
+            await _kafkaProducerService.SendEmailNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult(timesheetDetail);
         }

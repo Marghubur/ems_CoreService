@@ -5,10 +5,11 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
-using ems_CommonUtility.KafkaService.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
@@ -34,7 +35,7 @@ namespace ServiceLayer.Code
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
         private readonly ILogger<AttendanceService> _logger;
         private readonly ICommonService _commonService;
         public AttendanceService(IDb db,
@@ -43,7 +44,7 @@ namespace ServiceLayer.Code
             ICompanyService companyService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            IKafkaNotificationService kafkaNotificationService,
+            IKafkaProducerService kafkaProducerService,
             ILogger<AttendanceService> logger,
             ICommonService commonService)
         {
@@ -53,7 +54,7 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
             _logger = logger;
             _commonService = commonService;
         }
@@ -650,7 +651,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
             return workingattendance;
         }
@@ -880,7 +881,7 @@ namespace ServiceLayer.Code
 
             AttendanceRequestModal attendanceRequestModal = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
 
-            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
             return "Attendance raised successfully";
         }
@@ -1302,7 +1303,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaNotificationService.SendEmailNotification(attendanceRequestModal);
+            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
             return workingattendance;
         }

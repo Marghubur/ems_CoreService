@@ -4,9 +4,10 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
-using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -26,19 +27,19 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
         private readonly ITimezoneConverter _timezoneConverter;
 
         public LeaveRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            IKafkaNotificationService kafkaNotificationService,
+            IKafkaProducerService kafkaProducerService,
             ITimezoneConverter timezoneConverter)
         {
             _db = db;
             _currentSession = currentSession;
             _approvalEmailService = approvalEmailService;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
             _timezoneConverter = timezoneConverter;
         }
 
@@ -197,7 +198,7 @@ namespace ServiceLayer.Code
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
-                await _kafkaNotificationService.SendEmailNotification(leaveTemplateModel);
+                await _kafkaProducerService.SendEmailNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
                 //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
             }
 

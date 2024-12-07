@@ -1,9 +1,10 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
-using ems_CommonUtility.KafkaService.interfaces;
 using ModalLayer.Modal;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
@@ -18,17 +19,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly IKafkaNotificationService _kafkaNotificationService;
+        private readonly IKafkaProducerService _kafkaProducerService;
 
         public TimesheetRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            IKafkaNotificationService kafkaNotificationService)
+            IKafkaProducerService kafkaProducerService)
         {
             _db = db;
             _currentSession = currentSession;
             _approvalEmailService = approvalEmailService;
-            _kafkaNotificationService = kafkaNotificationService;
+            _kafkaProducerService = kafkaProducerService;
         }
 
         public async Task<List<TimesheetDetail>> RejectTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
@@ -92,7 +93,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaNotificationService.SendEmailNotification(timesheetApprovalTemplateModel);
+            await _kafkaProducerService.SendEmailNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
             await Task.CompletedTask;
         }

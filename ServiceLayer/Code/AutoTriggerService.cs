@@ -4,13 +4,15 @@ using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using bt_lib_common_services.Configserver;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using Confluent.Kafka;
 using EMailService.Modal;
 using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
 using EMailService.Modal.Payroll;
-using ems_CommonUtility.MicroserviceHttpRequest;
-using ems_CommonUtility.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModalLayer;
@@ -23,7 +25,6 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Net;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -32,6 +33,9 @@ namespace ServiceLayer.Code
     public class AutoTriggerService : IAutoTriggerService
     {
         private readonly IDb _db;
+        private readonly IKafkaConsumerService _kafkaConsumerService;
+        private readonly IFetchGithubConfigurationService _fetchGithubConfigurationService;
+
         private readonly ILogger<AutoTriggerService> _logger;
         private readonly MasterDatabase _masterDatabase;
         private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
@@ -71,49 +75,13 @@ namespace ServiceLayer.Code
 
         public async Task ScheduledJobManager()
         {
-            var kafkaConfig = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.DailyJobsManager);
-            if (kafkaConfig == null)
-            {
-                throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.DailyJobsManager, HttpStatusCode.InternalServerError);
-            }
-
-            var config = new ConsumerConfig
-            {
-                GroupId = kafkaConfig.GroupId,
-                BootstrapServers = $"{kafkaConfig.ServiceName}:{kafkaConfig.Port}"
-            };
-
-            _logger.LogInformation($"[Kafka] Start listening kafka topic: {kafkaConfig.Topic}");
-            using (var consumer = new ConsumerBuilder<Null, string>(config).Build())
-            {
-                consumer.Subscribe(kafkaConfig.Topic);
-                while (true)
-                {
-                    try
-                    {
-                        _logger.LogInformation($"[Kafka] Waiting on topic: {kafkaConfig.Topic}");
-                        var message = consumer.Consume();
-
-                        _logger.LogInformation($"[Kafka] Message received: {message}");
-                        if (message != null && !string.IsNullOrEmpty(message.Message.Value))
-                        {
-                            _logger.LogInformation(message.Message.Value);
-                            await RunJobAsync(message.Message.Value);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"[Kafka Error]: Got exception - {ex.Message}");
-                    }
-
-                    await Task.CompletedTask;
-                }
-            }
+            await _kafkaConsumerService.SubscribeKafkaService(RunJobAsync);
+            await Task.CompletedTask;
         }
 
-        public async Task RunJobAsync(string payload)
+        public async Task RunJobAsync(ConsumeResult<Null, string> result)
         {
-            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(payload);
+            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(result.Message.Value);
 
             // Load all database configuration from master database
             List<DbConfigModal> dbConfig = await LoadDatabaseConfiguration();
@@ -128,7 +96,7 @@ namespace ServiceLayer.Code
                     switch (kafkaPayload.kafkaServiceName)
                     {
                         case KafkaServiceName.MonthlyLeaveAccrualJob:
-                            LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(payload);
+                            LeaveAccrualKafkaModel leaveAccrualKafkaModel = JsonConvert.DeserializeObject<LeaveAccrualKafkaModel>(result.Message.Value);
                             await ExecuteLeaveAccrualJobAsync(companySettings, leaveAccrualKafkaModel);
                             break;
                         case KafkaServiceName.WeeklyTimesheetJob:
@@ -170,8 +138,12 @@ namespace ServiceLayer.Code
 
         private async Task<List<DbConfigModal>> LoadDatabaseConfiguration()
         {
-            List<DbConfigModal> databaseConfiguration = new List<DbConfigModal>();
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            // DatabaseConfiguration config = await _fetchGithubConfigurationService.GetDatabaseConfiguration();
+            // string cs = $"server={config.Server};port={config.Port};database={config.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            
+            string cs = DatabaseConfiguration.BuildConnectionString(await _fetchGithubConfigurationService.GetDatabaseConfiguration());
+            
+            List<DbConfigModal> dbConfiguration = new List<DbConfigModal>();
             using (var connection = new MySqlConnection(cs))
             {
                 using (MySqlCommand command = new MySqlCommand())
@@ -189,7 +161,7 @@ namespace ServiceLayer.Code
                             dataAdapter.Fill(dataSet);
                             if (dataSet.Tables == null || dataSet.Tables.Count != 1 || dataSet.Tables[0].Rows.Count == 0)
                                 throw new Exception("Fail to load the master data");
-                            databaseConfiguration = Converter.ToList<DbConfigModal>(dataSet.Tables[0]);
+                            dbConfiguration = Converter.ToList<DbConfigModal>(dataSet.Tables[0]);
                         }
                     }
                     catch
@@ -199,7 +171,7 @@ namespace ServiceLayer.Code
                 }
             }
 
-            return await Task.FromResult(databaseConfiguration);
+            return await Task.FromResult(dbConfiguration);
         }
 
         public async Task RunTimesheetJobAsync(CompanySetting companySetting, DateTime startDate, DateTime? endDate, bool isCronJob)
