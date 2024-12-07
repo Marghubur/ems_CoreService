@@ -25,6 +25,8 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
+                userDetail = null;
+                userDetail.AdminId = 9;
                 var result = await _dashboardService.GetSystemDashboardService(userDetail);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
