@@ -39,16 +39,15 @@ namespace ServiceLayer.Code
                 Period = 30
             });
 
+            if (Result == null || Result.Tables.Count != 7)
+                throw HiringBellException.ThrowBadRequest("Unable to get the Dashboard data. Please try again or contact support if the problem persists.");
 
-            if (Result != null && Result.Tables.Count == 7)
-            {
-                dashboard = await GetProfitAndLossDetail(Result);
+            dashboard = await GetProfitAndLossDetail(Result);
 
-                dashboard.projects = Result.Tables[3];
-                dashboard.clients = Result.Tables[4];
-                dashboard.newJoinees = Result.Tables[5];
-                dashboard.leaves = Result.Tables[6];
-            }
+            dashboard.projects = Result.Tables[3];
+            dashboard.clients = Result.Tables[4];
+            dashboard.newJoinees = Result.Tables[5];
+            dashboard.leaves = Result.Tables[6];
 
             return dashboard;
         }
