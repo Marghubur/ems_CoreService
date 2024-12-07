@@ -30,6 +30,8 @@ namespace OnlineDataBuilder.Controllers
             _httpContext = httpContext.HttpContext;
         }
 
+        #region Get Active and De-Active and Get All employees and Manage employee mapped clients
+
         [HttpPost]
         [Route("GetEmployees")]
         public ApiResponse GetEmployees([FromBody] FilterModel filterModel)
@@ -42,51 +44,6 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, filterModel);
-            }
-        }
-
-        [HttpPost]
-        [Route("EmployeesListData")]
-        public ApiResponse EmployeesListData([FromRoute] FilterModel filterModel)
-        {
-            try
-            {
-                var Result = _employeeService.EmployeesListDataService(filterModel);
-                return BuildResponse(Result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, filterModel);
-            }
-        }
-
-        [HttpGet]
-        [Route("GetManageEmployeeDetail/{EmployeeId}")]
-        public ApiResponse GetManageEmployeeDetail(long EmployeeId)
-        {
-            try
-            {
-                var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
-                return BuildResponse(Result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, EmployeeId);
-            }
-        }
-
-        [HttpGet]
-        [Route("LoadMappedClients/{EmployeeId}")]
-        public ApiResponse LoadMappedClients(long EmployeeId)
-        {
-            try
-            {
-                var Result = _employeeService.LoadMappedClientService(EmployeeId);
-                return BuildResponse(Result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, EmployeeId);
             }
         }
 
@@ -165,6 +122,10 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        #endregion
+
+        #region Employee insert or update
+
         [Authorize(Roles = Role.Admin)]
         [HttpPost("employeeregistration")]
         public async Task<ApiResponse> EmployeeRegistration()
@@ -220,6 +181,10 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        #endregion
+
+        #region Generate offer letter
+
         [Authorize(Roles = Role.Admin)]
         [HttpPost("GenerateOfferLetter")]
         public async Task<ApiResponse> GenerateOfferLetter(EmployeeOfferLetter employeeOfferLetter)
@@ -234,6 +199,10 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, employeeOfferLetter);
             }
         }
+
+        #endregion
+
+        #region Emport employee detail in excel
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet("ExportEmployee/{CompanyId}/{FileType}")]
@@ -250,6 +219,10 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        #endregion
+
+        #region Insert employee record by using excel
+
         [Authorize(Roles = Role.Admin)]
         [HttpPost("UploadEmployeeExcel")]
         public async Task<ApiResponse> UploadEmployeeExcel()
@@ -265,6 +238,10 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex);
             }
         }
+
+        #endregion
+
+        #region Employee resignation
 
         [HttpGet("GetEmployeeResignationById/{EmployeeId}")]
         public async Task<ApiResponse> GetEmployeeResignationById(long EmployeeId)
@@ -307,5 +284,56 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, employeeNoticePeriod);
             }
         }
+
+        #endregion
+
+        #region Un-used code
+
+        //[HttpPost]
+        //[Route("EmployeesListData")]
+        //public ApiResponse EmployeesListData([FromRoute] FilterModel filterModel)
+        //{
+        //    try
+        //    {
+        //        var Result = _employeeService.EmployeesListDataService(filterModel);
+        //        return BuildResponse(Result, HttpStatusCode.OK);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, filterModel);
+        //    }
+        //}
+
+        //[HttpGet]
+        //[Route("GetManageEmployeeDetail/{EmployeeId}")]
+        //public ApiResponse GetManageEmployeeDetail(long EmployeeId)
+        //{
+        //    try
+        //    {
+        //        var Result = _employeeService.GetEmployeeLeaveDetailService(EmployeeId);
+        //        return BuildResponse(Result, HttpStatusCode.OK);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, EmployeeId);
+        //    }
+        //}
+
+        //[HttpGet]
+        //[Route("LoadMappedClients/{EmployeeId}")]
+        //public ApiResponse LoadMappedClients(long EmployeeId)
+        //{
+        //    try
+        //    {
+        //        var Result = _employeeService.LoadMappedClientService(EmployeeId);
+        //        return BuildResponse(Result, HttpStatusCode.OK);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, EmployeeId);
+        //    }
+        //}
+
+        #endregion
     }
 }

@@ -158,7 +158,7 @@ namespace ServiceLayer.Code.Leaves
                 {
                     var date = Convert.ToDateTime($"{now.Year}-01-01");
                     var joiningDate = _leaveCalculationModal.employee.CreatedOn;
-                    while (date.Month <= now.Month)
+                    while (date.Month <= now.Month && date.Year == now.Year)
                     {
                         // start leave accrual calculation for present month
                         if (joiningDate.Year == now.Year)
