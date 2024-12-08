@@ -4,7 +4,11 @@ using BottomhalfCore.DatabaseLayer.MySql.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using bt_lib_common_services;
+using bt_lib_common_services.Configserver;
+using bt_lib_common_services.KafkaService.code;
+using bt_lib_common_services.KafkaService.interfaces;
 using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -38,7 +42,7 @@ namespace ems_CoreService
         {
             _registry = new CommonRegistry(env, configuration, corsPolisy);
         }
-        
+
         public void RegisterDatabase(IServiceCollection services, IConfiguration configuration)
         {
             string connectionString = configuration.GetConnectionString("EmsMasterCS");
@@ -135,6 +139,18 @@ namespace ems_CoreService
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
+
+            services.AddSingleton<IKafkaConsumerService>(x =>
+                new KafkaConsumerService(
+                    KafkaTopicNames.EXCEPTION_MESSAGE_BROKER,
+                    FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+                )
+            );
+
+            services.AddSingleton<IFetchGithubConfigurationService>(x =>
+                FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+            );
+
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
@@ -161,7 +177,7 @@ namespace ems_CoreService
                 return locationDetail;
             });
         }
-    
+
         public void RegisterCommonUtility(IServiceCollection services)
         {
             // register current session class

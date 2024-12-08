@@ -46,8 +46,8 @@ namespace ServiceLayer.Code
                 var uploadedPayrollData = await ReadPayrollExcelData(files);
                 CheckDuplicateEmailAndMobile(uploadedPayrollData);
 
-                EmployeeCalculation employeeCalculation = await GetEmployeeRegistrationCommonData();
-                await UpdateEmployeeData(uploadedPayrollData, employeeCalculation);
+                //EmployeeCalculation employeeCalculation = await GetEmployeeRegistrationCommonData();
+                await UpdateEmployeeData(uploadedPayrollData);
                 return uploadedPayrollData;
             }
             catch
@@ -107,7 +107,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(employeeCalculation);
         }
 
-        private async Task UpdateEmployeeData(List<UploadedPayrollData> uploadedPayrolls, EmployeeCalculation employeeCalculation)
+        private async Task UpdateEmployeeData(List<UploadedPayrollData> uploadedPayrolls)
         {
             int i = 0;
             int skipIndex = 0;
@@ -167,26 +167,26 @@ namespace ServiceLayer.Code
                     //if (employeeEmailMobileCheck.EmailCount > 0)
                     //    throw HiringBellException.ThrowBadRequest($"Email id: {e.Email} of {e.EmployeeName} is already exist.");
 
-                    EmployeeCalculation empCalc = new EmployeeCalculation
-                    {
-                        salaryComponents = employeeCalculation.salaryComponents,
-                        companySetting = employeeCalculation.companySetting,
-                        ptaxSlab = employeeCalculation.ptaxSlab,
-                        surchargeSlabs = employeeCalculation.surchargeSlabs,
-                        PayrollLocalTimeStartDate = employeeCalculation.PayrollLocalTimeStartDate,
-                    };
+                    //EmployeeCalculation empCalc = new EmployeeCalculation
+                    //{
+                    //    salaryComponents = employeeCalculation.salaryComponents,
+                    //    companySetting = employeeCalculation.companySetting,
+                    //    ptaxSlab = employeeCalculation.ptaxSlab,
+                    //    surchargeSlabs = employeeCalculation.surchargeSlabs,
+                    //    PayrollLocalTimeStartDate = employeeCalculation.PayrollLocalTimeStartDate,
+                    //};
 
-                    empCalc.companySetting.DeclarationStartMonth = employeeCalculation.companySetting.DeclarationStartMonth;
-                    empCalc.companySetting.FinancialYear = employeeCalculation.companySetting.FinancialYear;
+                    //empCalc.companySetting.DeclarationStartMonth = employeeCalculation.companySetting.DeclarationStartMonth;
+                    //empCalc.companySetting.FinancialYear = employeeCalculation.companySetting.FinancialYear;
 
-                    await RegisterNewEmployee(e, empCalc);
+                    await RegisterNewEmployee(e);
                 }
 
                 i += chunkSize;
             }
         }
 
-        private async Task RegisterNewEmployee(UploadedPayrollData emp, EmployeeCalculation employeeCalculation)
+        private async Task RegisterNewEmployee(UploadedPayrollData emp)
         {
             Employee employee = new Employee
             {
@@ -252,7 +252,7 @@ namespace ServiceLayer.Code
                 employee.LastName = "NA";
             }
 
-            await _employeeService.RegisterEmployeeByExcelService(employee, emp, employeeCalculation);
+            await _employeeService.RegisterEmployeeByExcelService(employee, emp);
         }
 
         private async Task<List<UploadedPayrollData>> ReadPayrollExcelData(IFormFileCollection files)

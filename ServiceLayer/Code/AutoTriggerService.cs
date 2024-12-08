@@ -57,7 +57,9 @@ namespace ServiceLayer.Code
             YearEndCalculation yearEndCalculation,
             IOptions<MicroserviceRegistry> microserviceOptions,
             RequestMicroservice requestMicroservice,
-            IAttendanceService attendanceService)
+            IAttendanceService attendanceService,
+            IFetchGithubConfigurationService fetchGithubConfigurationService,
+            IKafkaConsumerService kafkaConsumerService)
         {
             _logger = logger;
             _masterDatabase = options.Value;
@@ -70,6 +72,8 @@ namespace ServiceLayer.Code
             _microserviceRegistry = microserviceOptions.Value;
             _requestMicroservice = requestMicroservice;
             _attendanceService = attendanceService;
+            _fetchGithubConfigurationService = fetchGithubConfigurationService;
+            _kafkaConsumerService = kafkaConsumerService;
             // _payrollService = payrollService;
         }
 

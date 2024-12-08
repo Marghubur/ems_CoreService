@@ -135,6 +135,8 @@
         public static string Previous_Employement_Details_And_Emp_By_Empid = "sp_previous_employement_details_and_emp_by_empid";
         public static string Previous_Employement_Details_By_Empid = "sp_previous_employement_details_by_empid";
         public static string Declaration_Get_Filter_By_Empid = "sp_declaration_get_filter_by_empid";
+        public static string PREVIOUS_EMPLOYEMENT_INS_UPD = "sp_previous_employement_ins_upd";
+        public static string EMPLOYEE_DECLARATION_DETAIL_GET_BY_EMPID = "sp_employee_declaration_detail_get_by_empid";
 
         /*--------------  Email Service procedures ------------*/
         public static string Email_Template_Get = "sp_email_template_get";
@@ -173,6 +175,7 @@
         public static string EMPLOYEE_PAYROLL_GET_BY_PAGE = "sp_employee_payroll_get_by_page";
         public static string EMPLOYEE_GETBYID_TO_REG_OR_UPD_BY_EXCEL = "sp_employee_getbyid_to_reg_or_upd_by_excel";
         public static string EMPLOYEE_REGISTRATION_COMMON_DATA = "sp_employee_registration_common_data";
+        public static string CHECK_MOBILE_EMAIL_EXISTENCE = "sp_check_mobile_email_existence";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
