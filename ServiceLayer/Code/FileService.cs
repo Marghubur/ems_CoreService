@@ -1,8 +1,8 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using bt_lib_common_services.MicroserviceHttpRequest;
-using bt_lib_common_services.Model;
+using Bt.Lib.Common.Service.MicroserviceHttpRequest;
+using Bt.Lib.Common.Service.Model;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;

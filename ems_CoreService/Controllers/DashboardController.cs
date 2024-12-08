@@ -1,11 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
-using bt_lib_common_services.Configserver;
-using bt_lib_common_services.KafkaService.code;
-using bt_lib_common_services.Model;
-using Confluent.Kafka;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;

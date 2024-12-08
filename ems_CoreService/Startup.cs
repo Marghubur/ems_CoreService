@@ -1,7 +1,7 @@
-using bt_lib_common_services.Configserver;
-using bt_lib_common_services.KafkaService.code;
-using bt_lib_common_services.KafkaService.interfaces;
-using bt_lib_common_services.Model;
+using Bt.Lib.Common.Service.Configserver;
+using Bt.Lib.Common.Service.KafkaService.code;
+using Bt.Lib.Common.Service.KafkaService.interfaces;
+using Bt.Lib.Common.Service.Model;
 using ems_CoreService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -77,7 +77,5 @@ namespace OnlineDataBuilder
 
             ConfigureMiddlewares.Configure(app, CorsPolicy);
         }
-
-
     }
 }

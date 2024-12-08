@@ -1,16 +1,10 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
-using bt_lib_common_services.MicroserviceHttpRequest;
-using bt_lib_common_services.Model;
+using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using EMailService.Modal;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ModalLayer.Modal;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Interface;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ServiceLayer.Code.PayrollCycle.Code
 {
