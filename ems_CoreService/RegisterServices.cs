@@ -143,12 +143,12 @@ namespace ems_CoreService
             services.AddSingleton<IKafkaConsumerService>(x =>
                 new KafkaConsumerService(
                     KafkaTopicNames.EXCEPTION_MESSAGE_BROKER,
-                    FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+                    FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).GetAwaiter().GetResult()
                 )
             );
 
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+                FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).GetAwaiter().GetResult()
             );
 
         }

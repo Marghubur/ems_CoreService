@@ -63,7 +63,7 @@ namespace OnlineDataBuilder
             services.AddSingleton<IKafkaConsumerService>(x =>
                 new KafkaConsumerService(
                     KafkaTopicNames.DAILY_JOBS_MANAGER,
-                    FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).Result
+                    FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).Result
                 )
             );
         }
