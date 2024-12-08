@@ -1,7 +1,9 @@
 using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.KafkaService.code;
+using Bt.Lib.Common.Service.KafkaService.code.Consumer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.Model;
+using Confluent.Kafka;
 using ems_CoreService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -59,11 +61,11 @@ namespace OnlineDataBuilder
             // register common utility for web config services
             _registerService.RegisterCommonUtility(services);
 
-            // Subscribe the kafka service
+            // Subscribe the kafka producer service
             services.AddSingleton<IKafkaConsumerService>(x =>
-                new KafkaConsumerService(
-                    KafkaTopicNames.DAILY_JOBS_MANAGER,
-                    FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).Result
+                KafkaConsumerService.SubscribeKafkaService(
+                    ApplicationNames.EMSTUM,
+                    KafkaTopicNames.DAILY_JOBS_MANAGER
                 )
             );
         }
