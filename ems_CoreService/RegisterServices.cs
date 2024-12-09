@@ -4,11 +4,13 @@ using BottomhalfCore.DatabaseLayer.MySql.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Bt.Lib.Common.Service.Configserver;
-using Bt.Lib.Common.Service.KafkaService.code;
+using Bt.Lib.Common.Service.KafkaService.code.Consumer;
+using Bt.Lib.Common.Service.KafkaService.code.Producer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
 using Bt.Lib.Common.Service.Services;
+using Confluent.Kafka;
 using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -30,6 +32,7 @@ using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
+using System;
 using System.IO;
 
 namespace ems_CoreService
@@ -142,15 +145,16 @@ namespace ems_CoreService
 
             services.AddSingleton<IKafkaConsumerService>(x =>
                 new KafkaConsumerService(
-                    KafkaTopicNames.EXCEPTION_MESSAGE_BROKER,
-                    FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).GetAwaiter().GetResult()
+                    ApplicationNames.EMSTUM,
+                    KafkaTopicNames.EXCEPTION_MESSAGE_BROKER
                 )
             );
 
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance(GitRepositories.EMSTUM).GetAwaiter().GetResult()
+                FetchGithubConfigurationService.getInstance(ApplicationNames.EMSTUM).GetAwaiter().GetResult()
             );
 
+            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>())));
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
