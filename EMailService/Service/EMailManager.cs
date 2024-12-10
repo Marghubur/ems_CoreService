@@ -27,19 +27,6 @@ namespace EMailService.Service
             _db = db;
         }
 
-        private void GetDefaultEmailDetail()
-        {
-            // _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
-            _emailSettingDetail = new EmailSettingDetail
-            {
-                Credentials = "rBottomHalf@mi9_00123em",
-                EmailAddress = "info@hiringbell.com",
-                EmailHost = "smtp.hostinger.com",
-                PortNo = 587,
-                EnableSsl = true
-            };
-        }
-
         public EmailTemplate GetTemplate(EmailRequestModal emailRequestModal)
         {
             if (emailRequestModal.TemplateId <= 0)
@@ -156,8 +143,8 @@ namespace EMailService.Service
         public async Task SendMailAsync(EmailSenderModal emailSenderModal)
         {
             GetDefaultEmailDetail();
-            if (_emailSettingDetail == null)
-                throw new HiringBellException("Email setting detail not found. Please contact to admin.");
+            //if (_emailSettingDetail == null)
+            //    throw new HiringBellException("Email setting detail not found. Please contact to admin.");
 
             await Task.Run(() => Send(emailSenderModal));
             await Task.CompletedTask;
@@ -229,7 +216,21 @@ namespace EMailService.Service
                 var _e = ex;
                 throw;
             }
+
             return ApplicationConstants.Successfull;
+        }
+
+        private void GetDefaultEmailDetail()
+        {
+            // _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            _emailSettingDetail = new EmailSettingDetail
+            {
+                EmailHost = "smtp.secureserver.net",
+                PortNo = 465,
+                Credentials = "Bottomhalf@i9_0012",
+                EmailAddress = "info@bottomhalf.in",
+                EnableSsl = true,
+            };
         }
     }
 }

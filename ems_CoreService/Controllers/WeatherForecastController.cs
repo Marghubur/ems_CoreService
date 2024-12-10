@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
@@ -157,16 +158,6 @@ namespace OnlineDataBuilder.Controllers
 
             // await _runLeaveEndYearService.LoadDbConfiguration();
 
-            //EmailSenderModal emailSenderModal = new EmailSenderModal
-            //{
-            //    To = new List<string> { "marghub12@gmail.com" },
-            //    Body = "Testing",
-            //    Subject = "Testing",
-            //    Title = "Testing"
-            //};
-
-            //await _eMailManager.SendMailAsync(emailSenderModal);
-
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -175,6 +166,20 @@ namespace OnlineDataBuilder.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        private async Task SendTestEmail()
+        {
+            var emailSenderModal = new EmailSenderModal
+            {
+                Body = "<div>Email testing</div>",
+                From = "info@bottomhalf.in",
+                To = new List<string> { "istiyaq.mi9@gmail.com" },
+                Subject = "Testing",
+                Title = "Test"               
+            };
+
+            await _eMailManager.SendMailAsync(emailSenderModal);
         }
 
         [HttpGet("RunAccrualManually")]
