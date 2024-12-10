@@ -27,20 +27,20 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly IKafkaProducerService _kafkaProducerService;
+        private readonly IUtilityService _utilityService;
         private readonly ITimezoneConverter _timezoneConverter;
 
         public LeaveRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            IKafkaProducerService kafkaProducerService,
-            ITimezoneConverter timezoneConverter)
+            ITimezoneConverter timezoneConverter,
+            IUtilityService utilityService)
         {
             _db = db;
             _currentSession = currentSession;
             _approvalEmailService = approvalEmailService;
-            _kafkaProducerService = kafkaProducerService;
             _timezoneConverter = timezoneConverter;
+            _utilityService = utilityService;
         }
 
         public async Task<List<LeaveRequestNotification>> ApprovalLeaveService(LeaveRequestDetail leaveRequestDetail, int filterId = ApplicationConstants.Only)
@@ -198,7 +198,7 @@ namespace ServiceLayer.Code
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
-                await _kafkaProducerService.SendEmailNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+                await _utilityService.SendNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
                 //Task task = Task.Run(async () => await _approvalEmailService.LeaveApprovalStatusSendEmail(leaveRequestDetail, status));
             }
 

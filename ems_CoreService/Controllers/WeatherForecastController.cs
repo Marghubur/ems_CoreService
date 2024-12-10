@@ -39,7 +39,6 @@ namespace OnlineDataBuilder.Controllers
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IRunLeaveEndYearService _runLeaveEndYearService;
         private readonly RequestMicroservice _requestMicroservice;
-
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -157,6 +156,16 @@ namespace OnlineDataBuilder.Controllers
             // await _attendanceService.GenerateAttendanceService();
 
             // await _runLeaveEndYearService.LoadDbConfiguration();
+
+            //EmailSenderModal emailSenderModal = new EmailSenderModal
+            //{
+            //    To = new List<string> { "marghub12@gmail.com" },
+            //    Body = "Testing",
+            //    Subject = "Testing",
+            //    Title = "Testing"
+            //};
+
+            //await _eMailManager.SendMailAsync(emailSenderModal);
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

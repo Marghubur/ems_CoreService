@@ -48,8 +48,8 @@ namespace ServiceLayer.Code
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
+        private readonly IUtilityService _utilityService;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly IKafkaProducerService _kafkaProducerService;
         // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
         private readonly MicroserviceRegistry _microserviceRegistry;
@@ -65,11 +65,11 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker,
-            IKafkaProducerService kafkaProducerService,
             // IDeclarationService declarationService,
             IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> microserviceoptions)
+            IOptions<MicroserviceRegistry> microserviceoptions, 
+            IUtilityService utilityService)
         {
             this.db = db;
             _logger = logger;
@@ -83,11 +83,11 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
-            _kafkaProducerService = kafkaProducerService;
             // _declarationService = declarationService;
             _masterDatabase = options.Value;
             _requestMicroservice = requestMicroservice;
             _microserviceRegistry = microserviceoptions.Value;
+            _utilityService = utilityService;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -1159,7 +1159,7 @@ namespace ServiceLayer.Code
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
-                await _kafkaProducerService.SendEmailNotification(billingTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+                await _utilityService.SendNotification(billingTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             }
 
             return ApplicationConstants.Successfull;

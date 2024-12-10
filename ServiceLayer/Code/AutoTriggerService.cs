@@ -145,7 +145,7 @@ namespace ServiceLayer.Code
             // DatabaseConfiguration config = await _fetchGithubConfigurationService.GetDatabaseConfiguration();
             // string cs = $"server={config.Server};port={config.Port};database={config.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
             
-            string cs = DatabaseConfiguration.BuildConnectionString(await _fetchGithubConfigurationService.GetDatabaseConfiguration());
+            string cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetConfiguration<DatabaseConfiguration>());
             
             List<DbConfigModal> dbConfiguration = new List<DbConfigModal>();
             using (var connection = new MySqlConnection(cs))

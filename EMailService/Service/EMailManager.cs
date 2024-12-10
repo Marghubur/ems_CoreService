@@ -29,7 +29,15 @@ namespace EMailService.Service
 
         private void GetDefaultEmailDetail()
         {
-            _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            // _emailSettingDetail = _db.Get<EmailSettingDetail>("sp_email_setting_detail_get", new { EmailSettingDetailId = 0 });
+            _emailSettingDetail = new EmailSettingDetail
+            {
+                Credentials = "rBottomHalf@mi9_00123em",
+                EmailAddress = "info@hiringbell.com",
+                EmailHost = "smtp.hostinger.com",
+                PortNo = 587,
+                EnableSsl = true
+            };
         }
 
         public EmailTemplate GetTemplate(EmailRequestModal emailRequestModal)
@@ -172,7 +180,8 @@ namespace EMailService.Service
                 EnableSsl = _emailSettingDetail.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 UseDefaultCredentials = _emailSettingDetail.UserDefaultCredentials,
-                Credentials = new NetworkCredential(fromAddress.Address, _emailSettingDetail.Credentials)
+                Credentials = new NetworkCredential(fromAddress.Address, _emailSettingDetail.Credentials),
+                
             };
 
             var message = new MailMessage();

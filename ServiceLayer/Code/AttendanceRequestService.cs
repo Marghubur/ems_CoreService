@@ -25,19 +25,19 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly ILogger<AttendanceRequestService> _logger;
-        private readonly IKafkaProducerService _kafkaProducerService;
+        private readonly IUtilityService _utilityService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ILogger<AttendanceRequestService> logger,
-            IKafkaProducerService kafkaProducerService)
+            IUtilityService utilityService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _logger = logger;
-            _kafkaProducerService = kafkaProducerService;
+            _utilityService = utilityService;
         }
 
         private RequestModel GetEmployeeRequestedDataService(long employeeId, string procedure, ItemStatus itemStatus = ItemStatus.Pending)
@@ -189,7 +189,7 @@ namespace ServiceLayer.Code
                         CompanyId = _currentSession.CurrentUserDetail.CompanyId
                     };
 
-                    await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+                    await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
                 }
 
                 await Task.CompletedTask;

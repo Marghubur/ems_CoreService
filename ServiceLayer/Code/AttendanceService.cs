@@ -35,18 +35,18 @@ namespace ServiceLayer.Code
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IKafkaProducerService _kafkaProducerService;
         private readonly ILogger<AttendanceService> _logger;
         private readonly ICommonService _commonService;
+        private readonly IUtilityService _utilityService;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             ICompanyService companyService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            IKafkaProducerService kafkaProducerService,
             ILogger<AttendanceService> logger,
-            ICommonService commonService)
+            ICommonService commonService,
+            IUtilityService utilityService)
         {
             _db = db;
             _companyService = companyService;
@@ -54,9 +54,9 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
-            _kafkaProducerService = kafkaProducerService;
             _logger = logger;
             _commonService = commonService;
+            _utilityService = utilityService;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -651,7 +651,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+            await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
             return workingattendance;
         }
@@ -881,7 +881,7 @@ namespace ServiceLayer.Code
 
             AttendanceRequestModal attendanceRequestModal = await InsertUpdateAttendanceRequest(complaintOrRequestWithEmail, complaintOrRequestWithEmail.AttendanceId);
 
-            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+            await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await this.AttendaceApprovalStatusSendEmail(complaintOrRequestWithEmail);
             return "Attendance raised successfully";
         }
@@ -1303,7 +1303,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaProducerService.SendEmailNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+            await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
             return workingattendance;
         }
