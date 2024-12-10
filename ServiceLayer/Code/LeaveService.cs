@@ -32,25 +32,25 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly IKafkaProducerService _kafkaProducerService;
         private readonly ILogger<LeaveService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
+        private readonly IUtilityService _utilityService;
 
         public LeaveService(IDb db,
             CurrentSession currentSession,
             ICommonService commonService,
             ILeaveCalculation leaveCalculation,
-            IKafkaProducerService kafkaProducerService,
             ILogger<LeaveService> logger,
-            ITimezoneConverter timezoneConverter)
+            ITimezoneConverter timezoneConverter,
+            IUtilityService utilityService)
         {
             _db = db;
             _currentSession = currentSession;
             _commonService = commonService;
             _leaveCalculation = leaveCalculation;
-            _kafkaProducerService = kafkaProducerService;
             _logger = logger;
             _timezoneConverter = timezoneConverter;
+            _utilityService = utilityService;
         }
 
         public List<LeavePlan> AddLeavePlansService(LeavePlan leavePlan)
@@ -461,7 +461,9 @@ namespace ServiceLayer.Code
             });
 
             _logger.LogInformation($"Call to kafka: {leaveCalculationModal.ReporterEmail.ToString()}");
-            await _kafkaProducerService.SendEmailNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+
+            await _utilityService.SendNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+
             var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
             var monthlyLeaveData = new Dictionary<string, decimal>();
 
@@ -622,7 +624,7 @@ namespace ServiceLayer.Code
             if (leaveCalculationModal.leaveRequestDetail.LeaveDetail != null && leaveCalculationModal.leaveRequestDetail.LeaveDetail != "[]")
                 leaveDetails = JsonConvert.DeserializeObject<List<int>>(leaveCalculationModal.leaveRequestDetail.LeaveDetail);
 
-            lOPAdjustmentDetail.BlockedDates.ForEach(x =>
+            lOPAdjustmentDetail.BlockedDates.ForEach(async x =>
             {
                 result = _db.Execute<LeaveRequestNotification>(Procedures.LEAVE_REQUEST_NOTIFICATION_DAILY_ATTENDANCE_INSUPDATE, new
                 {
@@ -670,7 +672,7 @@ namespace ServiceLayer.Code
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
                 };
 
-                _ = Task.Run(() => _kafkaProducerService.SendEmailNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION));
+                await _utilityService.SendNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             });
 
             availableLeave.AvailableLeaves = availableLeave.AvailableLeaves - lOPAdjustmentDetail.BlockedDates.Count;

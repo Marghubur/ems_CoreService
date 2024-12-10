@@ -151,7 +151,7 @@ namespace ems_CoreService
             );
 
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance(ApplicationNames.EMSTUM).GetAwaiter().GetResult()
+                FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM)
             );
 
             services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>())));

@@ -19,17 +19,17 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly ApprovalEmailService _approvalEmailService;
-        private readonly IKafkaProducerService _kafkaProducerService;
+        private readonly IUtilityService _utilityService;
 
         public TimesheetRequestService(IDb db,
             ApprovalEmailService approvalEmailService,
             CurrentSession currentSession,
-            IKafkaProducerService kafkaProducerService)
+            IUtilityService utilityService)
         {
             _db = db;
             _currentSession = currentSession;
             _approvalEmailService = approvalEmailService;
-            _kafkaProducerService = kafkaProducerService;
+            _utilityService = utilityService;
         }
 
         public async Task<List<TimesheetDetail>> RejectTimesheetService(int timesheetId, TimesheetDetail timesheetDetail, int filterId = ApplicationConstants.Only)
@@ -93,7 +93,7 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             };
 
-            await _kafkaProducerService.SendEmailNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+            await _utilityService.SendNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await _approvalEmailService.TimesheetApprovalStatusSendEmail(timesheet, timesheetDetails, itemStatus);
             await Task.CompletedTask;
         }

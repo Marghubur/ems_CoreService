@@ -1,5 +1,9 @@
-﻿using ExcelDataReader;
+﻿using Bt.Lib.Common.Service.KafkaService.interfaces;
+using Bt.Lib.Common.Service.Model;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
@@ -15,7 +19,8 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class UtilityService : IUtilityService
+    public class UtilityService(IKafkaProducerService _kafkaProducerService,
+                                IWebHostEnvironment  _env) : IUtilityService
     {
         public bool CheckIsJoinedInCurrentFinancialYear(DateTime doj, CompanySetting companySetting)
         {
@@ -26,6 +31,14 @@ namespace ServiceLayer.Code
                     if (doj.Month <= companySetting.DeclarationEndMonth) return true;
 
             return false;
+        }
+
+        public async Task SendNotification(dynamic requestBody, KafkaTopicNames kafkaTopicNames)
+        {
+            if (_env.IsProduction())
+                await _kafkaProducerService.SendEmailNotification(requestBody, kafkaTopicNames);
+
+            await Task.CompletedTask;
         }
 
 

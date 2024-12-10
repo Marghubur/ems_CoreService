@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Bt.Lib.Common.Service.Model;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal.Accounts;
 using System;
 using System.Collections.Generic;
@@ -10,5 +11,6 @@ namespace ServiceLayer.Interface
     {
         bool CheckIsJoinedInCurrentFinancialYear(DateTime doj, CompanySetting companySetting);
         Task<List<T>> ReadExcelData<T>(IFormFileCollection files);
+        Task SendNotification(dynamic requestBody, KafkaTopicNames kafkaTopicNames);
     }
 }

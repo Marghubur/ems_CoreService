@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <PackageReference Include="BottomHalf.Utilities" Version="1.0.48" />
-    <PackageReference Include="Bt.Lib.Common.Service" Version="1.0.10" />
+    <PackageReference Include="Bt.Lib.Common.Service" Version="1.0.15" />
     <PackageReference Include="EAGetMail" Version="5.3.5.1" />
     <PackageReference Include="MailKit" Version="4.8.0" />
   </ItemGroup>

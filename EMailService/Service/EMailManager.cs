@@ -167,7 +167,8 @@ namespace EMailService.Service
                 EnableSsl = _emailSettingDetail.EnableSsl,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 UseDefaultCredentials = _emailSettingDetail.UserDefaultCredentials,
-                Credentials = new NetworkCredential(fromAddress.Address, _emailSettingDetail.Credentials)
+                Credentials = new NetworkCredential(fromAddress.Address, _emailSettingDetail.Credentials),
+                
             };
 
             var message = new MailMessage();

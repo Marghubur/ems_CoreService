@@ -40,7 +40,6 @@ namespace OnlineDataBuilder.Controllers
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IRunLeaveEndYearService _runLeaveEndYearService;
         private readonly RequestMicroservice _requestMicroservice;
-
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
             IEMailManager eMailManager,
             IDb db,
@@ -158,8 +157,6 @@ namespace OnlineDataBuilder.Controllers
             // await _attendanceService.GenerateAttendanceService();
 
             // await _runLeaveEndYearService.LoadDbConfiguration();
-
-            // await SendTestEmail();
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

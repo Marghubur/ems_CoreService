@@ -25,20 +25,20 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
         private readonly TimesheetEmailService _timesheetEmailService;
-        private readonly IKafkaProducerService _kafkaProducerService;
+        private readonly IUtilityService _utilityService;
 
         public TimesheetService(
             IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
             TimesheetEmailService timesheetEmailService,
-            IKafkaProducerService kafkaProducerService)
+            IUtilityService utilityService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _timesheetEmailService = timesheetEmailService;
-            _kafkaProducerService = kafkaProducerService;
+            _utilityService = utilityService;
         }
 
         #region NEW CODE
@@ -249,7 +249,8 @@ namespace ServiceLayer.Code
 
             TimesheetApprovalTemplateModel timesheetApprovalTemplateModel = await GetTemplate(timesheetDetail);
             timesheetApprovalTemplateModel.LocalConnectionString = _currentSession.LocalConnectionString;
-            await _kafkaProducerService.SendEmailNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+
+            await _utilityService.SendNotification(timesheetApprovalTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             //await _timesheetEmailService.SendSubmitTimesheetEmail(timesheetDetail);
             return await Task.FromResult(timesheetDetail);
         }
