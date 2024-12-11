@@ -1,6 +1,7 @@
 using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.KafkaService.code;
 using Bt.Lib.Common.Service.KafkaService.code.Consumer;
+using Bt.Lib.Common.Service.KafkaService.code.Producer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.Model;
 using Confluent.Kafka;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ServiceLayer.Interface;
+using System;
 using System.Collections.Generic;
 
 namespace OnlineDataBuilder
@@ -62,11 +64,20 @@ namespace OnlineDataBuilder
             // register common utility for web config services
             _registerService.RegisterCommonUtility(services);
 
-            // Subscribe the kafka producer service
+            // Subscribe the kafka consumer service
             services.AddSingleton<IKafkaConsumerService>(x =>
-                KafkaConsumerService.SubscribeKafkaService(
+                KafkaConsumerService.GetInstance(
                     ApplicationNames.EMSTUM,
                     new List<KafkaTopicNames> { KafkaTopicNames.DAILY_JOBS_MANAGER },
+                    _env
+                )
+            );
+
+            // Subscribe the kafka producer service
+            services.AddSingleton<IKafkaProducerService>(x => 
+                KafkaProducerService.GetInstance(
+                    ApplicationNames.EMSTUM, 
+                    x.GetRequiredService<ProducerConfig>(), 
                     _env
                 )
             );

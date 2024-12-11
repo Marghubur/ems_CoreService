@@ -145,19 +145,9 @@ namespace ems_CoreService
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
 
-            services.AddSingleton<IKafkaConsumerService>(x =>
-                new KafkaConsumerService(
-                    ApplicationNames.EMSTUM,
-                    new List<KafkaTopicNames> { KafkaTopicNames.EXCEPTION_MESSAGE_BROKER },
-                    _env
-                )
-            );
-
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
                 FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM, _env)
             );
-
-            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>(), _env)));
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
