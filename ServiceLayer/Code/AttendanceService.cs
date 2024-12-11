@@ -1800,6 +1800,25 @@ namespace ServiceLayer.Code
                 if (result != attendances.Count)
                     throw HiringBellException.ThrowBadRequest("Fail to update attendance request");
 
+                AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
+                {
+                    ActionType = ApplicationConstants.Approved,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = 1,
+                    DeveloperName = attendances[0].EmployeeName,
+                    FromDate = _timezoneConverter.ToTimeZoneDateTime(attendances[0].AttendanceDate, _currentSession.TimeZone),
+                    ToDate = _timezoneConverter.ToTimeZoneDateTime(attendances.Last().AttendanceDate, _currentSession.TimeZone),
+                    ManagerName = _currentSession.CurrentUserDetail.FullName,
+                    Message = attendances[0].Comments,
+                    RequestType = (int)attendances[0].WorkTypeId == (int)WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                    ToAddress = new List<string> { attendances[0].EmployeeEmail },
+                    kafkaServiceName = KafkaServiceName.Attendance,
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                };
+
+                await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+
                 return attendances.OrderBy(x => x.AttendanceDate).ToList();
             }
             catch (Exception e)
@@ -1860,6 +1879,7 @@ namespace ServiceLayer.Code
                 // check for leave
                 await this.CheckIsOnPaidLeave(attendance, shiftDetail);
             }
+
             return dailyAttendances;
         }
 

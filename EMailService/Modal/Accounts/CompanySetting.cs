@@ -1,8 +1,11 @@
-﻿using System;
+﻿using ModalLayer.MarkerInterface;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ModalLayer.Modal.Accounts
 {
+    [Table(name: "company_setting")]
     public class CompanySetting
     {
         public CompanySetting()
@@ -17,6 +20,7 @@ namespace ModalLayer.Modal.Accounts
             OfficialWeekOffDays.Add(DayOfWeek.Sunday);
         }
 
+        [Key]
         public int SettingId { set; get; }
         public int CompanyId { set; get; }
         public int ProbationPeriodInDays { set; get; }
@@ -42,5 +46,13 @@ namespace ModalLayer.Modal.Accounts
         public string TimeDifferences { get; set; }
         public string StateName { get; set; }
         public bool AttendanceType { get; set; } = true; // True => Weekly Attendance, False => Daily Attendance
+    }
+
+    public class Select
+    {
+        public string Get()
+        {
+            return "select * from ";
+        }
     }
 }

@@ -8,6 +8,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -142,6 +143,8 @@ namespace ServiceLayer.Code
         {
             try
             {
+                // var companySetting = await _db.SelectByIdAsync<CompanySetting>(new { SettingId = 1 });
+
                 foreach (var dailyAttendance in dailyAttendances)
                 {
                     if (dailyAttendance.AttendanceId <= 0)
