@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 
 namespace OnlineDataBuilder
 {
@@ -65,7 +66,8 @@ namespace OnlineDataBuilder
             services.AddSingleton<IKafkaConsumerService>(x =>
                 KafkaConsumerService.SubscribeKafkaService(
                     ApplicationNames.EMSTUM,
-                    KafkaTopicNames.DAILY_JOBS_MANAGER
+                    new List<KafkaTopicNames> { KafkaTopicNames.DAILY_JOBS_MANAGER },
+                    _env
                 )
             );
         }

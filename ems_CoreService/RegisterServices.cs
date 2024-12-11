@@ -33,6 +33,7 @@ using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ems_CoreService
@@ -40,9 +41,10 @@ namespace ems_CoreService
     public class RegisterServices
     {
         private readonly CommonRegistry _registry;
-
+        private readonly IWebHostEnvironment _env;
         public RegisterServices(IWebHostEnvironment env, IConfiguration configuration, string corsPolisy)
         {
+            _env = env;
             _registry = new CommonRegistry(env, configuration, corsPolisy);
         }
 
@@ -146,15 +148,16 @@ namespace ems_CoreService
             services.AddSingleton<IKafkaConsumerService>(x =>
                 new KafkaConsumerService(
                     ApplicationNames.EMSTUM,
-                    KafkaTopicNames.EXCEPTION_MESSAGE_BROKER
+                    new List<KafkaTopicNames> { KafkaTopicNames.EXCEPTION_MESSAGE_BROKER },
+                    _env
                 )
             );
 
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM)
+                FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM, _env)
             );
 
-            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>())));
+            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>(), _env)));
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
