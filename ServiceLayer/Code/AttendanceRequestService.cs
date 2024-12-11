@@ -143,7 +143,7 @@ namespace ServiceLayer.Code
         {
             try
             {
-                // var companySetting = await _db.SelectByIdAsync<CompanySetting>(new { SettingId = 1 });
+                var companySetting = await _db.SelectByIdAsync<CompanySetting>(_currentSession.CurrentUserDetail.CompanyId.ToString());
 
                 foreach (var dailyAttendance in dailyAttendances)
                 {
@@ -175,27 +175,36 @@ namespace ServiceLayer.Code
                     {
                         throw HiringBellException.ThrowBadRequest("Unable to update attendance status");
                     }
-
-                    AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
-                    {
-                        ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
-                        CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                        DayCount = 1,
-                        DeveloperName = dailyAttendance.EmployeeName,
-                        FromDate = dailyAttendance.AttendanceDate,
-                        ManagerName = dailyAttendance.ManagerName,
-                        Message = dailyAttendance.UserComment,
-                        RequestType = dailyAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                        ToAddress = new List<string> { attendance.EmployeeEmail },
-                        kafkaServiceName = KafkaServiceName.Attendance,
-                        LocalConnectionString = _currentSession.LocalConnectionString,
-                        CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                    };
-
-                    await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
                 }
 
-                await Task.CompletedTask;
+                dailyAttendances = dailyAttendances.OrderBy(x => x.AttendanceDate).ToList();
+                var attendanceRequestModal = new AttendanceRequestModal
+                {
+                    ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = 1,
+                    DeveloperName = dailyAttendances.First().EmployeeName,
+                    FromDate = dailyAttendances.First().AttendanceDate,
+                    ToDate = dailyAttendances.Last().AttendanceDate,
+                    ManagerName = dailyAttendances.First().ManagerName,
+                    Message = dailyAttendances.First().UserComment,
+                    RequestType = dailyAttendances.First().WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                    ToAddress = new List<string> { dailyAttendances.First().EmployeeEmail },
+                    kafkaServiceName = KafkaServiceName.Attendance,
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                };
+
+                if (companySetting.AttendanceType) // true for weekly
+                {
+                    var i = dailyAttendances.Select(x => x.WorkTypeId).Distinct().Count();
+                    if (i > 1)
+                    {
+                        attendanceRequestModal.RequestType = "Hybrid mode";
+                    }
+                }
+
+                await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
             }
             catch (Exception e)
             {
