@@ -35,7 +35,7 @@ namespace ServiceLayer.Code
 
         public async Task SendNotification(dynamic requestBody, KafkaTopicNames kafkaTopicNames)
         {
-            if (_env.IsDevelopment())
+            if (_env.IsProduction())
                 await _kafkaProducerService.SendEmailNotification(requestBody, kafkaTopicNames);
 
             await Task.CompletedTask;
