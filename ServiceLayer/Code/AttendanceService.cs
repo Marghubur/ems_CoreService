@@ -1802,7 +1802,7 @@ namespace ServiceLayer.Code
 
                 AttendanceRequestModal attendanceRequestModal = new AttendanceRequestModal
                 {
-                    ActionType = ApplicationConstants.Approved,
+                    ActionType = ApplicationConstants.Submitted,
                     CompanyName = _currentSession.CurrentUserDetail.CompanyName,
                     DayCount = 1,
                     DeveloperName = attendances[0].EmployeeName,
