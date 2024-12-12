@@ -1811,7 +1811,7 @@ namespace ServiceLayer.Code
                     ManagerName = _currentSession.CurrentUserDetail.FullName,
                     Message = attendances[0].Comments,
                     RequestType = (int)attendances[0].WorkTypeId == (int)WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                    ToAddress = new List<string> { attendances[0].ManagerEmail },
+                    ToAddress = new List<string> { _currentSession.CurrentUserDetail.ManagerEmailId },
                     kafkaServiceName = KafkaServiceName.Attendance,
                     LocalConnectionString = _currentSession.LocalConnectionString,
                     CompanyId = _currentSession.CurrentUserDetail.CompanyId
