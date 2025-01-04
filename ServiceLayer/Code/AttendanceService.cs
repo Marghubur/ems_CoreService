@@ -5,7 +5,6 @@ using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
@@ -1699,7 +1698,7 @@ namespace ServiceLayer.Code
         private async Task<AttendanceWithClientDetail> GetUserAttendance(WeekDates weekDates)
         {
             AttendanceWithClientDetail attendanceWithClientDetail = new AttendanceWithClientDetail();
-            var attendanceDs = await _db.GetDataSetAsync("sp_daily_attendance_by_user", new
+            var attendanceDs = await _db.GetDataSetAsync(Procedures.DAILY_ATTENDANCE_BY_USER, new
             {
                 FromDate = weekDates.StartDate.AddDays(-1),
                 ToDate = weekDates.EndDate,
@@ -1729,24 +1728,16 @@ namespace ServiceLayer.Code
         private void ValidateAttendanceResult(DataSet attendanceDs)
         {
             if (attendanceDs.Tables.Count != 4)
-            {
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found.");
-            }
 
             if (attendanceDs.Tables[0].Rows.Count == 0)
-            {
                 throw HiringBellException.ThrowBadRequest("Attendance detail not found.");
-            }
 
             if (attendanceDs.Tables[2].Rows.Count == 0)
-            {
                 throw HiringBellException.ThrowBadRequest("Employee detail not found.");
-            }
 
             if (attendanceDs.Tables[3].Rows.Count == 0)
-            {
                 throw HiringBellException.ThrowBadRequest("Shift detail not found.");
-            }
         }
 
         public async Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances)
@@ -2067,7 +2058,7 @@ namespace ServiceLayer.Code
                 if (x.EmployeeId == 0)
                     throw HiringBellException.ThrowBadRequest("Invalid employee id");
 
-                if (x.Month == null)
+                if (x.Month == 0)
                     throw HiringBellException.ThrowBadRequest("Invalid Month");
 
                 DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, out List<DailyAttendance> attendanceDetails);

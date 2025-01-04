@@ -645,27 +645,12 @@ namespace ServiceLayer.Code
                     }
                     else if (file.UserTypeId == UserType.Client)
                     {
-                        //var userDetail = this.db.Get<UserDetail>("sp_UserDetail_ById", new { userId = file.UserId });
-                        //userEmail = userDetail.EmailId;
                         userEmail = file.Email;
                         ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, file.FilePath);
                     }
 
                     if (!string.IsNullOrEmpty(userEmail))
                     {
-                        //fileDetail.ForEach(item =>
-                        //{
-                        //    if (string.IsNullOrEmpty(item.ParentFolder))
-                        //    {
-                        //        item.ParentFolder = string.Empty;  // Path.Combine(ApplicationConstants.DocumentRootPath, ApplicationConstants.User);
-                        //    }
-                        //    else
-                        //    {
-                        //        item.Email = userEmail;
-                        //    }
-                        //});
-
-                        // ---- save document in by another microservice call ------
                         string url = $"{_microserviceRegistry.SaveApplicationFile}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {

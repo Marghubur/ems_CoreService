@@ -31,5 +31,11 @@
         public static int Document = 2;
         public static int Resume = 3;
         public static int LeaveAttachment = 4;
+
+        //------ Gender ---------
+        public static string Male = "Male";
+        public static string Female = "Female";
+        public static string Any = "Any";
+
     }
 }

@@ -89,8 +89,8 @@ namespace ServiceLayer.Code
             value = _db.Execute<PfEsiSetting>(Procedures.Pf_Esi_Setting_Insupd, existing, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
-            else
-                await UpdateEmployeeSalaryDetails(existing);
+            //else
+            //    await UpdateEmployeeSalaryDetails(existing);
 
             return existing;
         }
