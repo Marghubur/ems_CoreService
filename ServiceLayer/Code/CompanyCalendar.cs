@@ -397,56 +397,60 @@ namespace ServiceLayer
 
         private async Task<List<Calendar>> UpdateHolidayData(List<Calendar> uploadedHolidayData)
         {
-            int i = 0;
-            int skipIndex = 0;
-            int chunkSize = 2;
             var companyId = _currentSession.CurrentUserDetail.CompanyId;
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            while (i < uploadedHolidayData.Count)
+            var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = companyId });
+
+            foreach (Calendar calendar in uploadedHolidayData)
             {
-                var holiday = uploadedHolidayData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
-                var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = companyId });
-                foreach (Calendar calendar in holiday)
+                var existCalendar = new Calendar();
+
+                calendar.CompanyId = companyId;
+
+                ValidateCalender(calendar);
+
+                calendar.EventName = calendar.EventName.ToUpper();
+                calendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
+                calendar.Country = textInfo.ToTitleCase(calendar.Country);
+
+                if (result.Count > 0)
                 {
-                    var existCalendar = new Calendar();
-                    calendar.CompanyId = companyId;
-                    calendar.EventName = calendar.EventName.ToUpper();
-                    calendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
-                    calendar.Country = textInfo.ToTitleCase(calendar.Country);
-                    ValidateCalender(calendar);
-                    if (result.Count > 0)
+                    existCalendar = result.Find(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.StartDate)
+                    .Subtract(_timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, calendar.StartDate)).TotalDays == 0);
+                    if (existCalendar != null)
                     {
-                        existCalendar = result.Find(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.StartDate)
-                        .Subtract(_timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, calendar.StartDate)).TotalDays == 0);
-                        if (existCalendar != null)
-                        {
-                            existCalendar.CompanyId = calendar.CompanyId;
-                            existCalendar.HolidayDate = calendar.HolidayDate;
-                            existCalendar.EventName = calendar.EventName;
-                            existCalendar.IsHoliday = calendar.IsHoliday;
-                            existCalendar.IsHalfDay = calendar.IsHalfDay;
-                            existCalendar.DescriptionNote = calendar.DescriptionNote;
-                            existCalendar.ApplicableFor = 1;
-                            existCalendar.Year = calendar.Year;
-                            existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
-                            existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;
-                            existCalendar.Country = calendar.Country;
-                        }
+                        existCalendar.CompanyId = calendar.CompanyId;
+                        existCalendar.HolidayDate = calendar.HolidayDate;
+                        existCalendar.EventName = calendar.EventName;
+                        existCalendar.IsHoliday = calendar.IsHoliday;
+                        existCalendar.IsHalfDay = calendar.IsHalfDay;
+                        existCalendar.DescriptionNote = calendar.DescriptionNote;
+                        existCalendar.ApplicableFor = 1;
+                        existCalendar.Year = calendar.Year;
+                        existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
+                        existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;
+                        existCalendar.Country = calendar.Country;
                     }
+                }
+                else
+                {
                     existCalendar = calendar;
-                    existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-                    var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
-                    if (string.IsNullOrEmpty(value))
-                        throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
                 }
 
-                i++;
+                existCalendar.HolidayDate = _timezoneConverter.ToUtcTime(existCalendar.HolidayDate, _currentSession.TimeZone);
+                existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
+
+                var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
+                if (string.IsNullOrEmpty(value))
+                    throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
             }
+
             FilterModel filterModel = new FilterModel
             {
                 SearchString = $"1=1 and CompanyId={companyId}"
             };
             var data = GetAllHolidayService(filterModel);
+
             return await Task.FromResult(data);
         }
     }

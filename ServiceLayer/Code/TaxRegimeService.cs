@@ -1,4 +1,4 @@
-﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
@@ -11,19 +11,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class TaxRegimeService : ITaxRegimeService
+    public class TaxRegimeService(IDb _db,
+                                  CurrentSession _currentSession) : ITaxRegimeService
     {
-        private readonly IDb _db;
-
-        public TaxRegimeService(IDb db)
-        {
-            _db = db;
-        }
         public TaxRegimeDesc AddUpdateTaxRegimeDescService(TaxRegimeDesc taxRegimeDesc)
         {
             if (string.IsNullOrEmpty(taxRegimeDesc.RegimeName))
@@ -49,6 +43,7 @@ namespace ServiceLayer.Code
             taxRegimeDesc.TaxRegimeDescId = Convert.ToInt32(result);
             return taxRegimeDesc;
         }
+
         public dynamic GetAllRegimeService()
         {
             var resultSet = _db.FetchDataSet(Procedures.Tax_Regime_Desc_Getall);
@@ -197,9 +192,8 @@ namespace ServiceLayer.Code
             try
             {
                 ValidatePTaxSlab(pTaxSlabs);
-                int companyId = pTaxSlabs.FirstOrDefault().CompanyId;
 
-                List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { CompanyId = companyId });
+                List<PTaxSlab> oldPtaxSlab = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { _currentSession.CurrentUserDetail.CompanyId });
                 foreach (var slab in pTaxSlabs)
                 {
                     if (slab.PtaxSlabId > 0)
@@ -231,13 +225,17 @@ namespace ServiceLayer.Code
                                 }).ToList();
 
                 var status = await _db.BulkExecuteAsync(Procedures.Ptax_Slab_Insupd, allSlabs, true);
-                return this.GetPTaxSlabByCompIdService(companyId);
+                if (status != pTaxSlabs.Count)
+                    throw HiringBellException.ThrowBadRequest("Fail to insert or update professiobnal tax detail");
+
+                return GetPTaxSlabByCompIdService(_currentSession.CurrentUserDetail.CompanyId);
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
         public string DeletePTaxSlabService(int PtaxSlabId)
         {
             if (PtaxSlabId <= 0)
@@ -249,6 +247,7 @@ namespace ServiceLayer.Code
 
             return status;
         }
+
         public List<PTaxSlab> GetPTaxSlabByCompIdService(int CompanyId)
         {
             if (CompanyId <= 0)
@@ -257,15 +256,13 @@ namespace ServiceLayer.Code
             var result = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { CompanyId });
             return result;
         }
+
         private void ValidatePTaxSlab(List<PTaxSlab> pTaxSlabs)
         {
             pTaxSlabs.ForEach(i =>
             {
                 if (string.IsNullOrEmpty(i.StateName))
                     throw new HiringBellException("State name is null or empty");
-
-                if (i.CompanyId <= 0)
-                    throw new HiringBellException("Invalid company. Please select a valid company.");
 
                 if (i.MinIncome < 0 || i.MinIncome == null)
                     throw new HiringBellException("Invalid minimum income. Please enter a valid company.");
