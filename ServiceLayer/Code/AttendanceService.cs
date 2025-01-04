@@ -2030,6 +2030,7 @@ namespace ServiceLayer.Code
                     EmployeeId = long.Parse(row["EmployeeId"].ToString()),
                     Name = row["Name"].ToString(),
                     Month = Int32.Parse(row["Month"].ToString()),
+                    Year = Int32.Parse(row["Year"].ToString()),
                 };
 
                 int daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, attendance.Month);
@@ -2061,7 +2062,10 @@ namespace ServiceLayer.Code
                 if (x.Month == 0)
                     throw HiringBellException.ThrowBadRequest("Invalid Month");
 
-                DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, out List<DailyAttendance> attendanceDetails);
+                if (x.Year == 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid Year");
+
+                DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
 
                 foreach (var item in attendanceDetails)
                 {
@@ -2089,13 +2093,13 @@ namespace ServiceLayer.Code
             return dailyAttendances;
         }
 
-        private DailyAttendanceBuilder GetDailyAttendanceDetail(long employeeId, int month, out List<DailyAttendance> dailyAttendances)
+        private DailyAttendanceBuilder GetDailyAttendanceDetail(long employeeId, int month, int year, out List<DailyAttendance> dailyAttendances)
         {
             dailyAttendances = new List<DailyAttendance>();
             DailyAttendanceBuilder dailyAttendanceBuilder = new DailyAttendanceBuilder();
 
-            var fromDate = new DateTime(DateTime.UtcNow.Year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
-            var toDate = new DateTime(DateTime.UtcNow.Year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddMonths(1);
+            var fromDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddDays(-1);
+            var toDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Unspecified).AddMonths(1);
             var Result = _db.FetchDataSet(Procedures.DAILY_ATTENDANCE_GET, new
             {
                 EmployeeId = employeeId,
@@ -2106,6 +2110,9 @@ namespace ServiceLayer.Code
 
             if (Result.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
+
+            if (Result.Tables[0].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
 
             if (Result.Tables[3].Rows.Count != 1)
                 throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
@@ -2126,7 +2133,7 @@ namespace ServiceLayer.Code
         private int GetAttendanceDayStatus(string value, DailyAttendanceBuilder dailyAttendanceBuilder, DateTime attedanceDate)
         {
             int status = 0;
-            var isHoliday = dailyAttendanceBuilder.calendars.Any() == true && CheckIsHoliday(attedanceDate, dailyAttendanceBuilder.calendars);
+            var isHoliday = dailyAttendanceBuilder.calendars.Any() && CheckIsHoliday(attedanceDate, dailyAttendanceBuilder.calendars);
             var isWeekend = CheckWeekend(dailyAttendanceBuilder.shiftDetail, attedanceDate);
 
             if (isWeekend)
@@ -2187,7 +2194,7 @@ namespace ServiceLayer.Code
         private List<DailyAttendance> GenerateDailyAttendanceRecord(List<DailyBiometricAttendance> dailyBiometricAttendances)
         {
             var firstBiometricAttendance = dailyBiometricAttendances.First();
-            DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(firstBiometricAttendance.EmployeeId, firstBiometricAttendance.Date.Month, out List<DailyAttendance> attendanceDetails);
+            DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(firstBiometricAttendance.EmployeeId, firstBiometricAttendance.Date.Month, firstBiometricAttendance.Date.Year, out List<DailyAttendance> attendanceDetails);
 
             foreach (var item in attendanceDetails)
             {
