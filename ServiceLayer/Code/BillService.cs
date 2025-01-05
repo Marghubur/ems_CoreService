@@ -1344,7 +1344,7 @@ namespace ServiceLayer.Code
             string declarationHTML = String.Empty;
             //declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
 
-            var grossIncome = employeeDeclaration.SalaryDetail.GrossIncome;
+            var grossIncome = Math.Round(employeeDeclaration.SalaryDetail.GrossIncome);
             decimal totalYTDAmount = 0;
 
             salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
@@ -1359,10 +1359,10 @@ namespace ServiceLayer.Code
 
             // var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var pTaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
-            var totalEarning = salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount;
-            var totalActualEarning = salaryDetail.Sum(x => x.ActualAmount);
-            var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? payslipModal.TaxDetail.TaxDeducted : pTaxAmount;
-            var netSalary = totalEarning > 0 ? totalEarning - (totalContribution + totalDeduction) : 0;
+            var totalEarning = Math.Round(salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount);
+            var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
+            var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) : Math.Round(pTaxAmount);
+            var netSalary = totalEarning > 0 ? Math.Round(totalEarning - (totalContribution + totalDeduction)) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
             var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
@@ -1397,16 +1397,16 @@ namespace ServiceLayer.Code
                 Replace("[[Year]]", payslipModal.Year.ToString()).
                 Replace("[[CompleteSalaryDetails]]", salaryDetailsHTML).
                 Replace("[[CompleteContributions]]", employeeContribution).
-                Replace("[[TotalEarnings]]", totalEarning.ToString("0.00")).
-                Replace("[[TotalIncomeTax]]", (payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? payslipModal.TaxDetail.TaxDeducted - pTaxAmount : 0).ToString("0.00")).
-                Replace("[[TotalDeduction]]", totalDeduction.ToString("0.00")).
-                Replace("[[TotalContribution]]", totalContribution.ToString("0.00")).
+                Replace("[[TotalEarnings]]", totalEarning.ToString()).
+                Replace("[[TotalIncomeTax]]", (payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(pTaxAmount) : 0).ToString()).
+                Replace("[[TotalDeduction]]", totalDeduction.ToString()).
+                Replace("[[TotalContribution]]", totalContribution.ToString()).
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).
-                Replace("[[NetSalaryPayable]]", netSalary.ToString("0.00")).
-                Replace("[[GrossIncome]]", grossIncome.ToString("0.00")).
-                Replace("[[TotalActualEarnings]]", totalActualEarning.ToString("0.00")).
-                Replace("[[TotalYTD]]", totalYTDAmount.ToString("0.00")).
+                Replace("[[NetSalaryPayable]]", netSalary.ToString()).
+                Replace("[[GrossIncome]]", grossIncome.ToString()).
+                Replace("[[TotalActualEarnings]]", totalActualEarning.ToString()).
+                Replace("[[TotalYTD]]", totalYTDAmount.ToString()).
                 Replace("[[EmployeeDeclaration]]", declarationHTML)
                 .Replace("[[CompanyLegalName]]", payslipModal.Company.CompanyName);
 
@@ -1428,18 +1428,18 @@ namespace ServiceLayer.Code
                 decimal YTDAmount = 0;
                 YTDSalaryBreakup.ForEach(x =>
                 {
-                    YTDAmount += x.SalaryBreakupDetails.Find(i => i.ComponentId == item.ComponentId).FinalAmount;
+                    YTDAmount += Math.Round(x.SalaryBreakupDetails.Find(i => i.ComponentId == item.ComponentId).FinalAmount);
                 });
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.ActualAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + item.FinalAmount.ToString("0.00") + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(item.ActualAmount) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(item.FinalAmount) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + YTDAmount + "</td>";
                 salaryDetailsHTML += "</tr>";
                 totalYTDAmount += YTDAmount;
             }
 
-            decimal arrearAmount = YTDSalaryBreakup.Sum(x => x.ArrearAmount);
+            decimal arrearAmount = Math.Round(YTDSalaryBreakup.Sum(x => x.ArrearAmount));
             totalYTDAmount += arrearAmount;
 
             return salaryDetailsHTML;
@@ -1450,10 +1450,10 @@ namespace ServiceLayer.Code
             var employeeESI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
             if (employeeESI != null && employeeESI.IsIncludeInPayslip)
             {
-                totalContribution += employeeESI.FinalAmount;
+                totalContribution += Math.Round(employeeESI.FinalAmount);
                 employeeContribution += "<tr>";
                 employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee ESI" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeeESI.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(employeeESI.FinalAmount) + "</td>";
                 employeeContribution += "</tr>";
             }
 
@@ -1465,10 +1465,10 @@ namespace ServiceLayer.Code
             var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
             if (employeePF != null && employeePF.IsIncludeInPayslip)
             {
-                totalContribution += employeePF.FinalAmount;
+                totalContribution += Math.Round(employeePF.FinalAmount);
                 employeeContribution += "<tr>";
                 employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Employee PF" + "</td>";
-                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + employeePF.FinalAmount.ToString("0.00") + "</td>";
+                employeeContribution += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(employeePF.FinalAmount) + "</td>";
                 employeeContribution += "</tr>";
             }
 
@@ -1482,7 +1482,7 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Bonus Amount" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.BonusAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(payslipModal.SalaryDetail.BonusAmount) + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "</tr>";
             }
@@ -1497,7 +1497,7 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + payslipModal.SalaryDetail.ArrearAmount.ToString("0.00") + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(payslipModal.SalaryDetail.ArrearAmount) + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "</tr>";
             }
