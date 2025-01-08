@@ -1,6 +1,7 @@
 ﻿using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace ServiceLayer.Interface
 {

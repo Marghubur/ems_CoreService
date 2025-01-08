@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using Bot.CoreBottomHalf.CommonModal.Leave;
 using ModalLayer.Modal.Accounts;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace ModalLayer.Modal
         public List<LeaveRequestNotification> UserLeaveRequests { set; get; }
         public EmployeePayrollData CurrentEmployee { get; set; }
         public TaxDetails PresentTaxDetail { set; get; }
-        public List<TaxDetails> TaxDetails {  set; get; }
+        public List<TaxDetails> TaxDetails { set; get; }
         public DateTime PayrollDate { get; set; }
         public DateTime Doj { get; set; }
         public DateTime LocalTimePresentDate { get; set; }

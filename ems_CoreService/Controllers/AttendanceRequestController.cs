@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
+using Bot.CoreBottomHalf.CommonModal.Leave;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace OnlineDataBuilder.Controllers
 {

@@ -45,6 +45,7 @@ namespace ModalLayer.Modal.Accounts
         public int ExcludePayrollFromJoinDate { get; set; }
         public string TimeDifferences { get; set; }
         public string StateName { get; set; }
+        public int AttendanceViewLimit { set; get; } = 5;
         public bool AttendanceType { get; set; } = true; // True => Weekly Attendance, False => Daily Attendance
     }
 

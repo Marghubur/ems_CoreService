@@ -1,7 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using System;
-using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -61,62 +59,5 @@ namespace ModalLayer.Modal
         public int PageIndex { get; set; }
         public int TotalDays { get; set; }
         public string UserComment { get; set; }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-    public class PayrollEmployeeData : Attendance
-    {
-        public string LeaveDetail { set; get; }
-        public int DeclarationStartMonth { set; get; }
-        public int DeclarationEndMonth { set; get; }
-        public int FinancialYear { set; get; }
-        public EmployeeDeclaration employeeDeclaration { set; get; }
-        public DateTime Doj { get; set; }
-        public string PreviuosMonthAttendance { get; set; }
-        public int CompanyId { set; get; }
-        public string CompleteSalaryDetail { set; get; }
-        public decimal CTC { set; get; }
-        public int GroupId { set; get; }
-        public string TaxDetail { set; get; }
-        public int WorkShiftId { get; set; }
-    }
-
-    //public class EmployeePayrollData
-    //{
-    //    public long EmployeeId { set; get; }
-    //    public string EmployeeName { set; get; }
-    //    public string Email { set; get; }
-    //    public string CompleteSalaryDetail { set; get; }
-    //    public decimal CTC { set; get; }
-    //    public int GroupId { set; get; }
-    //    public string TaxDetail { set; get; }
-    //    public int CompanyId { set; get; }
-    //    public int WorkShiftId { get; set; }
-    //    public DateTime Doj { get; set; }
-    //    public EmployeeDeclaration employeeDeclaration { set; get; }
-    //}
-
-    public class PayrollEmployeePageData
-    {
-        public List<LeaveRequestNotification> leaveRequestDetails { set; get; }
-        public List<EmployeePayrollData> employeeData { set; get; }
-        public List<HikeBonusSalaryAdhoc> hikeBonusSalaryAdhoc { set; get; }
-        public List<DailyAttendance> dailyAttendances { set; get; }
-        public List<JoinedAfterPayrollEmployees> joinedAfterPayrollEmployees { set; get; } = [];
-    }
-
-    public class JoinedAfterPayrollEmployees
-    {
-        public long EmployeeUid { get; set; }
     }
 }
