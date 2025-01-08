@@ -218,7 +218,7 @@ namespace ServiceLayer.Code
                 FatherName = "NA",
                 MotherName = "NA",
                 SpouseName = "NA",
-                Gender = true,
+                Gender = 1,
                 State = "NA",
                 City = "NA",
                 Pincode = 000000,

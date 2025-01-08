@@ -13,6 +13,8 @@
         public static string LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET_BY_ROLE = "sp_leave_timesheet_and_attendance_requests_get_by_role";
         public static string LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET = "sp_leave_timesheet_and_attendance_requests_get";
         public static string DAILY_ATTENDANCE_FILTER = "sp_daily_attendance_filter";
+        public static string DAILY_ATTENDANCE_BY_USER = "sp_daily_attendance_by_user";
+        public static string DAILY_ATTENDANCE_CONFIG_DATA = "sp_daily_attendance_config_data";
 
         /*------------- Leave Request service proceudures -------*/
         public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";

@@ -152,7 +152,7 @@ namespace ServiceLayer.Code
                                                 DateTime result;
                                                 if (DateTime.TryParseExact(dr[x.Name].ToString(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
                                                 {
-                                                    date = DateTime.SpecifyKind(result, DateTimeKind.Utc);
+                                                    date = DateTime.SpecifyKind(result, DateTimeKind.Unspecified);
                                                     x.SetValue(t, date);
                                                 }
                                             }

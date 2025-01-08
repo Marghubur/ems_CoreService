@@ -1,4 +1,4 @@
-﻿using CoreBottomHalf.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.Leave;
 using EMailService.Modal;
 using System;
 using System.Collections.Generic;

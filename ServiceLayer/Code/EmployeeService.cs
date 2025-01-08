@@ -33,7 +33,6 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Threading.Tasks;
 using File = System.IO.File;
-using PreviousEmployementDetail = Bot.CoreBottomHalf.CommonModal.PreviousEmployementDetail;
 
 namespace ServiceLayer.Code
 {
@@ -251,7 +250,6 @@ namespace ServiceLayer.Code
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
             .SetToken(_currentSession.Authorization);
-
 
             var response = await _requestMicroservice.GetRequest<EmployeeCalculation>(microserviceRequest);
             if (response is null)
@@ -545,6 +543,7 @@ namespace ServiceLayer.Code
                 employee.PFNumber,
                 PFJoinDate = employee.PFAccountCreationDate,
                 UniversalAccountNumber = employee.UAN,
+                employee.ESISerialNumber,
                 employee.SalaryDetailId,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             },
@@ -562,7 +561,7 @@ namespace ServiceLayer.Code
         private async Task SetupPreviousEmployerIncome(long employeeId, UploadedPayrollData uploaded)
         {
             // save this value into database
-            var result = await _db.ExecuteAsync(Procedures.PREVIOUS_EMPLOYEMENT_INS_UPD, new PreviousEmployementDetail
+            var result = await _db.ExecuteAsync(Procedures.PREVIOUS_EMPLOYEMENT_INS_UPD, new ModalLayer.Modal.Accounts.PreviousEmployementDetail
             {
                 PreviousEmpDetailId = 0,
                 EmployeeId = employeeId,
@@ -1576,13 +1575,26 @@ namespace ServiceLayer.Code
                                                     x.SetValue(t, Convert.ToBoolean(dr[x.Name]));
                                             }
                                             else
+                                            {
                                                 x.SetValue(t, default(bool));
+                                            }
                                             break;
                                         case nameof(Int32):
                                             if (dr[x.Name] != DBNull.Value)
-                                                x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            {
+                                                if (dr[x.Name].ToString().Equals(LocalConstants.Male, StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, 1);
+                                                else if (dr[x.Name].ToString().Equals(LocalConstants.Female, StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, 2);
+                                                else if (dr[x.Name].ToString().Equals(LocalConstants.Any, StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, 3);
+                                                else
+                                                    x.SetValue(t, Convert.ToInt32(dr[x.Name]));
+                                            }
                                             else
+                                            {
                                                 x.SetValue(t, 0);
+                                            }
                                             break;
                                         case nameof(Int64):
                                             if (dr[x.Name] != DBNull.Value)

@@ -2,7 +2,6 @@
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
@@ -17,6 +16,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace ServiceLayer.Code
 {

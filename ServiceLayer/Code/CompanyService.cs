@@ -476,6 +476,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.ExcludePayrollFromJoinDate = companySetting.ExcludePayrollFromJoinDate;
                 companySettingDetail.TimeDifferences = companySetting.TimeDifferences;
                 companySettingDetail.AttendanceType = companySetting.AttendanceType;
+                companySettingDetail.AttendanceViewLimit = companySetting.AttendanceViewLimit;
             }
 
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
@@ -497,6 +498,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.ExcludePayrollFromJoinDate,
                 companySetting.TimeDifferences,
                 companySettingDetail.AttendanceType,
+                companySettingDetail.AttendanceViewLimit,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -655,6 +657,7 @@ namespace ServiceLayer.Code
                 companySettingDetail.ExcludePayrollFromJoinDate,
                 companySettingDetail.TimeDifferences,
                 companySettingDetail.AttendanceType,
+                companySettingDetail.AttendanceViewLimit,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
