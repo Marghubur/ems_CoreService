@@ -37,7 +37,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<OnlineDocumentService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
 
         public OnlineDocumentService(IDb db,
@@ -48,7 +48,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             IBillService billService,
             ITimezoneConverter timezoneConverter,
-            MicroserviceUrlLogs microserviceUrlLogs,
+            MicroserviceRegistry microserviceUrlLogs,
             RequestMicroservice requestMicroservice)
         {
             this.db = db;

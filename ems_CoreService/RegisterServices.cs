@@ -134,9 +134,9 @@ namespace ems_CoreService
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
-            services.Configure<MicroserviceUrlLogs>(x => configuration.GetSection(nameof(MicroserviceUrlLogs)).Bind(x));
+            services.Configure<MicroserviceRegistry>(x => configuration.GetSection(nameof(MicroserviceRegistry)).Bind(x));
             services.AddSingleton(x =>
-                x.GetRequiredService<IOptions<MicroserviceUrlLogs>>().Value
+                x.GetRequiredService<IOptions<MicroserviceRegistry>>().Value
             );
 
             services.AddSingleton<FileLocationDetail>(service =>

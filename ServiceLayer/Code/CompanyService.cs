@@ -25,7 +25,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public CompanyService(
             IDb db,
@@ -33,7 +33,7 @@ namespace ServiceLayer.Code
             IFileService fileService,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;

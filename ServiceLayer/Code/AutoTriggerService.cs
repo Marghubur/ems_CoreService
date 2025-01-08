@@ -13,8 +13,6 @@ using EMailService.Modal.CronJobs;
 using EMailService.Modal.Jobs;
 using EMailService.Modal.Payroll;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
@@ -40,7 +38,7 @@ namespace ServiceLayer.Code
         private readonly ILeaveAccrualJob _leaveAccrualJob;
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly IAttendanceService _attendanceService;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
@@ -49,7 +47,7 @@ namespace ServiceLayer.Code
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
             YearEndCalculation yearEndCalculation,
-            IOptions<MicroserviceUrlLogs> microserviceUrlLogs,
+            MicroserviceRegistry microserviceUrlLogs,
             RequestMicroservice requestMicroservice,
             IAttendanceService attendanceService,
             IKafkaConsumerService kafkaConsumerService)
@@ -60,7 +58,7 @@ namespace ServiceLayer.Code
             _db = db;
             _leaveAccrualJob = leaveAccrualJob;
             _yearEndCalculation = yearEndCalculation;
-            _microserviceUrlLogs = microserviceUrlLogs.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
             _attendanceService = attendanceService;
             _kafkaConsumerService = kafkaConsumerService;

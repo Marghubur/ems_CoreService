@@ -26,14 +26,14 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         public ProductService(
             IDb db, 
             FileLocationDetail fileLocationDetail, 
             IFileService fileService, 
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;

@@ -26,7 +26,7 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public CompanyNotificationService(IDb db,
             CurrentSession currentSession,
@@ -34,7 +34,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             IFileService fileService,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _currentSession = currentSession;

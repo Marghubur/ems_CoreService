@@ -51,7 +51,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<LeaveCalculation> _logger;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -66,7 +66,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             ILogger<LeaveCalculation> logger,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;

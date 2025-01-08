@@ -24,7 +24,7 @@ namespace CoreServiceLayer.Implementation
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public FileService(
             IWebHostEnvironment hostingEnvironment,
@@ -32,7 +32,7 @@ namespace CoreServiceLayer.Implementation
             FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _hostingEnvironment = hostingEnvironment;
             _fileLocationDetail = fileLocationDetail;

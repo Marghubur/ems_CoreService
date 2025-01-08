@@ -52,7 +52,7 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
@@ -67,7 +67,7 @@ namespace ServiceLayer.Code
             IFileMaker fileMaker,
             IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs, 
+            MicroserviceRegistry microserviceUrlLogs, 
             IUtilityService utilityService)
         {
             this.db = db;

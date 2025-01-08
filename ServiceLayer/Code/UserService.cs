@@ -31,7 +31,7 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
 
         public UserService(
             IDb db,
@@ -41,7 +41,7 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             IEmployeeService employeeService,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _fileService = fileService;

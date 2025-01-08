@@ -27,7 +27,7 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public ClientsService(IDb db,
             CommonFilterService commonFilterService,
@@ -35,7 +35,7 @@ namespace ServiceLayer.Code
             IFileService fileService,
             FileLocationDetail fileLocationDetail,
             RequestMicroservice requestMicroservice,
-            MicroserviceUrlLogs microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _commonFilterService = commonFilterService;
