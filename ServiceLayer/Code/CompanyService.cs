@@ -25,7 +25,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public CompanyService(
             IDb db,
@@ -33,14 +33,14 @@ namespace ServiceLayer.Code
             IFileService fileService,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
         public List<OrganizationDetail> GetAllCompany()
         {
@@ -244,7 +244,7 @@ namespace ServiceLayer.Code
             //}).ToList<Files>();
             //_fileService.SaveFile(_fileLocationDetail.LogoPath, files, fileCollection, (companyInfo.OrganizationId).ToString());
 
-            var url = $"{_microserviceRegistry.SaveApplicationFile}";
+            var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
             FileFolderDetail fileFolderDetail = new FileFolderDetail
             {
                 FolderPath = path,
@@ -554,7 +554,7 @@ namespace ServiceLayer.Code
 
             //_fileService.SaveFileToLocation(FolderPath, files, fileCollection);
 
-            var url = $"{_microserviceRegistry.SaveApplicationFile}";
+            var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
             FileFolderDetail fileFolderDetail = new FileFolderDetail
             {
                 FolderPath = FolderPath,

@@ -40,7 +40,7 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
             ITimesheetService timesheetService,
             ExcelWriter excelWriter,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -81,7 +81,7 @@ namespace ServiceLayer.Code
             _timesheetService = timesheetService;
             _excelWriter = excelWriter;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
 
         #region Code Used for employee insert or update
@@ -243,7 +243,7 @@ namespace ServiceLayer.Code
 
         private async Task<EmployeeCalculation> GetDeclarationDetail(Employee employee, int currentRegimeId)
         {
-            string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{employee.EmployeeId}/{employee.CTC}/{currentRegimeId}";
+            string url = $"{_microserviceUrlLogs.SalaryDeclarationCalculation}/{employee.EmployeeId}/{employee.CTC}/{currentRegimeId}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
             .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
@@ -607,7 +607,7 @@ namespace ServiceLayer.Code
                 var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
                 //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
 
-                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
@@ -1396,7 +1396,7 @@ namespace ServiceLayer.Code
                 }
                 try
                 {
-                    string url = $"{_microserviceRegistry.UpdateBulkDeclarationDetail}/{emp.EmployeeDeclarationId}";
+                    string url = $"{_microserviceUrlLogs.UpdateBulkDeclarationDetail}/{emp.EmployeeDeclarationId}";
                     var microserviceRequest = MicroserviceRequest.Builder(url);
                     microserviceRequest
                     .SetPayload(employeeDeclarations)

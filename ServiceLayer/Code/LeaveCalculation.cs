@@ -51,7 +51,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<LeaveCalculation> _logger;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         public LeaveCalculation(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -66,7 +66,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             ILogger<LeaveCalculation> logger,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
@@ -82,7 +82,7 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
             _logger = logger;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
 
         private async Task<List<LeaveTypeBrief>> PrepareLeaveType(List<LeaveTypeBrief> leaveTypeBrief, List<LeavePlanType> leavePlanTypes)
@@ -929,7 +929,7 @@ namespace ServiceLayer.Code
                 // save file to server filesystem
                 //_fileService.SaveFileToLocation(documentPath, fileDetail, fileCollection);
 
-                var url = $"{_microserviceRegistry.SaveApplicationFile}";
+                var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = documentPath,

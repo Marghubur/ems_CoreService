@@ -26,21 +26,21 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         public ProductService(
             IDb db, 
             FileLocationDetail fileLocationDetail, 
             IFileService fileService, 
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
 
         public dynamic GetAllProductsService(FilterModel filterModel)
@@ -128,7 +128,7 @@ namespace ServiceLayer.Code
                     var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
                     //_fileService.SaveFile(folderPath, files, FileCollection, product.ProductId.ToString());
 
-                    string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                     FileFolderDetail fileFolderDetail = new FileFolderDetail
                     {
                         FolderPath = folderPath,

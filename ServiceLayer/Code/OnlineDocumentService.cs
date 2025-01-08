@@ -13,7 +13,6 @@ using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -38,7 +37,7 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ILogger<OnlineDocumentService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
 
         public OnlineDocumentService(IDb db,
@@ -49,7 +48,7 @@ namespace ServiceLayer.Code
             FileLocationDetail fileLocationDetail,
             IBillService billService,
             ITimezoneConverter timezoneConverter,
-            IOptions<MicroserviceRegistry> microserviceOptions,
+            MicroserviceUrlLogs microserviceUrlLogs,
             RequestMicroservice requestMicroservice)
         {
             this.db = db;
@@ -60,7 +59,7 @@ namespace ServiceLayer.Code
             _billService = billService;
             _fileLocationDetail = fileLocationDetail;
             _timezoneConverter = timezoneConverter;
-            _microserviceRegistry = microserviceOptions.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
         }
 
@@ -583,7 +582,7 @@ namespace ServiceLayer.Code
                         createPageModel.OnlineDocumentModel.Title.Replace(" ", "_"));
                     //List<Files> files = _fileService.SaveFile(FolderPath, fileDetail, FileCollection, NewDocId);
 
-                    var url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                     FileFolderDetail fileFolderDetail = new FileFolderDetail
                     {
                         FolderPath = FolderPath,
@@ -651,7 +650,7 @@ namespace ServiceLayer.Code
 
                     if (!string.IsNullOrEmpty(userEmail))
                     {
-                        string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                        string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
                             FolderPath = ownerPath,

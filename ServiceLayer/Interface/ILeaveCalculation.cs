@@ -2,7 +2,6 @@
 using Bot.CoreBottomHalf.CommonModal.Leave;
 using EMailService.Modal.Leaves;
 using Microsoft.AspNetCore.Http;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using System;

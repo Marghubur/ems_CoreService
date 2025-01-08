@@ -7,7 +7,6 @@ using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
@@ -25,7 +24,7 @@ namespace CoreServiceLayer.Implementation
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public FileService(
             IWebHostEnvironment hostingEnvironment,
@@ -33,14 +32,14 @@ namespace CoreServiceLayer.Implementation
             FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _hostingEnvironment = hostingEnvironment;
             _fileLocationDetail = fileLocationDetail;
             _db = db;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
 
         public int DeleteFiles(List<Files> files)
@@ -48,7 +47,7 @@ namespace CoreServiceLayer.Implementation
             int deleteCount = 0;
             if (files.Count > 0)
             {
-                string url = $"{_microserviceRegistry.DeleteFiles}";
+                string url = $"{_microserviceUrlLogs.DeleteFiles}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = files.First().FilePath,
@@ -327,7 +326,7 @@ namespace CoreServiceLayer.Implementation
                         //if (!Directory.Exists(actualFolderPath))
                         //    Directory.CreateDirectory(actualFolderPath);
 
-                        string url = $"{_microserviceRegistry.CreateFolder}";
+                        string url = $"{_microserviceUrlLogs.CreateFolder}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
                             FolderPath = fileDetail.FilePath,

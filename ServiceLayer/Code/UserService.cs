@@ -9,7 +9,6 @@ using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
@@ -32,7 +31,7 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IEmployeeService _employeeService;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
 
         public UserService(
             IDb db,
@@ -42,7 +41,7 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             IEmployeeService employeeService,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _fileService = fileService;
@@ -51,7 +50,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _employeeService = employeeService;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
 
         public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
@@ -100,7 +99,7 @@ namespace ServiceLayer.Code
                 //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
 
                 var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
-                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
@@ -157,7 +156,7 @@ namespace ServiceLayer.Code
                 //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
 
                 var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
-                string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,

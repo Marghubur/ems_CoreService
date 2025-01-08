@@ -8,7 +8,6 @@ using Bt.Lib.Common.Service.Model;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -28,7 +27,7 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IFileService _fileService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public ClientsService(IDb db,
             CommonFilterService commonFilterService,
@@ -36,7 +35,7 @@ namespace ServiceLayer.Code
             IFileService fileService,
             FileLocationDetail fileLocationDetail,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> options)
+            MicroserviceUrlLogs microserviceUrlLogs)
         {
             _db = db;
             _commonFilterService = commonFilterService;
@@ -44,7 +43,7 @@ namespace ServiceLayer.Code
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
         }
         public List<Organization> GetClients(FilterModel filterModel)
         {
@@ -136,7 +135,7 @@ namespace ServiceLayer.Code
 
                     var ownerFolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{UserType.Client}_{organization.ClientId}");
                     //_fileService.SaveFile(ownerFolderPath, files, fileCollection, client.OldFileName);
-                    string url = $"{_microserviceRegistry.SaveApplicationFile}";
+                    string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                     FileFolderDetail fileFolderDetail = new FileFolderDetail
                     {
                         FolderPath = ownerFolderPath,

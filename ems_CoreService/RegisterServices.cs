@@ -3,14 +3,8 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.Configserver;
-using Bt.Lib.Common.Service.KafkaService.code.Consumer;
-using Bt.Lib.Common.Service.KafkaService.code.Producer;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
 using Bt.Lib.Common.Service.Services;
-using Confluent.Kafka;
 using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -21,9 +15,8 @@ using HtmlService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ModalLayer.Modal;
+using Microsoft.Extensions.Options;
 using ServiceLayer;
-using ServiceLayer.Caching;
 using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.HostedServiceJobs;
@@ -32,8 +25,6 @@ using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
-using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace ems_CoreService
@@ -42,22 +33,18 @@ namespace ems_CoreService
     {
         private readonly CommonRegistry _registry;
         private readonly IWebHostEnvironment _env;
-        public RegisterServices(IWebHostEnvironment env, IConfiguration configuration, string corsPolisy)
+        public RegisterServices(IWebHostEnvironment env)
         {
             _env = env;
-            _registry = new CommonRegistry(env, configuration, corsPolisy);
         }
 
-        public void RegisterDatabase(IServiceCollection services, IConfiguration configuration)
+        public void RegisterDatabase(IServiceCollection services)
         {
-            string connectionString = configuration.GetConnectionString("EmsMasterCS");
-
-            services.Configure<MasterDatabase>(x => configuration.GetSection(nameof(MasterDatabase)).Bind(x));
             services.AddScoped<IDb, Db>();
-            services.AddSingleton<ICacheManager, CacheManager>(x =>
-            {
-                return CacheManager.GetInstance(connectionString);
-            });
+            //services.AddSingleton<ICacheManager, CacheManager>(x =>
+            //{
+            //    return CacheManager.GetInstance(connectionString);
+            //});
         }
 
         public void RegisterServiceLayerServices(IServiceCollection services)
@@ -144,14 +131,14 @@ namespace ems_CoreService
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
-
-            services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM, _env)
-            );
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
-            services.Configure<MicroserviceRegistry>(x => configuration.GetSection(nameof(MicroserviceRegistry)).Bind(x));
+            services.Configure<MicroserviceUrlLogs>(x => configuration.GetSection(nameof(MicroserviceUrlLogs)).Bind(x));
+            services.AddSingleton(x =>
+                x.GetRequiredService<IOptions<MicroserviceUrlLogs>>().Value
+            );
+
             services.AddSingleton<FileLocationDetail>(service =>
             {
                 var fileLocationDetail = configuration.GetSection("BillingFolders").Get<FileLocationDetail>();
@@ -173,24 +160,6 @@ namespace ems_CoreService
 
                 return locationDetail;
             });
-        }
-
-        public void RegisterCommonUtility(IServiceCollection services)
-        {
-            // register current session class
-            _registry.RegisterPerSessionClass(services);
-
-            // register jwt authentication services
-            _registry.RegisterAuthenticationToken(services);
-
-            // register json request and response handler
-            _registry.RegisterJsonHandler(services);
-
-            // register cors for the http request
-            _registry.RegisterCorsEnableService(services);
-
-            // register kafka services
-            _registry.RegisterKafka(services);
         }
     }
 }

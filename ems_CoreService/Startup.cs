@@ -1,10 +1,4 @@
-using Bt.Lib.Common.Service.Configserver;
-using Bt.Lib.Common.Service.KafkaService.code;
-using Bt.Lib.Common.Service.KafkaService.code.Consumer;
-using Bt.Lib.Common.Service.KafkaService.code.Producer;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
-using Bt.Lib.Common.Service.Model;
-using Confluent.Kafka;
+using Bt.Lib.Common.Service.Services;
 using ems_CoreService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -12,8 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ServiceLayer.Interface;
-using System;
-using System.Collections.Generic;
 
 namespace OnlineDataBuilder
 {
@@ -37,14 +29,13 @@ namespace OnlineDataBuilder
 
                 _configuration = config.Build();
                 _env = env;
-                _registerService = new RegisterServices(env, _configuration, CorsPolicy);
+                _registerService = new RegisterServices(env);
             }
             catch
             {
                 throw;
             }
         }
-
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -59,28 +50,17 @@ namespace OnlineDataBuilder
             _registerService.RegisterFolderPaths(_configuration, _env, services);
 
             // register database
-            _registerService.RegisterDatabase(services, _configuration);
+            _registerService.RegisterDatabase(services);
 
-            // register common utility for web config services
-            _registerService.RegisterCommonUtility(services);
+            var commonRegistry = new CommonRegistry(services, _env, _configuration);
 
-            // Subscribe the kafka consumer service
-            services.AddSingleton<IKafkaConsumerService>(x =>
-                KafkaConsumerService.GetInstance(
-                    ApplicationNames.EMSTUM,
-                    new List<KafkaTopicNames> { KafkaTopicNames.DAILY_JOBS_MANAGER },
-                    _env
-                )
-            );
-
-            // Subscribe the kafka producer service
-            services.AddSingleton<IKafkaProducerService>(x => 
-                KafkaProducerService.GetInstance(
-                    ApplicationNames.EMSTUM, 
-                    x.GetRequiredService<ProducerConfig>(), 
-                    _env
-                )
-            );
+            commonRegistry
+                .AddCurrentSessionClass()
+                .AddPublicKeyConfiguration()
+                .AddKafkaProducerService()
+                .AddKafkaConsumerService()
+                .AddCORS("EmstumCorsPolicy")
+                .AddJWTSupport();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

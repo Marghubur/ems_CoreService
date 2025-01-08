@@ -4,7 +4,6 @@ using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
@@ -34,56 +33,46 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly IKafkaConsumerService _kafkaConsumerService;
-        private readonly IFetchGithubConfigurationService _fetchGithubConfigurationService;
 
         private readonly ILogger<AutoTriggerService> _logger;
-        private readonly MasterDatabase _masterDatabase;
-        private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
         private readonly ILeaveAccrualJob _leaveAccrualJob;
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly IAttendanceService _attendanceService;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
-            IOptions<MasterDatabase> options,
-            IOptions<List<KafkaServiceConfig>> kafkaOptions,
             ITimezoneConverter timezoneConverter,
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
             ILeaveAccrualJob leaveAccrualJob,
             IDb db,
             YearEndCalculation yearEndCalculation,
-            IOptions<MicroserviceRegistry> microserviceOptions,
+            IOptions<MicroserviceUrlLogs> microserviceUrlLogs,
             RequestMicroservice requestMicroservice,
             IAttendanceService attendanceService,
-            IFetchGithubConfigurationService fetchGithubConfigurationService,
             IKafkaConsumerService kafkaConsumerService)
         {
             _logger = logger;
-            _masterDatabase = options.Value;
-            _kafkaServiceConfig = kafkaOptions.Value;
             _timezoneConverter = timezoneConverter;
             _weeklyTimesheetCreationJob = weeklyTimesheetCreationJob;
             _db = db;
             _leaveAccrualJob = leaveAccrualJob;
             _yearEndCalculation = yearEndCalculation;
-            _microserviceRegistry = microserviceOptions.Value;
+            _microserviceUrlLogs = microserviceUrlLogs.Value;
             _requestMicroservice = requestMicroservice;
             _attendanceService = attendanceService;
-            _fetchGithubConfigurationService = fetchGithubConfigurationService;
             _kafkaConsumerService = kafkaConsumerService;
-            // _payrollService = payrollService;
         }
 
         public async Task ScheduledJobManager()
         {
-            await _kafkaConsumerService.SubscribeTopic(RunJobAsync, KafkaTopicNames.DAILY_JOBS_MANAGER);
+            await _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
             await Task.CompletedTask;
         }
 
-        public async Task RunJobAsync(ConsumeResult<Null, string> result)
+        public async Task RunJobAsync(ConsumeResult<Ignore, string> result)
         {
             KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(result.Message.Value);
 
@@ -142,11 +131,15 @@ namespace ServiceLayer.Code
 
         private async Task<List<DbConfigModal>> LoadDatabaseConfiguration()
         {
-            // DatabaseConfiguration config = await _fetchGithubConfigurationService.GetDatabaseConfiguration();
-            // string cs = $"server={config.Server};port={config.Port};database={config.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-            
-            string cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetConfiguration<DatabaseConfiguration>());
-            
+            DatabaseConfiguration databaseConfiguration = await _requestMicroservice.GetRequest<DatabaseConfiguration>(new MicroserviceRequest
+            {
+                Url = _microserviceUrlLogs.DatabaseConfigurationUrl,
+                CompanyCode = "BOT",
+                Token = "Bearer_empt"
+            });
+
+            string cs = DatabaseConfiguration.BuildConnectionString(databaseConfiguration);
+
             List<DbConfigModal> dbConfiguration = new List<DbConfigModal>();
             using (var connection = new MySqlConnection(cs))
             {
@@ -200,7 +193,7 @@ namespace ServiceLayer.Code
 
             // await _payrollService.RunPayrollCycle(runDate.Value);
             var date = runDate.Value;
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
+            string url = $"{_microserviceUrlLogs.RunPayroll}/{true}";
             await _requestMicroservice.GetRequest<EmployeeCalculation>(MicroserviceRequest.Builder(url));
         }
 

@@ -6,7 +6,6 @@ using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
@@ -53,7 +52,7 @@ namespace ServiceLayer.Code
         private readonly ITimezoneConverter _timezoneConverter;
         // private readonly IDeclarationService _declarationService;
         private readonly MasterDatabase _masterDatabase;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
 
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
@@ -66,10 +65,9 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker,
-            // IDeclarationService declarationService,
             IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
-            IOptions<MicroserviceRegistry> microserviceoptions, 
+            MicroserviceUrlLogs microserviceUrlLogs, 
             IUtilityService utilityService)
         {
             this.db = db;
@@ -84,10 +82,9 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
-            // _declarationService = declarationService;
             _masterDatabase = options.Value;
             _requestMicroservice = requestMicroservice;
-            _microserviceRegistry = microserviceoptions.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
             _utilityService = utilityService;
         }
 
@@ -1296,7 +1293,7 @@ namespace ServiceLayer.Code
                 FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, Email)
             };
 
-            string url = $"{_microserviceRegistry.ConvertHtmlToPdf}";
+            string url = $"{_microserviceUrlLogs.ConvertHtmlToPdf}";
 
             MicroserviceRequest microserviceRequest = new MicroserviceRequest
             {
@@ -1330,7 +1327,7 @@ namespace ServiceLayer.Code
             );
 
             // EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
-            string url = $"{_microserviceRegistry.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
+            string url = $"{_microserviceUrlLogs.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
             MicroserviceRequest microserviceRequest = new MicroserviceRequest
             {
                 Url = url,

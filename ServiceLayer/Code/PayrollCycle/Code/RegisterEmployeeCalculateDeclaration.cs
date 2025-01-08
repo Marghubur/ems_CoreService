@@ -14,7 +14,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
         // private readonly IDeclarationService _declarationService;
         private readonly ILogger<RegisterEmployeeCalculateDeclaration> _logger;
         private readonly CurrentSession _currentSession;
-        private readonly MicroserviceRegistry _microserviceRegistry;
+        private readonly MicroserviceUrlLogs _microserviceRegistry;
         private readonly RequestMicroservice _requestMicroservice;
 
         public RegisterEmployeeCalculateDeclaration(
@@ -22,7 +22,7 @@ namespace ServiceLayer.Code.PayrollCycle.Code
             CurrentSession currentSession,
             // IDeclarationService declarationService,
             ILogger<RegisterEmployeeCalculateDeclaration> logger,
-            IOptions<MicroserviceRegistry> options,
+            IOptions<MicroserviceUrlLogs> options,
             RequestMicroservice requestMicroservice)
         {
             _employeeService = employeeService;
