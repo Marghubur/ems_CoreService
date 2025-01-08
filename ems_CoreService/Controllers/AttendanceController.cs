@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace OnlineDataBuilder.Controllers
 {

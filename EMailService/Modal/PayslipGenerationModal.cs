@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using Bot.CoreBottomHalf.CommonModal.Leave;
 using EMailService.Modal.Payroll;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;

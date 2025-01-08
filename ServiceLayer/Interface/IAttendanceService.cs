@@ -1,8 +1,10 @@
-﻿using EMailService.Modal;
+﻿using Bot.CoreBottomHalf.CommonModal.Leave;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace ServiceLayer.Interface
 {
@@ -22,9 +24,9 @@ namespace ServiceLayer.Interface
         Task<DailyAttendance> AdjustAttendanceService(Attendance attendance);
         Task<List<LOPAdjustmentDetail>> GetLOPAdjustmentService(int month, int year);
         Task<AttendanceWithClientDetail> GetDailyAttendanceByUserIdService(WeekDates weekDates);
-        Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId);
-        Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances);
-        Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
+        Task<dynamic> LoadAttendanceConfigDataService(long EmployeeId);
+        Task<dynamic> SaveDailyAttendanceService(List<DailyAttendance> attendances);
+        Task<dynamic> SubmitDailyAttendanceService(List<DailyAttendance> attendances);
         Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel);
         Task<Dictionary<long, List<DailyAttendance>>> GetRecentWeeklyAttendanceService(FilterModel filterModel);
         Task GenerateMonthlyAttendance();

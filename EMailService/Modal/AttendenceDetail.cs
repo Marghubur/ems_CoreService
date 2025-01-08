@@ -1,6 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
-using CoreBottomHalf.Modal;
-using ModalLayer.Modal.Accounts;
+using Bot.CoreBottomHalf.CommonModal.Leave;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
@@ -56,27 +55,6 @@ namespace ModalLayer.Modal
         public LeaveDetail leaveDetail { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
         public List<Project> projects { get; set; }
-    }
-
-    public class AttendanceJson
-    {
-        public int AttendenceDetailId { set; get; }
-        public bool IsHoliday { set; get; }
-        public bool IsOnLeave { set; get; }
-        public bool IsWeekend { set; get; }
-        public DateTime AttendanceDay { set; get; }
-        public string LogOn { set; get; }
-        public string LogOff { set; get; }
-        public int PresentDayStatus { set; get; }
-        public string UserComments { set; get; }
-        public string ApprovedName { set; get; }
-        public long ApprovedBy { set; get; }
-        public int SessionType { set; get; }
-        public int TotalMinutes { set; get; }
-        public bool IsOpen { set; get; }
-        public string Emails { set; get; }
-        public int WorkTypeId { get; set; }
-        public bool IsHalfDay { get; set; } = false;
     }
 
     public class AttendanceDetailJson : UserMangerCommonDetail

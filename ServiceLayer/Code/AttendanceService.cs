@@ -2,6 +2,7 @@
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
+using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
@@ -12,6 +13,7 @@ using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -23,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
 namespace ServiceLayer.Code
 {
@@ -337,42 +340,42 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task GenerateAttendanceForEachEmployee(DateTime attendanceStartDate, DateTime attendanceEndDate, long employeeId, int status)
-        {
-            while (attendanceStartDate.Subtract(attendanceEndDate).TotalDays < 0)
-            {
-                Attendance attendance = new Attendance
-                {
-                    AttendanceDay = attendanceStartDate,
-                    ForMonth = attendanceStartDate.Month,
-                    ForYear = attendanceStartDate.Year,
-                    EmployeeId = employeeId
-                };
+        //private async Task GenerateAttendanceForEachEmployee(DateTime attendanceStartDate, DateTime attendanceEndDate, long employeeId, int status)
+        //{
+        //    while (attendanceStartDate.Subtract(attendanceEndDate).TotalDays < 0)
+        //    {
+        //        Attendance attendance = new Attendance
+        //        {
+        //            AttendanceDay = attendanceStartDate,
+        //            ForMonth = attendanceStartDate.Month,
+        //            ForYear = attendanceStartDate.Year,
+        //            EmployeeId = employeeId
+        //        };
 
-                var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
-                {
-                    EmployeeId = employeeId,
-                    ForYear = attendanceStartDate.Year,
-                    ForMonth = attendanceStartDate.Month
-                });
+        //        var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
+        //        {
+        //            EmployeeId = employeeId,
+        //            ForYear = attendanceStartDate.Year,
+        //            ForMonth = attendanceStartDate.Month
+        //        });
 
-                if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
-                {
-                    List<AttendanceJson> attendenceDetails;
-                    var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
+        //        if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
+        //        {
+        //            List<AttendanceJson> attendenceDetails;
+        //            var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
 
-                    attendanceModal.attendanceSubmissionLimit = 2;
-                    await BuildApprovedAttendance(attendanceModal, attendanceModal.employee.CreatedOn, status);
+        //            attendanceModal.attendanceSubmissionLimit = 2;
+        //            await BuildApprovedAttendance(attendanceModal, attendanceModal.employee.CreatedOn, status);
 
-                    attendanceStartDate = attendanceStartDate.AddMonths(1);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            await Task.CompletedTask;
-        }
+        //            attendanceStartDate = attendanceStartDate.AddMonths(1);
+        //        }
+        //        else
+        //        {
+        //            break;
+        //        }
+        //    }
+        //    await Task.CompletedTask;
+        //}
 
         public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
         {
@@ -1211,7 +1214,7 @@ namespace ServiceLayer.Code
             //var attendanceList = new List<AttendanceJson>();
 
             // check for leave, holiday and weekends
-            await this.IsGivenDateAllowed(attendance.AttendanceDay);
+            //await this.IsGivenDateAllowed(attendance.AttendanceDay);
 
             //var presentAttendance = _db.Get<Attendance>(Procedures.Attendance_Get_ById, new { AttendanceId = attendance.AttendanceId });
             //if (presentAttendance == null || string.IsNullOrEmpty(presentAttendance.AttendanceDetail))
@@ -1560,7 +1563,7 @@ namespace ServiceLayer.Code
 
         #region ATTENDANCE_NEW_CLASS
 
-        public async Task<AttendanceConfig> LoadAttendanceConfigDataService(long EmployeeId)
+        public async Task<dynamic> LoadAttendanceConfigDataService(long EmployeeId)
         {
             if (EmployeeId == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee id passed");
@@ -1568,30 +1571,168 @@ namespace ServiceLayer.Code
             return await GetAttendanceConfiData(EmployeeId);
         }
 
-        private async Task<AttendanceConfig> GetAttendanceConfiData(long EmployeeId)
+        private async Task<dynamic> GetAttendanceConfiData(long EmployeeId)
         {
-            var ds = await _db.GetDataSetAsync("sp_daily_attendance_config_data", new
+            var ds = await _db.GetDataSetAsync(Procedures.DAILY_ATTENDANCE_CONFIG_DATA, new
             {
                 EmployeeId
             });
 
-            if (ds.Tables.Count != 2)
+            if (ds.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest("Employee and project detail not found.");
 
             if (ds.Tables[0].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Attendance detail not found.");
+
+            if (ds.Tables[3].Rows.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Employee detail not found.");
 
-            var weekDates = getCurrentWeekStartEndDate();
-
-            AttendanceConfig attendanceConfig = new AttendanceConfig
+            var companySetting = Converter.ToType<CompanySetting>(ds.Tables[3]);
+            var dailyAttendances = ProcessAttendanceRecords(ds);
+            var requestAttendance = FilterAttendancesByStatus(dailyAttendances, AttendanceEnum.NotSubmitted, companySetting.AttendanceType);
+            
+            return new
             {
-                EmployeeDetail = Converter.ToType<Employee>(ds.Tables[0]),
-                Projects = Converter.ToList<Project>(ds.Tables[1]),
-                Weeks = await GenerateWeeks(),
-                AttendanceWithClientDetail = await GetDailyAttendanceByUserIdService(weekDates)
+                AttendanceType = companySetting.AttendanceType,
+                Projects = Converter.ToList<Project>(ds.Tables[4]),
+                ShiftDetail = Converter.ToType<ShiftDetail>(ds.Tables[2]),
+                RequestAttendance = requestAttendance,
+                AttendanceLogs = GetAttendanceLogs(dailyAttendances, companySetting.AttendanceType),
+                PendingRequest = FilterPendingAttendance(dailyAttendances, companySetting.AttendanceType),
+                Weeks = companySetting.AttendanceType ? await GenerateWeeks(requestAttendance) : null
             };
+        }
 
-            return attendanceConfig;
+        private async Task<List<WeekDates>> GenerateWeeks(Dictionary<long, List<DailyAttendance>> dailyAttendances)
+        {
+            var attendanceWeeks = new List<WeekDates>();
+            foreach (var item in dailyAttendances)
+            {
+                var startDate = _timezoneConverter.ToTimeZoneDateTime(item.Value.First().AttendanceDate, _currentSession.TimeZone);
+                var endDate = _timezoneConverter.ToTimeZoneDateTime(item.Value.Last().AttendanceDate, _currentSession.TimeZone);
+
+                attendanceWeeks.Add(new WeekDates
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    WeekIndex = GetWeekIndex(startDate)
+                });
+            }
+
+            return await Task.FromResult(attendanceWeeks);
+        }
+
+        private dynamic FilterPendingAttendance(List<DailyAttendance> dailyAttendances, bool attendanceType)
+        {
+            dailyAttendances = dailyAttendances.FindAll(x => x.AttendanceStatus == (int)AttendanceEnum.Submitted || x.AttendanceStatus == 8);
+
+            if (attendanceType)
+                return GetGroupAttendance(dailyAttendances);
+            else
+                return dailyAttendances;
+        }
+
+        private Dictionary<long, List<DailyAttendance>> GetGroupAttendance(List<DailyAttendance> dailyAttendances)
+        {
+            var groupedByWeek = dailyAttendances
+               .Select(attendance =>
+               {
+                   var localDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
+
+                   var isoWeek = ISOWeek.GetWeekOfYear(localDate);
+                   var isoYear = localDate.Month == 12 && isoWeek == 1
+                       ? localDate.Year + 1
+                       : (localDate.Month == 1 && isoWeek >= 52 ? localDate.Year - 1 : localDate.Year);
+
+                   return new
+                   {
+                       Attendance = attendance,
+                       WeekKey = $"{isoYear}-{isoWeek}",
+                       LocalDate = localDate
+                   };
+               })
+               .GroupBy(x => x.WeekKey)
+               .OrderBy(x => x.Key);
+
+            var result = new Dictionary<long, List<DailyAttendance>>();
+
+            foreach (var weekGroup in groupedByWeek)
+            {
+                var minId = weekGroup.Min(x => x.Attendance.AttendanceId);
+                result[minId] = weekGroup.OrderBy(x => x.LocalDate).Select(x => x.Attendance).ToList();
+            }
+
+            return result;
+        }
+
+        private dynamic FilterAttendancesByStatus(List<DailyAttendance> attendances, AttendanceEnum status, bool attendanceType)
+        {
+
+            attendances = attendances.FindAll(x => x.AttendanceStatus == (int)AttendanceEnum.NotSubmitted
+                                        && x.AttendanceStatus != (int)AttendanceEnum.WeekOff
+                                        && !x.IsOnLeave && !x.IsHoliday);
+
+            if (attendanceType)
+                return GetGroupAttendance(attendances);
+            else
+                return attendances;
+        }
+
+        private dynamic GetAttendanceLogs(List<DailyAttendance> dailyAttendances, bool attendanceType)
+        {
+            dailyAttendances = dailyAttendances.FindAll(x => x.AttendanceStatus == (int)AttendanceEnum.Approved
+                                                    || x.AttendanceStatus == (int)AttendanceEnum.Rejected
+                                                    || x.AttendanceStatus == (int)AttendanceEnum.WeekOff
+                                                    || (x.IsHoliday && x.HolidayId > 0)
+                                                    || x.IsOnLeave);
+
+            if (attendanceType)
+                return GetGroupAttendance(dailyAttendances);
+            else
+                return dailyAttendances;
+        }
+
+        private List<DailyAttendance> ProcessAttendanceRecords(DataSet dataset)
+        {
+            var dailyAttendances = Converter.ToList<DailyAttendance>(dataset.Tables[0]);
+            var leaveRequests = Converter.ToList<LeaveRequestNotification>(dataset.Tables[1]);
+            var shiftDetail = Converter.ToType<ShiftDetail>(dataset.Tables[2]);
+
+            return GetDailyAttendanceUpdateDetail(dailyAttendances, leaveRequests, shiftDetail);
+        }
+
+        private List<DailyAttendance> GetDailyAttendanceUpdateDetail(List<DailyAttendance> dailyAttendances, List<LeaveRequestNotification> LeaveRequestDetail, ShiftDetail shiftDetail)
+        {
+            dailyAttendances = dailyAttendances.OrderBy(i => i.AttendanceDate).ToList();
+
+            if (LeaveRequestDetail.Count > 0)
+            {
+                foreach (var item in dailyAttendances)
+                {
+                    var leaveDetail = LeaveRequestDetail
+                                        .Find(
+                                                x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays <= 0
+                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date
+                                                        .Subtract(item.AttendanceDate.Date).TotalDays >= 0
+                                             );
+
+                    if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
+                    {
+                        item.IsOnLeave = true;
+                    }
+                }
+            }
+
+            foreach (var item in dailyAttendances)
+            {
+                var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
+                item.AttendanceStatus = CheckWeekend(shiftDetail, attendanceDate)
+                                        ? (int)AttendanceEnum.WeekOff
+                                        : (item.AttendanceStatus != (int)AttendanceEnum.WeekOff ? item.AttendanceStatus : (int)AttendanceEnum.NotSubmitted);
+            }
+
+            return dailyAttendances;
         }
 
         private WeekDates getCurrentWeekStartEndDate()
@@ -1718,11 +1859,13 @@ namespace ServiceLayer.Code
 
         private void UpdateShiftInAttendance(AttendanceWithClientDetail attendanceWithClientDetail)
         {
-            attendanceWithClientDetail.DailyAttendances.ForEach(x =>
+            foreach (var item in attendanceWithClientDetail.DailyAttendances)
             {
-                var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(x.AttendanceDate, _currentSession.TimeZone);
-                x.IsWeekend = CheckWeekend(attendanceWithClientDetail.EmployeeShift, attendanceDate);
-            });
+                var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
+                item.AttendanceStatus = CheckWeekend(attendanceWithClientDetail.EmployeeShift, attendanceDate)
+                    ? (int)AttendanceEnum.WeekOff
+                    : (item.AttendanceStatus != (int)AttendanceEnum.WeekOff ? item.AttendanceStatus : (int)AttendanceEnum.NotSubmitted);
+            }
         }
 
         private void ValidateAttendanceResult(DataSet attendanceDs)
@@ -1740,7 +1883,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Shift detail not found.");
         }
 
-        public async Task<List<DailyAttendance>> SaveDailyAttendanceService(List<DailyAttendance> attendances)
+        public async Task<dynamic> SaveDailyAttendanceService(List<DailyAttendance> attendances)
         {
             if (attendances.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Attendance record not found");
@@ -1748,7 +1891,7 @@ namespace ServiceLayer.Code
             return await UpdateDailyAttendanceService(attendances, ItemStatus.Saved);
         }
 
-        public async Task<List<DailyAttendance>> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
+        public async Task<dynamic> SubmitDailyAttendanceService(List<DailyAttendance> attendances)
         {
             if (attendances.Count == 0)
                 throw HiringBellException.ThrowBadRequest("Attendance record not found");
@@ -1756,7 +1899,7 @@ namespace ServiceLayer.Code
             return await UpdateDailyAttendanceService(attendances, ItemStatus.Submitted);
         }
 
-        private async Task<List<DailyAttendance>> UpdateDailyAttendanceService(List<DailyAttendance> attendances, ItemStatus status)
+        private async Task<dynamic> UpdateDailyAttendanceService(List<DailyAttendance> attendances, ItemStatus status)
         {
             try
             {
@@ -1810,13 +1953,12 @@ namespace ServiceLayer.Code
 
                 await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
-                return attendances.OrderBy(x => x.AttendanceDate).ToList();
+                return GetAttendanceConfiData(attendances[0].EmployeeId);
             }
             catch (Exception e)
             {
                 throw HiringBellException.ThrowBadRequest(e.Message);
             }
-
         }
 
         private async Task<List<DailyAttendance>> PrepareAttendanceForUpdate(List<DailyAttendance> attendances, ItemStatus status)
@@ -1917,7 +2059,6 @@ namespace ServiceLayer.Code
                     dailyAttendance.AttendanceStatus = (int)DayStatus.Weekend;
                 }
             }
-            // check if from date already applied for leave
 
             return await Task.FromResult(dailyAttendance);
         }
