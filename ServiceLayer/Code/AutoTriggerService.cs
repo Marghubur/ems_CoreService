@@ -66,7 +66,7 @@ namespace ServiceLayer.Code
 
         public async Task ScheduledJobManager()
         {
-            await _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
+            _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
             await Task.CompletedTask;
         }
 

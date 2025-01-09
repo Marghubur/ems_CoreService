@@ -1,16 +1,10 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
-using Confluent.Kafka;
-using CoreBottomHalf.CommonModal.HtmlTemplateModel;
-using EMailService.Modal;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using ModalLayer;
 using ModalLayer.Modal;
-using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -26,20 +20,14 @@ namespace OnlineDataBuilder.Controllers
     public class AttendanceController : BaseController
     {
         private readonly IAttendanceService _attendanceService;
-        private readonly ProducerConfig _producerConfig;
-        private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly ILogger<AttendanceController> _logger;
         private readonly HttpContext _httpContext;
 
         public AttendanceController(IAttendanceService attendanceService,
-            ProducerConfig producerConfig,
-            IOptions<List<KafkaServiceConfig>> options,
             ILogger<AttendanceController> logger,
             IHttpContextAccessor httpContext)
         {
             _attendanceService = attendanceService;
-            _producerConfig = producerConfig;
-            _kafkaServiceConfig = options.Value;
             _logger = logger;
             _httpContext = httpContext.HttpContext;
         }
@@ -58,39 +46,39 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpPost("SendEmailNotification")]
-        [AllowAnonymous]
-        public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
-        {
-            try
-            {
-                var config = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.SendEmail);
-                if (config == null)
-                {
-                    throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.SendEmail, HttpStatusCode.InternalServerError);
-                }
+        //[HttpPost("SendEmailNotification")]
+        //[AllowAnonymous]
+        //public async Task<ApiResponse> SendEmailNotification(AttendanceRequestModal attendanceTemplateModel)
+        //{
+        //    try
+        //    {
+        //        var config = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.SendEmail);
+        //        if (config == null)
+        //        {
+        //            throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.SendEmail, HttpStatusCode.InternalServerError);
+        //        }
 
-                var result = JsonConvert.SerializeObject(attendanceTemplateModel);
-                _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {config.Topic}, Service: {config.ServiceName}");
-                using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
-                {
-                    _logger.LogInformation($"[Kafka] Sending mesage: {result}");
-                    await producer.ProduceAsync(config.Topic, new Message<Null, string>
-                    {
-                        Value = result
-                    });
+        //        var result = JsonConvert.SerializeObject(attendanceTemplateModel);
+        //        _logger.LogInformation($"[Kafka] Starting kafka service to send mesage. Topic used: {config.Topic}, Service: {config.ServiceName}");
+        //        using (var producer = new ProducerBuilder<Null, string>(_producerConfig).Build())
+        //        {
+        //            _logger.LogInformation($"[Kafka] Sending mesage: {result}");
+        //            await producer.ProduceAsync(config.Topic, new Message<Null, string>
+        //            {
+        //                Value = result
+        //            });
 
-                    producer.Flush(TimeSpan.FromSeconds(10));
-                    _logger.LogInformation($"[Kafka] Messge send successfully");
-                }
+        //            producer.Flush(TimeSpan.FromSeconds(10));
+        //            _logger.LogInformation($"[Kafka] Messge send successfully");
+        //        }
 
-                return BuildResponse(result, HttpStatusCode.OK);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, attendanceTemplateModel);
-            }
-        }
+        //        return BuildResponse(result, HttpStatusCode.OK);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex, attendanceTemplateModel);
+        //    }
+        //}
 
         [HttpGet("BuildMonthBlankAttadanceData")]
         public IResponse<ApiResponse> BuildMonthBankAttadanceData()
