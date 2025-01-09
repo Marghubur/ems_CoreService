@@ -1,6 +1,4 @@
-﻿using Bt.Lib.Common.Service.Model;
-
-namespace EMailService.Modal
+﻿namespace EMailService.Modal
 {
     public class MicroserviceRegistry
     {

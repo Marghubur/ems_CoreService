@@ -14,7 +14,7 @@ namespace OnlineDataBuilder
         private IWebHostEnvironment _env { set; get; }
         private IConfiguration _configuration { get; }
         private readonly RegisterServices _registerService;
-        private static string CorsPolicy = "BottomhalfCORS";
+        private static string CorsPolicy = "EmstumCORS";
 
         public Startup(IWebHostEnvironment env)
         {
@@ -59,7 +59,7 @@ namespace OnlineDataBuilder
                 .AddPublicKeyConfiguration()
                 .AddKafkaProducerService()
                 .AddKafkaConsumerService()
-                .AddCORS("EmstumCorsPolicy")
+                .AddCORS(CorsPolicy)
                 .AddJWTSupport();
         }
 
