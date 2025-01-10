@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Bt.Lib.Common.Service.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
@@ -243,7 +244,6 @@ namespace ServiceLayer.Code
 
         public async Task<dynamic> GetAttendanceRequestDataService(Attendance attendance)
         {
-            bool isWeeklyAttendance = true;
             if (attendance.ReportingManagerId == 0)
                 throw new HiringBellException("Invalid reporting manager");
 
@@ -256,7 +256,7 @@ namespace ServiceLayer.Code
             DateTime FromDate, ToDate;
             GetAttendanceFromAndToDate(attendance, out FromDate, out ToDate);
 
-            var result = _db.GetList<DailyAttendance>(Procedures.Attendance_Requests_By_Filter, new
+            var result = _db.FetchDataSet(Procedures.Attendance_Requests_By_Filter, new
             {
                 attendance.ReportingManagerId,
                 FromDate,
@@ -264,19 +264,25 @@ namespace ServiceLayer.Code
                 AttendanceStatus = attendance.PresentDayStatus
             });
 
-            if (result.Count == 0)
+            if (result.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Attendance record not found");
+
+            if (result.Tables[0].Rows.Count == 0)
                 return null;
 
-            List<AutoCompleteEmployees> autoCompleteEmployees = GetEmployeeAutoComplete(result);
-            if (isWeeklyAttendance)
+            var dailyAttendances = Converter.ToList<DailyAttendance>(result.Tables[0]);
+            var companySetting = Converter.ToType<CompanySetting>(result.Tables[1]);
+
+            List<AutoCompleteEmployees> autoCompleteEmployees = GetEmployeeAutoComplete(dailyAttendances);
+            if (companySetting.AttendanceType)
             {
-                var filteredAttendance = FilterAndPagingWeeklyAttendanceRecord(attendance, result);
-                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+                var filteredAttendance = FilterAndPagingWeeklyAttendanceRecord(attendance, dailyAttendances);
+                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees, companySetting.AttendanceType });
             }
             else
             {
-                var filteredAttendance = FilterAndPagingDailyAttendanceRecord(attendance, result);
-                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees });
+                var filteredAttendance = FilterAndPagingDailyAttendanceRecord(attendance, dailyAttendances);
+                return await Task.FromResult(new { FilteredAttendance = filteredAttendance, AutoCompleteEmployees = autoCompleteEmployees, companySetting.AttendanceType });
             }
         }
 
