@@ -31,7 +31,6 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly IKafkaConsumerService _kafkaConsumerService;
-
         private readonly ILogger<AutoTriggerService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IWeeklyTimesheetCreationJob _weeklyTimesheetCreationJob;
@@ -39,7 +38,6 @@ namespace ServiceLayer.Code
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
-        private readonly IAttendanceService _attendanceService;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             ITimezoneConverter timezoneConverter,
@@ -49,7 +47,6 @@ namespace ServiceLayer.Code
             YearEndCalculation yearEndCalculation,
             MicroserviceRegistry microserviceUrlLogs,
             RequestMicroservice requestMicroservice,
-            IAttendanceService attendanceService,
             IKafkaConsumerService kafkaConsumerService)
         {
             _logger = logger;
@@ -60,13 +57,12 @@ namespace ServiceLayer.Code
             _yearEndCalculation = yearEndCalculation;
             _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
-            _attendanceService = attendanceService;
             _kafkaConsumerService = kafkaConsumerService;
         }
 
         public async Task ScheduledJobManager()
         {
-            _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
+            _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER).ToLower());
             await Task.CompletedTask;
         }
 
@@ -102,7 +98,7 @@ namespace ServiceLayer.Code
                             await RunLeaveYearEndJobAsync(companySettings, data);
                             break;
                         case KafkaServiceName.NewRegistration:
-                            await RunGenerateAttendanceAsync();
+                            await ExecuteYearlyLeaveRequestAccrualJobAsync(companySettings);
                             break;
                     }
                 }
@@ -116,6 +112,18 @@ namespace ServiceLayer.Code
         public async Task ExecuteLeaveAccrualJobAsync(CompanySetting companySetting, LeaveAccrualKafkaModel leaveAccrualKafkaModel)
         {
             _logger.LogInformation("Leave Accrual cron job started.");
+            await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
+        }
+
+        public async Task ExecuteYearlyLeaveRequestAccrualJobAsync(CompanySetting companySetting)
+        {
+            _logger.LogInformation("Leave Accrual cron job started.");
+
+            LeaveAccrualKafkaModel leaveAccrualKafkaModel = new LeaveAccrualKafkaModel
+            {
+                GenerateLeaveAccrualTillMonth = true
+            };
+
             await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
         }
 
@@ -207,11 +215,6 @@ namespace ServiceLayer.Code
             };
 
             await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
-        }
-
-        public async Task RunGenerateAttendanceAsync()
-        {
-            await _attendanceService.GenerateMonthlyAttendance();
         }
     }
 }

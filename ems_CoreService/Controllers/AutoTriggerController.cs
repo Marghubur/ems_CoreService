@@ -64,19 +64,18 @@ namespace ems_CoreService.Controllers
             }
         }
 
-        [Authorize(Roles = Role.Admin)]
-        //[AllowAnonymous]
-        [HttpGet("MonthlyAttendanceTrigger")]
-        public async Task MonthlyAttendanceTrigger()
-        {
-            try
-            {
-                await _autoTriggerService.RunGenerateAttendanceAsync();
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex);
-            }
-        }
+        //[Authorize(Roles = Role.Admin)]
+        //[HttpGet("MonthlyAttendanceTrigger")]
+        //public async Task MonthlyAttendanceTrigger()
+        //{
+        //    try
+        //    {
+        //        await _autoTriggerService.RunGenerateAttendanceAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw Throw(ex);
+        //    }
+        //}
     }
 }

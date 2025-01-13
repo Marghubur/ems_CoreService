@@ -16,8 +16,6 @@ using ExcelDataReader;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -45,7 +43,6 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IConfiguration _configuration;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly ILogger<EmployeeService> _logger;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly IEMailManager _eMailManager;
         private readonly ILeaveCalculation _leaveCalculation;
@@ -57,7 +54,6 @@ namespace ServiceLayer.Code
             IFileService fileService,
             IConfiguration configuration,
             ITimezoneConverter timezoneConverter,
-            ILogger<EmployeeService> logger,
             FileLocationDetail fileLocationDetail,
             HtmlToPdfConverter htmlToPdfConverter,
             ILeaveCalculation leaveCalculation,
@@ -73,9 +69,7 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _fileService = fileService;
             _fileLocationDetail = fileLocationDetail;
-            // _declarationService = declarationService;
             _timezoneConverter = timezoneConverter;
-            _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
             _eMailManager = eMailManager;
             _timesheetService = timesheetService;
@@ -94,21 +88,6 @@ namespace ServiceLayer.Code
         /// <returns></returns>
         public async Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
         {
-            _logger.LogInformation("Starting method: RegisterEmployeeService");
-
-            //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            //employeeCalculation.employee = employee;
-            //_logger.LogInformation("Employee file converted");
-            //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-            //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            //employeeCalculation.Doj = employee.DateOfJoining;
-            //employeeCalculation.IsFirstYearDeclaration = true;
-
-            //CreateFinancialStartEndDatetime(employeeCalculation);
-
-            //if (employeeEmailMobileCheck.EmployeeCount > 0)
-            //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
-
             var result = CheckMobileEmailExistence(employee.EmployeeId, employee.Email, employee.Mobile);
             if (result.EmailCount > 0)
                 throw HiringBellException.ThrowBadRequest($"Email id: {employee.Email} already exists.");
@@ -118,7 +97,6 @@ namespace ServiceLayer.Code
 
             await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
 
-            _logger.LogInformation("Leaving method: RegisterEmployeeService");
             return ApplicationConstants.Successfull;
         }
 
@@ -198,8 +176,6 @@ namespace ServiceLayer.Code
                     eCal.Doj = employee.DateOfJoining;
                 }
 
-                // long declarationId = CheckUpdateDeclarationComponents(eCal);
-
                 // make insert or update call for employee
                 string employeeId = InsertUpdateEmployee(eCal, IsNewRegistration, EncryptedPassword, employee);
 
@@ -262,26 +238,6 @@ namespace ServiceLayer.Code
         {
             if (employee.EmployeeUid <= 0)
                 throw new HiringBellException { UserMessage = "Invalid EmployeeId.", FieldName = nameof(employee.EmployeeUid), FieldValue = employee.EmployeeUid.ToString() };
-
-            //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-            //employeeCalculation.employee = employee;
-            //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-
-
-            //var numOfYears = employeeCalculation.Doj.Year - employeeCalculation.companySetting.FinancialYear;
-            //if ((numOfYears == 0 || numOfYears == 1)
-            //    &&
-            //    employeeCalculation.Doj.Month >= employeeCalculation.companySetting.DeclarationStartMonth
-            //    &&
-            //    employeeCalculation.Doj.Month <= employeeCalculation.companySetting.DeclarationEndMonth)
-            //    employeeCalculation.IsFirstYearDeclaration = true;
-            //else
-            //    employeeCalculation.IsFirstYearDeclaration = false;
-
-            //CreateFinancialStartEndDatetime(employeeCalculation);
-
-            //if (employeeEmailMobileCheck.EmployeeCount == 0)
-            //    throw HiringBellException.ThrowBadRequest("Employee record not found. Please contact to admin.");
 
             var result = CheckMobileEmailExistence(employee.EmployeeUid, employee.Email, employee.Mobile);
             if (result.EmployeeCount == 0)
@@ -595,18 +551,7 @@ namespace ServiceLayer.Code
             eCal.EmployeeId = Convert.ToInt64(employeeId);
             if (fileCollection != null && fileCollection.Count > 0)
             {
-                //var files = fileCollection.Select(x => new Files
-                //{
-                //    FileUid = employee.FileId,
-                //    FileName = fileCollection[0].Name,
-                //    Email = employee.Email,
-                //    FileExtension = string.Empty
-                //}).ToList<Files>();
-
-
                 var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
-                //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
-
                 string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
@@ -1345,20 +1290,6 @@ namespace ServiceLayer.Code
         #region Employee registion with Declaration by using excel
         public async Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData uploaded)
         {
-            _logger.LogInformation("Starting method: RegisterEmployeeService");
-
-            //employeeCalculation.employee = employee;
-            _logger.LogInformation("Employee file converted");
-
-            //GetEmployeesDetail(employeeCalculation);
-
-            //employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
-            //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-            //employeeCalculation.Doj = employee.DateOfJoining;
-            //employeeCalculation.IsFirstYearDeclaration = true;
-            //employeeCalculation.employee.IsCTCChanged = false;
-            //employeeCalculation.employeeDeclaration.TaxRegimeDescId = currentRegimeId;
-            //CreateFinancialStartEndDatetime(employeeCalculation);
             var employeeEmailMobileCheck = CheckMobileEmailExistence(employee.EmployeeId, employee.Email, employee.Mobile);
             if (employeeEmailMobileCheck.EmailCount > 0)
                 throw HiringBellException.ThrowBadRequest($"Email id: {employee.Email} already exists.");
@@ -1409,11 +1340,9 @@ namespace ServiceLayer.Code
                 }
                 catch
                 {
-                    _logger.LogInformation($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
+                    throw HiringBellException.ThrowBadRequest($"Investment not found. Component id: {componentId}. Investment id: {emp.EmployeeDeclarationId}");
                 }
             }
-
-            _logger.LogInformation("Leaving method: RegisterEmployeeService");
         }
 
         #endregion
@@ -1678,722 +1607,6 @@ namespace ServiceLayer.Code
 
             return columnList;
         }
-
-        #endregion
-
-        #region Old Code For employee insert and Update
-
-        //public async Task EmployeeBulkRegistrationService(Employee employee, IFormFileCollection fileCollection)
-        //{
-        //EmployeeCalculation employeeCalculation = new EmployeeCalculation();
-        //employeeCalculation.employee = employee;
-        //EmployeeEmailMobileCheck employeeEmailMobileCheck = this.GetEmployeeDetail(employeeCalculation);
-        //employeeCalculation.employeeDeclaration.EmployeeCurrentRegime = ApplicationConstants.DefaultTaxRegin;
-        //employeeCalculation.Doj = DateTime.UtcNow;
-        //employeeCalculation.IsFirstYearDeclaration = true;
-
-        //CreateFinancialStartEndDatetime(employeeCalculation);
-
-        //if (employeeEmailMobileCheck.EmployeeCount > 0)
-        //    throw HiringBellException.ThrowBadRequest("Employee already exists. Please login first and update detail.");
-
-        // await BulkRegistration(employee, fileCollection);
-        // }
-
-        //public void CreateFinancialStartEndDatetime(EmployeeCalculation employeeCalculation)
-        //{
-        //    employeeCalculation.financialYearStartDateTime = _timezoneConverter.ToTimeZoneDateTime(
-        //        new DateTime(employeeCalculation.companySetting!.FinancialYear, employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc),
-        //        _currentSession.TimeZone
-        //    );
-
-        //    var numOfDays = DateTime.DaysInMonth(employeeCalculation.companySetting!.FinancialYear + 1, employeeCalculation.companySetting.DeclarationEndMonth);
-        //    employeeCalculation.financialYearEndDateTime = _timezoneConverter.ToTimeZoneDateTime(
-        //        new DateTime(employeeCalculation.companySetting!.FinancialYear + 1, employeeCalculation.companySetting.DeclarationEndMonth, numOfDays, 0, 0, 0, DateTimeKind.Utc),
-        //        _currentSession.TimeZone
-        //    );
-        //}
-
-        //private EmployeeDeclaration GetDeclarationInstance(DataTable declarationTable, Employee employee)
-        //{
-        //    EmployeeDeclaration employeeDeclaration = null;
-        //    if (declarationTable.Rows.Count == 1)
-        //    {
-        //        employeeDeclaration = Converter.ToType<EmployeeDeclaration>(declarationTable);
-        //        if (employeeDeclaration.SalaryDetail == null)
-        //        {
-        //            employeeDeclaration.SalaryDetail = new EmployeeSalaryDetail();
-        //        }
-
-        //        employeeDeclaration.SalaryDetail.CTC = employee.CTC;
-        //    }
-        //    else
-        //    {
-        //        employeeDeclaration = new EmployeeDeclaration
-        //        {
-        //            SalaryDetail = new EmployeeSalaryDetail
-        //            {
-        //                CTC = employee.CTC
-        //            }
-        //        };
-        //    }
-
-        //    return employeeDeclaration;
-        //}
-
-        //private EmployeeSalaryDetail GetEmployeeSalaryDetailInstance(DataTable salaryDetailTable, Employee employee)
-        //{
-        //    EmployeeSalaryDetail employeeSalaryDetail = null;
-        //    if (salaryDetailTable.Rows.Count == 1)
-        //    {
-        //        employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(salaryDetailTable);
-        //    }
-        //    else
-        //    {
-        //        employeeSalaryDetail = new EmployeeSalaryDetail
-        //        {
-        //            GrossIncome = 0,
-        //            NetSalary = 0,
-        //            CompleteSalaryDetail = "[]",
-        //            TaxDetail = "[]"
-        //        };
-        //    }
-
-        //    if (employeeSalaryDetail.CTC != employee.CTC)
-        //        employee.IsCTCChanged = true;
-
-        //    employeeSalaryDetail.CTC = employee.CTC;
-        //    return employeeSalaryDetail;
-        //}
-
-        //private long CheckUpdateDeclarationComponents(EmployeeCalculation employeeCalculation)
-        //{
-        //    long declarationId = 0;
-
-        //    if (!string.IsNullOrEmpty(employeeCalculation.employeeDeclaration.DeclarationDetail))
-        //    {
-        //        try
-        //        {
-        //            List<SalaryComponents> components = JsonConvert.DeserializeObject<List<SalaryComponents>>(employeeCalculation.employeeDeclaration.DeclarationDetail);
-        //            if (components == null || components.Count == 0)
-        //                declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
-        //        }
-        //        catch
-        //        {
-        //            declarationId = employeeCalculation.employeeDeclaration.EmployeeDeclarationId;
-        //            _logger.LogInformation("Salary component not found. Taking from master data.");
-        //        }
-        //    }
-
-        //    return declarationId;
-        //}
-
-        //public EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation)
-        //{
-        //    _logger.LogInformation("Starting method: GetEmployeeDetail");
-
-        //    employeeCalculation.CTC = employeeCalculation.employee.CTC;
-        //    employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
-        //    _logger.LogInformation("Loading data.");
-        //    DataSet resultSet = _db.FetchDataSet(Procedures.Employee_Getbyid_To_Reg_Or_Upd, new
-        //    {
-        //        EmployeeId = employeeCalculation.employee.EmployeeUid,
-        //        employeeCalculation.employee.Mobile,
-        //        employeeCalculation.employee.Email,
-        //        employeeCalculation.employee.CompanyId,
-        //    });
-
-        //    if (resultSet == null || resultSet.Tables.Count != 8)
-        //        throw HiringBellException.ThrowBadRequest("Fail to get employee relevant data. Please contact to admin.");
-
-        //    _logger.LogInformation("[GetEmployeeDetail]: Date fetched total table: " + resultSet.Tables.Count);
-        //    if (resultSet.Tables[4].Rows.Count != 1)
-        //        throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin.");
-
-        //    ConvertAndGetEmployeeDetails(employeeCalculation, resultSet);
-
-        //    // check if salary group changed
-        //    //if (employeeDetail.SalaryGroupId != employeeCalculation.employee.SalaryGroupId)
-        //    //    employeeCalculation.employee.IsCTCChanged = true;
-
-        //    // check and get Declaration object
-        //    employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
-
-        //    // check and get employee salary detail object
-        //    employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2], employeeCalculation.employee);
-
-        //    employeeCalculation.salaryComponents = Converter.ToList<SalaryComponents>(resultSet.Tables[3]);
-
-        //    // build and bind company setting
-        //    BuildAndBindCompanySetting(employeeCalculation, resultSet);
-
-        //    // getting professional tax detail based on company id
-        //    GetProTaxAndSurchargeByCompId(employeeCalculation, resultSet);
-
-        //    EmployeeEmailMobileCheck employeeEmailMobileCheck = GetEmployeeEmailMobileCheck(employeeCalculation, resultSet);
-
-        //    employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
-
-        //    _logger.LogInformation("Leaving method: GetEmployeeDetail");
-        //    return employeeEmailMobileCheck;
-        //}
-
-        //private void ConvertAndGetEmployeeDetails(EmployeeCalculation employeeCalculation, DataSet resultSet)
-        //{
-        //    Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
-
-        //    if (employeeDetail.EmployeeUid > 0)
-        //        employeeCalculation.Doj = employeeDetail.CreatedOn;
-        //    else
-        //        employeeCalculation.Doj = DateTime.UtcNow;
-
-        //    if (employeeDetail != null)
-        //    {
-        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-        //        employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
-        //    }
-        //    else
-        //    {
-        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-        //        employeeCalculation.employee.EmpProfDetailUid = -1;
-        //    }
-        //}
-
-        //private EmployeeEmailMobileCheck GetEmployeeEmailMobileCheck(EmployeeCalculation employeeCalculation, DataSet resultSet)
-        //{
-        //    // got duplication email, mobile or employee id if any
-        //    EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[5]);
-        //    if (employeeEmailMobileCheck.EmailCount > 0)
-        //        throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
-
-        //    if (employeeEmailMobileCheck.MobileCount > 0)
-        //        throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
-        //    return employeeEmailMobileCheck;
-        //}
-
-        //private void GetProTaxAndSurchargeByCompId(EmployeeCalculation employeeCalculation, DataSet resultSet)
-        //{
-        //    employeeCalculation.ptaxSlab = Converter.ToList<PTaxSlab>(resultSet.Tables[6]);
-
-        //    if (employeeCalculation.ptaxSlab.Count == 0)
-        //        throw HiringBellException.ThrowBadRequest("Professional tax not found for the current employee. Please contact to admin.");
-
-        //    // getting surcharges slab detail based on company id
-        //    employeeCalculation.surchargeSlabs = Converter.ToList<SurChargeSlab>(resultSet.Tables[7]);
-
-        //    if (employeeCalculation.surchargeSlabs.Count == 0)
-        //        throw HiringBellException.ThrowBadRequest("Surcharges slab not found for the current employee. Please contact to admin.");
-        //}
-
-        //private void BuildAndBindCompanySetting(EmployeeCalculation employeeCalculation, DataSet resultSet)
-        //{
-        //    employeeCalculation.companySetting = Converter.ToType<CompanySetting>(resultSet.Tables[4]);
-
-        //    if (employeeCalculation.companySetting.FinancialYear == 0)
-        //    {
-        //        if (DateTime.UtcNow.Month < 4)
-        //            employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year - 1;
-        //        else
-        //            employeeCalculation.companySetting.FinancialYear = DateTime.UtcNow.Year;
-        //    }
-
-        //    if (employeeCalculation.companySetting.DeclarationStartMonth == 0)
-        //    {
-        //        employeeCalculation.companySetting.DeclarationStartMonth = 4;
-        //    }
-
-        //    employeeCalculation.PayrollLocalTimeStartDate = new DateTime(employeeCalculation.companySetting.FinancialYear,
-        //        employeeCalculation.companySetting.DeclarationStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        //    employeeCalculation.employeeSalaryDetail.FinancialStartYear = employeeCalculation.companySetting.FinancialYear;
-        //}
-
-        //private EmployeeEmailMobileCheck GetEmployeesDetail(EmployeeCalculation employeeCalculation)
-        //{
-        //    employeeCalculation.CTC = employeeCalculation.employee.CTC;
-        //    employeeCalculation.EmployeeId = employeeCalculation.employee.EmployeeId;
-
-        //    DataSet resultSet = _db.FetchDataSet(Procedures.EMPLOYEE_GETBYID_TO_REG_OR_UPD_BY_EXCEL, new
-        //    {
-        //        EmployeeId = employeeCalculation.employee.EmployeeUid,
-        //        employeeCalculation.employee.Mobile,
-        //        employeeCalculation.employee.Email,
-        //        employeeCalculation.employee.CompanyId,
-        //    });
-
-        //    if (resultSet == null || resultSet.Tables.Count != 4)
-        //        throw HiringBellException.ThrowBadRequest("Fail to get employee relevant data. Please contact to admin.");
-
-        //    Employee employeeDetail = Converter.ToType<Employee>(resultSet.Tables[0]);
-
-        //    if (employeeDetail.EmployeeUid > 0)
-        //        employeeCalculation.Doj = employeeDetail.CreatedOn;
-        //    else
-        //        employeeCalculation.Doj = DateTime.UtcNow;
-
-        //    // check and get Declaration object
-        //    employeeCalculation.employeeDeclaration = GetDeclarationInstance(resultSet.Tables[1], employeeCalculation.employee);
-
-        //    // check and get employee salary detail object
-        //    employeeCalculation.employeeSalaryDetail = GetEmployeeSalaryDetailInstance(resultSet.Tables[2], employeeCalculation.employee);
-
-        //    // got duplication email, mobile or employee id if any
-        //    EmployeeEmailMobileCheck employeeEmailMobileCheck = Converter.ToType<EmployeeEmailMobileCheck>(resultSet.Tables[3]);
-
-        //    if (employeeDetail != null)
-        //    {
-        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-        //        employeeCalculation.employee.EmpProfDetailUid = employeeDetail.EmpProfDetailUid;
-        //    }
-        //    else
-        //    {
-        //        employeeCalculation.employee.OrganizationId = employeeCalculation.employee.OrganizationId;
-        //        employeeCalculation.employee.EmpProfDetailUid = -1;
-        //    }
-
-        //    if (employeeEmailMobileCheck.EmailCount > 0)
-        //        throw HiringBellException.ThrowBadRequest($"Email id: {employeeCalculation.employee.Email} already exists.");
-
-        //    if (employeeEmailMobileCheck.MobileCount > 0)
-        //        throw HiringBellException.ThrowBadRequest($"Mobile no: {employeeCalculation.employee.Mobile} already exists.");
-
-        //    employeeCalculation.employee.BaseLocation = employeeCalculation.companySetting.StateName;
-
-        //    return employeeEmailMobileCheck;
-        //}
-
-        //public async Task<string> RegisterOrUpdateEmployeeDetail(EmployeeCalculation eCal, IFormFileCollection fileCollection, bool isEmpByExcel = false)
-        //{
-        //    bool IsNewRegistration = false;
-
-        //    try
-        //    {
-        //        string EncryptedPassword = string.Empty;
-        //        Employee employee = eCal.employee;
-        //        int empId = Convert.ToInt32(employee.EmployeeUid);
-        //        eCal.EmployeeId = eCal.employee.EmployeeUid;
-
-        //        // validate employee
-        //        ValidateEmployee(employee);
-
-        //        // validate employee detail
-        //        this.ValidateEmployeeDetails(employee);
-
-        //        await ManagerProfessionalDetail(employee);
-
-        //        await AssignReportingManager(employee);
-
-        //        _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-
-        //        // prepare for new insert of employee
-        //        IsNewRegistration = await PrepareEmployeeInsertData(eCal, employee);
-
-        //        if (IsNewRegistration)
-        //        {
-        //            EncryptedPassword = UtilService.Encrypt(
-        //                _configuration.GetSection("DefaultNewEmployeePassword").Value,
-        //                _configuration.GetSection("EncryptSecret").Value
-        //            );
-
-        //            await GetDeclarationDetail(eCal);
-        //        }
-
-        //        long declarationId = CheckUpdateDeclarationComponents(eCal);
-
-        //        // make insert or update call for employee
-        //        string employeeId = InsertUpdateEmployee(eCal, IsNewRegistration, EncryptedPassword, employee, declarationId);
-
-        //        await EmployeeFileInsertUpdate(eCal, fileCollection, employee, employeeId);
-
-        //        //if (!isEmpByExcel)
-        //        await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
-
-        //        return employeeId;
-        //    }
-        //    catch
-        //    {
-        //        if (IsNewRegistration && eCal.employee.EmployeeId > 0)
-        //            _db.Execute(Procedures.Employee_Delete_by_EmpId, new { eCal.employee.EmployeeId }, false);
-
-        //        throw;
-        //    }
-        //}
-
-        //private async Task GetDeclarationDetail(EmployeeCalculation eCal)
-        //{
-        //    string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-        //    var microserviceRequest = MicroserviceRequest.Builder(url);
-        //    microserviceRequest
-        //    .SetPayload(eCal)
-        //    .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
-        //    .SetConnectionString(_currentSession.LocalConnectionString)
-        //    .SetCompanyCode(_currentSession.CompanyCode)
-        //    .SetToken(_currentSession.Authorization);
-
-
-        //    var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
-        //    if (response is null)
-        //        throw HiringBellException.ThrowBadRequest("fail to get response");
-
-        //    eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
-        //    eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
-        //    eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
-        //    eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
-        //    eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
-        //    eCal.salaryComponents = response.salaryComponents;
-        //}
-
-        //private async Task<bool> PrepareEmployeeInsertData(EmployeeCalculation eCal, Employee employee)
-        //{
-        //    bool IsNewRegistration = false;
-        //    if (employee.AccessLevelId != (int)RolesName.Admin)
-        //        employee.UserTypeId = (int)RolesName.User;
-
-        //    if (string.IsNullOrEmpty(employee.NewSalaryDetail))
-        //        employee.NewSalaryDetail = "[]";
-
-        //    employee.EmployeeId = employee.EmployeeUid;
-        //    if (employee.EmployeeUid == 0)
-        //    {
-        //        // create employee record
-        //        employee.EmployeeId = await RegisterNewEmployee(employee, eCal.Doj);
-        //        IsNewRegistration = true;
-
-        //        employee.EmployeeUid = employee.EmployeeId;
-        //        eCal.EmployeeId = employee.EmployeeId;
-        //        eCal.employee.IsCTCChanged = false;
-        //        eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
-        //    }
-
-        //    return await Task.FromResult(IsNewRegistration);
-        //}
-
-        //private async Task BulkRegistration(Employee employee, IFormFileCollection fileCollection)
-        //{
-        //    try
-        //    {
-        //        //Employee employee = eCal.employee;
-        //        //eCal.Doj = employee.DateOfJoining;
-        //        //eCal.EmployeeId = eCal.employee.EmployeeUid;
-
-        //        this.ValidateEmployee(employee);
-        //        this.ValidateEmployeeDetails(employee);
-        //        int empId = Convert.ToInt32(employee.EmployeeUid);
-
-        //        var professionalDetail = new EmployeeProfessionDetail
-        //        {
-        //            AadharNo = employee.AadharNo,
-        //            AccountNumber = employee.AccountNumber,
-        //            BankName = employee.BankName,
-        //            BranchName = employee.BranchName,
-        //            CreatedBy = employee.EmployeeUid,
-        //            CreatedOn = employee.CreatedOn,
-        //            Domain = employee.Domain,
-        //            Email = employee.Email,
-        //            EmployeeUid = employee.EmployeeUid,
-        //            EmpProfDetailUid = employee.EmpProfDetailUid,
-        //            ExperienceInYear = employee.ExperienceInYear,
-        //            FirstName = employee.FirstName,
-        //            IFSCCode = employee.IFSCCode,
-        //            LastCompanyName = employee.LastCompanyName,
-        //            LastName = employee.LastName,
-        //            Mobile = employee.Mobile,
-        //            PANNo = employee.PANNo,
-        //            SecomdaryMobile = employee.SecondaryMobile,
-        //            Specification = employee.Specification,
-        //        };
-
-        //        await AssignReportingManager(employee);
-
-        //        employee.ProfessionalDetail_Json = JsonConvert.SerializeObject(professionalDetail);
-
-
-        //        string EncreptedPassword = UtilService.Encrypt(
-        //            _configuration.GetSection("DefaultNewEmployeePassword").Value,
-        //            _configuration.GetSection("EncryptSecret").Value
-        //        );
-
-        //        if (employee.AccessLevelId != (int)RolesName.Admin)
-        //            employee.UserTypeId = (int)RolesName.User;
-
-        //        if (string.IsNullOrEmpty(employee.NewSalaryDetail))
-        //            employee.NewSalaryDetail = "[]";
-
-        //        employee.EmployeeUid = employee.EmployeeId;
-        //        if (employee.EmployeeUid == 0)
-        //        {
-        //            // create employee record
-        //            var result = _db.Execute(Procedures.Employee_LastId, new { IsActive = true }, true);
-        //            if (string.IsNullOrEmpty(result.statusMessage))
-        //                throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
-
-        //            long id = Convert.ToInt64(result.statusMessage);
-        //            if (id <= 0)
-        //                throw HiringBellException.ThrowBadRequest("Fail to get last employee entry.");
-
-        //            employee.EmployeeId = id + 1;
-        //            employee.EmployeeUid = employee.EmployeeId;
-        //            //eCal.EmployeeId = employee.EmployeeId;
-        //            //eCal.employeeDeclaration.EmployeeId = employee.EmployeeId;
-        //        }
-
-        //        _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
-        //        // await _declarationService.CalculateSalaryNDeclaration(eCal, true);
-
-        //        string url = $"{_microserviceRegistry.SalaryDeclarationCalculation}/{true}";
-        //        var microserviceRequest = MicroserviceRequest.Builder(url);
-        //        microserviceRequest
-        //        //.SetPayload(eCal)
-        //        .SetPayload(employee.EmployeeId)
-        //        .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
-        //        .SetConnectionString(_currentSession.LocalConnectionString)
-        //        .SetCompanyCode(_currentSession.CompanyCode)
-        //        .SetToken(_currentSession.Authorization);
-
-        //        var response = await _requestMicroservice.PutRequest<EmployeeCalculation>(microserviceRequest);
-        //        if (response is null)
-        //            throw HiringBellException.ThrowBadRequest("fail to get response");
-
-        //        var eCal = response;
-
-        //        eCal.employeeDeclaration.DeclarationDetail = response.employeeDeclaration.DeclarationDetail;
-        //        eCal.employeeSalaryDetail.GrossIncome = response.employeeSalaryDetail.GrossIncome;
-        //        eCal.employeeSalaryDetail.NetSalary = response.employeeSalaryDetail.NetSalary;
-        //        eCal.employeeSalaryDetail.CompleteSalaryDetail = response.employeeSalaryDetail.CompleteSalaryDetail;
-        //        eCal.employeeSalaryDetail.TaxDetail = response.employeeSalaryDetail.TaxDetail;
-        //        eCal.salaryComponents = response.salaryComponents;
-
-        //        long declarationId = CheckUpdateDeclarationComponents(eCal);
-        //        var employeeId = _db.Execute<Employee>(Procedures.Employees_Ins_Upd, new
-        //        {
-        //            employee.EmployeeUid,
-        //            employee.OrganizationId,
-        //            employee.FirstName,
-        //            employee.LastName,
-        //            employee.Mobile,
-        //            employee.Email,
-        //            employee.LeavePlanId,
-        //            employee.PayrollGroupId,
-        //            employee.SalaryGroupId,
-        //            employee.CompanyId,
-        //            employee.NoticePeriodId,
-        //            employee.SecondaryMobile,
-        //            employee.FatherName,
-        //            employee.MotherName,
-        //            employee.SpouseName,
-        //            employee.Gender,
-        //            employee.State,
-        //            employee.City,
-        //            employee.Pincode,
-        //            employee.Address,
-        //            employee.PANNo,
-        //            employee.AadharNo,
-        //            employee.AccountNumber,
-        //            employee.BankName,
-        //            employee.BranchName,
-        //            employee.IFSCCode,
-        //            employee.Domain,
-        //            employee.Specification,
-        //            employee.ExprienceInYear,
-        //            employee.LastCompanyName,
-        //            employee.IsPermanent,
-        //            employee.ActualPackage,
-        //            employee.FinalPackage,
-        //            employee.TakeHomeByCandidate,
-        //            employee.ReportingManagerId,
-        //            employee.DesignationId,
-        //            employee.ProfessionalDetail_Json,
-        //            Password = EncreptedPassword,
-        //            employee.AccessLevelId,
-        //            employee.UserTypeId,
-        //            employee.CTC,
-        //            eCal.employeeSalaryDetail.GrossIncome,
-        //            eCal.employeeSalaryDetail.NetSalary,
-        //            eCal.employeeSalaryDetail.CompleteSalaryDetail,
-        //            eCal.employeeSalaryDetail.TaxDetail,
-        //            employee.DOB,
-        //            RegistrationDate = employee.DateOfJoining,
-        //            EmployeeDeclarationId = declarationId,
-        //            DeclarationDetail = JsonConvert.SerializeObject(eCal.salaryComponents),
-        //            employee.WorkShiftId,
-        //            IsPending = false,
-        //            employee.NewSalaryDetail,
-        //            employee.PFNumber,
-        //            employee.PFJoinDate,
-        //            employee.UniversalAccountNumber,
-        //            AdminId = _currentSession.CurrentUserDetail.UserId
-        //        },
-        //            true
-        //        );
-
-
-        //        if (string.IsNullOrEmpty(employeeId) || employeeId == "0")
-        //        {
-        //            throw HiringBellException.ThrowBadRequest("Fail to insert or update record. Contact to admin.");
-        //        }
-
-        //        eCal.EmployeeId = Convert.ToInt64(employeeId);
-        //        if (fileCollection.Count > 0)
-        //        {
-        //            //var files = fileCollection.Select(x => new Files
-        //            //{
-        //            //    FileUid = employee.FileId,
-        //            //    FileName = fileCollection[0].Name,
-        //            //    Email = employee.Email,
-        //            //    FileExtension = string.Empty
-        //            //}).ToList<Files>();
-
-        //            var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.UserFolder, $"{nameof(UserType.Employee)}_{eCal.EmployeeId}");
-        //            //_fileService.SaveFile(ownerPath, files, fileCollection, employee.OldFileName);
-
-        //            url = $"{_microserviceRegistry.SaveApplicationFile}";
-        //            FileFolderDetail fileFolderDetail = new FileFolderDetail
-        //            {
-        //                FolderPath = ownerPath,
-        //                OldFileName = new List<string> { employee.OldFileName },
-        //                ServiceName = LocalConstants.EmstumFileService
-        //            };
-
-        //            microserviceRequest = MicroserviceRequest.Builder(url);
-        //            microserviceRequest
-        //            .SetFiles(fileCollection)
-        //            .SetPayload(fileFolderDetail)
-        //            .SetConnectionString(_currentSession.LocalConnectionString)
-        //            .SetCompanyCode(_currentSession.CompanyCode)
-        //            .SetToken(_currentSession.Authorization);
-
-        //            var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-
-        //            var fileInfo = (from n in files
-        //                            select new
-        //                            {
-        //                                FileId = employee.FileId,
-        //                                FileOwnerId = eCal.EmployeeId,
-        //                                FileName = n.FileName,
-        //                                FilePath = n.FilePath,
-        //                                FileExtension = n.FileExtension,
-        //                                UserTypeId = (int)UserType.Employee,
-        //                                ItemStatusId = LocalConstants.Profile,
-        //                                AdminId = _currentSession.CurrentUserDetail.UserId
-        //                            }).ToList();
-
-        //            var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
-        //        }
-        //    }
-        //    catch
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<string> UploadEmployeeExcelService(List<Employee> employees, IFormFileCollection formFiles)
-        //{
-        //    string status = string.Empty;
-        //    if (employees.Count > 0)
-        //    {
-        //        foreach (var x in employees)
-        //        {
-        //            if (!string.IsNullOrEmpty(x.FirstName))
-        //            {
-        //                if (x.CTC < 1000)
-        //                    x.CTC = 1000;
-
-        //                x.DesignationId = 13;
-        //                if (string.IsNullOrEmpty(x.LastName))
-        //                    x.LastName = "NA";
-
-        //                x.FirstName = x.FirstName.ToUpper();
-        //                x.LastName = x.LastName.ToUpper();
-
-        //                try
-        //                {
-        //                    await EmployeeBulkRegistrationService(x, formFiles);
-        //                }
-        //                catch (Exception ex)
-        //                {
-        //                    _logger.LogError(ex.Message);
-        //                }
-        //            }
-        //        }
-
-        //        status = "success";
-        //        return status;
-        //    }
-
-        //    return await Task.FromResult(status);
-        //}
-
-        //public List<AutoCompleteEmployees> EmployeesListDataService(FilterModel filterModel)
-        //{
-        //    if (filterModel.CompanyId > 0)
-        //        filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
-        //    else
-        //        filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
-
-        //    List<AutoCompleteEmployees> employees = _db.GetList<AutoCompleteEmployees>(Procedures.Employee_GetAll, new
-        //    {
-        //        filterModel.SearchString,
-        //        filterModel.PageIndex,
-        //        filterModel.PageSize,
-        //        filterModel.CompanyId
-        //    });
-
-        //    if (employees == null)
-        //        throw HiringBellException.ThrowBadRequest("Unable to load employee list data.");
-
-        //    return employees;
-        //}
-
-        //public DataSet GetEmployeeLeaveDetailService(long EmployeeId)
-        //{
-        //    var result = _db.FetchDataSet(Procedures.Leave_Detail_Getby_EmployeeId, new
-        //    {
-        //        EmployeeId,
-        //    });
-
-        //    if (result == null || result.Tables.Count != 2)
-        //        throw HiringBellException.ThrowBadRequest("Unable to get data.");
-        //    else
-        //    {
-        //        result.Tables[0].TableName = "Employees";
-        //        result.Tables[1].TableName = "LeavePlan";
-        //    }
-
-        //    return result;
-        //}
-
-        //public DataSet LoadMappedClientService(long EmployeeId)
-        //{
-        //    var result = _db.FetchDataSet(Procedures.Attandence_Detail_By_EmployeeId, new
-        //    {
-        //        EmployeeId,
-        //    });
-
-        //    if (result == null || result.Tables.Count != 1)
-        //        throw HiringBellException.ThrowBadRequest("Unable to get data.");
-        //    else
-        //    {
-        //        result.Tables[0].TableName = "AllocatedClients";
-        //    }
-
-        //    return result;
-        //}
-
-
-        //private string GetDeclarationBasicFields(List<SalaryComponents> salaryComponents)
-        //{
-        //    var basicFields = salaryComponents.Select(x => new
-        //    {
-        //        x.ComponentId,
-        //        x.DeclaredValue,
-        //        x.Section,
-        //        x.MaxLimit,
-        //        x.ComponentFullName,
-        //        x.UploadedFileIds
-        //    }).ToList();
-
-        //    return JsonConvert.SerializeObject(basicFields);
-        //}
 
         #endregion
 

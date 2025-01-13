@@ -11,7 +11,6 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -21,9 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using DailyAttendance = ModalLayer.Modal.DailyAttendance;
 
@@ -37,7 +34,6 @@ namespace ServiceLayer.Code
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly ILogger<AttendanceService> _logger;
         private readonly ICommonService _commonService;
         private readonly IUtilityService _utilityService;
         public AttendanceService(IDb db,
@@ -46,7 +42,6 @@ namespace ServiceLayer.Code
             ICompanyService companyService,
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
-            ILogger<AttendanceService> logger,
             ICommonService commonService,
             IUtilityService utilityService)
         {
@@ -56,7 +51,6 @@ namespace ServiceLayer.Code
             _timezoneConverter = timezoneConverter;
             _eMailManager = eMailManager;
             _fileLocationDetail = fileLocationDetail;
-            _logger = logger;
             _commonService = commonService;
             _utilityService = utilityService;
         }
@@ -86,104 +80,6 @@ namespace ServiceLayer.Code
                 todayDate = todayDate.AddDays(-1 * i);
 
             return todayDate;
-        }
-
-        private async Task<List<AttendanceJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining, int status)
-        {
-            List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
-            var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
-            int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
-            if (dateOfJoining.Month > timezoneFirstDate.Month && dateOfJoining.Year >= timezoneFirstDate.Year)
-                return null;
-
-            double days = 0;
-            var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
-            if (timezoneFirstDate.Day > 1)
-                totalNumOfDaysInPresentMonth = totalNumOfDaysInPresentMonth - timezoneFirstDate.Day;
-
-            int weekDays = 0;
-            int totalMinute = 0;
-            int i = 0;
-            DateTime workingDate = timezoneFirstDate;
-            while (i < totalNumOfDaysInPresentMonth)
-            {
-                workingDate = timezoneFirstDate.AddDays(i);
-                var isHoliday = CheckIsHoliday(workingDate, attendanceModal.calendars);
-                var isWeekend = CheckWeekend(attendanceModal.shiftDetail, workingDate);
-                var officetime = attendanceModal.shiftDetail.OfficeTime;
-                var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
-
-                days = barrierDate.Date.Subtract(workingDate.Date).TotalDays;
-                totalMinute = attendanceModal.shiftDetail.Duration;
-                var presentDayStatus = (int)DayStatus.Empty;
-                if (isHoliday || isWeekend)
-                {
-                    officetime = "00:00";
-                    logoff = "00:00";
-                    totalMinute = 0;
-                }
-
-                if (isHoliday)
-                    presentDayStatus = (int)DayStatus.Holiday;
-                else if (isWeekend)
-                    presentDayStatus = (int)DayStatus.Weekend;
-                else
-                {
-                    presentDayStatus = status;
-                }
-
-                attendenceDetails.Add(new AttendanceJson
-                {
-                    AttendenceDetailId = workingDate.Day,
-                    IsHoliday = isHoliday,
-                    IsOnLeave = false,
-                    IsWeekend = isWeekend,
-                    AttendanceDay = workingDate,
-                    LogOn = officetime,
-                    LogOff = logoff,
-                    PresentDayStatus = presentDayStatus,
-                    UserComments = string.Empty,
-                    ApprovedName = string.Empty,
-                    ApprovedBy = 0,
-                    SessionType = 1,
-                    TotalMinutes = totalMinute,
-                    IsOpen = i >= days ? true : false,
-                    WorkTypeId = (int)WorkType.WORKFROMHOME
-                });
-
-                i++;
-            }
-
-            var result = await _db.ExecuteAsync(Procedures.Attendance_Insupd, new
-            {
-                AttendanceId = 0,
-                AttendanceDetail = JsonConvert.SerializeObject(attendenceDetails),
-                UserTypeId = (int)UserType.Employee,
-                EmployeeId = attendanceModal.employee.EmployeeUid,
-                TotalDays = totalNumOfDaysInPresentMonth,
-                TotalWeekDays = weekDays,
-                DaysPending = totalNumOfDaysInPresentMonth,
-                TotalBurnedMinutes = 0,
-                ForYear = attendanceModal.firstDate.AddDays(1).Year,
-                ForMonth = attendanceModal.firstDate.AddDays(1).Month,
-                _currentSession.CurrentUserDetail.UserId,
-                PendingRequestCount = 0,
-                attendanceModal.employee.ReportingManagerId,
-                attendanceModal.employee.ManagerName,
-                attendanceModal.employee.Mobile,
-                attendanceModal.employee.Email,
-                EmployeeName = attendanceModal.employee.FirstName + " " + attendanceModal.employee.LastName,
-                AttendenceStatus = (int)DayStatus.WorkFromOffice,
-                BillingHours = 0,
-                ClientId = 0,
-                LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
-            }, true);
-
-            if (string.IsNullOrEmpty(result.statusMessage))
-                throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
-
-            attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
-            return attendenceDetails;
         }
 
         private async Task<List<AttendanceJson>> CreateAttendanceTillDate(AttendanceDetailBuildModal attendanceModal)
@@ -339,43 +235,6 @@ namespace ServiceLayer.Code
 
             await Task.CompletedTask;
         }
-
-        //private async Task GenerateAttendanceForEachEmployee(DateTime attendanceStartDate, DateTime attendanceEndDate, long employeeId, int status)
-        //{
-        //    while (attendanceStartDate.Subtract(attendanceEndDate).TotalDays < 0)
-        //    {
-        //        Attendance attendance = new Attendance
-        //        {
-        //            AttendanceDay = attendanceStartDate,
-        //            ForMonth = attendanceStartDate.Month,
-        //            ForYear = attendanceStartDate.Year,
-        //            EmployeeId = employeeId
-        //        };
-
-        //        var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
-        //        {
-        //            EmployeeId = employeeId,
-        //            ForYear = attendanceStartDate.Year,
-        //            ForMonth = attendanceStartDate.Month
-        //        });
-
-        //        if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
-        //        {
-        //            List<AttendanceJson> attendenceDetails;
-        //            var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
-
-        //            attendanceModal.attendanceSubmissionLimit = 2;
-        //            await BuildApprovedAttendance(attendanceModal, attendanceModal.employee.CreatedOn, status);
-
-        //            attendanceStartDate = attendanceStartDate.AddMonths(1);
-        //        }
-        //        else
-        //        {
-        //            break;
-        //        }
-        //    }
-        //    await Task.CompletedTask;
-        //}
 
         public async Task<AttendanceWithClientDetail> GetAttendanceByUserId(Attendance attendance)
         {
@@ -975,53 +834,6 @@ namespace ServiceLayer.Code
             await Task.CompletedTask;
         }
 
-        private async Task CreatePresentDayAttendance(AttendenceDetail attendenceDetail, DateTime workingTimezoneDate)
-        {
-            var totalDays = DateTime.DaysInMonth(workingTimezoneDate.Year, workingTimezoneDate.Month);
-
-            attendenceDetail.IsActiveDay = false;
-            attendenceDetail.TotalDays = totalDays;
-            attendenceDetail.AttendanceId = 0;
-            attendenceDetail.AttendenceStatus = (int)DayStatus.WorkFromOffice;
-            attendenceDetail.BillingHours = 480;
-            attendenceDetail.ClientId = attendenceDetail.ClientId;
-            attendenceDetail.DaysPending = totalDays;
-            attendenceDetail.EmployeeUid = attendenceDetail.EmployeeUid;
-            attendenceDetail.ForMonth = workingTimezoneDate.Month;
-            attendenceDetail.ForYear = workingTimezoneDate.Year;
-            attendenceDetail.TotalMinutes = 480;
-            attendenceDetail.IsHoliday = (workingTimezoneDate.DayOfWeek == DayOfWeek.Saturday
-                            ||
-                        workingTimezoneDate.DayOfWeek == DayOfWeek.Sunday) ? true : false;
-            attendenceDetail.IsOnLeave = false;
-            attendenceDetail.LeaveId = 0;
-            attendenceDetail.PresentDayStatus = (int)ItemStatus.Pending;
-            attendenceDetail.UserTypeId = (int)UserType.Employee;
-            attendenceDetail.IsOpen = true;
-            CalculateLogOffTime(attendenceDetail);
-            await Task.CompletedTask;
-        }
-
-        private void CalculateLogOffTime(AttendenceDetail attendenceDetail)
-        {
-            var logontime = attendenceDetail.LogOn.Replace(":", ".");
-            decimal logon = decimal.Parse(logontime);
-            var totaltime = 0;
-            if (attendenceDetail.SessionType == 1)
-            {
-                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes);
-                var time = ConvertToMin(totaltime);
-                attendenceDetail.LogOff = time.ToString();
-            }
-            else
-            {
-                totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes) / 2;
-                var time = ConvertToMin(totaltime);
-                attendenceDetail.LogOn = time.ToString();
-                attendenceDetail.LogOff = time.ToString();
-            }
-        }
-
         public string ConvertToMin(int mins)
         {
             int hours = ((mins - mins % 60) / 60);
@@ -1045,160 +857,6 @@ namespace ServiceLayer.Code
             // check shift weekends
 
             await Task.CompletedTask;
-        }
-
-        private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
-        {
-            var firstAttn = finalAttendanceSet.FirstOrDefault();
-
-            var AttendaceDetail = JsonConvert.SerializeObject((from n in finalAttendanceSet
-                                                               select new
-                                                               {
-                                                                   TotalMinutes = n.TotalMinutes,
-                                                                   UserTypeId = n.UserTypeId,
-                                                                   PresentDayStatus = n.PresentDayStatus,
-                                                                   EmployeeUid = n.EmployeeUid,
-                                                                   AttendanceId = n.AttendanceId,
-                                                                   UserComments = n.UserComments,
-                                                                   AttendanceDay = n.AttendanceDay,
-                                                                   AttendenceStatus = n.AttendenceStatus
-                                                               }));
-
-            double MonthsMinutes = 0;
-            currentAttendance.DaysPending = 0;
-            finalAttendanceSet.ForEach(x =>
-            {
-                MonthsMinutes += x.TotalMinutes;
-                if (x.AttendenceStatus == 8)
-                    currentAttendance.DaysPending++;
-            });
-
-            var Result = _db.Execute<string>(procedure, new
-            {
-                AttendanceId = currentAttendance.AttendanceId,
-                EmployeeId = currentAttendance.EmployeeId,
-                UserTypeId = currentAttendance.UserTypeId,
-                AttendanceDetail = AttendaceDetail,
-                TotalDays = currentAttendance.TotalDays,
-                TotalWeekDays = currentAttendance.TotalWeekDays,
-                DaysPending = currentAttendance.DaysPending,
-                TotalBurnedMinutes = MonthsMinutes,
-                ForYear = currentAttendance.ForYear,
-                ForMonth = currentAttendance.ForMonth,
-                UserId = _currentSession.CurrentUserDetail.UserId
-            }, true);
-
-            if (string.IsNullOrEmpty(Result))
-                throw new HiringBellException("Fail to insert or update attendance detail. Pleasa contact to admin.");
-
-            return Result;
-        }
-
-        private void ValidateDateOfAttendanceSubmission(DateTime firstDate, DateTime lastDate)
-        {
-            DateTime now = DateTime.Now;
-            DateTime presentDate = _timezoneConverter.GetUtcDateTime(now.Year, now.Month, now.Day);
-
-            // handling future date
-            if (presentDate.Subtract(lastDate).TotalDays > 0)
-            {
-                throw new HiringBellException("Future date's are not allowed.");
-            }
-            // handling past date
-            else if (presentDate.Subtract(firstDate).TotalDays < 0)
-            {
-                if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
-                {
-                    throw new HiringBellException("Past week's are not allowed.");
-                }
-            }
-        }
-
-        private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(ComplaintOrRequest compalintOrRequest)
-        {
-            var templateReplaceModal = new TemplateReplaceModal
-            {
-                DeveloperName = compalintOrRequest.EmployeeName,
-                RequestType = ApplicationConstants.WorkFromHome,
-                ToAddress = new List<string> { compalintOrRequest.Email },
-                ActionType = "Requested",
-                FromDate = compalintOrRequest.AttendanceDate,
-                ToDate = compalintOrRequest.AttendanceDate,
-                ManagerName = compalintOrRequest.ManagerName,
-                Message = string.IsNullOrEmpty(compalintOrRequest.ManagerComments)
-                    ? "NA"
-                    : compalintOrRequest.ManagerComments,
-            };
-
-            if (compalintOrRequest.NotifyList != null && compalintOrRequest.NotifyList.Count > 0)
-            {
-                foreach (var email in compalintOrRequest.NotifyList)
-                {
-                    templateReplaceModal.ToAddress.Add(email.Email);
-                }
-            }
-            return await Task.FromResult(templateReplaceModal);
-        }
-
-        public async Task AttendaceApprovalStatusSendEmail(ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
-        {
-            var templateReplaceModal = new TemplateReplaceModal();
-            if (compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList != null && compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList.Count > 0)
-            {
-                templateReplaceModal.ToAddress = new List<string>();
-                foreach (var email in compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList)
-                {
-                    templateReplaceModal.ToAddress.Add(email.Email);
-                }
-            }
-
-            await SendEmailWithTemplate(compalintOrRequestWithEmail, templateReplaceModal);
-        }
-
-        private async Task<EmailSenderModal> SendEmailWithTemplate(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
-        {
-            templateReplaceModal.BodyContent = compalintOrRequestWithEmail.EmailBody;
-            var emailSenderModal = await ReplaceActualData(templateReplaceModal, compalintOrRequestWithEmail);
-
-            await _eMailManager.SendMailAsync(emailSenderModal);
-            return await Task.FromResult(emailSenderModal);
-        }
-
-        private async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
-        {
-            EmailSenderModal emailSenderModal = null;
-            var attendance = compalintOrRequestWithEmail.CompalintOrRequestList.First();
-            if (templateReplaceModal != null)
-            {
-                var totalDays = compalintOrRequestWithEmail.CompalintOrRequestList.Count;
-                string subject = $"{totalDays} Days Blocked Attendance Approval Status";
-                string body = compalintOrRequestWithEmail.EmailBody;
-
-                StringBuilder builder = new StringBuilder();
-                builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
-                builder.AppendLine();
-                builder.AppendLine();
-                builder.Append("<div>" + "Thanks and Regard" + "</div>");
-                builder.Append("<div>" + attendance.EmployeeName + "</div>");
-                builder.Append("<div>" + attendance.Mobile + "</div>");
-
-                var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
-                if (File.Exists(logoPath))
-                {
-                    builder.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
-                }
-
-                emailSenderModal = new EmailSenderModal
-                {
-                    To = templateReplaceModal.ToAddress,
-                    Subject = subject,
-                    Body = string.Concat(body, builder.ToString()),
-                };
-            }
-
-            emailSenderModal.Title = $"{attendance.EmployeeName} requested for approved blocked attendance.";
-
-            return await Task.FromResult(emailSenderModal);
         }
 
         public async Task<DailyAttendance> AdjustAttendanceService(Attendance attendance)
@@ -1590,7 +1248,7 @@ namespace ServiceLayer.Code
             var companySetting = Converter.ToType<CompanySetting>(ds.Tables[3]);
             var dailyAttendances = ProcessAttendanceRecords(ds);
             var requestAttendance = FilterAttendancesByStatus(dailyAttendances, AttendanceEnum.NotSubmitted, companySetting.AttendanceType);
-            
+
             return new
             {
                 AttendanceType = companySetting.AttendanceType,
@@ -1733,60 +1391,6 @@ namespace ServiceLayer.Code
             }
 
             return dailyAttendances;
-        }
-
-        private WeekDates getCurrentWeekStartEndDate()
-        {
-            DateTime today = DateTime.UtcNow;
-
-            int daysToSubtract = today.DayOfWeek - DayOfWeek.Monday;
-            if (daysToSubtract < 0)
-                daysToSubtract += 7;
-
-            DateTime weekStart = today.AddDays(-daysToSubtract);
-            DateTime weekEnd = weekStart.AddDays(6);
-
-            WeekDates weekDates = new WeekDates
-            {
-                StartDate = weekStart,
-                EndDate = weekEnd
-            };
-
-            return weekDates;
-        }
-
-        private async Task<List<WeekDates>> GenerateWeeks()
-        {
-            (DateTime FromDate, DateTime ToDate) = await BuildDates();
-
-            if (ToDate.Date.Subtract(FromDate.Date).TotalDays < 0)
-                throw HiringBellException.ThrowBadRequest("Invalid date calculation for week generation. Please contact to admin.");
-
-            var attendanceWeeks = new List<WeekDates>();
-            DateTime startDate = FromDate;
-            DateTime movingDate = FromDate;
-
-            int weekIndex = GetWeekIndex(startDate);
-            while (movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
-            {
-                if (movingDate.DayOfWeek == DayOfWeek.Sunday)
-                {
-                    attendanceWeeks.Add(new WeekDates
-                    {
-                        StartDate = startDate,
-                        EndDate = movingDate,
-                        WeekIndex = weekIndex++
-                    });
-
-                    startDate = movingDate.AddDays(1);
-                }
-
-                movingDate = movingDate.AddDays(1);
-            }
-
-            attendanceWeeks = attendanceWeeks.OrderByDescending(x => x.WeekIndex).ToList();
-
-            return await Task.FromResult(attendanceWeeks);
         }
 
         private int GetWeekIndex(DateTime date)
@@ -1953,7 +1557,7 @@ namespace ServiceLayer.Code
 
                 await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
-                return GetAttendanceConfiData(attendances[0].EmployeeId);
+                return await GetAttendanceConfiData(attendances[0].EmployeeId);
             }
             catch (Exception e)
             {
@@ -2376,12 +1980,6 @@ namespace ServiceLayer.Code
             return attendanceDetails;
         }
 
-        private string ConvertPunchTime(string punchTime)
-        {
-            TimeSpan timeSpan = TimeSpan.Parse(punchTime);
-            return timeSpan.ToString(@"hh\:mm\:ss");
-        }
-
         private int GetWorkingMinute(string punchIn, string punchOut)
         {
             TimeSpan startTime = TimeSpan.Parse(punchIn);
@@ -2441,6 +2039,404 @@ namespace ServiceLayer.Code
 
             return dailyBiometricAttendances;
         }
+        #endregion
+
+        #region Un-used Code
+        //private async Task GenerateAttendanceForEachEmployee(DateTime attendanceStartDate, DateTime attendanceEndDate, long employeeId, int status)
+        //{
+        //    while (attendanceStartDate.Subtract(attendanceEndDate).TotalDays < 0)
+        //    {
+        //        Attendance attendance = new Attendance
+        //        {
+        //            AttendanceDay = attendanceStartDate,
+        //            ForMonth = attendanceStartDate.Month,
+        //            ForYear = attendanceStartDate.Year,
+        //            EmployeeId = employeeId
+        //        };
+
+        //        var record = _db.Get<Attendance>(Procedures.Attendance_Get_By_Empid, new
+        //        {
+        //            EmployeeId = employeeId,
+        //            ForYear = attendanceStartDate.Year,
+        //            ForMonth = attendanceStartDate.Month
+        //        });
+
+        //        if (record == null || string.IsNullOrEmpty(record.AttendanceDetail) || record.AttendanceDetail == "[]")
+        //        {
+        //            List<AttendanceJson> attendenceDetails;
+        //            var attendanceModal = GetAttendanceDetail(attendance, out attendenceDetails);
+
+        //            attendanceModal.attendanceSubmissionLimit = 2;
+        //            await BuildApprovedAttendance(attendanceModal, attendanceModal.employee.CreatedOn, status);
+
+        //            attendanceStartDate = attendanceStartDate.AddMonths(1);
+        //        }
+        //        else
+        //        {
+        //            break;
+        //        }
+        //    }
+        //    await Task.CompletedTask;
+        //}
+
+        //private async Task<List<AttendanceJson>> BuildApprovedAttendance(AttendanceDetailBuildModal attendanceModal, DateTime dateOfJoining, int status)
+        //{
+        //    List<AttendanceJson> attendenceDetails = new List<AttendanceJson>();
+        //    var timezoneFirstDate = _timezoneConverter.ToTimeZoneDateTime(attendanceModal.firstDate, _currentSession.TimeZone);
+        //    int totalNumOfDaysInPresentMonth = DateTime.DaysInMonth(timezoneFirstDate.Year, timezoneFirstDate.Month);
+        //    if (dateOfJoining.Month > timezoneFirstDate.Month && dateOfJoining.Year >= timezoneFirstDate.Year)
+        //        return null;
+
+        //    double days = 0;
+        //    var barrierDate = GetBarrierDate(attendanceModal.attendanceSubmissionLimit);
+        //    if (timezoneFirstDate.Day > 1)
+        //        totalNumOfDaysInPresentMonth = totalNumOfDaysInPresentMonth - timezoneFirstDate.Day;
+
+        //    int weekDays = 0;
+        //    int totalMinute = 0;
+        //    int i = 0;
+        //    DateTime workingDate = timezoneFirstDate;
+        //    while (i < totalNumOfDaysInPresentMonth)
+        //    {
+        //        workingDate = timezoneFirstDate.AddDays(i);
+        //        var isHoliday = CheckIsHoliday(workingDate, attendanceModal.calendars);
+        //        var isWeekend = CheckWeekend(attendanceModal.shiftDetail, workingDate);
+        //        var officetime = attendanceModal.shiftDetail.OfficeTime;
+        //        var logoff = CalculateLogOff(attendanceModal.shiftDetail.OfficeTime, attendanceModal.shiftDetail.LunchDuration);
+
+        //        days = barrierDate.Date.Subtract(workingDate.Date).TotalDays;
+        //        totalMinute = attendanceModal.shiftDetail.Duration;
+        //        var presentDayStatus = (int)DayStatus.Empty;
+        //        if (isHoliday || isWeekend)
+        //        {
+        //            officetime = "00:00";
+        //            logoff = "00:00";
+        //            totalMinute = 0;
+        //        }
+
+        //        if (isHoliday)
+        //            presentDayStatus = (int)DayStatus.Holiday;
+        //        else if (isWeekend)
+        //            presentDayStatus = (int)DayStatus.Weekend;
+        //        else
+        //        {
+        //            presentDayStatus = status;
+        //        }
+
+        //        attendenceDetails.Add(new AttendanceJson
+        //        {
+        //            AttendenceDetailId = workingDate.Day,
+        //            IsHoliday = isHoliday,
+        //            IsOnLeave = false,
+        //            IsWeekend = isWeekend,
+        //            AttendanceDay = workingDate,
+        //            LogOn = officetime,
+        //            LogOff = logoff,
+        //            PresentDayStatus = presentDayStatus,
+        //            UserComments = string.Empty,
+        //            ApprovedName = string.Empty,
+        //            ApprovedBy = 0,
+        //            SessionType = 1,
+        //            TotalMinutes = totalMinute,
+        //            IsOpen = i >= days ? true : false,
+        //            WorkTypeId = (int)WorkType.WORKFROMHOME
+        //        });
+
+        //        i++;
+        //    }
+
+        //    var result = await _db.ExecuteAsync(Procedures.Attendance_Insupd, new
+        //    {
+        //        AttendanceId = 0,
+        //        AttendanceDetail = JsonConvert.SerializeObject(attendenceDetails),
+        //        UserTypeId = (int)UserType.Employee,
+        //        EmployeeId = attendanceModal.employee.EmployeeUid,
+        //        TotalDays = totalNumOfDaysInPresentMonth,
+        //        TotalWeekDays = weekDays,
+        //        DaysPending = totalNumOfDaysInPresentMonth,
+        //        TotalBurnedMinutes = 0,
+        //        ForYear = attendanceModal.firstDate.AddDays(1).Year,
+        //        ForMonth = attendanceModal.firstDate.AddDays(1).Month,
+        //        _currentSession.CurrentUserDetail.UserId,
+        //        PendingRequestCount = 0,
+        //        attendanceModal.employee.ReportingManagerId,
+        //        attendanceModal.employee.ManagerName,
+        //        attendanceModal.employee.Mobile,
+        //        attendanceModal.employee.Email,
+        //        EmployeeName = attendanceModal.employee.FirstName + " " + attendanceModal.employee.LastName,
+        //        AttendenceStatus = (int)DayStatus.WorkFromOffice,
+        //        BillingHours = 0,
+        //        ClientId = 0,
+        //        LunchBreanInMinutes = attendanceModal.shiftDetail.LunchDuration
+        //    }, true);
+
+        //    if (string.IsNullOrEmpty(result.statusMessage))
+        //        throw HiringBellException.ThrowBadRequest("Got server error. Please contact to admin.");
+
+        //    attendanceModal.attendance.AttendanceId = Convert.ToInt64(result.statusMessage);
+        //    return attendenceDetails;
+        //}
+
+        //private string UpdateOrInsertAttendanceDetail(List<AttendenceDetail> finalAttendanceSet, Attendance currentAttendance, string procedure)
+        //{
+        //    var firstAttn = finalAttendanceSet.FirstOrDefault();
+
+        //    var AttendaceDetail = JsonConvert.SerializeObject((from n in finalAttendanceSet
+        //                                                       select new
+        //                                                       {
+        //                                                           TotalMinutes = n.TotalMinutes,
+        //                                                           UserTypeId = n.UserTypeId,
+        //                                                           PresentDayStatus = n.PresentDayStatus,
+        //                                                           EmployeeUid = n.EmployeeUid,
+        //                                                           AttendanceId = n.AttendanceId,
+        //                                                           UserComments = n.UserComments,
+        //                                                           AttendanceDay = n.AttendanceDay,
+        //                                                           AttendenceStatus = n.AttendenceStatus
+        //                                                       }));
+
+        //    double MonthsMinutes = 0;
+        //    currentAttendance.DaysPending = 0;
+        //    finalAttendanceSet.ForEach(x =>
+        //    {
+        //        MonthsMinutes += x.TotalMinutes;
+        //        if (x.AttendenceStatus == 8)
+        //            currentAttendance.DaysPending++;
+        //    });
+
+        //    var Result = _db.Execute<string>(procedure, new
+        //    {
+        //        AttendanceId = currentAttendance.AttendanceId,
+        //        EmployeeId = currentAttendance.EmployeeId,
+        //        UserTypeId = currentAttendance.UserTypeId,
+        //        AttendanceDetail = AttendaceDetail,
+        //        TotalDays = currentAttendance.TotalDays,
+        //        TotalWeekDays = currentAttendance.TotalWeekDays,
+        //        DaysPending = currentAttendance.DaysPending,
+        //        TotalBurnedMinutes = MonthsMinutes,
+        //        ForYear = currentAttendance.ForYear,
+        //        ForMonth = currentAttendance.ForMonth,
+        //        UserId = _currentSession.CurrentUserDetail.UserId
+        //    }, true);
+
+        //    if (string.IsNullOrEmpty(Result))
+        //        throw new HiringBellException("Fail to insert or update attendance detail. Pleasa contact to admin.");
+
+        //    return Result;
+        //}
+
+        //private void ValidateDateOfAttendanceSubmission(DateTime firstDate, DateTime lastDate)
+        //{
+        //    DateTime now = DateTime.Now;
+        //    DateTime presentDate = _timezoneConverter.GetUtcDateTime(now.Year, now.Month, now.Day);
+
+        //    // handling future date
+        //    if (presentDate.Subtract(lastDate).TotalDays > 0)
+        //    {
+        //        throw new HiringBellException("Future date's are not allowed.");
+        //    }
+        //    // handling past date
+        //    else if (presentDate.Subtract(firstDate).TotalDays < 0)
+        //    {
+        //        if (_currentSession.CurrentUserDetail.RoleId != (int)UserType.Admin)
+        //        {
+        //            throw new HiringBellException("Past week's are not allowed.");
+        //        }
+        //    }
+        //}
+
+        //private async Task<TemplateReplaceModal> GetAttendanceApprovalTemplate(ComplaintOrRequest compalintOrRequest)
+        //{
+        //    var templateReplaceModal = new TemplateReplaceModal
+        //    {
+        //        DeveloperName = compalintOrRequest.EmployeeName,
+        //        RequestType = ApplicationConstants.WorkFromHome,
+        //        ToAddress = new List<string> { compalintOrRequest.Email },
+        //        ActionType = "Requested",
+        //        FromDate = compalintOrRequest.AttendanceDate,
+        //        ToDate = compalintOrRequest.AttendanceDate,
+        //        ManagerName = compalintOrRequest.ManagerName,
+        //        Message = string.IsNullOrEmpty(compalintOrRequest.ManagerComments)
+        //            ? "NA"
+        //            : compalintOrRequest.ManagerComments,
+        //    };
+
+        //    if (compalintOrRequest.NotifyList != null && compalintOrRequest.NotifyList.Count > 0)
+        //    {
+        //        foreach (var email in compalintOrRequest.NotifyList)
+        //        {
+        //            templateReplaceModal.ToAddress.Add(email.Email);
+        //        }
+        //    }
+        //    return await Task.FromResult(templateReplaceModal);
+        //}
+
+        //public async Task AttendaceApprovalStatusSendEmail(ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
+        //{
+        //    var templateReplaceModal = new TemplateReplaceModal();
+        //    if (compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList != null && compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList.Count > 0)
+        //    {
+        //        templateReplaceModal.ToAddress = new List<string>();
+        //        foreach (var email in compalintOrRequestWithEmail.CompalintOrRequestList.First().NotifyList)
+        //        {
+        //            templateReplaceModal.ToAddress.Add(email.Email);
+        //        }
+        //    }
+
+        //    await SendEmailWithTemplate(compalintOrRequestWithEmail, templateReplaceModal);
+        //}
+
+        //private async Task<EmailSenderModal> SendEmailWithTemplate(ComplaintOrRequestWithEmail compalintOrRequestWithEmail, TemplateReplaceModal templateReplaceModal)
+        //{
+        //    templateReplaceModal.BodyContent = compalintOrRequestWithEmail.EmailBody;
+        //    var emailSenderModal = await ReplaceActualData(templateReplaceModal, compalintOrRequestWithEmail);
+
+        //    await _eMailManager.SendMailAsync(emailSenderModal);
+        //    return await Task.FromResult(emailSenderModal);
+        //}
+
+        //private async Task<EmailSenderModal> ReplaceActualData(TemplateReplaceModal templateReplaceModal, ComplaintOrRequestWithEmail compalintOrRequestWithEmail)
+        //{
+        //    EmailSenderModal emailSenderModal = null;
+        //    var attendance = compalintOrRequestWithEmail.CompalintOrRequestList.First();
+        //    if (templateReplaceModal != null)
+        //    {
+        //        var totalDays = compalintOrRequestWithEmail.CompalintOrRequestList.Count;
+        //        string subject = $"{totalDays} Days Blocked Attendance Approval Status";
+        //        string body = compalintOrRequestWithEmail.EmailBody;
+
+        //        StringBuilder builder = new StringBuilder();
+        //        builder.Append("<div style=\"border-bottom:1px solid black; margin-top: 14px; margin-bottom:5px\">" + "" + "</div>");
+        //        builder.AppendLine();
+        //        builder.AppendLine();
+        //        builder.Append("<div>" + "Thanks and Regard" + "</div>");
+        //        builder.Append("<div>" + attendance.EmployeeName + "</div>");
+        //        builder.Append("<div>" + attendance.Mobile + "</div>");
+
+        //        var logoPath = Path.Combine(_fileLocationDetail.RootPath, _fileLocationDetail.LogoPath, ApplicationConstants.HiringBellLogoSmall);
+        //        if (File.Exists(logoPath))
+        //        {
+        //            builder.Append($"<div><img src=\"cid:{ApplicationConstants.LogoContentId}\" style=\"width: 10rem;margin-top: 1rem;\"></div>");
+        //        }
+
+        //        emailSenderModal = new EmailSenderModal
+        //        {
+        //            To = templateReplaceModal.ToAddress,
+        //            Subject = subject,
+        //            Body = string.Concat(body, builder.ToString()),
+        //        };
+        //    }
+
+        //    emailSenderModal.Title = $"{attendance.EmployeeName} requested for approved blocked attendance.";
+
+        //    return await Task.FromResult(emailSenderModal);
+        //}
+
+        //private async Task CreatePresentDayAttendance(AttendenceDetail attendenceDetail, DateTime workingTimezoneDate)
+        //{
+        //    var totalDays = DateTime.DaysInMonth(workingTimezoneDate.Year, workingTimezoneDate.Month);
+
+        //    attendenceDetail.IsActiveDay = false;
+        //    attendenceDetail.TotalDays = totalDays;
+        //    attendenceDetail.AttendanceId = 0;
+        //    attendenceDetail.AttendenceStatus = (int)DayStatus.WorkFromOffice;
+        //    attendenceDetail.BillingHours = 480;
+        //    attendenceDetail.ClientId = attendenceDetail.ClientId;
+        //    attendenceDetail.DaysPending = totalDays;
+        //    attendenceDetail.EmployeeUid = attendenceDetail.EmployeeUid;
+        //    attendenceDetail.ForMonth = workingTimezoneDate.Month;
+        //    attendenceDetail.ForYear = workingTimezoneDate.Year;
+        //    attendenceDetail.TotalMinutes = 480;
+        //    attendenceDetail.IsHoliday = (workingTimezoneDate.DayOfWeek == DayOfWeek.Saturday
+        //                    ||
+        //                workingTimezoneDate.DayOfWeek == DayOfWeek.Sunday) ? true : false;
+        //    attendenceDetail.IsOnLeave = false;
+        //    attendenceDetail.LeaveId = 0;
+        //    attendenceDetail.PresentDayStatus = (int)ItemStatus.Pending;
+        //    attendenceDetail.UserTypeId = (int)UserType.Employee;
+        //    attendenceDetail.IsOpen = true;
+        //    CalculateLogOffTime(attendenceDetail);
+        //    await Task.CompletedTask;
+        //}
+
+        //private void CalculateLogOffTime(AttendenceDetail attendenceDetail)
+        //{
+        //    var logontime = attendenceDetail.LogOn.Replace(":", ".");
+        //    decimal logon = decimal.Parse(logontime);
+        //    var totaltime = 0;
+        //    if (attendenceDetail.SessionType == 1)
+        //    {
+        //        totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes);
+        //        var time = ConvertToMin(totaltime);
+        //        attendenceDetail.LogOff = time.ToString();
+        //    }
+        //    else
+        //    {
+        //        totaltime = (int)(logon * 60 - attendenceDetail.LunchBreanInMinutes) / 2;
+        //        var time = ConvertToMin(totaltime);
+        //        attendenceDetail.LogOn = time.ToString();
+        //        attendenceDetail.LogOff = time.ToString();
+        //    }
+        //}
+
+        //private WeekDates getCurrentWeekStartEndDate()
+        //{
+        //    DateTime today = DateTime.UtcNow;
+
+        //    int daysToSubtract = today.DayOfWeek - DayOfWeek.Monday;
+        //    if (daysToSubtract < 0)
+        //        daysToSubtract += 7;
+
+        //    DateTime weekStart = today.AddDays(-daysToSubtract);
+        //    DateTime weekEnd = weekStart.AddDays(6);
+
+        //    WeekDates weekDates = new WeekDates
+        //    {
+        //        StartDate = weekStart,
+        //        EndDate = weekEnd
+        //    };
+
+        //    return weekDates;
+        //}
+
+        //private async Task<List<WeekDates>> GenerateWeeks()
+        //{
+        //    (DateTime FromDate, DateTime ToDate) = await BuildDates();
+
+        //    if (ToDate.Date.Subtract(FromDate.Date).TotalDays < 0)
+        //        throw HiringBellException.ThrowBadRequest("Invalid date calculation for week generation. Please contact to admin.");
+
+        //    var attendanceWeeks = new List<WeekDates>();
+        //    DateTime startDate = FromDate;
+        //    DateTime movingDate = FromDate;
+
+        //    int weekIndex = GetWeekIndex(startDate);
+        //    while (movingDate.Date.Subtract(ToDate.Date).TotalDays <= 0)
+        //    {
+        //        if (movingDate.DayOfWeek == DayOfWeek.Sunday)
+        //        {
+        //            attendanceWeeks.Add(new WeekDates
+        //            {
+        //                StartDate = startDate,
+        //                EndDate = movingDate,
+        //                WeekIndex = weekIndex++
+        //            });
+
+        //            startDate = movingDate.AddDays(1);
+        //        }
+
+        //        movingDate = movingDate.AddDays(1);
+        //    }
+
+        //    attendanceWeeks = attendanceWeeks.OrderByDescending(x => x.WeekIndex).ToList();
+
+        //    return await Task.FromResult(attendanceWeeks);
+        //}
+
+        //private string ConvertPunchTime(string punchTime)
+        //{
+        //    TimeSpan timeSpan = TimeSpan.Parse(punchTime);
+        //    return timeSpan.ToString(@"hh\:mm\:ss");
+        //}
         #endregion
     }
 }
