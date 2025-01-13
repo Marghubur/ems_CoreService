@@ -48,10 +48,10 @@ jobs:
     - name: Apply new changes
       run: |
           echo "Deleting existing Kubernetes resources"
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kc delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "microk8s kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
 
           echo "Applying new Kubernetes configuration"
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kc apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "microk8s kubectl apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
 
     - name: cleanup
       run: |
