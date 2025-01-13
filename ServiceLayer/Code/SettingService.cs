@@ -55,7 +55,6 @@ namespace ServiceLayer.Code
 
         public async Task<PfEsiSetting> PfEsiSetting(int CompanyId, PfEsiSetting pfesiSetting)
         {
-            string value = string.Empty;
             var existing = _db.Get<PfEsiSetting>(Procedures.Pf_Esi_Setting_Get, new { CompanyId });
             if (existing != null)
             {
@@ -86,13 +85,13 @@ namespace ServiceLayer.Code
                 existing = pfesiSetting;
 
             pfesiSetting.Admin = _currentSession.CurrentUserDetail.UserId;
-            value = _db.Execute<PfEsiSetting>(Procedures.Pf_Esi_Setting_Insupd, existing, true);
+            string value = _db.Execute<PfEsiSetting>(Procedures.Pf_Esi_Setting_Insupd, existing, true);
             if (string.IsNullOrEmpty(value))
                 throw new HiringBellException("Unable to update PF Setting.");
             //else
             //    await UpdateEmployeeSalaryDetails(existing);
 
-            return existing;
+            return await Task.FromResult(existing);
         }
 
         private async Task UpdateEmployeeSalaryDetails(PfEsiSetting pfEsiSetting)

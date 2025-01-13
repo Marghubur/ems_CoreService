@@ -24,7 +24,7 @@ namespace ServiceLayer.Code.HostedServiceJobs
                 IsSingleRun = false
             };
 
-            if (!leaveAccrualKafkaModel.GenerateLeaveAccrualTillMonth)
+            if (leaveAccrualKafkaModel.GenerateLeaveAccrualTillMonth)
             {
                 runAccrualModel.RunTillMonthOfPresnetYear = leaveAccrualKafkaModel.GenerateLeaveAccrualTillMonth;
             }
