@@ -48,8 +48,8 @@ jobs:
     - name: Apply new changes
       run: |
           echo "Deleting existing Kubernetes resources"
-          kc delete -f /home/emstum-api-deploy.yml || echo "No resources found to delete"
+          kubectl delete -f /home/emstum-api-deploy.yml || echo "No resources found to delete"
 
           echo "Applying new Kubernetes configuration"
-          kc apply -f /home/emstum-api-deploy.yml
+          kubectl apply -f /home/emstum-api-deploy.yml
         
