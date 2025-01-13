@@ -48,8 +48,8 @@ jobs:
     - name: Apply new changes
       run: |
           echo "Deleting existing Kubernetes resources"
-          kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml || echo "No resources found to delete"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
 
           echo "Applying new Kubernetes configuration"
-          kubectl apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} kubectl apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml
         
