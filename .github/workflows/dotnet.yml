@@ -48,8 +48,13 @@ jobs:
     - name: Apply new changes
       run: |
           echo "Deleting existing Kubernetes resources"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml"
 
           echo "Applying new Kubernetes configuration"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} kubectl apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} kubectl apply -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml
+
+    - name: cleanup
+      run: |
+        echo "Cleaning up SSH credentials"
+        rm -rf ~/.ssh
         
