@@ -39,14 +39,13 @@ jobs:
         push: true
         tags: istiyaqmi9/onlinedatabuilder:latest
 
-    - name: install SSH keys
-      run: |
-        install -m 600 -D /dev/null ~/.ssh/id_rsa
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-
-    - name: connect and push
-      run: |
+    - name: SSH to Remote Server and Deploy
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
           echo "Deleting existing Kubernetes resources"
           kubectl delete -f /root/kube.ws/emstum/Coreservice/emstum-api-deploy.yml || echo "No resources found to delete"
 
