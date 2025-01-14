@@ -43,11 +43,12 @@ namespace OnlineDataBuilder
             services.AddControllers();
             services.AddHttpContextAccessor();
 
+            // register folder paths
+            _registerService.RegisterFolderPaths(_configuration, _env, services);
+
             // register service layer classes
             _registerService.RegisterServiceLayerServices(services);
 
-            // register folder paths
-            _registerService.RegisterFolderPaths(_configuration, _env, services);
 
             // register database
             _registerService.RegisterDatabase(services);

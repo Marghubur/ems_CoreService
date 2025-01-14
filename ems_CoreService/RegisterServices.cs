@@ -51,6 +51,7 @@ namespace ems_CoreService
         {
             services.AddSingleton<IUtilityService, UtilityService>();
             services.AddScoped<IAutoTriggerService, AutoTriggerService>();
+            services.AddSingleton<GitHubConnector>();
 
             services.AddScoped<IEvaluationPostfixExpression, EvaluationPostfixExpression>();
             services.AddScoped<IEmailService, EmailService>();
