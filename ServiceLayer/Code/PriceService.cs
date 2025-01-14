@@ -1,6 +1,7 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
+using Bt.Lib.Common.Service.Model;
+using Bt.Lib.Common.Service.Services;
 using EMailService.Modal;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -13,12 +14,14 @@ namespace ServiceLayer.Code
 {
     public class PriceService : IPriceService
     {
-        private readonly MasterDatabase _masterDatabase;
         private readonly IDb _db;
-        public PriceService(IOptions<MasterDatabase> options, IDb db)
+        private readonly GitHubConnector _gitHubConnector;
+        private readonly MicroserviceRegistry _microserviceRegistry;
+        public PriceService(IDb db, MicroserviceRegistry microserviceRegistry, GitHubConnector gitHubConnector)
         {
-            _masterDatabase = options.Value;
             _db = db;
+            _microserviceRegistry = microserviceRegistry;
+            _gitHubConnector = gitHubConnector;
         }
         public async Task<List<PriceDetail>> GetPriceDetailService()
         {
@@ -31,8 +34,10 @@ namespace ServiceLayer.Code
         public async Task<string> AddContactusService(ContactUsDetail contactUsDetail)
         {
             validateContactUsDetail(contactUsDetail);
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-            _db.SetupConnectionString(cs);
+
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceRegistry.DatabaseConfigurationUrl); ;
+            _db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+
             var result = _db.Execute<ContactUsDetail>(Procedures.CONTACT_US_INSUPD, new
             {
                 ContactUsId = contactUsDetail.ContactUsId,
@@ -75,9 +80,11 @@ namespace ServiceLayer.Code
 
         public async Task<string> AddTrailRequestService(ContactUsDetail contactUsDetail)
         {
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-            _db.SetupConnectionString(cs);
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceRegistry.DatabaseConfigurationUrl); ;
+            _db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+            
             validateTrailRequestDetail(contactUsDetail);
+
             var result = _db.Execute<ContactUsDetail>(Procedures.TRAIL_REQUEST_INSUPD, new
             {
                 contactUsDetail.TrailRequestId,

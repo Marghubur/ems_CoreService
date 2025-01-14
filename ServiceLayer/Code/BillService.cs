@@ -8,13 +8,13 @@ using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
+using Bt.Lib.Common.Service.Services;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
-using EMailService.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -46,33 +46,29 @@ namespace ServiceLayer.Code
         private readonly ILogger<BillService> _logger;
         private readonly ExcelWriter _excelWriter;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
-        private readonly IEMailManager _eMailManager;
         private readonly ITemplateService _templateService;
         private readonly IUtilityService _utilityService;
         private readonly ITimezoneConverter _timezoneConverter;
-        // private readonly IDeclarationService _declarationService;
-        private readonly MasterDatabase _masterDatabase;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
-
+        private readonly GitHubConnector _gitHubConnector;
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
             CurrentSession currentSession,
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
-            IEMailManager eMailManager,
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker,
             IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
-            MicroserviceRegistry microserviceUrlLogs, 
-            IUtilityService utilityService)
+            MicroserviceRegistry microserviceUrlLogs,
+            IUtilityService utilityService, 
+            GitHubConnector gitHubConnector)
         {
             this.db = db;
             _logger = logger;
-            _eMailManager = eMailManager;
             _htmlToPdfConverter = htmlToPdfConverter;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
@@ -82,10 +78,10 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _templateService = templateService;
             _timezoneConverter = timezoneConverter;
-            _masterDatabase = options.Value;
             _requestMicroservice = requestMicroservice;
             _microserviceUrlLogs = microserviceUrlLogs;
             _utilityService = utilityService;
+            _gitHubConnector = gitHubConnector;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -681,7 +677,7 @@ namespace ServiceLayer.Code
                 await SaveExecuteBill(billModal);
 
                 // get email notification detail
-                EmailTemplate emailTemplate = GetEmailTemplateService();
+                EmailTemplate emailTemplate = await GetEmailTemplateService();
                 emailTemplate.Emails = emails;
 
                 // return result data
@@ -733,19 +729,20 @@ namespace ServiceLayer.Code
             if (Result.Tables[0].Rows.Count != 1)
                 throw new HiringBellException("Invalid bill no. No record found.");
 
-            return await Task.FromResult(new
+            return (new
             {
                 EmployeeDetail = Result.Tables[0],
-                EmailTemplate = GetEmailTemplateService(),
+                EmailTemplate = await GetEmailTemplateService(),
                 Receiver = Result.Tables[1],
                 Sender = Result.Tables[2]
             });
         }
 
-        private EmailTemplate GetEmailTemplateService()
+        private async Task<EmailTemplate> GetEmailTemplateService()
         {
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-            db.SetupConnectionString(cs);
+            var masterDatabse =  await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
+            db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+
             var result = db.Get<EmailTemplate>(Procedures.Email_Template_Get, new
             {
                 EmailTemplateId = ApplicationConstants.BillingEmailTemplate,
