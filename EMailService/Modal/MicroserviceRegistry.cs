@@ -12,5 +12,6 @@
         public string SalaryDeclarationCalculation {  get; set; }
         public string UpdateBulkDeclarationDetail {  get; set; }
         public string CalculateSalaryDetail {  get; set; }
+        public string GenerateExcel { get; set; }
     }
 }

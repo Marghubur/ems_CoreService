@@ -199,8 +199,8 @@ namespace OnlineDataBuilder.Controllers
         #region Emport employee detail in excel
 
         [Authorize(Roles = Role.Admin)]
-        [HttpGet("ExportEmployee/{CompanyId}/{FileType}")]
-        public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromRoute] int FileType)
+        [HttpPost("ExportEmployee/{CompanyId}")]
+        public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromBody] int FileType)
         {
             try
             {

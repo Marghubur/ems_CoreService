@@ -334,6 +334,9 @@ namespace ServiceLayer.Code
             if (employee.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please contact to admin");
 
+            if (employee.WorkShiftId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid shift selected. Please contact to admin");
+
             if (employee?.DOB == null)
                 throw new HiringBellException { UserMessage = "Date of birth is a mandatory field.", FieldName = nameof(employee.DOB), FieldValue = employee.DOB.ToString() };
 
@@ -1253,7 +1256,7 @@ namespace ServiceLayer.Code
 
         #region Export Employee detail in excel
 
-        public async Task<string> ExportEmployeeService(int companyId, int fileType)
+        public async Task<byte[]> ExportEmployeeService(int companyId, int fileType)
         {
             if (companyId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid company. Please login again");
@@ -1261,28 +1264,34 @@ namespace ServiceLayer.Code
             if (fileType == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid type selected. Please select a valid type");
 
-            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, "Employees_Excel");
-            if (!Directory.Exists(Path.Combine(_fileLocationDetail.RootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_fileLocationDetail.RootPath, folderPath));
-
-            var filepath = Path.Combine(folderPath, "Employee_Excel" + $".{ApplicationConstants.Excel}");
-            var destinationFilePath = Path.Combine(_fileLocationDetail.RootPath, filepath);
-
-            if (File.Exists(destinationFilePath))
-                File.Delete(destinationFilePath);
             FilterModel filterModel = new FilterModel();
-            filterModel.PageSize = 1000;
-            //filterModel.SearchString += $" and CompanyId = {companyId} ";
-            var employees = FilterActiveEmployees(filterModel);
-            if (employees.Count > 0)
+            var employees = _db.FetchDataSet(Procedures.Employee_GetAll, new
+            {
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                PageSize = 1000
+            });
+
+            if (employees.Tables[0].Rows.Count > 0)
             {
                 if (fileType == 2)
                 {
-                    var datatable = Converter.ToDataTable(employees);
-                    _excelWriter.ToExcel(datatable, destinationFilePath);
+                    var url = $"{_microserviceUrlLogs.GenerateExcel}/EmployeeSheet";
+                    DataTable abc = employees.Tables[0];
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetPayload(abc)
+                    .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                    .SetConnectionString(_currentSession.LocalConnectionString)
+                    .SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken(_currentSession.Authorization);
+
+                    return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
                 }
             }
-            return await Task.FromResult(filepath);
+
+            return null;
         }
 
         #endregion
