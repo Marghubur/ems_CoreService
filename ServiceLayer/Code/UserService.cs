@@ -89,21 +89,12 @@ namespace ServiceLayer.Code
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
-                //var files = FileCollection.Select(x => new Files
-                //{
-                //    FileUid = professionalUser.FileId,
-                //    FileName = x.Name,
-                //    Email = professionalUser.Email,
-                //    FileExtension = string.Empty
-                //}).ToList<Files>();
-                //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
-
                 var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
                 string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
-                    OldFileName = new List<string> { professionalUser.OldFileName },
+                    OldFileName = string.IsNullOrEmpty(professionalUser.OldFileName) ? null : new List<string> { professionalUser.OldFileName },
                     ServiceName = LocalConstants.EmstumFileService
                 };
 
@@ -145,22 +136,12 @@ namespace ServiceLayer.Code
             Files file = new Files();
             if (FileCollection.Count > 0)
             {
-                //var files = FileCollection.Select(x => new Files
-                //{
-                //    FileUid = professionalUser.FileId,
-                //    FileName = x.Name,
-                //    Email = professionalUser.Email,
-                //    FileExtension = string.Empty
-                //}).ToList<Files>();
-
-                //_fileService.SaveFile(_fileLocationDetail.UserFolder, files, FileCollection, userId);
-
                 var ownerPath = Path.Combine(_fileLocationDetail.User, $"{nameof(UserType.Employee)}_{professionalUser.EmployeeId}");
                 string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
-                    OldFileName = new List<string> { professionalUser.OldFileName },
+                    OldFileName = string.IsNullOrEmpty(professionalUser.OldFileName) ? null : new List<string> { professionalUser.OldFileName },
                     ServiceName = LocalConstants.EmstumFileService
                 };
 

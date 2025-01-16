@@ -1277,8 +1277,8 @@ namespace ServiceLayer.Code
             // Converting html context for pdf conversion.
             var html = await GetPayslipHtmlString(payslipModal.PdfTemplatePath, payslipModal, true);
 
-            var destinationFilePath = Path.Combine(payslipModal.FileDetail.DiskFilePath,
-                payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
+            //var destinationFilePath = Path.Combine(payslipModal.FileDetail.DiskFilePath,
+            //    payslipModal.FileDetail.FileName + $".{ApplicationConstants.Pdf}");
 
             var Email = payslipModal.Employee.Email.Replace("@", "_").Replace(".", "_");
 
@@ -1365,6 +1365,7 @@ namespace ServiceLayer.Code
             var TotalWorkingDays = ActualPayableDays - payslipModal.PayrollMonthlyDetail.LOP;
 
             var LossOfPayDays = payslipModal.PayrollMonthlyDetail.LOP;
+            var doj = _timezoneConverter.ToTimeZoneDateTime(payslipModal.Employee.CreatedOn, _currentSession.TimeZone);
 
             html = payslipModal.PdfTemplateHTML.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
                 Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
@@ -1373,7 +1374,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
                 Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", payslipModal.Employee.EmployeeUid.ToString()).
-                Replace("[[JoiningDate]]", payslipModal.Employee.CreatedOn.ToString("dd MMM, yyyy")).
+                Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
                 Replace("[[Department]]", designation).
                 Replace("[[SubDepartment]]", "NA").
                 Replace("[[Designation]]", designation).
