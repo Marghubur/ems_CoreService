@@ -12,6 +12,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -39,6 +40,7 @@ namespace ServiceLayer.Code
         private readonly IUtilityService _utilityService;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
+        private readonly ILogger<AttendanceService> _logger;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -48,7 +50,8 @@ namespace ServiceLayer.Code
             ICommonService commonService,
             IUtilityService utilityService,
             MicroserviceRegistry microserviceUrlLogs,
-            RequestMicroservice requestMicroservice)
+            RequestMicroservice requestMicroservice,
+            ILogger<AttendanceService> logger)
         {
             _db = db;
             _companyService = companyService;
@@ -60,6 +63,7 @@ namespace ServiceLayer.Code
             _utilityService = utilityService;
             _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
+            _logger = logger;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -2162,39 +2166,50 @@ namespace ServiceLayer.Code
 
         public async Task<byte[]> DownloadAttendanceExcelWithDataService()
         {
-            var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL);
-
-            List<dynamic> employeeRecord = new List<dynamic>();
-            var currentDate = DateTime.UtcNow;
-            int daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-
-            foreach (var employee in employees)
+            
+            try
             {
-                Dictionary<string, object> data = new Dictionary<string, object>();
+                var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL);
 
-                data.Add("EmployeeId", employee.EmployeeUid);
-                data.Add("Name", employee.FirstName + " " + employee.LastName);
-                data.Add("Month", currentDate.Month);
-                data.Add("Year", currentDate.Year);
-                for (int i = 1; i <= daysInMonth; i++)
+                List<dynamic> employeeRecord = new List<dynamic>();
+                var currentDate = DateTime.UtcNow;
+                int daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+
+                foreach (var employee in employees)
                 {
-                    data.Add($"{i}", "p");
+                    Dictionary<string, object> data = new Dictionary<string, object>();
+
+                    data.Add("EmployeeId", employee.EmployeeUid);
+                    data.Add("Name", employee.FirstName + " " + employee.LastName);
+                    data.Add("Month", currentDate.Month);
+                    data.Add("Year", currentDate.Year);
+                    for (int i = 1; i <= daysInMonth; i++)
+                    {
+                        data.Add($"{i}", "p");
+                    }
+
+                    employeeRecord.Add(data);
                 }
 
-                employeeRecord.Add(data);
+                var url = $"{_microserviceUrlLogs.GenerateExelWithHeader}";
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetPayload(employeeRecord)
+                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
             }
 
-            var url = $"{_microserviceUrlLogs.GenerateExelWithHeader}";
-
-            var microserviceRequest = MicroserviceRequest.Builder(url);
-            microserviceRequest
-            .SetPayload(employeeRecord)
-            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
-            .SetConnectionString(_currentSession.LocalConnectionString)
-            .SetCompanyCode(_currentSession.CompanyCode)
-            .SetToken(_currentSession.Authorization);
-
-            return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
+            
         }
         #endregion
 
