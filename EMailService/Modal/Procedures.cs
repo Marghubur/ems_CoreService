@@ -7,7 +7,7 @@
         public static string Attendance_Update_Request = "sp_attendance_update_request";
         public static string Attendance_Get_ById = "sp_attendance_get_byid";
         public static string LEAVE_PLAN_TYPE_BY_LEAVEID = "sp_get_leave_plan_type_by_leaveid";
-        public static string DAILY_ATTENDANCE_UPD_WEEKLY = "sp_daily_attendance_upd_weekly";
+        public static string DAILY_ATTENDANCE_INS_UPD_WEEKLY = "sp_daily_attendance_ins_upd_weekly";
         public static string DAILY_ATTENDANCE_BET_DATES = "sp_daily_attendance_bet_dates";
         public static string DAILY_ATTENDANCE_BET_DATES_EMPID = "sp_daily_attendance_bet_dates_EmpId";
         public static string LEAVE_TIMESHEET_AND_ATTENDANCE_REQUESTS_GET_BY_ROLE = "sp_leave_timesheet_and_attendance_requests_get_by_role";
@@ -178,6 +178,7 @@
         public static string EMPLOYEE_GETBYID_TO_REG_OR_UPD_BY_EXCEL = "sp_employee_getbyid_to_reg_or_upd_by_excel";
         public static string EMPLOYEE_REGISTRATION_COMMON_DATA = "sp_employee_registration_common_data";
         public static string CHECK_MOBILE_EMAIL_EXISTENCE = "sp_check_mobile_email_existence";
+        public static string EMPLOYEES_ACTIVE_ALL = "sp_employees_active_all";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
@@ -338,5 +339,13 @@
         public static string EMPLOYEE_TIMESHEET_SHIFT_GETBY_TIMESHEETID = "sp_employee_timesheet_shift_getby_timesheetId";
         public static string WORK_SHIFTS_BY_CLIENTID = "sp_work_shifts_by_clientId";
         public static string TIMESHEET_INSUPD = "sp_timesheet_insupd";
+
+        /*------------- Overtime Service Procedures --------------------*/
+        public static string OVERTIMETABLE_CONFIGURATION_GET_BYID = "sp_overtimetable_configuration_get_byid";
+        public static string OVERTIMETABLE_CONFIGURATION_INSUPD = "sp_overtimetable_configuration_insupd";
+        public static string EMPLOYEE_OVERTIMETABLE_INSUPD = "sp_employee_overtimetable_insupd";
+        public static string EMPLOYEE_OVERTIMETABLE_GET_BYID = "sp_employee_overtimetable_get_byid";
+        public static string EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID = "sp_employee_overtimetable_get_by_empid";
+        public static string OVERTIME_TYPE_CONFIGURATION_GETALL = "sp_overtime_type_configuration_getall";
     }
 }

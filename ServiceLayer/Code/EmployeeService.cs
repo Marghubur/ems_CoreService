@@ -49,6 +49,7 @@ namespace ServiceLayer.Code
         private readonly ITimesheetService _timesheetService;
         private readonly ExcelWriter _excelWriter;
         private readonly RequestMicroservice _requestMicroservice;
+        private readonly ICommonService _commonService;
         public EmployeeService(IDb db,
             CurrentSession currentSession,
             IFileService fileService,
@@ -61,7 +62,8 @@ namespace ServiceLayer.Code
             ITimesheetService timesheetService,
             ExcelWriter excelWriter,
             RequestMicroservice requestMicroservice,
-            MicroserviceRegistry microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs,
+            ICommonService commonService)
         {
             _db = db;
             _leaveCalculation = leaveCalculation;
@@ -76,6 +78,7 @@ namespace ServiceLayer.Code
             _excelWriter = excelWriter;
             _requestMicroservice = requestMicroservice;
             _microserviceUrlLogs = microserviceUrlLogs;
+            _commonService = commonService;
         }
 
         #region Code Used for employee insert or update
@@ -614,6 +617,7 @@ namespace ServiceLayer.Code
                 filterModel.PageIndex,
                 filterModel.PageSize
             });
+
             return employees;
         }
 
@@ -677,18 +681,22 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(filterModel.SearchString))
                 filterModel.SearchString = "1=1";
 
-
             if (filterModel.IsActive != null && filterModel.IsActive == true)
             {
                 if (filterModel.CompanyId > 0)
                     filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
                 else
                     filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
-                employees = FilterActiveEmployees(filterModel);
 
+                employees = FilterActiveEmployees(filterModel);
             }
             else
                 employees = FilterInActiveEmployees(filterModel);
+
+            employees.ForEach(x =>
+            {
+                x.ManagerName = _commonService.GetEmployeeCode(x.EmployeeUid, "BOT", 5);
+            });
 
             return employees;
         }

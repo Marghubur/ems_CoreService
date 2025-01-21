@@ -17,7 +17,6 @@ using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -52,6 +51,7 @@ namespace ServiceLayer.Code
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly GitHubConnector _gitHubConnector;
+        private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
         public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
@@ -61,11 +61,11 @@ namespace ServiceLayer.Code
             ITemplateService templateService,
             ITimezoneConverter timezoneConverter,
             IFileMaker fileMaker,
-            IOptions<MasterDatabase> options,
             RequestMicroservice requestMicroservice,
             MicroserviceRegistry microserviceUrlLogs,
-            IUtilityService utilityService, 
-            GitHubConnector gitHubConnector)
+            IUtilityService utilityService,
+            GitHubConnector gitHubConnector,
+            IDOCXToHTMLConverter iDOCXToHTMLConverter)
         {
             this.db = db;
             _logger = logger;
@@ -82,6 +82,7 @@ namespace ServiceLayer.Code
             _microserviceUrlLogs = microserviceUrlLogs;
             _utilityService = utilityService;
             _gitHubConnector = gitHubConnector;
+            _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -740,7 +741,7 @@ namespace ServiceLayer.Code
 
         private async Task<EmailTemplate> GetEmailTemplateService()
         {
-            var masterDatabse =  await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
             db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
 
             var result = db.Get<EmailTemplate>(Procedures.Email_Template_Get, new
@@ -1182,7 +1183,7 @@ namespace ServiceLayer.Code
         //        template.EmailTitle = generateBillFileDetail.EmailTemplateDetail.EmailTitle;
         //}
 
-        public async Task<dynamic> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal)
+        public async Task<FileDetail> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal)
         {
             try
             {
@@ -1204,7 +1205,7 @@ namespace ServiceLayer.Code
                 await GeneratePayslipPdfFile(payslipGenerationModal);
 
                 // return result data
-                return await Task.FromResult(new { FileDetail = fileDetail });
+                return fileDetail;
             }
             catch (HiringBellException e)
             {
@@ -2128,6 +2129,69 @@ namespace ServiceLayer.Code
                     amount = amount + x.DeclaredValue;
             });
             return amount;
+        }
+
+        public async Task<byte[]> GenerateBulkPayslipService(PayslipGenerationModal payslipGenerationModal)
+        {
+            var pdfPaths = new List<string>();
+
+            foreach (var employeeId in payslipGenerationModal.EmployeeIds)
+            {
+                try
+                {
+                    var fileDetail = await GeneratePayslipService(new PayslipGenerationModal
+                    {
+                        EmployeeId = employeeId,
+                        Year = payslipGenerationModal.Year,
+                        Month = payslipGenerationModal.Month
+                    });
+
+                    var pdfPath = $"{_microserviceUrlLogs.ResourceBaseUrl}{fileDetail.FilePath}/{fileDetail.FileName}.{ApplicationConstants.Pdf}";
+
+                    if (!string.IsNullOrEmpty(pdfPath))
+                        pdfPaths.Add(pdfPath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error generating payslip for employee {EmployeeId}", employeeId);
+                }
+            }
+
+            if (!pdfPaths.Any())
+                return null;
+
+            return await GetZipFile(pdfPaths);
+        }
+
+        private async Task<byte[]> GetZipFile(List<string> pdfPaths)
+        {
+            var url = $"{_microserviceUrlLogs.ConvertZipFile}";
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(pdfPaths)
+            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
+        }
+
+        public async Task<string> GetDocxHtmlService(FileDetail fileDetail)
+        {
+            var filPath = $"{_microserviceUrlLogs.ResourceBaseUrl}{fileDetail.FilePath}";
+            var url = $"{_microserviceUrlLogs.ConvertDocxToHtml}";
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(filPath)
+            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<string>(microserviceRequest);
         }
     }
 }

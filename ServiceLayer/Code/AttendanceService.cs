@@ -6,6 +6,7 @@ using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
@@ -36,6 +37,8 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly ICommonService _commonService;
         private readonly IUtilityService _utilityService;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly RequestMicroservice _requestMicroservice;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -43,7 +46,9 @@ namespace ServiceLayer.Code
             IEMailManager eMailManager,
             FileLocationDetail fileLocationDetail,
             ICommonService commonService,
-            IUtilityService utilityService)
+            IUtilityService utilityService,
+            MicroserviceRegistry microserviceUrlLogs,
+            RequestMicroservice requestMicroservice)
         {
             _db = db;
             _companyService = companyService;
@@ -53,6 +58,8 @@ namespace ServiceLayer.Code
             _fileLocationDetail = fileLocationDetail;
             _commonService = commonService;
             _utilityService = utilityService;
+            _microserviceUrlLogs = microserviceUrlLogs;
+            _requestMicroservice = requestMicroservice;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -898,7 +905,7 @@ namespace ServiceLayer.Code
             workingattendance.TotalMinutes = 480;
             workingattendance.WorkTypeId = WorkType.WORKFROMHOME;
 
-            string Result = _db.Execute<DailyAttendance>(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, new
+            string Result = _db.Execute<DailyAttendance>(Procedures.DAILY_ATTENDANCE_INS_UPD_WEEKLY, new
             {
                 AttendanceId = workingattendance.AttendanceId,
                 EmployeeId = workingattendance.EmployeeId,
@@ -1508,7 +1515,7 @@ namespace ServiceLayer.Code
             try
             {
                 attendances = await PrepareAttendanceForUpdate(attendances, status);
-                var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, (
+                var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INS_UPD_WEEKLY, (
                 from n in attendances
                 select new
                 {
@@ -1721,7 +1728,6 @@ namespace ServiceLayer.Code
         {
             if (filterModel.EmployeeId == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid user selected");
-
             filterModel.SearchString = filterModel.SearchString + $" and AttendanceDate between '{fromDate.ToString("yyyy-MM-dd HH:mm:ss")}' and '{toDate.ToString("yyyy-MM-dd HH:mm:ss")}'";
             (List<DailyAttendance> dailyAttendances, List<LeaveRequestNotification> leaveRequestDetail) = _db.GetList<DailyAttendance, LeaveRequestNotification>(Procedures.DAILY_ATTENDANCE_FILTER, new
             {
@@ -1760,7 +1766,7 @@ namespace ServiceLayer.Code
         {
             var attendanceData = await _commonService.ReadExcelData(files);
             var monthlyRecord = GetMonthlyAttendanceRecord(attendanceData);
-            List<DailyAttendance> attendances = GenerateMonthlyAttendanceRecord(monthlyRecord);
+            List<DailyAttendance> attendances = GenerateMonthlyAttendanceDetail(monthlyRecord); //GenerateMonthlyAttendanceRecord(monthlyRecord);
 
             await UploadBulkDailyAttendanceDetail(attendances);
         }
@@ -1770,22 +1776,24 @@ namespace ServiceLayer.Code
             List<MonthlyAttendanceDetail> monthlyAttendanceDetail = new List<MonthlyAttendanceDetail>();
             foreach (DataRow row in dataTable.Rows)
             {
-                var attendance = new MonthlyAttendanceDetail
-                {
-                    EmployeeId = long.Parse(row["EmployeeId"].ToString()),
-                    Name = row["Name"].ToString(),
-                    Month = Int32.Parse(row["Month"].ToString()),
-                    Year = Int32.Parse(row["Year"].ToString()),
-                };
+                MonthlyAttendanceDetail attendance = ValidateAttendanceBasicDetail(row);
 
-                int daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, attendance.Month);
+                int daysInMonth = DateTime.DaysInMonth(attendance.Year, attendance.Month);
                 for (int day = 1; day <= daysInMonth; day++)
                 {
                     string dayColumnName = day.ToString();
                     if (dataTable.Columns.Contains(dayColumnName))
                     {
                         var dayValue = row[dayColumnName].ToString();
-                        attendance.DailyData.Add(day, dayValue);
+                        if (string.IsNullOrEmpty(dayValue) || dayValue.Equals("p", StringComparison.OrdinalIgnoreCase)
+                            || dayValue.Equals("a", StringComparison.OrdinalIgnoreCase))
+                        {
+                            attendance.DailyData.Add(day, dayValue);
+                        }
+                        else
+                        {
+                            throw HiringBellException.ThrowBadRequest($"Invalid day value {dayValue} for employee {attendance.Name}");
+                        }
                     }
                 }
 
@@ -1795,47 +1803,159 @@ namespace ServiceLayer.Code
             return monthlyAttendanceDetail;
         }
 
-        private List<DailyAttendance> GenerateMonthlyAttendanceRecord(List<MonthlyAttendanceDetail> monthlyAttendanceDetails)
+        private MonthlyAttendanceDetail ValidateAttendanceBasicDetail(DataRow row)
+        {
+            if (row["Name"] == null || string.IsNullOrEmpty(row["Name"].ToString()))
+                throw HiringBellException.ThrowBadRequest("Employee Name is null. Please provide a valid Employee Name.");
+
+            string employeeName = row["Name"].ToString();
+
+            if (row["EmployeeId"] == null || string.IsNullOrEmpty(row["EmployeeId"].ToString()))
+                throw HiringBellException.ThrowBadRequest($"Employee ID is null for employee name '{employeeName}'. Please provide a valid Employee Id.");
+
+            if (row["Month"] == null || string.IsNullOrEmpty(row["Month"].ToString()))
+                throw HiringBellException.ThrowBadRequest($"Month number is null for employee name '{employeeName}'. Please provide a valid Month number.");
+
+            if (row["Year"] == null || string.IsNullOrEmpty(row["Year"].ToString()))
+                throw HiringBellException.ThrowBadRequest($"Year is null for employee name '{employeeName}'. Please provide a valid Year.");
+
+            long.TryParse(row["EmployeeId"].ToString(), out long employeeId);
+            if (employeeId == 0)
+                throw HiringBellException.ThrowBadRequest($"Employee ID is invalid for employee name '{employeeName}'");
+
+            int.TryParse(row["Month"].ToString(), out int month);
+            if (month < 1 || month > 12)
+                throw HiringBellException.ThrowBadRequest($"Month number is invalid for employee name '{employeeName}'");
+
+            int.TryParse(row["Year"].ToString(), out int year);
+            if (year < 1)
+                throw HiringBellException.ThrowBadRequest($"Year is invalid for employee name '{employeeName}'");
+
+            return new MonthlyAttendanceDetail
+            {
+                EmployeeId = employeeId,
+                Name = employeeName,
+                Month = month,
+                Year = year
+            };
+        }
+
+        //private List<DailyAttendance> GenerateMonthlyAttendanceRecord(List<MonthlyAttendanceDetail> monthlyAttendanceDetails)
+        //{
+        //    List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
+
+        //    monthlyAttendanceDetails.ForEach(x =>
+        //    {
+        //        DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
+
+        //        foreach (var item in attendanceDetails)
+        //        {
+        //            var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
+        //            if (attedanceDate.Month == x.Month)
+        //            {
+        //                x.DailyData.TryGetValue(attedanceDate.Day, out string value);
+        //                item.WorkTypeId = WorkType.WORKFROMOFFICE;
+        //                item.AttendanceStatus = GetAttendanceDayStatus(value, dailyAttendanceBuilder, attedanceDate);
+
+        //                var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(item.AttendanceDate.Date).TotalDays <= 0
+        //                                                                                && i.ToDate.Date.Subtract(item.AttendanceDate.Date).TotalDays >= 0);
+
+        //                if (leaveDetail != null)
+        //                {
+        //                    item.IsOnLeave = true;
+        //                    item.LeaveId = leaveDetail.LeaveTypeId;
+        //                }
+        //            }
+        //        };
+
+        //        dailyAttendances.AddRange(attendanceDetails);
+        //    });
+
+        //    return dailyAttendances;
+        //}
+
+        private List<DailyAttendance> GenerateMonthlyAttendanceDetail(List<MonthlyAttendanceDetail> monthlyAttendanceDetails)
         {
             List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
 
             monthlyAttendanceDetails.ForEach(x =>
             {
-                if (x.EmployeeId == 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid employee id");
-
-                if (x.Month == 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid Month");
-
-                if (x.Year == 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid Year");
-
                 DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
+                if (dailyAttendanceBuilder.employee.CreatedOn.Year > x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month > x.Month)
+                    throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
 
-                foreach (var item in attendanceDetails)
+                foreach (var item in x.DailyData)
                 {
-                    var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone);
-                    if (attedanceDate.Month == x.Month)
+                    var attendance = new DailyAttendance();
+                    if (attendanceDetails.Any())
                     {
-                        x.DailyData.TryGetValue(attedanceDate.Day, out string value);
-                        item.WorkTypeId = WorkType.WORKFROMOFFICE;
-                        item.AttendanceStatus = GetAttendanceDayStatus(value, dailyAttendanceBuilder, attedanceDate);
+                        attendance = attendanceDetails.Find(i => item.Key == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Day);
+                        if (attendance != null)
+                        {
+                            attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
+                            var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
+                            attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate);
+                        }
+                        else
+                        {
+                            attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
+                        }
 
-                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(item.AttendanceDate.Date).TotalDays <= 0
-                                                                                        && i.ToDate.Date.Subtract(item.AttendanceDate.Date).TotalDays >= 0);
+                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
+                                                                                        && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
 
                         if (leaveDetail != null)
                         {
-                            item.IsOnLeave = true;
-                            item.LeaveId = leaveDetail.LeaveTypeId;
+                            attendance.IsOnLeave = true;
+                            attendance.LeaveId = leaveDetail.LeaveTypeId;
                         }
                     }
-                };
+                    else
+                    {
+                        attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
 
-                dailyAttendances.AddRange(attendanceDetails);
+                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
+                                                                                        && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
+
+                        if (leaveDetail != null)
+                        {
+                            attendance.IsOnLeave = true;
+                            attendance.LeaveId = leaveDetail.LeaveTypeId;
+                        }
+                    }
+
+                    dailyAttendances.Add(attendance);
+                }
             });
 
             return dailyAttendances;
+        }
+
+        private DailyAttendance BuildNewAttendance(MonthlyAttendanceDetail monthlyAttendance, DailyAttendanceBuilder dailyAttendanceBuilder, KeyValuePair<int, string> item)
+        {
+            var date = new DateTime(monthlyAttendance.Year, monthlyAttendance.Month, item.Key, 18, 30, 0, DateTimeKind.Unspecified).AddDays(-1);
+            var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone);
+
+            return new DailyAttendance
+            {
+                AttendanceId = 0,
+                EmployeeId = dailyAttendanceBuilder.employee.EmployeeUid,
+                EmployeeEmail = dailyAttendanceBuilder.employee.Email,
+                ReviewerId = 0,
+                ProjectId = 0,
+                TaskId = 0,
+                TaskType = 0,
+                LogOn = "00:00:00",
+                LogOff = "00:00:00",
+                TotalMinutes = dailyAttendanceBuilder.shiftDetail.Duration,
+                Comments = "[]",
+                WorkTypeId = WorkType.WORKFROMOFFICE,
+                IsOnLeave = false,
+                LeaveId = 0,
+                AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate),
+                AttendanceDate = _timezoneConverter.ToUtcTime(attedanceDate, _currentSession.TimeZone),
+                WeekOfYear = ISOWeek.GetWeekOfYear(attedanceDate)
+            };
         }
 
         private DailyAttendanceBuilder GetDailyAttendanceDetail(long employeeId, int month, int year, out List<DailyAttendance> dailyAttendances)
@@ -1856,8 +1976,8 @@ namespace ServiceLayer.Code
             if (Result.Tables.Count != 5)
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
 
-            if (Result.Tables[0].Rows.Count == 0)
-                throw HiringBellException.ThrowBadRequest("Fail to get attendance detail");
+            //if (Result.Tables[0].Rows.Count == 0)
+            //    throw HiringBellException.ThrowBadRequest("Attendance not found. Please contact to admin");
 
             if (Result.Tables[3].Rows.Count != 1)
                 throw HiringBellException.ThrowBadRequest("Company regular shift is not configured. Please complete company setting first.");
@@ -1921,7 +2041,7 @@ namespace ServiceLayer.Code
                                CreatedBy = _currentSession.CurrentUserDetail.UserId
                            }).ToList();
 
-            var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_UPD_WEEKLY, records, true);
+            var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INS_UPD_WEEKLY, records, true);
 
             if (result != records.Count)
                 throw HiringBellException.ThrowBadRequest("Fail to insert the record");
@@ -2038,6 +2158,43 @@ namespace ServiceLayer.Code
             }
 
             return dailyBiometricAttendances;
+        }
+
+        public async Task<byte[]> DownloadAttendanceExcelWithDataService()
+        {
+            var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL);
+
+            List<dynamic> employeeRecord = new List<dynamic>();
+            var currentDate = DateTime.UtcNow;
+            int daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+
+            foreach (var employee in employees)
+            {
+                Dictionary<string, object> data = new Dictionary<string, object>();
+
+                data.Add("EmployeeId", employee.EmployeeUid);
+                data.Add("Name", employee.FirstName + " " + employee.LastName);
+                data.Add("Month", currentDate.Month);
+                data.Add("Year", currentDate.Year);
+                for (int i = 1; i <= daysInMonth; i++)
+                {
+                    data.Add($"{i}", "p");
+                }
+
+                employeeRecord.Add(data);
+            }
+
+            var url = $"{_microserviceUrlLogs.GenerateExelWithHeader}";
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(employeeRecord)
+            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
         }
         #endregion
 
