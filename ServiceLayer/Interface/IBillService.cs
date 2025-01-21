@@ -18,6 +18,8 @@ namespace ServiceLayer.Interface
         FileDetail CreateFiles(BillGenerationModal billModal);
         Task<string> SendBillToClientService(GenerateBillFileDetail generateBillFileDetail);
         Task<dynamic> GetBillDetailWithTemplateService(string billNo, long employeeId);
-        Task<dynamic> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal);
+        Task<FileDetail> GeneratePayslipService(PayslipGenerationModal payslipGenerationModal);
+        Task<byte[]> GenerateBulkPayslipService(PayslipGenerationModal payslipGenerationModal);
+        Task<string> GetDocxHtmlService(FileDetail fileDetail);
     }
 }

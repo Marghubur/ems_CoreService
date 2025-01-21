@@ -387,6 +387,21 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("DownloadAttendanceExcelWithData")]
+        public async Task<IActionResult> DownloadAttendanceExcelWithData([FromBody] int year)
+        {
+            try
+            {
+                var result = await _attendanceService.DownloadAttendanceExcelWithDataService();
+                return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AttendanceExcelWIthData.xlsx");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
         #endregion
     }
 }

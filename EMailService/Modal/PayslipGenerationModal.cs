@@ -29,5 +29,6 @@ namespace ModalLayer.Modal
         public List<LeaveRequestNotification> leaveRequestNotifications { get; set; }
         public PayrollMonthlyDetail PayrollMonthlyDetail { get; set; }
         public string PdfTemplateHTML { set; get; }
+        public List<int> EmployeeIds { get; set; }
     }
 }

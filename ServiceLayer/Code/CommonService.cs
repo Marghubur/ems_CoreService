@@ -14,6 +14,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -85,6 +86,43 @@ namespace ServiceLayer.Code
             uniqueCode += id.ToString();
             return uniqueCode;
         }
+
+        public string GetEmployeeCode(long id, string employeeCodePrefix, int size = 5)
+        {
+            if (string.IsNullOrEmpty(employeeCodePrefix))
+                throw HiringBellException.ThrowBadRequest("Invalid employee code prefix");
+
+            StringBuilder empCode = new StringBuilder();
+            empCode.Append(employeeCodePrefix);
+
+            string empId = id.ToString();
+
+            var zeroCount = size - +empId.Length;
+            var i = 0;
+            while (i < zeroCount)
+            {
+                empCode.Append(0);
+                i++;
+            }
+
+            empCode.Append(empId);
+
+            return empCode.ToString();
+        }
+
+        public int ExtractEmployeeId(string empCode, string employeeCodePrefix)
+        {
+            if (string.IsNullOrEmpty(empCode))
+                throw HiringBellException.ThrowBadRequest("Invalid employee code");
+
+            if (string.IsNullOrEmpty(employeeCodePrefix))
+                throw HiringBellException.ThrowBadRequest("Invalid employee code prefix");
+
+            empCode = empCode.Replace(employeeCodePrefix, "");
+
+            return int.Parse(empCode);
+        }
+
         public long DecryptUniqueCoe(string code)
         {
             string value = Regex.Replace(code, "[A-Za-z ]", "");
@@ -328,6 +366,6 @@ namespace ServiceLayer.Code
             }
 
             return columnList;
-        } 
+        }
     }
 }

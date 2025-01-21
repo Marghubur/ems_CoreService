@@ -19,5 +19,8 @@ namespace ServiceLayer.Interface
         string GetStringifySalaryGroupData(List<SalaryComponents> salaryComponents);
         Task<DataTable> ReadExcelData(IFormFileCollection files);
         Task<List<T>> ReadExcelData<T>(IFormFileCollection files);
+
+        string GetEmployeeCode(long id, string employeeCodePrefix, int size = 5);
+        int ExtractEmployeeId(string empCode, string employeeCodePrefix);
     }
 }

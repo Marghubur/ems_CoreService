@@ -200,12 +200,12 @@ namespace OnlineDataBuilder.Controllers
 
         [Authorize(Roles = Role.Admin)]
         [HttpPost("ExportEmployee/{CompanyId}")]
-        public async Task<ApiResponse> ExportEmployee([FromRoute] int CompanyId, [FromBody] int FileType)
+        public async Task<IActionResult> ExportEmployee([FromRoute] int CompanyId, [FromBody] int FileType)
         {
             try
             {
                 var result = await _employeeService.ExportEmployeeService(CompanyId, FileType);
-                return BuildResponse(result);
+                return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "EmployeeDatq.xlsx");
             }
             catch (Exception ex)
             {

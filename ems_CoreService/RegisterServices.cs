@@ -49,6 +49,7 @@ namespace ems_CoreService
 
         public void RegisterServiceLayerServices(IServiceCollection services)
         {
+            services.AddHttpClient();
             services.AddSingleton<IUtilityService, UtilityService>();
             services.AddScoped<IAutoTriggerService, AutoTriggerService>();
             services.AddSingleton<GitHubConnector>();
@@ -132,6 +133,7 @@ namespace ems_CoreService
             services.AddScoped<ILeaveAccrualJob, LeaveAccrualJob>();
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
+            services.AddScoped<IOvertimeService, OvertimeService>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {

@@ -7,7 +7,6 @@ using Bt.Lib.Common.Service.Model;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
@@ -23,21 +22,18 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         public CompanyService(
             IDb db,
             FileLocationDetail fileLocationDetail,
-            IFileService fileService,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
             MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
-            _fileService = fileService;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
             _microserviceUrlLogs = microserviceUrlLogs;
@@ -499,6 +495,8 @@ namespace ServiceLayer.Code
                 companySetting.TimeDifferences,
                 companySettingDetail.AttendanceType,
                 companySettingDetail.AttendanceViewLimit,
+                companySettingDetail.EmployeeCodePrefix,
+                companySettingDetail.EmployeeCodeLength,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -543,16 +541,6 @@ namespace ServiceLayer.Code
         public async Task<List<Files>> UpdateCompanyFiles(Files uploadedFileDetail, IFormFileCollection fileCollection)
         {
             string FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "logo");
-
-            //var files = fileCollection.Select(x => new Files
-            //{
-            //    FileUid = uploadedFileDetail.FileId,
-            //    FileName = x.Name,
-            //    Email = uploadedFileDetail.Email,
-            //    FileExtension = string.Empty
-            //}).ToList<Files>();
-
-            //_fileService.SaveFileToLocation(FolderPath, files, fileCollection);
 
             var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
             FileFolderDetail fileFolderDetail = new FileFolderDetail
@@ -619,25 +607,15 @@ namespace ServiceLayer.Code
 
         public async Task<CompanySetting> UpdateCompanyInitialSettingService(int companyId, CompanySetting companySetting)
         {
-            if (companyId <= 0)
-                throw new HiringBellException("Invalid company id supplied.");
-
-            var result = _db.FetchDataSet(Procedures.Company_Setting_Get_Byid, new { CompanyId = companyId });
-            if (result == null || result.Tables.Count != 2)
-                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
-
-            CompanySetting companySettingDetail = null;
-            if (result.Tables[0].Rows.Count > 0)
-                companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
-
-            if (companySettingDetail == null)
-                throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin");
-
+            CompanySetting companySettingDetail = ValidateInitialSetupCompanyDetail(companyId, companySetting);
 
             companySettingDetail.DeclarationStartMonth = companySetting.DeclarationStartMonth;
             companySettingDetail.DeclarationEndMonth = companySetting.DeclarationEndMonth;
             companySettingDetail.FinancialYear = companySetting.FinancialYear;
             companySettingDetail.EveryMonthLastDayOfDeclaration = companySetting.EveryMonthLastDayOfDeclaration;
+            companySettingDetail.EmployeeCodePrefix = companySetting.EmployeeCodePrefix;
+            companySettingDetail.EmployeeCodeLength = companySetting.EmployeeCodeLength;
+
             var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
             {
                 companySettingDetail.CompanyId,
@@ -658,6 +636,8 @@ namespace ServiceLayer.Code
                 companySettingDetail.TimeDifferences,
                 companySettingDetail.AttendanceType,
                 companySettingDetail.AttendanceViewLimit,
+                companySettingDetail.EmployeeCodePrefix,
+                companySettingDetail.EmployeeCodeLength,
                 AdminId = _currentSession.CurrentUserDetail.UserId,
             }, true);
 
@@ -666,6 +646,31 @@ namespace ServiceLayer.Code
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
 
+            return companySettingDetail;
+        }
+
+        private CompanySetting ValidateInitialSetupCompanyDetail(int companyId, CompanySetting companySetting)
+        {
+            if (companyId <= 0)
+                throw new HiringBellException("Invalid company id supplied.");
+
+            var result = _db.FetchDataSet(Procedures.Company_Setting_Get_Byid, new { CompanyId = companyId });
+            if (result == null || result.Tables.Count != 2)
+                throw new HiringBellException("Fail to get company setting details. Please contact to admin");
+
+            CompanySetting companySettingDetail = null;
+            if (result.Tables[0].Rows.Count > 0)
+                companySettingDetail = Converter.ToType<CompanySetting>(result.Tables[0]);
+
+            if (companySettingDetail == null)
+                throw HiringBellException.ThrowBadRequest("Company setting not found. Please contact to admin");
+
+            if (companySetting.EmployeeCodeLength < 5 || companySetting.EmployeeCodeLength > 20)
+                throw HiringBellException.ThrowBadRequest("Employee code length must be between 5 to 20");
+
+            if (string.IsNullOrEmpty(companySetting.EmployeeCodePrefix) || companySetting.EmployeeCodePrefix.Length > 10)
+                throw HiringBellException.ThrowBadRequest("Invalid employee code prefix. Please provide valid employee code prefix");
+            
             return companySettingDetail;
         }
     }

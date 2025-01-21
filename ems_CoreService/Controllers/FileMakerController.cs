@@ -22,20 +22,17 @@ namespace OnlineDataBuilder.Controllers
         private readonly IOnlineDocumentService _onlineDocumentService;
         private readonly IFileService _fileService;
         private readonly IBillService _billService;
-        private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
         private readonly HttpContext _httpContext;
-        private readonly IHTMLConverter iHTMLConverter;
-        public FileMakerController(IConfiguration configuration,
+        public FileMakerController(
             IOnlineDocumentService onlineDocumentService,
-            IFileService fileService, IBillService billService,
-            IHttpContextAccessor httpContext,
-            IDOCXToHTMLConverter iDOCXToHTMLConverter)
+            IFileService fileService, 
+            IBillService billService,
+            IHttpContextAccessor httpContext)
         {
             _onlineDocumentService = onlineDocumentService;
             _fileService = fileService;
             _billService = billService;
             _httpContext = httpContext.HttpContext;
-            _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
         }
 
         [Authorize(Roles = Role.Admin)]
@@ -124,7 +121,6 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [Authorize(Roles = Role.Admin)]
         [HttpDelete]
         [Route("DeleteFile/{userId}/{UserTypeId}")]
         public IResponse<ApiResponse> DeleteFiles(long userId, int userTypeId, List<string> fileIds)
@@ -142,11 +138,11 @@ namespace OnlineDataBuilder.Controllers
 
         [HttpPost]
         [Route("GetDocxHtml")]
-        public IResponse<ApiResponse> GetDocxHtml(FileDetail fileDetail)
+        public async Task<ApiResponse> GetDocxHtml(FileDetail fileDetail)
         {
             try
             {
-                var result = _iDOCXToHTMLConverter.ToHtml(fileDetail);
+                var result = await _billService.GetDocxHtmlService(fileDetail);
                 return BuildResponse(result, System.Net.HttpStatusCode.OK);
             }
             catch (Exception ex)
@@ -179,6 +175,21 @@ namespace OnlineDataBuilder.Controllers
             {
                 var fileDetail = await _billService.GeneratePayslipService(payslipGenerationModal);
                 return BuildResponse(fileDetail, System.Net.HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, payslipGenerationModal);
+            }
+        }
+
+        [HttpPost]
+        [Route("GenerateBulkPayslip")]
+        public async Task<IActionResult> GenerateBulkPayslip([FromBody] PayslipGenerationModal payslipGenerationModal)
+        {
+            try
+            {
+                var zipBytes = await _billService.GenerateBulkPayslipService(payslipGenerationModal);
+                return File(zipBytes, "application/zip", $"payslips_{DateTime.Now:yyyyMMdd}.zip");
             }
             catch (Exception ex)
             {
