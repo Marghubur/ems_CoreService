@@ -96,7 +96,7 @@ namespace ServiceLayer.Code
 
         private async Task UpdateEmployeeSalaryDetails(PfEsiSetting pfEsiSetting)
         {
-            var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get);
+            var employeeSalaryDetail = _db.GetList<EmployeeSalaryDetail>(Procedures.Employee_Salary_Detail_Get, new { _currentSession.FinancialStartYear });
             if (employeeSalaryDetail != null && employeeSalaryDetail.Count > 0)
             {
                 employeeSalaryDetail.ForEach(x =>

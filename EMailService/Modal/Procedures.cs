@@ -264,7 +264,7 @@
         public static string Adhoc_Detail_Get = "sp_adhoc_detail_get";
         public static string Salary_Group_Get_By_Id_Or_Ctc = "sp_salary_group_get_by_id_or_ctc";
         public static string Salary_Group_Get_By_Ctc = "sp_salary_group_get_by_ctc";
-        public static string Employee_Salary_Detail_Get_By_Empid = "sp_employee_salary_detail_get_by_empid";
+        public static string SP_EMPLOYEE_SALARY_DETAIL_AND_EMPLOYEE_GET_BY_EMPID = "sp_employee_salary_detail_and_employee_get_by_empid";
         public static string Pf_Esi_Setting_Get = "sp_pf_esi_setting_get";
         public static string Employee_Salary_Detail_GetbyFilter = "sp_employee_salary_detail_getbyFilter";
         public static string Salary_Components_Group_By_Employeeid = "sp_salary_components_group_by_employeeid";
