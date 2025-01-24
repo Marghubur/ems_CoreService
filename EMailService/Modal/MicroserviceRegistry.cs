@@ -13,5 +13,9 @@
         public string UpdateBulkDeclarationDetail {  get; set; }
         public string CalculateSalaryDetail {  get; set; }
         public string GenerateExcel { get; set; }
+        public string ConvertZipFile { get; set; }
+        public string ResourceBaseUrl { get; set; }
+        public string ConvertDocxToHtml { get; set; }
+        public string GenerateExelWithHeader { get; set; }
     }
 }

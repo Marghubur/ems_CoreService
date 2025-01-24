@@ -47,6 +47,8 @@ namespace ModalLayer.Modal.Accounts
         public string StateName { get; set; }
         public int AttendanceViewLimit { set; get; } = 5;
         public bool AttendanceType { get; set; } = true; // True => Weekly Attendance, False => Daily Attendance
+        public string EmployeeCodePrefix { get; set; }
+        public int EmployeeCodeLength { get; set; }
     }
 
     public class Select

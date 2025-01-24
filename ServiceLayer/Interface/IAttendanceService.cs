@@ -33,5 +33,6 @@ namespace ServiceLayer.Interface
         Task UploadMonthlyAttendanceExcelService(IFormFileCollection files);
         Task UploadDailyBiometricAttendanceExcelService(IFormFileCollection files);
         Task<List<DailyAttendance>> GetRecentDailyAttendanceService(FilterModel filterModel);
+        Task<byte[]> DownloadAttendanceExcelWithDataService();
     }
 }
