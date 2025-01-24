@@ -347,5 +347,15 @@
         public static string EMPLOYEE_OVERTIMETABLE_GET_BYID = "sp_employee_overtimetable_get_byid";
         public static string EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID = "sp_employee_overtimetable_get_by_empid";
         public static string OVERTIME_TYPE_CONFIGURATION_GETALL = "sp_overtime_type_configuration_getall";
+
+
+        //---------------- Employee Insert Update ------------------------
+        public static string EMPLOYEES_BASICINFO_INS_UPD = "sp_employees_basicinfo_ins_upd";
+        public static string SP_EMPLOYEES_PERSONALDETAIL_UPD = "sp_employees_personaldetail_upd";
+        public static string EMPLOYEES_ADDRESSDETAIL_UPD = "sp_employees_addressdetail_upd";
+        public static string EMPLOYEES_PROFESSIONALDETAIL_UPD = "sp_employees_professionaldetail_upd";
+        public static string EMPLOYEES_PREVEMPLOYMENT_DETAIL_UPD = "sp_employees_prevemployment_detail_upd";
+        public static string EMPLOYEES_BACKGROUNDVERIFICATION_DETAIL_UPD = "sp_employees_backgroundverification_detail_upd";
+        public static string EMPLOYEES_NOMINEE_INS_UPD = "sp_employees_nominee_ins_upd";
     }
 }

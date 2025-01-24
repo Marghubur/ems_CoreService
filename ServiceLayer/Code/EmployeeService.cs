@@ -10,6 +10,7 @@ using Bt.Lib.Common.Service.Model;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Modal;
+using EMailService.Modal.EmployeeModal;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using ExcelDataReader;
@@ -103,6 +104,252 @@ namespace ServiceLayer.Code
             return ApplicationConstants.Successfull;
         }
 
+        public async Task<string> ManageEmpNomineeDetailService(EmployeeNomineeDetail employeeNomineeDetail)
+        {
+            if (employeeNomineeDetail.EmployeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+            var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_NOMINEE_INS_UPD, new
+            {
+                employeeNomineeDetail.NomineeId,
+                employeeNomineeDetail.EmployeeId,
+                employeeNomineeDetail.NomineeName,
+                employeeNomineeDetail.NomineeRelationship,
+                employeeNomineeDetail.NomineeMobile,
+                employeeNomineeDetail.NomineeEmail,
+                employeeNomineeDetail.NomineeDOB,
+                employeeNomineeDetail.NomineeAddress,
+                employeeNomineeDetail.PercentageShare,
+                employeeNomineeDetail.IsPrimaryNominee,
+                ProfileStatusCode = "111111111",
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+            return ApplicationConstants.Successfull;
+        }
+
+        public async Task<string> ManageEmpBackgroundVerificationDetailService(EmployeeBackgroundVerification employeeBackgroundVerification)
+        {
+            try
+            {
+                if (employeeBackgroundVerification.EmployeeUid < 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+                var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_BACKGROUNDVERIFICATION_DETAIL_UPD, new
+                {
+                    employeeBackgroundVerification.EmployeeUid,
+                    employeeBackgroundVerification.AgencyName,
+                    employeeBackgroundVerification.VerificationRemark,
+                    employeeBackgroundVerification.VerificationStatus,
+                    ProfileStatusCode = "111111100",
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+                return ApplicationConstants.Successfull;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        public async Task<string> ManageEmpPrevEmploymentDetailService(PrevEmploymentDetail prevEmploymentDetail)
+        {
+            try
+            {
+                if (prevEmploymentDetail.EmployeeUid < 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+                if (prevEmploymentDetail.ExprienceInYear < 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid experience entered");
+
+                var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_PREVEMPLOYMENT_DETAIL_UPD, new
+                {
+                    prevEmploymentDetail.EmployeeUid,
+                    prevEmploymentDetail.LastCompanyDesignation,
+                    prevEmploymentDetail.WorkingFromDate,
+                    prevEmploymentDetail.WorkingToDate,
+                    prevEmploymentDetail.LastCompanyAddress,
+                    prevEmploymentDetail.LastCompanyNatureOfDuty,
+                    prevEmploymentDetail.LastDrawnSalary,
+                    prevEmploymentDetail.ExprienceInYear,
+                    prevEmploymentDetail.LastCompanyName,
+                    ProfileStatusCode = "111110000",
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+                return ApplicationConstants.Successfull;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        public async Task<string> ManageEmpProfessionalDetailService(EmployeeProfessionalDetail employeeProfessionalDetail)
+        {
+            try
+            {
+                ValidateEmployeeProfessionalDetail(employeeProfessionalDetail);
+
+                var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_PROFESSIONALDETAIL_UPD, new
+                {
+                    employeeProfessionalDetail.EmployeeUid,
+                    employeeProfessionalDetail.PANNo,
+                    employeeProfessionalDetail.AadharNo,
+                    employeeProfessionalDetail.BankName,
+                    employeeProfessionalDetail.AccountNumber,
+                    employeeProfessionalDetail.IFSCCode,
+                    employeeProfessionalDetail.BranchName,
+                    employeeProfessionalDetail.BankAccountType,
+                    employeeProfessionalDetail.PFNumber,
+                    employeeProfessionalDetail.UAN,
+                    employeeProfessionalDetail.ESISerialNumber,
+                    employeeProfessionalDetail.PFAccountCreationDate,
+                    employeeProfessionalDetail.IsEmployeeEligibleForESI,
+                    employeeProfessionalDetail.IsEmployeeEligibleForPF,
+                    employeeProfessionalDetail.IsExistingMemberOfPF,
+                    ProfileStatusCode = "111100000",
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+                return ApplicationConstants.Successfull;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        private void ValidateEmployeeProfessionalDetail(EmployeeProfessionalDetail employeeProfessionalDetail)
+        {
+            if (employeeProfessionalDetail.EmployeeUid < 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+            if (string.IsNullOrEmpty(employeeProfessionalDetail.PANNo))
+                throw HiringBellException.ThrowBadRequest("Invalid PAN No.");
+
+            if (string.IsNullOrEmpty(employeeProfessionalDetail.AccountNumber))
+                throw HiringBellException.ThrowBadRequest("Invalid account No.");
+
+            if (string.IsNullOrEmpty(employeeProfessionalDetail.BankName))
+                throw HiringBellException.ThrowBadRequest("Invalid bank name");
+
+            if (string.IsNullOrEmpty(employeeProfessionalDetail.IFSCCode))
+                throw HiringBellException.ThrowBadRequest("Invalid ifsc code name");
+        }
+
+        public async Task<string> ManageEmpAddressDetailService(EmployeeAddressDetail employeeAddressDetail)
+        {
+            try
+            {
+                if (employeeAddressDetail.EmployeeUid < 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+                var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_ADDRESSDETAIL_UPD, new
+                {
+                    employeeAddressDetail.EmployeeUid,
+                    employeeAddressDetail.Country,
+                    employeeAddressDetail.State,
+                    employeeAddressDetail.City,
+                    employeeAddressDetail.Pincode,
+                    employeeAddressDetail.Address,
+                    employeeAddressDetail.PermanentCountry,
+                    employeeAddressDetail.PermanentState,
+                    employeeAddressDetail.PermanentCity,
+                    employeeAddressDetail.PermanentPincode,
+                    employeeAddressDetail.PermanentAddress,
+                    ProfileStatusCode = "111000000",
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+                return ApplicationConstants.Successfull;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        public async Task<string> ManageEmpPerosnalDetailService(EmpPersonalDetail empPersonalDetail)
+        {
+            try
+            {
+                ValidateEmployeeDetail(empPersonalDetail);
+
+                var result = await _db.ExecuteAsync(Procedures.SP_EMPLOYEES_PERSONALDETAIL_UPD, new
+                {
+                    empPersonalDetail.EmployeeUid,
+                    empPersonalDetail.FatherName,
+                    empPersonalDetail.MotherName,
+                    empPersonalDetail.SpouseName,
+                    empPersonalDetail.MaritalStatus,
+                    empPersonalDetail.MarriageDate,
+                    empPersonalDetail.CountryOfOrigin,
+                    empPersonalDetail.Religion,
+                    empPersonalDetail.BloodGroup,
+                    empPersonalDetail.IsPhChallanged,
+                    empPersonalDetail.IsInternationalEmployee,
+                    empPersonalDetail.EmergencyContactName,
+                    empPersonalDetail.RelationShip,
+                    empPersonalDetail.EmergencyMobileNo,
+                    empPersonalDetail.EmergencyCountry,
+                    empPersonalDetail.EmergencyState,
+                    empPersonalDetail.EmergencyCity,
+                    empPersonalDetail.EmergencyPincode,
+                    empPersonalDetail.EmergencyAddress,
+                    empPersonalDetail.Domain,
+                    empPersonalDetail.Specification,
+                    ProfileStatusCode = "110000000",
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+                return ApplicationConstants.Successfull;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        private void ValidateEmployeeDetail(EmpPersonalDetail empPersonalDetail)
+        {
+            if (empPersonalDetail.EmployeeUid < 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee");
+
+            if (string.IsNullOrEmpty(empPersonalDetail.FatherName))
+                throw HiringBellException.ThrowBadRequest("Invalid faher name");
+        }
+
+        public async Task<long> ManageEmployeeBasicInfoService(EmployeeBasicInfo employee, IFormFileCollection fileCollection)
+        {
+            var result = CheckMobileEmailExistence(employee.EmployeeUid, employee.Email, employee.Mobile);
+            if (result.EmailCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Email id: {employee.Email} already exists.");
+
+            if (result.MobileCount > 0)
+                throw HiringBellException.ThrowBadRequest($"Mobile no: {employee.Mobile} already exists.");
+
+            return await RegisterOrUpdateEmployeeBasicDetail(employee, fileCollection);
+        }
+
         private EmployeeEmailMobileCheck CheckMobileEmailExistence(long employeeId, string email, string mobile)
         {
             var result = _db.Get<EmployeeEmailMobileCheck>(Procedures.CHECK_MOBILE_EMAIL_EXISTENCE, new
@@ -113,6 +360,147 @@ namespace ServiceLayer.Code
             });
 
             return result;
+        }
+
+        private async Task<long> RegisterOrUpdateEmployeeBasicDetail(EmployeeBasicInfo employee, IFormFileCollection fileCollection)
+        {
+            try
+            {
+                ValidateEmployeeBasicInfo(employee);
+
+                if (employee.ReportingManagerId == 0)
+                    employee.ReportingManagerId = _currentSession.CurrentUserDetail.UserId;
+
+                if (employee.EmployeeUid == 0)
+                {
+                    employee.Password = UtilService.Encrypt(
+                        _configuration.GetSection("DefaultNewEmployeePassword").Value,
+                        _configuration.GetSection("EncryptSecret").Value
+                    );
+                }
+
+                await PrepareEmployeeBasicInfoInsertData(employee);
+
+                await EmployeeFileInsertUpdate(fileCollection, employee.EmployeeUid, employee.OldFileName, employee.FileId);
+
+                return employee.EmployeeUid;
+            }
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+            }
+        }
+
+        private async Task PrepareEmployeeBasicInfoInsertData(EmployeeBasicInfo employee)
+        {
+            if (employee.AccessLevelId != (int)RolesName.Admin)
+                employee.UserTypeId = (int)RolesName.User;
+
+            var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_BASICINFO_INS_UPD, new
+            {
+                employee.EmployeeUid,
+                employee.FirstName,
+                employee.LastName,
+                employee.Mobile,
+                employee.Email,
+                employee.ReportingManagerId,
+                employee.DesignationId,
+                employee.DepartmentId,
+                employee.UserTypeId,
+                employee.LeavePlanId,
+                employee.SalaryGroupId,
+                employee.PayrollGroupId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
+                employee.WorkShiftId,
+                employee.DateOfJoining,
+                employee.SecondaryMobile,
+                employee.Password,
+                _currentSession.CurrentUserDetail.OrganizationId,
+                employee.CTC,
+                employee.AccessLevelId,
+                employee.DOB,
+                employee.Location,
+                employee.Gender,
+                ProfileStatusCode = "100000000",
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true); ;
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+            long employeeId = Convert.ToInt64(result.statusMessage);
+            if (employeeId == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+
+            employee.EmployeeUid = employeeId;
+
+            await Task.CompletedTask;
+        }
+
+        private void ValidateEmployeeBasicInfo(EmployeeBasicInfo employeeBasicInfo)
+        {
+            if (string.IsNullOrEmpty(employeeBasicInfo.FirstName))
+                throw HiringBellException.ThrowBadRequest("Invalid first name");
+
+            if (string.IsNullOrEmpty(employeeBasicInfo.LastName))
+                throw HiringBellException.ThrowBadRequest("Invalid last name");
+
+            if (string.IsNullOrEmpty(employeeBasicInfo.Mobile))
+                throw HiringBellException.ThrowBadRequest("Invalid mobile number");
+
+            if (string.IsNullOrEmpty(employeeBasicInfo.Email))
+                throw HiringBellException.ThrowBadRequest("Invalid email id");
+
+            if (employeeBasicInfo.DOB == null)
+                throw HiringBellException.ThrowBadRequest("Invalid date of birth");
+
+            if (employeeBasicInfo.CTC <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid CTC");
+
+            if (employeeBasicInfo.DesignationId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid designation selected");
+
+            if (employeeBasicInfo.WorkShiftId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid shift selected");
+        }
+
+        private async Task EmployeeFileInsertUpdate(IFormFileCollection fileCollection, long empId, string oldFileName, int fileId)
+        {
+            if (fileCollection != null && fileCollection.Count > 0)
+            {
+                var ownerPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, $"{nameof(UserType.Employee)}_{empId}");
+                string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
+                FileFolderDetail fileFolderDetail = new FileFolderDetail
+                {
+                    FolderPath = ownerPath,
+                    OldFileName = new List<string> { oldFileName },
+                    ServiceName = LocalConstants.EmstumFileService
+                };
+
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetFiles(fileCollection)
+                .SetPayload(fileFolderDetail)
+                .SetConnectionString(_currentSession.LocalConnectionString)
+                .SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken(_currentSession.Authorization);
+
+                List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+                var fileInfo = (from n in files
+                                select new
+                                {
+                                    FileId = fileId,
+                                    FileOwnerId = empId,
+                                    FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
+                                    FilePath = n.FilePath,
+                                    FileExtension = n.FileExtension,
+                                    UserTypeId = (int)UserType.Employee,
+                                    ItemStatusId = LocalConstants.Profile,
+                                    AdminId = _currentSession.CurrentUserDetail.UserId
+                                }).ToList();
+
+                var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
+            }
         }
 
         public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, UploadedPayrollData uploadedPayrollData = null)
@@ -507,6 +895,52 @@ namespace ServiceLayer.Code
                 UniversalAccountNumber = employee.UAN,
                 employee.ESISerialNumber,
                 employee.SalaryDetailId,
+                employee.IsEmployeeEligibleForPF,
+                employee.IsExistingMemberOfPF,
+                employee.IsEmployeeEligibleForESI,
+                employee.MaritalStatus,
+                employee.MarriageDate,
+                employee.CountryOfOrigin,
+                employee.Religion,
+                employee.BloodGroup,
+                employee.IsPhChallanged,
+                employee.Country,
+                employee.EmergencyContactName,
+                employee.RelationShip,
+                employee.EmergencyMobileNo,
+                employee.EmergencyState,
+                employee.EmergencyCity,
+                employee.EmergencyPincode,
+                employee.EmergencyAddress,
+                employee.EmergencyCountry,
+                employee.PermanentState,
+                employee.PermanentCity,
+                employee.PermanentPincode,
+                employee.PermanentAddress,
+                employee.PermanentCountry,
+                employee.BankAccountType,
+                employee.IsInternationalEmployee,
+                employee.AgencyName,
+                employee.VerificationStatus,
+                employee.VerificationRemark,
+                employee.Location,
+                employee.DepartmentId,
+                employee.LastCompanyDesignation,
+                employee.WorkingFromDate,
+                employee.WorkingToDate,
+                employee.LastCompanyAddress,
+                employee.LastCompanyNatureOfDuty,
+                employee.LastDrawnSalary,
+                //employee.NomineeId,
+                //employee.EmployeeId,
+                //employee.NomineeName,
+                //employee.NomineeRelationship,
+                //employee.NomineeMobile,
+                //employee.NomineeEmail,
+                //employee.NomineeDOB,
+                //employee.NomineeAddress,
+                //employee.PercentageShare,
+                //employee.IsPrimaryNominee,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             },
                 true
@@ -695,7 +1129,7 @@ namespace ServiceLayer.Code
 
             employees.ForEach(x =>
             {
-                x.ManagerName = _commonService.GetEmployeeCode(x.EmployeeUid, "BOT", 5);
+                x.EmployeeCode = _commonService.GetEmployeeCode(x.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength);
             });
 
             return employees;
@@ -722,6 +1156,14 @@ namespace ServiceLayer.Code
                 resultset.Tables[7].TableName = "LeavePlans";
                 resultset.Tables[8].TableName = "Companies";
                 resultset.Tables[9].TableName = "WorkShift";
+
+                if (resultset.Tables[0].Rows.Count > 0)
+                {
+                    long.TryParse(resultset.Tables[0].Rows[0]["EmployeeUid"].ToString(), out long empId);
+                    resultset.Tables[0].Columns.Add("EmployeeCode", typeof(string));
+
+                    resultset.Tables[0].AsEnumerable().ToList().ForEach(row => row["EmployeeCode"] = _commonService.GetEmployeeCode(empId, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength));
+                }
             }
 
             return resultset;
@@ -1453,6 +1895,7 @@ namespace ServiceLayer.Code
                                 });
 
                                 dataTable = result.Tables[0];
+                                dataTable.RemoveSpacesFromColumnNames();
 
                                 employeesList = MappedEmployee(dataTable);
                             }
@@ -1472,7 +1915,7 @@ namespace ServiceLayer.Code
             return employeesList;
         }
 
-        public static List<Employee> MappedEmployee(DataTable table)
+        private List<Employee> MappedEmployee(DataTable table)
         {
             string TypeName = string.Empty;
             DateTime date = DateTime.Now;
@@ -1528,12 +1971,12 @@ namespace ServiceLayer.Code
                                         case nameof(Int32):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
-                                                if (dr[x.Name].ToString().Equals(LocalConstants.Male, StringComparison.OrdinalIgnoreCase))
-                                                    x.SetValue(t, 1);
-                                                else if (dr[x.Name].ToString().Equals(LocalConstants.Female, StringComparison.OrdinalIgnoreCase))
-                                                    x.SetValue(t, 2);
-                                                else if (dr[x.Name].ToString().Equals(LocalConstants.Any, StringComparison.OrdinalIgnoreCase))
-                                                    x.SetValue(t, 3);
+                                                if (x.Name.Equals("Gender", StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, GetGenderValue(dr[x.Name].ToString()));
+                                                else if (x.Name.Equals("MaritalStatus", StringComparison.OrdinalIgnoreCase))
+                                                    x.SetValue(t, GetMaritalStatus(dr[x.Name].ToString()));
+                                                else if (x.Name.ToString().Equals("ExperienceInMonth", StringComparison.OrdinalIgnoreCase))
+                                                    t.ExperienceInYear = Convert.ToInt32(dr[x.Name]);
                                                 else
                                                     x.SetValue(t, Convert.ToInt32(dr[x.Name]));
                                             }
@@ -1556,7 +1999,19 @@ namespace ServiceLayer.Code
                                             break;
                                         case nameof(String):
                                             if (dr[x.Name] != DBNull.Value)
-                                                x.SetValue(t, dr[x.Name].ToString());
+                                            {
+                                                if (x.Name.Equals("EmployeeName", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    var name = GetFirstAndLastName(dr[x.Name].ToString());
+
+                                                    t.FirstName = name.FirstName;
+                                                    t.LastName = name.LastName;
+                                                }
+                                                else
+                                                {
+                                                    x.SetValue(t, dr[x.Name].ToString());
+                                                }
+                                            }
                                             else
                                                 x.SetValue(t, string.Empty);
                                             break;
@@ -1603,6 +2058,43 @@ namespace ServiceLayer.Code
             return items;
         }
 
+        private int GetMaritalStatus(string maritalStatus)
+        {
+            if (maritalStatus.Equals(nameof(LocalConstants.Married), StringComparison.OrdinalIgnoreCase))
+                return (int)LocalConstants.Married;
+            else if (maritalStatus.Equals(nameof(LocalConstants.Single), StringComparison.OrdinalIgnoreCase))
+                return (int)LocalConstants.Single;
+            else if (maritalStatus.Equals(nameof(LocalConstants.Separated), StringComparison.OrdinalIgnoreCase))
+                return (int)LocalConstants.Separated;
+            else if (maritalStatus.Equals(nameof(LocalConstants.Widowed), StringComparison.OrdinalIgnoreCase))
+                return (int)LocalConstants.Widowed;
+            else
+                return 0;
+        }
+
+        private int GetGenderValue(string gender)
+        {
+            if (gender.Equals(LocalConstants.Male, StringComparison.OrdinalIgnoreCase))
+                return 1;
+            else if (gender.Equals(LocalConstants.Female, StringComparison.OrdinalIgnoreCase))
+                return 2;
+            else
+                return 3;
+        }
+
+        private (string FirstName, string LastName) GetFirstAndLastName(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw HiringBellException.ThrowBadRequest("Name cannot be null or empty.");
+
+            string[] parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            string firstName = parts[0];
+            string lastName = string.Join(" ", parts[(1)..]);
+
+            return (firstName, lastName);
+        }
+
         private static List<string> ValidateHeaders(DataTable table, List<PropertyInfo> fileds)
         {
             List<string> columnList = new List<string>();
@@ -1613,7 +2105,7 @@ namespace ServiceLayer.Code
                 {
                     if (!columnList.Contains(column.ColumnName))
                     {
-                        columnList.Add(column.ColumnName);
+                        columnList.Add(column.ColumnName.Replace(" ", ""));
                     }
                     else
                     {

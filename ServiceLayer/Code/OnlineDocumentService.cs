@@ -598,7 +598,7 @@ namespace ServiceLayer.Code
                     .SetCompanyCode(_currentSession.CompanyCode)
                     .SetToken(_currentSession.Authorization);
 
-                    var files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+                    List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
 
                     if (files != null && files.Count > 0)
@@ -666,7 +666,6 @@ namespace ServiceLayer.Code
                         .SetCompanyCode(_currentSession.CompanyCode)
                         .SetToken(_currentSession.Authorization);
 
-                        _logger.LogInformation("Calling to microservice..................");
                         List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
                         _logger.LogInformation("File server successfully");

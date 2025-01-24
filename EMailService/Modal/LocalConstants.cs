@@ -37,5 +37,10 @@
         public static string Female = "Female";
         public static string Any = "Any";
 
+        //---------- Marital Status ---------------------
+        public static int Married = 1;
+        public static int Single = 2;
+        public static int Separated = 3;
+        public static int Widowed = 4;
     }
 }
