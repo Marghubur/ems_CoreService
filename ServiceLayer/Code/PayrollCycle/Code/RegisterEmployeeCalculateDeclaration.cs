@@ -1,36 +1,11 @@
-﻿using Bot.CoreBottomHalf.CommonModal;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using EMailService.Modal;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using ServiceLayer.Code.PayrollCycle.Interface;
-using ServiceLayer.Interface;
+﻿using ServiceLayer.Code.PayrollCycle.Interface;
 
 namespace ServiceLayer.Code.PayrollCycle.Code
 {
     public class RegisterEmployeeCalculateDeclaration : IRegisterEmployeeCalculateDeclaration
     {
-        private readonly IEmployeeService _employeeService;
-        // private readonly IDeclarationService _declarationService;
-        private readonly ILogger<RegisterEmployeeCalculateDeclaration> _logger;
-        private readonly CurrentSession _currentSession;
-        private readonly MicroserviceRegistry _microserviceRegistry;
-        private readonly RequestMicroservice _requestMicroservice;
-
-        public RegisterEmployeeCalculateDeclaration(
-            IEmployeeService employeeService,
-            CurrentSession currentSession,
-            // IDeclarationService declarationService,
-            ILogger<RegisterEmployeeCalculateDeclaration> logger,
-            IOptions<MicroserviceRegistry> options,
-            RequestMicroservice requestMicroservice)
+        public RegisterEmployeeCalculateDeclaration()
         {
-            _employeeService = employeeService;
-            _currentSession = currentSession;
-            // _declarationService = declarationService;
-            _logger = logger;
-            _microserviceRegistry = options.Value;
-            _requestMicroservice = requestMicroservice;
         }
 
         //public async Task<string> UpdateEmployeeService(Employee employee, UploadedPayrollData uploaded, IFormFileCollection fileCollection)

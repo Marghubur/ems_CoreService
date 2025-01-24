@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal.EmployeeModal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -168,6 +169,122 @@ namespace OnlineDataBuilder.Controllers
                 {
                     return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
                 }
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmployeeBasicInfo")]
+        public async Task<ApiResponse> ManageEmployeeBasicInfo()
+        {
+            try
+            {
+                StringValues UserInfoData = default(string);
+                _httpContext.Request.Form.TryGetValue("employeeDetail", out UserInfoData);
+                if (UserInfoData.Count > 0)
+                {
+                    EmployeeBasicInfo employee = JsonConvert.DeserializeObject<EmployeeBasicInfo>(UserInfoData);
+                    IFormFileCollection files = _httpContext.Request.Form.Files;
+                    var resetSet = await _employeeService.ManageEmployeeBasicInfoService(employee, files);
+                    return BuildResponse(resetSet);
+                }
+                else
+                {
+                    return BuildResponse(this.responseMessage, HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpPerosnalDetail")]
+        public async Task<ApiResponse> ManageEmpPerosnalDetail([FromBody] EmpPersonalDetail empPersonalDetail)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpPerosnalDetailService(empPersonalDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpAddressDetail")]
+        public async Task<ApiResponse> ManageEmpAddressDetail([FromBody] EmployeeAddressDetail employeeAddressDetail)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpAddressDetailService(employeeAddressDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpProfessionalDetail")]
+        public async Task<ApiResponse> ManageEmpProfessionalDetail([FromBody] EmployeeProfessionalDetail employeeProfessionalDetail)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpProfessionalDetailService(employeeProfessionalDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpPrevEmploymentDetail")]
+        public async Task<ApiResponse> ManageEmpPrevEmploymentDetail([FromBody] PrevEmploymentDetail prevEmploymentDetail)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpPrevEmploymentDetailService(prevEmploymentDetail);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpBackgroundVerificationDetail")]
+        public async Task<ApiResponse> ManageEmpBackgroundVerificationDetail([FromBody] EmployeeBackgroundVerification employeeBackgroundVerification)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpBackgroundVerificationDetailService(employeeBackgroundVerification);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ManageEmpNomineeDetail")]
+        public async Task<ApiResponse> ManageEmpNomineeDetail([FromBody] EmployeeNomineeDetail employeeNomineeDetail)
+        {
+            try
+            {
+                var result = await _employeeService.ManageEmpNomineeDetailService(employeeNomineeDetail);
+                return BuildResponse(result);
             }
             catch (Exception ex)
             {
