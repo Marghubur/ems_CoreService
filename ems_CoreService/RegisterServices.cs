@@ -3,8 +3,8 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.DatabaseLayer.MySql.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Services;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Services;
 using CoreServiceLayer.Implementation;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -31,7 +31,7 @@ namespace ems_CoreService
 {
     public class RegisterServices
     {
-        private readonly CommonRegistry _registry;
+        private readonly PipelineRegistry _registry;
         private readonly IWebHostEnvironment _env;
         public RegisterServices(IWebHostEnvironment env)
         {

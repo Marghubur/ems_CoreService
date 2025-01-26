@@ -1,4 +1,4 @@
-﻿using Bt.Lib.Common.Service.Middlewares;
+﻿using Bt.Lib.PipelineConfig.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;

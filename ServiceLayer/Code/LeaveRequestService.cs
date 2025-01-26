@@ -5,7 +5,7 @@ using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using ModalLayer.Modal;

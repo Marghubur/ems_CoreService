@@ -5,8 +5,8 @@ using BottomHalf.Utilities.UtilService;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using DocMaker.ExcelMaker;
 using DocMaker.PdfService;
 using EMailService.Modal;
@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -31,6 +32,7 @@ using System.Linq;
 using System.Net.Mail;
 using System.Reflection;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -51,6 +53,9 @@ namespace ServiceLayer.Code
         private readonly ExcelWriter _excelWriter;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly ICommonService _commonService;
+        private List<EmployeeRole> _designations;
+        private List<Department> _departments;
+
         public EmployeeService(IDb db,
             CurrentSession currentSession,
             IFileService fileService,
@@ -362,28 +367,58 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        private async Task<long> RegisterOrUpdateEmployeeBasicDetail(EmployeeBasicInfo employee, IFormFileCollection fileCollection)
+        private async Task<long> RegisterOrUpdateEmployeeBasicDetail(EmployeeBasicInfo employeeBasicInfo, IFormFileCollection fileCollection)
         {
             try
             {
-                ValidateEmployeeBasicInfo(employee);
+                bool isNewRegistration = false;
 
-                if (employee.ReportingManagerId == 0)
-                    employee.ReportingManagerId = _currentSession.CurrentUserDetail.UserId;
+                ValidateEmployeeBasicInfo(employeeBasicInfo);
 
-                if (employee.EmployeeUid == 0)
+                if (employeeBasicInfo.ReportingManagerId == 0)
+                    employeeBasicInfo.ReportingManagerId = _currentSession.CurrentUserDetail.UserId;
+
+                if (employeeBasicInfo.EmployeeUid == 0)
                 {
-                    employee.Password = UtilService.Encrypt(
+                    isNewRegistration = true;
+
+                    employeeBasicInfo.Password = UtilService.Encrypt(
                         _configuration.GetSection("DefaultNewEmployeePassword").Value,
                         _configuration.GetSection("EncryptSecret").Value
                     );
                 }
 
-                await PrepareEmployeeBasicInfoInsertData(employee);
+                await PrepareEmployeeBasicInfoInsertData(employeeBasicInfo);
 
-                await EmployeeFileInsertUpdate(fileCollection, employee.EmployeeUid, employee.OldFileName, employee.FileId);
+                await EmployeeFileInsertUpdate(fileCollection, employeeBasicInfo.EmployeeUid, employeeBasicInfo.OldFileName, employeeBasicInfo.FileId);
 
-                return employee.EmployeeUid;
+                var eCal = new EmployeeCalculation();
+                if (isNewRegistration)
+                {
+                    eCal = await GetDeclarationDetail(employeeBasicInfo.EmployeeUid, employeeBasicInfo.CTC, ApplicationConstants.DefaultTaxRegin);
+                }
+                else
+                {
+                    var dataSet = _db.FetchDataSet(Procedures.EMPLOYEE_DECLARATION_DETAIL_GET_BY_EMPID, new
+                    {
+                        EmployeeId = employeeBasicInfo.EmployeeUid,
+                        _currentSession.FinancialStartYear
+                    });
+
+                    if (dataSet == null || dataSet.Tables.Count != 2)
+                        throw HiringBellException.ThrowBadRequest("Fail to get salary detail and salary components");
+
+                    eCal.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(dataSet.Tables[1]);
+                    eCal.employeeDeclaration = Converter.ToType<EmployeeDeclaration>(dataSet.Tables[0]);
+
+                    eCal.Doj = employeeBasicInfo.DateOfJoining;
+                }
+
+                await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo, eCal);
+
+                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
+
+                return employeeBasicInfo.EmployeeUid;
             }
             catch
             {
@@ -391,39 +426,58 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task PrepareEmployeeBasicInfoInsertData(EmployeeBasicInfo employee)
+        private async Task AddEmployeeSalaryLeaveAndDeclarationDetail(EmployeeBasicInfo employeeBasicInfo, EmployeeCalculation eCal)
         {
-            if (employee.AccessLevelId != (int)RolesName.Admin)
-                employee.UserTypeId = (int)RolesName.User;
+            var result = await _db.ExecuteAsync(Procedures.GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL, new
+            {
+                EmployeeId = employeeBasicInfo.EmployeeUid,
+                _currentSession.CurrentUserDetail.CompanyId,
+                employeeBasicInfo.DateOfJoining,
+                eCal.employeeDeclaration.DeclarationDetail,
+                eCal.employeeSalaryDetail.CompleteSalaryDetail,
+                NewSalaryDetail = "[]",
+                eCal.employeeSalaryDetail.TaxDetail,
+                eCal.employeeSalaryDetail.GrossIncome,
+                eCal.employeeSalaryDetail.NetSalary
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to add employee salary detail, leave and declaration");
+        }
+
+        private async Task PrepareEmployeeBasicInfoInsertData(EmployeeBasicInfo employeeBasicInfo)
+        {
+            if (employeeBasicInfo.AccessLevelId != (int)RolesName.Admin)
+                employeeBasicInfo.UserTypeId = (int)RolesName.User;
 
             var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_BASICINFO_INS_UPD, new
             {
-                employee.EmployeeUid,
-                employee.FirstName,
-                employee.LastName,
-                employee.Mobile,
-                employee.Email,
-                employee.ReportingManagerId,
-                employee.DesignationId,
-                employee.DepartmentId,
-                employee.UserTypeId,
-                employee.LeavePlanId,
-                employee.SalaryGroupId,
-                employee.PayrollGroupId,
+                employeeBasicInfo.EmployeeUid,
+                employeeBasicInfo.FirstName,
+                employeeBasicInfo.LastName,
+                employeeBasicInfo.Mobile,
+                employeeBasicInfo.Email,
+                employeeBasicInfo.ReportingManagerId,
+                employeeBasicInfo.DesignationId,
+                employeeBasicInfo.DepartmentId,
+                employeeBasicInfo.UserTypeId,
+                employeeBasicInfo.LeavePlanId,
+                employeeBasicInfo.SalaryGroupId,
+                employeeBasicInfo.PayrollGroupId,
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
-                employee.WorkShiftId,
-                employee.DateOfJoining,
-                employee.SecondaryMobile,
-                employee.Password,
+                employeeBasicInfo.WorkShiftId,
+                employeeBasicInfo.DateOfJoining,
+                employeeBasicInfo.SecondaryMobile,
+                employeeBasicInfo.Password,
                 _currentSession.CurrentUserDetail.OrganizationId,
-                employee.CTC,
-                employee.AccessLevelId,
-                employee.DOB,
-                employee.Location,
-                employee.Gender,
+                employeeBasicInfo.CTC,
+                employeeBasicInfo.AccessLevelId,
+                employeeBasicInfo.DOB,
+                employeeBasicInfo.Location,
+                employeeBasicInfo.Gender,
                 ProfileStatusCode = "100000000",
                 AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true); ;
+            }, true);
 
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
@@ -432,7 +486,7 @@ namespace ServiceLayer.Code
             if (employeeId == 0)
                 throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
 
-            employee.EmployeeUid = employeeId;
+            employeeBasicInfo.EmployeeUid = employeeId;
 
             await Task.CompletedTask;
         }
@@ -462,6 +516,10 @@ namespace ServiceLayer.Code
 
             if (employeeBasicInfo.WorkShiftId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid shift selected");
+
+            EmailAddressAttribute email = new EmailAddressAttribute();
+            if (!email.IsValid(employeeBasicInfo.Email))
+                throw HiringBellException.ThrowBadRequest("Please enter a valid email id");
         }
 
         private async Task EmployeeFileInsertUpdate(IFormFileCollection fileCollection, long empId, string oldFileName, int fileId)
@@ -548,7 +606,7 @@ namespace ServiceLayer.Code
                         _configuration.GetSection("EncryptSecret").Value
                     );
 
-                    eCal = await GetDeclarationDetail(employee, currentRegimeId);
+                    eCal = await GetDeclarationDetail(employee.EmployeeId, employee.CTC, currentRegimeId);
                 }
                 else
                 {
@@ -608,12 +666,12 @@ namespace ServiceLayer.Code
             return await Task.FromResult(IsNewRegistration);
         }
 
-        private async Task<EmployeeCalculation> GetDeclarationDetail(Employee employee, int currentRegimeId)
+        private async Task<EmployeeCalculation> GetDeclarationDetail(long employeeId, decimal CTC, int currentRegimeId)
         {
-            string url = $"{_microserviceUrlLogs.SalaryDeclarationCalculation}/{employee.EmployeeId}/{employee.CTC}/{currentRegimeId}";
+            string url = $"{_microserviceUrlLogs.SalaryDeclarationCalculation}/{employeeId}/{CTC}/{currentRegimeId}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
-            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
             .SetToken(_currentSession.Authorization);
@@ -931,16 +989,14 @@ namespace ServiceLayer.Code
                 employee.LastCompanyAddress,
                 employee.LastCompanyNatureOfDuty,
                 employee.LastDrawnSalary,
-                //employee.NomineeId,
-                //employee.EmployeeId,
-                //employee.NomineeName,
-                //employee.NomineeRelationship,
-                //employee.NomineeMobile,
-                //employee.NomineeEmail,
-                //employee.NomineeDOB,
-                //employee.NomineeAddress,
-                //employee.PercentageShare,
-                //employee.IsPrimaryNominee,
+                NomineeId = 0,
+                NomineeName = "",
+                NomineeRelationship = "",
+                NomineeMobile = "",
+                NomineeEmail = "",
+                NomineeAddress = "",
+                PercentageShare = 0,
+                IsPrimaryNominee = false,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             },
                 true
@@ -1732,7 +1788,7 @@ namespace ServiceLayer.Code
                     var microserviceRequest = MicroserviceRequest.Builder(url);
                     microserviceRequest
                     .SetPayload(abc)
-                    .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                    .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                     .SetConnectionString(_currentSession.LocalConnectionString)
                     .SetCompanyCode(_currentSession.CompanyCode)
                     .SetToken(_currentSession.Authorization);
@@ -1790,7 +1846,7 @@ namespace ServiceLayer.Code
                     var microserviceRequest = MicroserviceRequest.Builder(url);
                     microserviceRequest
                     .SetPayload(employeeDeclarations)
-                    .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                    .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                     .SetConnectionString(_currentSession.LocalConnectionString)
                     .SetCompanyCode(_currentSession.CompanyCode)
                     .SetToken(_currentSession.Authorization);
@@ -1930,6 +1986,8 @@ namespace ServiceLayer.Code
 
                 if (table.Rows.Count > 0)
                 {
+                   GetEmployeeDepartmentAndDesignation();
+
                     int i = 0;
                     DataRow dr = null;
                     while (i < table.Rows.Count)
@@ -1951,7 +2009,7 @@ namespace ServiceLayer.Code
 
                                     switch (TypeName)
                                     {
-                                        case nameof(Boolean):
+                                        case nameof(System.Boolean):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
@@ -1997,7 +2055,7 @@ namespace ServiceLayer.Code
                                             else
                                                 x.SetValue(t, Decimal.Zero);
                                             break;
-                                        case nameof(String):
+                                        case nameof(System.String):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (x.Name.Equals("EmployeeName", StringComparison.OrdinalIgnoreCase))
@@ -2006,6 +2064,14 @@ namespace ServiceLayer.Code
 
                                                     t.FirstName = name.FirstName;
                                                     t.LastName = name.LastName;
+                                                }
+                                                else if (x.Name.Equals("Department", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    t.DepartmentId = GetDepartmentId(dr[x.Name].ToString());
+                                                }
+                                                else if (x.Name.Equals("Designation", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    t.DesignationId = GetDesignationId(dr[x.Name].ToString());
                                                 }
                                                 else
                                                 {
@@ -2056,6 +2122,41 @@ namespace ServiceLayer.Code
             }
 
             return items;
+        }
+
+        private void GetEmployeeDepartmentAndDesignation()
+        {
+            var dataset = _db.FetchDataSet(Procedures.ORG_HIERARCHY_DEPARTMENT_GETALL);
+
+            if (dataset == null || dataset.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Fail to get designation and department");
+
+            _departments = Converter.ToList<Department>(dataset.Tables[1]);
+            _designations = Converter.ToList<EmployeeRole>(dataset.Tables[0]);
+        }
+
+        private int GetDepartmentId(string department)
+        {
+            if (string.IsNullOrEmpty(department))
+                return 0;
+
+            var departmentDetail = _departments.Find(x => x.DepartmentName.Equals(department, StringComparison.OrdinalIgnoreCase));
+            if (departmentDetail == null)
+                throw HiringBellException.ThrowBadRequest("Please select a valid department");
+
+            return departmentDetail.DepartmentId;
+        }
+
+        private int GetDesignationId(string designation)
+        {
+            if (string.IsNullOrEmpty(designation))
+                return 0;
+
+            var designationDetail = _designations.Find(x => x.RoleName.Equals(designation, StringComparison.OrdinalIgnoreCase));
+            if (designationDetail == null)
+                throw HiringBellException.ThrowBadRequest("Please select a valid designation");
+
+            return (int)designationDetail.RoleId;
         }
 
         private int GetMaritalStatus(string maritalStatus)

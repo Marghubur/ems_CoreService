@@ -1,13 +1,12 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
 using EMailService.Modal.Leaves;
 using EMailService.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;

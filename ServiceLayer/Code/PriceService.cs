@@ -1,6 +1,6 @@
-﻿using BottomhalfCore.DatabaseLayer.Common.Code;
-using Bt.Lib.Common.Service.Model;
-using Bt.Lib.Common.Service.Services;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using BottomhalfCore.DatabaseLayer.Common.Code;
+using Bt.Lib.PipelineConfig.Services;
 using EMailService.Modal;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -35,8 +35,8 @@ namespace ServiceLayer.Code
         {
             validateContactUsDetail(contactUsDetail);
 
-            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceRegistry.DatabaseConfigurationUrl); ;
-            _db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceRegistry.DatabaseConfigurationUrl); ;
+            _db.SetupConnectionString(masterDatabse);
 
             var result = _db.Execute<ContactUsDetail>(Procedures.CONTACT_US_INSUPD, new
             {
@@ -80,8 +80,8 @@ namespace ServiceLayer.Code
 
         public async Task<string> AddTrailRequestService(ContactUsDetail contactUsDetail)
         {
-            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceRegistry.DatabaseConfigurationUrl); ;
-            _db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceRegistry.DatabaseConfigurationUrl); ;
+            _db.SetupConnectionString(masterDatabse);
             
             validateTrailRequestDetail(contactUsDetail);
 
