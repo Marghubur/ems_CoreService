@@ -6,8 +6,8 @@ using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
@@ -1885,7 +1885,7 @@ namespace ServiceLayer.Code
             monthlyAttendanceDetails.ForEach(x =>
             {
                 DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
-                if (dailyAttendanceBuilder.employee.CreatedOn.Year > x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month > x.Month)
+                if (dailyAttendanceBuilder.employee.CreatedOn.Year > x.Year)
                     throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
 
                 foreach (var item in x.DailyData)
@@ -2196,7 +2196,7 @@ namespace ServiceLayer.Code
                 var microserviceRequest = MicroserviceRequest.Builder(url);
                 microserviceRequest
                 .SetPayload(employeeRecord)
-                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                 .SetConnectionString(_currentSession.LocalConnectionString)
                 .SetCompanyCode(_currentSession.CompanyCode)
                 .SetToken(_currentSession.Authorization);

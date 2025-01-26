@@ -1,4 +1,4 @@
-using Bt.Lib.Common.Service.Services;
+using Bt.Lib.PipelineConfig.Services;
 using ems_CoreService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -53,9 +53,9 @@ namespace OnlineDataBuilder
             // register database
             _registerService.RegisterDatabase(services);
 
-            var commonRegistry = new CommonRegistry(services, _env, _configuration);
+            var pipelineRegistry = new PipelineRegistry(services, _env, _configuration);
 
-            commonRegistry
+            pipelineRegistry
                 .AddCurrentSessionClass()
                 .AddPublicKeyConfiguration()
                 .AddKafkaProducerService()

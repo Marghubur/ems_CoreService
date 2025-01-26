@@ -1,5 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.Model;
 using Microsoft.AspNetCore.Http;
 
 namespace EMailService.Modal

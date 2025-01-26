@@ -1,8 +1,8 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;

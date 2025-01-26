@@ -1,4 +1,6 @@
-﻿namespace EMailService.Modal
+﻿using DocumentFormat.OpenXml.Drawing;
+
+namespace EMailService.Modal
 {
     public class Procedures
     {
@@ -179,6 +181,7 @@
         public static string EMPLOYEE_REGISTRATION_COMMON_DATA = "sp_employee_registration_common_data";
         public static string CHECK_MOBILE_EMAIL_EXISTENCE = "sp_check_mobile_email_existence";
         public static string EMPLOYEES_ACTIVE_ALL = "sp_employees_active_all";
+        public static string ORG_HIERARCHY_DEPARTMENT_GETALL = "sp_org_hierarchy_department_getall";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
@@ -357,5 +360,6 @@
         public static string EMPLOYEES_PREVEMPLOYMENT_DETAIL_UPD = "sp_employees_prevemployment_detail_upd";
         public static string EMPLOYEES_BACKGROUNDVERIFICATION_DETAIL_UPD = "sp_employees_backgroundverification_detail_upd";
         public static string EMPLOYEES_NOMINEE_INS_UPD = "sp_employees_nominee_ins_upd";
+        public static string GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL = "sp_generate_emp_leave_declaration_salarydetail";
     }
 }

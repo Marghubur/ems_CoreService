@@ -1,8 +1,8 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Hosting;
@@ -58,7 +58,7 @@ namespace CoreServiceLayer.Implementation
                 var microserviceRequest = MicroserviceRequest.Builder(url);
                 microserviceRequest
                 .SetPayload(fileFolderDetail)
-                .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                 .SetConnectionString(_currentSession.LocalConnectionString)
                 .SetCompanyCode(_currentSession.CompanyCode)
                 .SetToken(_currentSession.Authorization);
@@ -336,7 +336,7 @@ namespace CoreServiceLayer.Implementation
                         var microserviceRequest = MicroserviceRequest.Builder(url);
                         microserviceRequest
                         .SetPayload(fileFolderDetail)
-                        .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+                        .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                         .SetConnectionString(_currentSession.LocalConnectionString)
                         .SetCompanyCode(_currentSession.CompanyCode)
                         .SetToken(_currentSession.Authorization);

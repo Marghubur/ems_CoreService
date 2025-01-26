@@ -6,9 +6,9 @@ using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
-using Bt.Lib.Common.Service.Services;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
+using Bt.Lib.PipelineConfig.Services;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
@@ -741,8 +741,8 @@ namespace ServiceLayer.Code
 
         private async Task<EmailTemplate> GetEmailTemplateService()
         {
-            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
-            db.SetupConnectionString(DatabaseConfiguration.BuildConnectionString(masterDatabse));
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
+            db.SetupConnectionString(masterDatabse);
 
             var result = db.Get<EmailTemplate>(Procedures.Email_Template_Get, new
             {
@@ -2170,7 +2170,7 @@ namespace ServiceLayer.Code
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
             .SetPayload(pdfPaths)
-            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
             .SetToken(_currentSession.Authorization);
@@ -2186,7 +2186,7 @@ namespace ServiceLayer.Code
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
             .SetPayload(filPath)
-            .SetDbConfigModal(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
             .SetConnectionString(_currentSession.LocalConnectionString)
             .SetCompanyCode(_currentSession.CompanyCode)
             .SetToken(_currentSession.Authorization);

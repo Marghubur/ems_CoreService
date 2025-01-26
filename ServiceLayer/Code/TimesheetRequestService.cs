@@ -1,8 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using BottomhalfCore.DatabaseLayer.Common.Code;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using ModalLayer.Modal;

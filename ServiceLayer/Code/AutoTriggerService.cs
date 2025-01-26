@@ -4,9 +4,9 @@ using Bot.CoreBottomHalf.CommonModal.Kafka;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.KafkaService.interfaces;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using Confluent.Kafka;
 using EMailService.Modal;
 using EMailService.Modal.CronJobs;
@@ -71,7 +71,7 @@ namespace ServiceLayer.Code
             KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(result.Message.Value);
 
             // Load all database configuration from master database
-            List<DbConfigModal> dbConfig = await LoadDatabaseConfiguration();
+            List<DbConfig> dbConfig = await LoadDatabaseConfiguration();
 
             foreach (var x in dbConfig)
             {
@@ -127,7 +127,7 @@ namespace ServiceLayer.Code
             await _leaveAccrualJob.LeaveAccrualAsync(companySetting, leaveAccrualKafkaModel);
         }
 
-        private async Task<CompanySetting> LoadCompanySettings(DbConfigModal x)
+        private async Task<CompanySetting> LoadCompanySettings(DbConfig x)
         {
             _db.SetupConnectionString($"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};");
             CompanySetting companySettings = _db.Get<CompanySetting>(Procedures.Company_Setting_Get_All);
@@ -135,18 +135,16 @@ namespace ServiceLayer.Code
             return await Task.FromResult(companySettings);
         }
 
-        private async Task<List<DbConfigModal>> LoadDatabaseConfiguration()
+        private async Task<List<DbConfig>> LoadDatabaseConfiguration()
         {
-            DatabaseConfiguration databaseConfiguration = await _requestMicroservice.GetRequest<DatabaseConfiguration>(new MicroserviceRequest
+            var cs = await _requestMicroservice.GetRequest<string>(new MicroserviceRequest
             {
                 Url = _microserviceUrlLogs.DatabaseConfigurationUrl,
                 CompanyCode = "BOT",
                 Token = "Bearer_empt"
             });
 
-            string cs = DatabaseConfiguration.BuildConnectionString(databaseConfiguration);
-
-            List<DbConfigModal> dbConfiguration = new List<DbConfigModal>();
+            List<DbConfig> dbConfiguration = new List<DbConfig>();
             using (var connection = new MySqlConnection(cs))
             {
                 using (MySqlCommand command = new MySqlCommand())
@@ -164,7 +162,7 @@ namespace ServiceLayer.Code
                             dataAdapter.Fill(dataSet);
                             if (dataSet.Tables == null || dataSet.Tables.Count != 1 || dataSet.Tables[0].Rows.Count == 0)
                                 throw new Exception("Fail to load the master data");
-                            dbConfiguration = Converter.ToList<DbConfigModal>(dataSet.Tables[0]);
+                            dbConfiguration = Converter.ToList<DbConfig>(dataSet.Tables[0]);
                         }
                     }
                     catch

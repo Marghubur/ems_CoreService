@@ -1,5 +1,5 @@
-﻿using Bt.Lib.Common.Service.KafkaService.interfaces;
-using Bt.Lib.Common.Service.Model;
+﻿using Bt.Lib.PipelineConfig.KafkaService.interfaces;
+using Bt.Lib.PipelineConfig.Model;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
