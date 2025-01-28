@@ -1814,8 +1814,8 @@ namespace ServiceLayer.Code
 
             string employeeName = row["Name"].ToString();
 
-            if (row["EmployeeId"] == null || string.IsNullOrEmpty(row["EmployeeId"].ToString()))
-                throw HiringBellException.ThrowBadRequest($"Employee ID is null for employee name '{employeeName}'. Please provide a valid Employee Id.");
+            if (row["EmployeeCode"] == null || string.IsNullOrEmpty(row["EmployeeCode"].ToString()))
+                throw HiringBellException.ThrowBadRequest($"Employee Code is null for employee name '{employeeName}'. Please provide a valid Employee Id.");
 
             if (row["Month"] == null || string.IsNullOrEmpty(row["Month"].ToString()))
                 throw HiringBellException.ThrowBadRequest($"Month number is null for employee name '{employeeName}'. Please provide a valid Month number.");
@@ -1823,9 +1823,9 @@ namespace ServiceLayer.Code
             if (row["Year"] == null || string.IsNullOrEmpty(row["Year"].ToString()))
                 throw HiringBellException.ThrowBadRequest($"Year is null for employee name '{employeeName}'. Please provide a valid Year.");
 
-            long.TryParse(row["EmployeeId"].ToString(), out long employeeId);
-            if (employeeId == 0)
-                throw HiringBellException.ThrowBadRequest($"Employee ID is invalid for employee name '{employeeName}'");
+            var empCode = row["EmployeeCode"].ToString();
+            if (string.IsNullOrEmpty(empCode))
+                throw HiringBellException.ThrowBadRequest($"Employee code is invalid for employee name '{employeeName}'");
 
             int.TryParse(row["Month"].ToString(), out int month);
             if (month < 1 || month > 12)
@@ -1837,7 +1837,7 @@ namespace ServiceLayer.Code
 
             return new MonthlyAttendanceDetail
             {
-                EmployeeId = employeeId,
+                EmployeeId = _commonService.ExtractEmployeeId(empCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix),
                 Name = employeeName,
                 Month = month,
                 Year = year
@@ -2179,7 +2179,7 @@ namespace ServiceLayer.Code
                 {
                     Dictionary<string, object> data = new Dictionary<string, object>();
 
-                    data.Add("EmployeeId", employee.EmployeeUid);
+                    data.Add("EmployeeCode", _commonService.GetEmployeeCode(employee.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength));
                     data.Add("Name", employee.FirstName + " " + employee.LastName);
                     data.Add("Month", currentDate.Month);
                     data.Add("Year", currentDate.Year);

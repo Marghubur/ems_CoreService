@@ -182,7 +182,7 @@ namespace EMailService.Modal
         public static string CHECK_MOBILE_EMAIL_EXISTENCE = "sp_check_mobile_email_existence";
         public static string EMPLOYEES_ACTIVE_ALL = "sp_employees_active_all";
         public static string ORG_HIERARCHY_DEPARTMENT_GETALL = "sp_org_hierarchy_department_getall";
-
+        public static string EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID = "sp_employee_salary_detail_get_by_empid";
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
 
@@ -361,5 +361,8 @@ namespace EMailService.Modal
         public static string EMPLOYEES_BACKGROUNDVERIFICATION_DETAIL_UPD = "sp_employees_backgroundverification_detail_upd";
         public static string EMPLOYEES_NOMINEE_INS_UPD = "sp_employees_nominee_ins_upd";
         public static string GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL = "sp_generate_emp_leave_declaration_salarydetail";
+
+        //--------------- Profile Health Check ----------------------------------
+        public static string RECORD_HEALTH_STATUS_GET_INCOMPLETE_PROFILE = "sp_record_health_status_get_incomplete_profile";
     }
 }

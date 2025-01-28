@@ -292,6 +292,36 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("GetEmployeesRecordHealthStatus")]
+        public async Task<ApiResponse> GetEmployeesRecordHealthStatus()
+        {
+            try
+            {
+                var result = await _employeeService.GetEmployeesRecordHealthStatusService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("FixEmployeesRecordHealthStatus/{employeeId}")]
+        public async Task<ApiResponse> FixEmployeesRecordHealthStatus([FromRoute] long employeeId)
+        {
+            try
+            {
+                var result = await _employeeService.FixEmployeesRecordHealthStatusService(employeeId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
         #endregion
 
         #region Generate offer letter
