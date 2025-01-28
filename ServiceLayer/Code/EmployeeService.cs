@@ -31,8 +31,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -55,6 +55,7 @@ namespace ServiceLayer.Code
         private readonly ICommonService _commonService;
         private List<EmployeeRole> _designations;
         private List<Department> _departments;
+        private Dictionary<string, Func<string, string, bool>> _validators;
 
         public EmployeeService(IDb db,
             CurrentSession currentSession,
@@ -432,7 +433,6 @@ namespace ServiceLayer.Code
             {
                 EmployeeId = employeeBasicInfo.EmployeeUid,
                 _currentSession.CurrentUserDetail.CompanyId,
-                employeeBasicInfo.DateOfJoining,
                 eCal.employeeDeclaration.DeclarationDetail,
                 eCal.employeeSalaryDetail.CompleteSalaryDetail,
                 NewSalaryDetail = "[]",
@@ -1088,8 +1088,8 @@ namespace ServiceLayer.Code
         public dynamic GetBillDetailForEmployeeService(FilterModel filterModel)
         {
             filterModel.PageSize = 100;
-            List<Employee> employees = GetEmployees(filterModel);
-            employees = employees.FindAll(x => x.EmployeeUid != 1);
+            var result = GetEmployees(filterModel);
+            var employees = result.employees.FindAll(x => x.EmployeeUid != 1);
             List<Organization> organizations = _db.GetList<Organization>(Procedures.Company_Get);
 
             if (employees.Count == 0 || organizations.Count == 0)
@@ -1098,17 +1098,18 @@ namespace ServiceLayer.Code
             return new { Employees = employees, Organizations = organizations };
         }
 
-        private List<Employee> FilterActiveEmployees(FilterModel filterModel)
+        private (List<Employee> employees, List<RecordHealthStatus> recordHealthStatus) FilterActiveEmployees(FilterModel filterModel)
         {
-            List<Employee> employees = _db.GetList<Employee>(Procedures.Employee_GetAll, new
+            (var employees, var recordHealthStatus) = _db.GetList<Employee, RecordHealthStatus>(Procedures.Employee_GetAll, new
             {
                 filterModel.SearchString,
                 filterModel.SortBy,
                 filterModel.PageIndex,
-                filterModel.PageSize
+                filterModel.PageSize,
+                FinancialYear = _currentSession.FinancialStartYear
             });
 
-            return employees;
+            return (employees, recordHealthStatus);
         }
 
         private List<Employee> FilterInActiveEmployees(FilterModel filterModel)
@@ -1165,9 +1166,10 @@ namespace ServiceLayer.Code
             return employees;
         }
 
-        public List<Employee> GetEmployees(FilterModel filterModel)
+        public (List<Employee> employees, List<RecordHealthStatus> recordHealthStatuse) GetEmployees(FilterModel filterModel)
         {
             List<Employee> employees = null;
+            List<RecordHealthStatus> recordHealthStatuse = null;
             if (string.IsNullOrEmpty(filterModel.SearchString))
                 filterModel.SearchString = "1=1";
 
@@ -1178,7 +1180,10 @@ namespace ServiceLayer.Code
                 else
                     filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
 
-                employees = FilterActiveEmployees(filterModel);
+                var result = FilterActiveEmployees(filterModel);
+
+                employees = result.employees;
+                recordHealthStatuse = result.recordHealthStatus;
             }
             else
                 employees = FilterInActiveEmployees(filterModel);
@@ -1188,7 +1193,7 @@ namespace ServiceLayer.Code
                 x.EmployeeCode = _commonService.GetEmployeeCode(x.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength);
             });
 
-            return employees;
+            return (employees, recordHealthStatuse);
         }
 
         public DataSet GetManageEmployeeDetailService(long EmployeeId)
@@ -1509,7 +1514,8 @@ namespace ServiceLayer.Code
             else
             {
                 status = ActivateEmployee(EmployeeId);
-                employees = FilterActiveEmployees(filterModel);
+                var result = FilterActiveEmployees(filterModel);
+                employees = result.employees;
             }
             return employees;
         }
@@ -1776,18 +1782,43 @@ namespace ServiceLayer.Code
                 filterModel.SearchString,
                 filterModel.SortBy,
                 filterModel.PageIndex,
-                PageSize = 1000
+                PageSize = 1000,
+                FinancialYear = _currentSession.FinancialStartYear
             });
 
             if (employees.Tables[0].Rows.Count > 0)
             {
+                var employeeData = Converter.ToList<Employee>(employees.Tables[0]);
+
+                List<dynamic> empData = new List<dynamic>();
+                foreach (var emp in employeeData)
+                {
+                    Dictionary<string, object> data = new Dictionary<string, object>
+                    {
+                        { "Employee Code", _commonService.GetEmployeeCode(emp.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength) },
+                        { "First Name", emp.FirstName },
+                        { "Last Name", emp.FirstName },
+                        { "Mobile", emp.Mobile },
+                        { "Email", emp.Email },
+                        { "Aadhar No", emp.AadharNo },
+                        { "PAN No", emp.PANNo },
+                        { "Account No", emp.AccountNumber },
+                        { "Bank Name", emp.BankName },
+                        { "IFSC Code", emp.IFSCCode },
+                        { "Experience In Month", emp.ExperienceInYear },
+                        { "Date Of Joining", emp.CreatedOn.ToString("dd-MM-yyyy") }
+                    };
+
+                    empData.Add(data);
+                }
+
+
                 if (fileType == 2)
                 {
-                    var url = $"{_microserviceUrlLogs.GenerateExcel}/EmployeeSheet";
-                    DataTable abc = employees.Tables[0];
+                    var url = $"{_microserviceUrlLogs.GenerateExelWithHeader}";
                     var microserviceRequest = MicroserviceRequest.Builder(url);
                     microserviceRequest
-                    .SetPayload(abc)
+                    .SetPayload(empData)
                     .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
                     .SetConnectionString(_currentSession.LocalConnectionString)
                     .SetCompanyCode(_currentSession.CompanyCode)
@@ -1978,6 +2009,7 @@ namespace ServiceLayer.Code
             DateTime defaultDate = Convert.ToDateTime("1976-01-01");
             List<Employee> items = new List<Employee>();
             string[] dateFormats = { "MM/dd/yyyy", "dd-MM-yyyy", "yyyy/MM/dd", "yyyy-MM-dd", "dd-MMM-yyyy" };
+            ValidateEmployeeExcel(table);
 
             try
             {
@@ -1986,7 +2018,7 @@ namespace ServiceLayer.Code
 
                 if (table.Rows.Count > 0)
                 {
-                   GetEmployeeDepartmentAndDesignation();
+                    GetEmployeeDepartmentAndDesignation();
 
                     int i = 0;
                     DataRow dr = null;
@@ -2124,6 +2156,203 @@ namespace ServiceLayer.Code
             return items;
         }
 
+        private void ValidateEmployeeExcel(DataTable dt)
+        {
+            EmployeeExcelValidator();
+
+            for (int rowIndex = 0; rowIndex < dt.Rows.Count; rowIndex++)
+            {
+                foreach (DataColumn column in dt.Columns)
+                {
+                    if (_validators.ContainsKey(column.ColumnName))
+                    {
+                        string cellValue = dt.Rows[rowIndex][column.ColumnName]?.ToString() ?? string.Empty;
+                        if (!_validators[column.ColumnName](cellValue, column.ColumnName))
+                        {
+                            throw HiringBellException.ThrowBadRequest($"Invalid value '{cellValue}' in column '{column.ColumnName}' at row {rowIndex + 2}");
+                        }
+                    }
+                }
+            }
+        }
+
+        #region Validation Methods
+
+        private bool IsValidName(string value, string fieldName)
+        {
+            return !string.IsNullOrEmpty(value) && Regex.IsMatch(value, @"^[A-Za-z\s\.]+$");
+        }
+
+        private bool IsValidNameOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[A-Za-z\s\.]+$");
+        }
+
+        private bool IsValidDate(string value, string fieldName)
+        {
+            return DateTime.TryParse(value, out _);
+        }
+
+        private bool IsValidDateOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || DateTime.TryParse(value, out _);
+        }
+
+        private bool IsValidDecimal(string value, string fieldName)
+        {
+            return decimal.TryParse(value, out _);
+        }
+
+        private bool IsValidInteger(string value, string fieldName)
+        {
+            return int.TryParse(value, out _);
+        }
+
+        private bool IsValidGender(string value, string fieldName)
+        {
+            var validGenders = new[] { nameof(LocalConstants.Male).ToUpper(), nameof(LocalConstants.Female).ToUpper(), nameof(LocalConstants.Any).ToUpper() };
+            return validGenders.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidEmail(string value, string fieldName)
+        {
+            return Regex.IsMatch(value, @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+        }
+
+        private bool IsValidMaritalStatus(string value, string fieldName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            var validStatuses = new[] { nameof(LocalConstants.Single).ToUpper(), nameof(LocalConstants.Married).ToUpper(), nameof(LocalConstants.Widowed).ToUpper(), nameof(LocalConstants.Separated).ToUpper() };
+            return validStatuses.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidBloodGroup(string value, string fieldName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            var validGroups = new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" };
+            return validGroups.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidBoolean(string value, string fieldName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            var validValues = new[] { "YES", "NO", "TRUE", "FALSE" };
+            return validValues.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidVerificationStatus(string value, string fieldName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            var validStatuses = new[] { "Cancelled", "Initiated", "On Hold", "Partially Verified", "Pending", "Rejected", "Verified" };
+            return validStatuses.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidBankAccountType(string value, string fieldName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            var validStatuses = new[] { "Current", "Saving" };
+            return validStatuses.Contains(value?.ToUpper());
+        }
+
+        private bool IsValidMobileNumber(string value, string fieldName)
+        {
+            return Regex.IsMatch(value, @"^[0-9]{10}$");
+        }
+
+        private bool IsValidMobileNumberOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{10}$");
+        }
+
+        private bool IsValidBankAccountNumber(string value, string fieldName)
+        {
+            return Regex.IsMatch(value, @"^[0-9]{9,18}$");
+        }
+
+        private bool IsValidIFSCCode(string value, string fieldName)
+        {
+            return Regex.IsMatch(value, @"^[A-Z]{4}0[A-Z0-9]{6}$");
+        }
+
+        private bool IsValidPANNumber(string value, string fieldName)
+        {
+            return Regex.IsMatch(value, @"^[A-Z]{5}[0-9]{4}[A-Z]{1}$");
+        }
+
+        private bool IsValidPFNumberOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[A-Z]{2}/[0-9]{5}/[0-9]{7}$");
+        }
+
+        private bool IsValidESINumberOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{10}$");
+        }
+
+        private bool IsValidAadharNumberOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{12}$");
+        }
+
+        private bool IsValidUANOrEmpty(string value, string fieldName)
+        {
+            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{12}$");
+        }
+
+        #endregion
+
+        private void EmployeeExcelValidator()
+        {
+            _validators = new Dictionary<string, Func<string, string, bool>>
+        {
+            {"EmployeeName", IsValidName},
+            {"DateOfJoining", IsValidDate},
+            {"DOB", IsValidDate},
+            {"CTC", IsValidDecimal},
+            {"Gender", IsValidGender},
+            {"ExperienceInMonth", IsValidInteger},
+            {"Email", IsValidEmail},
+            {"MaritalStatus", IsValidMaritalStatus},
+            {"MarriageDate", IsValidDateOrEmpty},
+            {"BloodGroup", IsValidBloodGroup},
+            {"FatherName", IsValidName},
+            {"SpouseName", IsValidNameOrEmpty},
+            {"IsPhChallanged", IsValidBoolean},
+            {"IsInternationalEmployee", IsValidBoolean},
+            {"VerificationStatus", IsValidVerificationStatus},
+            {"EmergencyContactName", IsValidNameOrEmpty},
+            {"EmergencyMobileNo", IsValidMobileNumberOrEmpty},
+            {"AccountNumber", IsValidBankAccountNumber},
+            {"IFSCCode", IsValidIFSCCode},
+            {"BankAccountType", IsValidBankAccountType},
+            {"BankName", IsValidName},
+            {"PANNo", IsValidPANNumber},
+            {"IsEmployeeEligibleForPF", IsValidBoolean},
+            {"PFNumber", IsValidPFNumberOrEmpty},
+            {"PFAccountCreationDate", IsValidDateOrEmpty},
+            {"IsExistingMemberOfPF", IsValidBoolean},
+            {"IsEmployeeEligibleForESI", IsValidBoolean},
+            {"ESISerialNumber", IsValidESINumberOrEmpty},
+            {"AadharNo", IsValidAadharNumberOrEmpty},
+            {"UAN", IsValidUANOrEmpty},
+            {"Mobile", IsValidMobileNumber},
+            {"CountryOfOrigin", IsValidNameOrEmpty},
+            {"Designation", IsValidNameOrEmpty},
+            {"Location", IsValidNameOrEmpty},
+            {"Department", IsValidNameOrEmpty}
+        };
+        }
+
         private void GetEmployeeDepartmentAndDesignation()
         {
             var dataset = _db.FetchDataSet(Procedures.ORG_HIERARCHY_DEPARTMENT_GETALL);
@@ -2170,7 +2399,7 @@ namespace ServiceLayer.Code
             else if (maritalStatus.Equals(nameof(LocalConstants.Widowed), StringComparison.OrdinalIgnoreCase))
                 return (int)LocalConstants.Widowed;
             else
-                return 0;
+                throw HiringBellException.ThrowBadRequest("Invalid marital status selected");
         }
 
         private int GetGenderValue(string gender)
@@ -2179,8 +2408,10 @@ namespace ServiceLayer.Code
                 return 1;
             else if (gender.Equals(LocalConstants.Female, StringComparison.OrdinalIgnoreCase))
                 return 2;
-            else
+            else if (gender.Equals(LocalConstants.Any, StringComparison.OrdinalIgnoreCase))
                 return 3;
+            else
+                throw HiringBellException.ThrowBadRequest("Invalid gender selected. Please select a valid gender type");
         }
 
         private (string FirstName, string LastName) GetFirstAndLastName(string fullName)
@@ -2216,6 +2447,52 @@ namespace ServiceLayer.Code
             }
 
             return columnList;
+        }
+
+        public async Task<List<RecordHealthStatus>> GetEmployeesRecordHealthStatusService()
+        {
+            var result = _db.GetList<RecordHealthStatus>(Procedures.RECORD_HEALTH_STATUS_GET_INCOMPLETE_PROFILE, new
+            {
+                FinancialYear = _currentSession.FinancialStartYear
+            });
+
+            return await Task.FromResult(result);
+        }
+
+        public async Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(long employeeId)
+        {
+            if (employeeId <= 0)
+                throw HiringBellException.ThrowBadRequest("Invalid employee id");
+
+            var empSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID, new
+            {
+                _currentSession.FinancialStartYear,
+                EmployeeId = employeeId
+            });
+
+            if (empSalaryDetail == null)
+                throw HiringBellException.ThrowBadRequest("Employee salary detail not found");
+
+            var eCal = await GetDeclarationDetail(employeeId, empSalaryDetail.CTC, ApplicationConstants.DefaultTaxRegin);
+
+            var result = await _db.ExecuteAsync(Procedures.GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL, new
+            {
+                EmployeeId = employeeId,
+                _currentSession.CurrentUserDetail.CompanyId,
+                eCal.employeeDeclaration.DeclarationDetail,
+                eCal.employeeSalaryDetail.CompleteSalaryDetail,
+                NewSalaryDetail = "[]",
+                eCal.employeeSalaryDetail.TaxDetail,
+                eCal.employeeSalaryDetail.GrossIncome,
+                eCal.employeeSalaryDetail.NetSalary
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to add employee salary detail, leave and declaration");
+
+            await CheckRunLeaveAccrualCycle(employeeId);
+
+            return await GetEmployeesRecordHealthStatusService();
         }
 
         #endregion

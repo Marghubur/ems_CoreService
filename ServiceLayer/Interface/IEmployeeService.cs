@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal;
 using EMailService.Modal.EmployeeModal;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
@@ -10,7 +11,7 @@ namespace ServiceLayer.Interface
 {
     public interface IEmployeeService
     {
-        List<Employee> GetEmployees(FilterModel filterModel);
+        (List<Employee> employees, List<RecordHealthStatus> recordHealthStatuse) GetEmployees(FilterModel filterModel);
         DataSet GetManageEmployeeDetailService(long EmployeeId);
         DataSet GetManageClientService(long EmployeeId);
         DataSet UpdateEmployeeMappedClientDetailService(EmployeeMappedClient employeeMappedClient, bool IsUpdating);
@@ -33,7 +34,8 @@ namespace ServiceLayer.Interface
         Task<string> ManageEmpPrevEmploymentDetailService(PrevEmploymentDetail prevEmploymentDetail);
         Task<string> ManageEmpBackgroundVerificationDetailService(EmployeeBackgroundVerification employeeBackgroundVerification);
         Task<string> ManageEmpNomineeDetailService(EmployeeNomineeDetail employeeNomineeDetail);
-
+        Task<List<RecordHealthStatus>> GetEmployeesRecordHealthStatusService();
+        Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(long employeeId);
         #region Un-used method
 
         //EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation);
