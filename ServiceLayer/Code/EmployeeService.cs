@@ -2009,7 +2009,7 @@ namespace ServiceLayer.Code
             DateTime defaultDate = Convert.ToDateTime("1976-01-01");
             List<Employee> items = new List<Employee>();
             string[] dateFormats = { "MM/dd/yyyy", "dd-MM-yyyy", "yyyy/MM/dd", "yyyy-MM-dd", "dd-MMM-yyyy" };
-            ValidateEmployeeExcel(table);
+            //ValidateEmployeeExcel(table);
 
             try
             {
