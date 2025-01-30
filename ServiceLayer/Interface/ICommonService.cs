@@ -22,5 +22,6 @@ namespace ServiceLayer.Interface
 
         string GetEmployeeCode(long id, string employeeCodePrefix, int size = 5);
         int ExtractEmployeeId(string empCode, string employeeCodePrefix);
+        Task<string> ReGenerateJWTTokenService();
     }
 }
