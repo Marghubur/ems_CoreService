@@ -160,7 +160,7 @@ namespace ServiceLayer.Code
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw;
             }
         }
 
@@ -397,6 +397,7 @@ namespace ServiceLayer.Code
                 if (isNewRegistration)
                 {
                     eCal = await GetDeclarationDetail(employeeBasicInfo.EmployeeUid, employeeBasicInfo.CTC, ApplicationConstants.DefaultTaxRegin);
+                    await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
                 }
                 else
                 {
@@ -417,13 +418,11 @@ namespace ServiceLayer.Code
 
                 await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo, eCal);
 
-                await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
-
                 return employeeBasicInfo.EmployeeUid;
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw;
             }
         }
 
@@ -1797,7 +1796,7 @@ namespace ServiceLayer.Code
                     {
                         { "Employee Code", _commonService.GetEmployeeCode(emp.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength) },
                         { "First Name", emp.FirstName },
-                        { "Last Name", emp.FirstName },
+                        { "Last Name", emp.LastName },
                         { "Mobile", emp.Mobile },
                         { "Email", emp.Email },
                         { "Aadhar No", emp.AadharNo },
