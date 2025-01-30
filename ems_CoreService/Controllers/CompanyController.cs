@@ -19,18 +19,18 @@ namespace OnlineDataBuilder.Controllers
     public class CompanyController : BaseController
     {
         private readonly ICompanyService _companyService;
-        // private readonly IPayrollService _payrollService;
+        private readonly ICommonService _commonService;
         private readonly HttpContext _httpContext;
 
         public CompanyController(
             ICompanyService companyService,
-            IHttpContextAccessor httpContext
-            // IPayrollService payrollService
+            IHttpContextAccessor httpContext,
+            ICommonService commonService
             )
         {
             _companyService = companyService;
             _httpContext = httpContext.HttpContext;
-            // _payrollService = payrollService;
+            _commonService = commonService;
         }
 
         [HttpGet("GetAllCompany")]
@@ -282,6 +282,8 @@ namespace OnlineDataBuilder.Controllers
             try
             {
                 var settingDetail = await _companyService.UpdateCompanyInitialSettingService(companyId, companySetting);
+                var token = await _commonService.ReGenerateJWTTokenService();
+                Response.Headers.Append("Authorization", $"Bearer {token}");
                 return BuildResponse(settingDetail);
             }
             catch (Exception ex)

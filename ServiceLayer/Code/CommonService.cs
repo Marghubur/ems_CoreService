@@ -1,7 +1,10 @@
-﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
@@ -23,10 +26,13 @@ namespace ServiceLayer.Code
     public class CommonService : ICommonService
     {
         private readonly IDb _db;
-
-        public CommonService(IDb db)
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly CurrentSession _currentSession;
+        public CommonService(IDb db, RequestMicroservice requestMicroservice, CurrentSession currentSession)
         {
             _db = db;
+            _requestMicroservice = requestMicroservice;
+            _currentSession = currentSession;
         }
 
         public List<Employee> LoadEmployeeData()
@@ -366,6 +372,19 @@ namespace ServiceLayer.Code
             }
 
             return columnList;
+        }
+
+        public async Task<string> ReGenerateJWTTokenService()
+        {
+            var url = $"http://localhost:5002/api/Login/ReGenerateToken";
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
     }
 }
