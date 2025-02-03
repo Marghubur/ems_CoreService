@@ -29,11 +29,12 @@ namespace ServiceLayer.Code
         private readonly RequestMicroservice _requestMicroservice;
         private readonly CurrentSession _currentSession;
         private readonly MicroserviceRegistry _microserviceRegistry;
-        public CommonService(IDb db, RequestMicroservice requestMicroservice, CurrentSession currentSession)
+        public CommonService(IDb db, RequestMicroservice requestMicroservice, CurrentSession currentSession, MicroserviceRegistry microserviceRegistry)
         {
             _db = db;
             _requestMicroservice = requestMicroservice;
             _currentSession = currentSession;
+            _microserviceRegistry = microserviceRegistry;
         }
 
         public List<Employee> LoadEmployeeData()
