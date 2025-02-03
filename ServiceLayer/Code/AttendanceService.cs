@@ -1777,6 +1777,9 @@ namespace ServiceLayer.Code
 
         private List<MonthlyAttendanceDetail> GetMonthlyAttendanceRecord(DataTable dataTable)
         {
+            if (dataTable.Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Attendance record not found. Please upload a valid excel");
+
             List<MonthlyAttendanceDetail> monthlyAttendanceDetail = new List<MonthlyAttendanceDetail>();
             foreach (DataRow row in dataTable.Rows)
             {
@@ -1800,6 +1803,9 @@ namespace ServiceLayer.Code
                         }
                     }
                 }
+
+                if (attendance.DailyData.Count == 0)
+                    throw HiringBellException.ThrowBadRequest("Attendance record not found in excel");
 
                 monthlyAttendanceDetail.Add(attendance);
             }
@@ -1882,11 +1888,27 @@ namespace ServiceLayer.Code
         {
             List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
 
+            var firstExcelRecord = monthlyAttendanceDetails[0];
+
+            var submitAttendanceFirstDate = new DateTime(firstExcelRecord.Year, firstExcelRecord.Month, firstExcelRecord.DailyData.First().Key);
             monthlyAttendanceDetails.ForEach(x =>
             {
                 DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
                 if (dailyAttendanceBuilder.employee.CreatedOn.Year > x.Year)
                     throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
+                else if (dailyAttendanceBuilder.employee.CreatedOn.Year == x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month < x.Month)
+                    throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
+                
+                if (dailyAttendanceBuilder.LastRunPayrollDate.Year != 1 && dailyAttendanceBuilder.LastRunPayrollDate.Subtract(submitAttendanceFirstDate).TotalDays > 0)
+                    throw HiringBellException.ThrowBadRequest($"You can't upload attendance after payroll run i.e {dailyAttendanceBuilder.LastRunPayrollDate.ToString("dd-MM-yyyy")} ");
+
+                if (dailyAttendanceBuilder.employee.CreatedOn.Year == x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month == x.Month)
+                {
+                    for (int i = 1; i < dailyAttendanceBuilder.employee.CreatedOn.Day; i++)
+                    {
+                        x.DailyData.Remove(i);
+                    }
+                }
 
                 foreach (var item in x.DailyData)
                 {
@@ -1917,7 +1939,6 @@ namespace ServiceLayer.Code
                     else
                     {
                         attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
-
                         var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
                                                                                         && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
 
@@ -1977,7 +1998,7 @@ namespace ServiceLayer.Code
                 _currentSession.CurrentUserDetail.CompanyId,
             });
 
-            if (Result.Tables.Count != 5)
+            if (Result.Tables.Count != 6)
                 throw HiringBellException.ThrowBadRequest("Fail to get attendance detail. Please contact to admin.");
 
             //if (Result.Tables[0].Rows.Count == 0)
@@ -1995,6 +2016,9 @@ namespace ServiceLayer.Code
             dailyAttendanceBuilder.employee = Converter.ToType<Employee>(Result.Tables[1]);
             dailyAttendanceBuilder.leaveDetails = Converter.ToList<LeaveRequestNotification>(Result.Tables[4]);
             dailyAttendanceBuilder.calendars = Converter.ToList<ModalLayer.Calendar>(Result.Tables[2]);
+
+            DateTime.TryParse(Result.Tables[5].Rows[0]["LastRunPayrollDate"].ToString(), out DateTime lastRunPayrollDate);
+            dailyAttendanceBuilder.LastRunPayrollDate = lastRunPayrollDate;
 
             return dailyAttendanceBuilder;
         }
@@ -2166,7 +2190,7 @@ namespace ServiceLayer.Code
 
         public async Task<byte[]> DownloadAttendanceExcelWithDataService()
         {
-            
+
             try
             {
                 var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL);
@@ -2209,7 +2233,7 @@ namespace ServiceLayer.Code
                 throw;
             }
 
-            
+
         }
         #endregion
 

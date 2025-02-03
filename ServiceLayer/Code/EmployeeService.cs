@@ -530,7 +530,7 @@ namespace ServiceLayer.Code
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
-                    OldFileName = new List<string> { oldFileName },
+                    OldFileName = string.IsNullOrEmpty(oldFileName) ? null : new List<string> { oldFileName },
                     ServiceName = LocalConstants.EmstumFileService
                 };
 
@@ -1051,7 +1051,7 @@ namespace ServiceLayer.Code
                 FileFolderDetail fileFolderDetail = new FileFolderDetail
                 {
                     FolderPath = ownerPath,
-                    OldFileName = new List<string> { employee.OldFileName },
+                    OldFileName = string.IsNullOrEmpty(employee.OldFileName) ? null : new List<string> { employee.OldFileName },
                     ServiceName = LocalConstants.EmstumFileService
                 };
 
@@ -2008,7 +2008,7 @@ namespace ServiceLayer.Code
             DateTime defaultDate = Convert.ToDateTime("1976-01-01");
             List<Employee> items = new List<Employee>();
             string[] dateFormats = { "MM/dd/yyyy", "dd-MM-yyyy", "yyyy/MM/dd", "yyyy-MM-dd", "dd-MMM-yyyy" };
-            //ValidateEmployeeExcel(table);
+            ValidateEmployeeExcel(table);
 
             try
             {
@@ -2250,7 +2250,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 return true;
 
-            var validStatuses = new[] { "Cancelled", "Initiated", "On Hold", "Partially Verified", "Pending", "Rejected", "Verified" };
+            var validStatuses = new[] { "CANCELLED", "INITIATED", "ON HOLD", "PARTIALLY VERIFIED", "PENDING", "REJECTED", "VERIFIED" };
             return validStatuses.Contains(value?.ToUpper());
         }
 
@@ -2259,7 +2259,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(value))
                 return true;
 
-            var validStatuses = new[] { "Current", "Saving" };
+            var validStatuses = new[] { "CURRENT", "SAVING", "SALARY" };
             return validStatuses.Contains(value?.ToUpper());
         }
 
@@ -2288,16 +2288,6 @@ namespace ServiceLayer.Code
             return Regex.IsMatch(value, @"^[A-Z]{5}[0-9]{4}[A-Z]{1}$");
         }
 
-        private bool IsValidPFNumberOrEmpty(string value, string fieldName)
-        {
-            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[A-Z]{2}/[0-9]{5}/[0-9]{7}$");
-        }
-
-        private bool IsValidESINumberOrEmpty(string value, string fieldName)
-        {
-            return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{10}$");
-        }
-
         private bool IsValidAadharNumberOrEmpty(string value, string fieldName)
         {
             return string.IsNullOrEmpty(value) || Regex.IsMatch(value, @"^[0-9]{12}$");
@@ -2313,43 +2303,41 @@ namespace ServiceLayer.Code
         private void EmployeeExcelValidator()
         {
             _validators = new Dictionary<string, Func<string, string, bool>>
-        {
-            {"EmployeeName", IsValidName},
-            {"DateOfJoining", IsValidDate},
-            {"DOB", IsValidDate},
-            {"CTC", IsValidDecimal},
-            {"Gender", IsValidGender},
-            {"ExperienceInMonth", IsValidInteger},
-            {"Email", IsValidEmail},
-            {"MaritalStatus", IsValidMaritalStatus},
-            {"MarriageDate", IsValidDateOrEmpty},
-            {"BloodGroup", IsValidBloodGroup},
-            {"FatherName", IsValidName},
-            {"SpouseName", IsValidNameOrEmpty},
-            {"IsPhChallanged", IsValidBoolean},
-            {"IsInternationalEmployee", IsValidBoolean},
-            {"VerificationStatus", IsValidVerificationStatus},
-            {"EmergencyContactName", IsValidNameOrEmpty},
-            {"EmergencyMobileNo", IsValidMobileNumberOrEmpty},
-            {"AccountNumber", IsValidBankAccountNumber},
-            {"IFSCCode", IsValidIFSCCode},
-            {"BankAccountType", IsValidBankAccountType},
-            {"BankName", IsValidName},
-            {"PANNo", IsValidPANNumber},
-            {"IsEmployeeEligibleForPF", IsValidBoolean},
-            {"PFNumber", IsValidPFNumberOrEmpty},
-            {"PFAccountCreationDate", IsValidDateOrEmpty},
-            {"IsExistingMemberOfPF", IsValidBoolean},
-            {"IsEmployeeEligibleForESI", IsValidBoolean},
-            {"ESISerialNumber", IsValidESINumberOrEmpty},
-            {"AadharNo", IsValidAadharNumberOrEmpty},
-            {"UAN", IsValidUANOrEmpty},
-            {"Mobile", IsValidMobileNumber},
-            {"CountryOfOrigin", IsValidNameOrEmpty},
-            {"Designation", IsValidNameOrEmpty},
-            {"Location", IsValidNameOrEmpty},
-            {"Department", IsValidNameOrEmpty}
-        };
+            {
+                {"EmployeeName", IsValidName},
+                {"DateOfJoining", IsValidDate},
+                {"DOB", IsValidDate},
+                {"CTC", IsValidDecimal},
+                {"Gender", IsValidGender},
+                {"ExperienceInMonth", IsValidInteger},
+                {"Email", IsValidEmail},
+                {"MaritalStatus", IsValidMaritalStatus},
+                {"MarriageDate", IsValidDateOrEmpty},
+                {"BloodGroup", IsValidBloodGroup},
+                {"FatherName", IsValidName},
+                {"SpouseName", IsValidNameOrEmpty},
+                {"IsPhChallanged", IsValidBoolean},
+                {"IsInternationalEmployee", IsValidBoolean},
+                {"VerificationStatus", IsValidVerificationStatus},
+                {"EmergencyContactName", IsValidNameOrEmpty},
+                {"EmergencyMobileNo", IsValidMobileNumberOrEmpty},
+                {"AccountNumber", IsValidBankAccountNumber},
+                {"IFSCCode", IsValidIFSCCode},
+                {"BankAccountType", IsValidBankAccountType},
+                {"BankName", IsValidName},
+                {"PANNo", IsValidPANNumber},
+                {"IsEmployeeEligibleForPF", IsValidBoolean},
+                {"PFAccountCreationDate", IsValidDateOrEmpty},
+                {"IsExistingMemberOfPF", IsValidBoolean},
+                {"IsEmployeeEligibleForESI", IsValidBoolean},
+                {"AadharNo", IsValidAadharNumberOrEmpty},
+                {"UAN", IsValidUANOrEmpty},
+                {"Mobile", IsValidMobileNumber},
+                {"CountryOfOrigin", IsValidNameOrEmpty},
+                {"Designation", IsValidNameOrEmpty},
+                {"Location", IsValidNameOrEmpty},
+                {"Department", IsValidNameOrEmpty}
+            };
         }
 
         private void GetEmployeeDepartmentAndDesignation()
@@ -2458,38 +2446,42 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(long employeeId)
+        public async Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(List<long> employeeIds)
         {
-            if (employeeId <= 0)
-                throw HiringBellException.ThrowBadRequest("Invalid employee id");
-
-            var empSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID, new
+            foreach (var employeeId in employeeIds)
             {
-                _currentSession.FinancialStartYear,
-                EmployeeId = employeeId
-            });
+                if (employeeId <= 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid employee id");
 
-            if (empSalaryDetail == null)
-                throw HiringBellException.ThrowBadRequest("Employee salary detail not found");
+                var empSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID, new
+                {
+                    _currentSession.FinancialStartYear,
+                    EmployeeId = employeeId
+                });
 
-            var eCal = await GetDeclarationDetail(employeeId, empSalaryDetail.CTC, ApplicationConstants.DefaultTaxRegin);
+                if (empSalaryDetail == null)
+                    throw HiringBellException.ThrowBadRequest("Employee salary detail not found");
 
-            var result = await _db.ExecuteAsync(Procedures.GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL, new
-            {
-                EmployeeId = employeeId,
-                _currentSession.CurrentUserDetail.CompanyId,
-                eCal.employeeDeclaration.DeclarationDetail,
-                eCal.employeeSalaryDetail.CompleteSalaryDetail,
-                NewSalaryDetail = "[]",
-                eCal.employeeSalaryDetail.TaxDetail,
-                eCal.employeeSalaryDetail.GrossIncome,
-                eCal.employeeSalaryDetail.NetSalary
-            }, true);
+                var eCal = await GetDeclarationDetail(employeeId, empSalaryDetail.CTC, ApplicationConstants.DefaultTaxRegin);
 
-            if (string.IsNullOrEmpty(result.statusMessage))
-                throw HiringBellException.ThrowBadRequest("Fail to add employee salary detail, leave and declaration");
+                var result = await _db.ExecuteAsync(Procedures.GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL, new
+                {
+                    EmployeeId = employeeId,
+                    _currentSession.CurrentUserDetail.CompanyId,
+                    eCal.employeeDeclaration.DeclarationDetail,
+                    eCal.employeeSalaryDetail.CompleteSalaryDetail,
+                    NewSalaryDetail = "[]",
+                    eCal.employeeSalaryDetail.TaxDetail,
+                    eCal.employeeSalaryDetail.GrossIncome,
+                    eCal.employeeSalaryDetail.NetSalary
+                }, true);
 
-            await CheckRunLeaveAccrualCycle(employeeId);
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail to add employee salary detail, leave and declaration");
+
+                await CheckRunLeaveAccrualCycle(employeeId);
+            }
+
 
             return await GetEmployeesRecordHealthStatusService();
         }

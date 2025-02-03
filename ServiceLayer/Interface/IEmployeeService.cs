@@ -35,7 +35,7 @@ namespace ServiceLayer.Interface
         Task<string> ManageEmpBackgroundVerificationDetailService(EmployeeBackgroundVerification employeeBackgroundVerification);
         Task<string> ManageEmpNomineeDetailService(EmployeeNomineeDetail employeeNomineeDetail);
         Task<List<RecordHealthStatus>> GetEmployeesRecordHealthStatusService();
-        Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(long employeeId);
+        Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(List<long> employeeIds);
         #region Un-used method
 
         //EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation);
