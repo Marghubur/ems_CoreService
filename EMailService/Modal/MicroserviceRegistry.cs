@@ -17,5 +17,6 @@
         public string ResourceBaseUrl { get; set; }
         public string ConvertDocxToHtml { get; set; }
         public string GenerateExelWithHeader { get; set; }
+        public string ReGenearateToken { get; set; }
     }
 }
