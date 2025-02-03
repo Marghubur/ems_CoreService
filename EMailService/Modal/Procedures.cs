@@ -17,6 +17,8 @@ namespace EMailService.Modal
         public static string DAILY_ATTENDANCE_FILTER = "sp_daily_attendance_filter";
         public static string DAILY_ATTENDANCE_BY_USER = "sp_daily_attendance_by_user";
         public static string DAILY_ATTENDANCE_CONFIG_DATA = "sp_daily_attendance_config_data";
+        public static string DAILY_ATTENDANCE_INSERT = "sp_daily_attendance_insert";
+        public static string DAILY_ATTENDANCE_GET = "sp_daily_attendance_get";
 
         /*------------- Leave Request service proceudures -------*/
         public static string Leave_Notification_And_Request_InsUpdate = "sp_leave_notification_and_request_InsUpdate";
@@ -70,8 +72,6 @@ namespace EMailService.Modal
         public static string Work_Shifts_Getby_Empid = "sp_work_shifts_getby_empid";
         public static string Leave_And_Lop_Get = "sp_leave_and_lop_get";
         public static string Complaint_Or_Request_Update_Status = "sp_complaint_or_request_update_status";
-        public static string DAILY_ATTENDANCE_INSERT = "sp_daily_attendance_insert";
-        public static string DAILY_ATTENDANCE_GET = "sp_daily_attendance_get";
 
         /*--------------  Authentication Service procedures ------------*/
         public static string AuthenticationToken_VerifyAndGet = "SP_AuthenticationToken_VerifyAndGet";

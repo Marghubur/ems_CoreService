@@ -244,7 +244,7 @@ namespace ServiceLayer.Code
             FileFolderDetail fileFolderDetail = new FileFolderDetail
             {
                 FolderPath = path,
-                OldFileName = new List<string> { companyInfo.OldFileName },
+                OldFileName = string.IsNullOrEmpty(companyInfo.OldFileName) ? null : new List<string> { companyInfo.OldFileName },
                 ServiceName = LocalConstants.EmstumFileService
             };
 

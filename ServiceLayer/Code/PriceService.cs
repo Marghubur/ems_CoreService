@@ -130,14 +130,14 @@ namespace ServiceLayer.Code
             if (!email.IsValid(contactUsDetail.Email))
                 throw HiringBellException.ThrowBadRequest("Please enter a valid email id");
 
-            var result = _db.GetList<ContactUsDetail>(Procedures.TRAIL_REQUEST_GETBY_EMAIL_PHONE, new
-            {
-                Email = contactUsDetail.Email,
-                PhoneNumber = contactUsDetail.PhoneNumber
-            });
+            //var result = _db.GetList<ContactUsDetail>(Procedures.TRAIL_REQUEST_GETBY_EMAIL_PHONE, new
+            //{
+            //    Email = contactUsDetail.Email,
+            //    PhoneNumber = contactUsDetail.PhoneNumber
+            //});
 
-            if (result.Count > 0)
-                throw HiringBellException.ThrowBadRequest("Email or mobile already exist");
+            //if (result.Count > 0)
+            //    throw HiringBellException.ThrowBadRequest("Email or mobile already exist");
         }
     }
 }

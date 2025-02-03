@@ -139,7 +139,7 @@ namespace ServiceLayer.Code
                     FileFolderDetail fileFolderDetail = new FileFolderDetail
                     {
                         FolderPath = ownerFolderPath,
-                        OldFileName = new List<string> { client.OldFileName },
+                        OldFileName = string.IsNullOrEmpty(client.OldFileName) ? null : new List<string> { client.OldFileName },
                         ServiceName = LocalConstants.EmstumFileService
                     };
 

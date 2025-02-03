@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using EMailService.Modal.EmployeeModal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +10,7 @@ using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -308,12 +310,12 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpGet("FixEmployeesRecordHealthStatus/{employeeId}")]
-        public async Task<ApiResponse> FixEmployeesRecordHealthStatus([FromRoute] long employeeId)
+        [HttpPost("FixEmployeesRecordHealthStatus")]
+        public async Task<ApiResponse> FixEmployeesRecordHealthStatus([FromBody] List<long> employeeIds)
         {
             try
             {
-                var result = await _employeeService.FixEmployeesRecordHealthStatusService(employeeId);
+                var result = await _employeeService.FixEmployeesRecordHealthStatusService(employeeIds);
                 return BuildResponse(result);
             }
             catch (Exception ex)

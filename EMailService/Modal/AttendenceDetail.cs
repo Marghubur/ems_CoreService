@@ -84,6 +84,7 @@ namespace ModalLayer.Modal
         public List<LeaveRequestNotification> leaveDetails { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
         public List<Project> projects { get; set; }
+        public DateTime LastRunPayrollDate { get; set; }
     }
 
     public class AttendanceConfig
