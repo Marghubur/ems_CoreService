@@ -1900,7 +1900,7 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
                 
                 if (dailyAttendanceBuilder.LastRunPayrollDate.Year != 1 && dailyAttendanceBuilder.LastRunPayrollDate.Subtract(submitAttendanceFirstDate).TotalDays > 0)
-                    throw HiringBellException.ThrowBadRequest($"You can't upload attendance after payroll run i.e {dailyAttendanceBuilder.LastRunPayrollDate.ToString("dd-MM-yyyy")} ");
+                    throw HiringBellException.ThrowBadRequest($"You can't upload {submitAttendanceFirstDate.ToString("MMMM")} {x.Year} attendance, as payroll already process.");
 
                 if (dailyAttendanceBuilder.employee.CreatedOn.Year == x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month == x.Month)
                 {

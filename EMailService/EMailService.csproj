@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <PackageReference Include="BottomHalf.Utilities" Version="1.0.58" />
-    <PackageReference Include="Bt.Lib.PipelineConfig" Version="1.0.3" />
+    <PackageReference Include="Bt.Lib.PipelineConfig" Version="1.0.6" />
     <PackageReference Include="EAGetMail" Version="5.3.5.1" />
     <PackageReference Include="MailKit" Version="4.8.0" />
   </ItemGroup>
