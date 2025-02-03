@@ -28,6 +28,7 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly CurrentSession _currentSession;
+        private readonly MicroserviceRegistry _microserviceRegistry;
         public CommonService(IDb db, RequestMicroservice requestMicroservice, CurrentSession currentSession)
         {
             _db = db;
@@ -376,7 +377,7 @@ namespace ServiceLayer.Code
 
         public async Task<string> ReGenerateJWTTokenService()
         {
-            var url = $"http://localhost:5002/api/Login/ReGenerateToken";
+            var url = _microserviceRegistry.ReGenearateToken;
 
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
