@@ -344,7 +344,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Invalid faher name");
         }
 
-        public async Task<long> ManageEmployeeBasicInfoService(EmployeeBasicInfo employee, IFormFileCollection fileCollection)
+        public async Task<(EmployeeBasicInfo employeeBasic, List<FileDetail> fileDetails)> ManageEmployeeBasicInfoService(EmployeeBasicInfo employee, IFormFileCollection fileCollection)
         {
             var result = CheckMobileEmailExistence(employee.EmployeeUid, employee.Email, employee.Mobile);
             if (result.EmailCount > 0)
@@ -368,7 +368,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        private async Task<long> RegisterOrUpdateEmployeeBasicDetail(EmployeeBasicInfo employeeBasicInfo, IFormFileCollection fileCollection)
+        private async Task<(EmployeeBasicInfo employeeBasic, List<FileDetail> fileDetails)> RegisterOrUpdateEmployeeBasicDetail(EmployeeBasicInfo employeeBasicInfo, IFormFileCollection fileCollection)
         {
             try
             {
@@ -391,34 +391,16 @@ namespace ServiceLayer.Code
 
                 await PrepareEmployeeBasicInfoInsertData(employeeBasicInfo);
 
-                await EmployeeFileInsertUpdate(fileCollection, employeeBasicInfo.EmployeeUid, employeeBasicInfo.OldFileName, employeeBasicInfo.FileId);
+                var fileDetails = await EmployeeFileInsertUpdate(fileCollection, employeeBasicInfo.EmployeeUid, employeeBasicInfo.OldFileName, employeeBasicInfo.FileId);
 
-                var eCal = new EmployeeCalculation();
+                EmployeeCalculation eCal = await GetEmployeeDeclarationDetail(employeeBasicInfo);
+
                 if (isNewRegistration)
-                {
-                    eCal = await GetDeclarationDetail(employeeBasicInfo.EmployeeUid, employeeBasicInfo.CTC, ApplicationConstants.DefaultTaxRegin);
                     await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
-                }
-                else
-                {
-                    var dataSet = _db.FetchDataSet(Procedures.EMPLOYEE_DECLARATION_DETAIL_GET_BY_EMPID, new
-                    {
-                        EmployeeId = employeeBasicInfo.EmployeeUid,
-                        _currentSession.FinancialStartYear
-                    });
 
-                    if (dataSet == null || dataSet.Tables.Count != 2)
-                        throw HiringBellException.ThrowBadRequest("Fail to get salary detail and salary components");
+                await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
 
-                    eCal.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(dataSet.Tables[1]);
-                    eCal.employeeDeclaration = Converter.ToType<EmployeeDeclaration>(dataSet.Tables[0]);
-
-                    eCal.Doj = employeeBasicInfo.DateOfJoining;
-                }
-
-                await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo, eCal);
-
-                return employeeBasicInfo.EmployeeUid;
+                return (employeeBasicInfo, fileDetails);
             }
             catch
             {
@@ -426,11 +408,38 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task AddEmployeeSalaryLeaveAndDeclarationDetail(EmployeeBasicInfo employeeBasicInfo, EmployeeCalculation eCal)
+        private async Task<EmployeeCalculation> GetEmployeeDeclarationDetail(EmployeeBasicInfo employeeBasicInfo)
+        {
+            var dataSet = _db.FetchDataSet(Procedures.EMPLOYEE_DECLARATION_DETAIL_GET_BY_EMPID, new
+            {
+                EmployeeId = employeeBasicInfo.EmployeeUid,
+                _currentSession.FinancialStartYear
+            });
+
+            if (dataSet == null || dataSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("Fail to get salary detail and salary components");
+
+            if (dataSet.Tables[0].Rows.Count == 0 || dataSet.Tables[1].Rows.Count == 0)
+            {
+                return await GetDeclarationDetail(employeeBasicInfo.EmployeeUid, employeeBasicInfo.CTC, ApplicationConstants.DefaultTaxRegin);
+            }
+            else
+            {
+                var eCal = new EmployeeCalculation();
+
+                eCal.employeeSalaryDetail = Converter.ToType<EmployeeSalaryDetail>(dataSet.Tables[1]);
+                eCal.employeeDeclaration = Converter.ToType<EmployeeDeclaration>(dataSet.Tables[0]);
+                eCal.Doj = employeeBasicInfo.DateOfJoining;
+
+                return await Task.FromResult(eCal);
+            }
+        }
+
+        private async Task AddEmployeeSalaryLeaveAndDeclarationDetail(long employeeId, EmployeeCalculation eCal)
         {
             var result = await _db.ExecuteAsync(Procedures.GENERATE_EMP_LEAVE_DECLARATION_SALARYDETAIL, new
             {
-                EmployeeId = employeeBasicInfo.EmployeeUid,
+                EmployeeId = employeeId,
                 _currentSession.CurrentUserDetail.CompanyId,
                 eCal.employeeDeclaration.DeclarationDetail,
                 eCal.employeeSalaryDetail.CompleteSalaryDetail,
@@ -521,7 +530,7 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Please enter a valid email id");
         }
 
-        private async Task EmployeeFileInsertUpdate(IFormFileCollection fileCollection, long empId, string oldFileName, int fileId)
+        private async Task<List<FileDetail>> EmployeeFileInsertUpdate(IFormFileCollection fileCollection, long empId, string oldFileName, int fileId)
         {
             if (fileCollection != null && fileCollection.Count > 0)
             {
@@ -543,21 +552,39 @@ namespace ServiceLayer.Code
                 .SetToken(_currentSession.Authorization);
 
                 List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-                var fileInfo = (from n in files
-                                select new
-                                {
-                                    FileId = fileId,
-                                    FileOwnerId = empId,
-                                    FileName = n.FileName.Contains(".") ? n.FileName : n.FileName + "." + n.FileExtension,
-                                    FilePath = n.FilePath,
-                                    FileExtension = n.FileExtension,
-                                    UserTypeId = (int)UserType.Employee,
-                                    ItemStatusId = LocalConstants.Profile,
-                                    AdminId = _currentSession.CurrentUserDetail.UserId
-                                }).ToList();
 
-                var batchResult = await _db.BulkExecuteAsync(Procedures.Userfiledetail_Upload, fileInfo, true);
+                var file = files.FirstOrDefault();
+                var result = await _db.ExecuteAsync(Procedures.Userfiledetail_Upload, new
+                {
+                    FileId = fileId,
+                    FileOwnerId = empId,
+                    FileName = file.FileName.Contains(".") ? file.FileName : file.FileName + "." + file.FileExtension,
+                    FilePath = file.FilePath,
+                    FileExtension = file.FileExtension,
+                    UserTypeId = (int)UserType.Employee,
+                    ItemStatusId = LocalConstants.Profile,
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Faile insert employee profile image");
+
+                return await GetUserFileDetail(empId);
             }
+
+            return await Task.FromResult(new List<FileDetail>());
+        }
+
+        private async Task<List<FileDetail>> GetUserFileDetail(long fileownerId, int userTypeId = (int)UserType.Employee, int itemStatusId = 1)
+        {
+            var result = _db.GetList<FileDetail>(Procedures.USERFILES_GETBY_OWNERID_ITEMSTATUS, new
+            {
+                FileOwnerId = fileownerId,
+                UserTypeId = userTypeId,
+                ItemStatusId = itemStatusId
+            });
+
+            return await Task.FromResult(result);
         }
 
         public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, UploadedPayrollData uploadedPayrollData = null)
@@ -1804,8 +1831,8 @@ namespace ServiceLayer.Code
                         { "Account No", emp.AccountNumber },
                         { "Bank Name", emp.BankName },
                         { "IFSC Code", emp.IFSCCode },
-                        { "Experience In Month", emp.ExperienceInYear },
-                        { "Date Of Joining", emp.CreatedOn.ToString("dd-MM-yyyy") }
+                        { "Experience In Month", emp.ExprienceInYear },
+                        { "Date Of Joining", FormatDate(emp.CreatedOn) }
                     };
 
                     empData.Add(data);
@@ -1828,6 +1855,11 @@ namespace ServiceLayer.Code
             }
 
             return null;
+        }
+
+        private string FormatDate(DateTime date)
+        {
+            return _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone).ToString("dd-MMM-yyyy");
         }
 
         #endregion
@@ -2460,7 +2492,7 @@ namespace ServiceLayer.Code
                 });
 
                 if (empSalaryDetail == null)
-                    throw HiringBellException.ThrowBadRequest("Employee salary detail not found");
+                    throw HiringBellException.ThrowBadRequest("Employee salary details are not available. Please ensure that the CTC is entered on the employee registration page first.");
 
                 var eCal = await GetDeclarationDetail(employeeId, empSalaryDetail.CTC, ApplicationConstants.DefaultTaxRegin);
 

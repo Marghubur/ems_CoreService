@@ -7,7 +7,7 @@ namespace ServiceLayer.Interface
 {
     public interface IOvertimeService
     {
-        Task<string> ManageOvertimeConfigService(OvertimeConfiguration overtimeDetail);
+        Task<List<OvertimeConfiguration>> ManageOvertimeConfigService(OvertimeConfiguration overtimeDetail);
         Task<DataSet> GetOvertimeTypeAndConfigService();
         Task<(List<EmployeeOvertime> EmployeeOvertimes, List<OvertimeConfiguration> OvertimeConfigurations)> ApplyOvertimeService(EmployeeOvertime employeeOvertime);
         Task<(List<EmployeeOvertime> EmployeeOvertimes, List<OvertimeConfiguration> OvertimeConfigurations)> GetEmployeeOvertimeService();

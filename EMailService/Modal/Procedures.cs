@@ -183,6 +183,7 @@ namespace EMailService.Modal
         public static string EMPLOYEES_ACTIVE_ALL = "sp_employees_active_all";
         public static string ORG_HIERARCHY_DEPARTMENT_GETALL = "sp_org_hierarchy_department_getall";
         public static string EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID = "sp_employee_salary_detail_get_by_empid";
+        public static string USERFILES_GETBY_OWNERID_ITEMSTATUS = "sp_userfiles_getby_ownerid_itemstatus";
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
 
@@ -350,7 +351,7 @@ namespace EMailService.Modal
         public static string EMPLOYEE_OVERTIMETABLE_GET_BYID = "sp_employee_overtimetable_get_byid";
         public static string EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID = "sp_employee_overtimetable_get_by_empid";
         public static string OVERTIME_TYPE_CONFIGURATION_GETALL = "sp_overtime_type_configuration_getall";
-
+        public static string OVERTIMETABLE_CONFIGURATION_GET_ALL = "sp_overtimetable_configuration_get_all";
 
         //---------------- Employee Insert Update ------------------------
         public static string EMPLOYEES_BASICINFO_INS_UPD = "sp_employees_basicinfo_ins_upd";

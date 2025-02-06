@@ -51,8 +51,10 @@ namespace ServiceLayer.Code
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly GitHubConnector _gitHubConnector;
-        private readonly IDOCXToHTMLConverter _iDOCXToHTMLConverter;
-        public BillService(IDb db, IFileService fileService, IHTMLConverter iHTMLConverter,
+        private readonly ICommonService _commonService;
+        public BillService(IDb db, 
+            IFileService fileService, 
+            IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
             CurrentSession currentSession,
@@ -65,7 +67,7 @@ namespace ServiceLayer.Code
             MicroserviceRegistry microserviceUrlLogs,
             IUtilityService utilityService,
             GitHubConnector gitHubConnector,
-            IDOCXToHTMLConverter iDOCXToHTMLConverter)
+            ICommonService commonService)
         {
             this.db = db;
             _logger = logger;
@@ -82,7 +84,7 @@ namespace ServiceLayer.Code
             _microserviceUrlLogs = microserviceUrlLogs;
             _utilityService = utilityService;
             _gitHubConnector = gitHubConnector;
-            _iDOCXToHTMLConverter = iDOCXToHTMLConverter;
+            _commonService = commonService;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -1361,12 +1363,14 @@ namespace ServiceLayer.Code
             var netSalary = totalEarning > 0 ? Math.Round(totalEarning - (totalContribution + totalDeduction)) : 0;
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
-            var ActualPayableDays = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
+
+            var doj = _timezoneConverter.ToTimeZoneDateTime(payslipModal.Employee.CreatedOn, _currentSession.TimeZone);
+            var ActualPayableDays = await GetActualPayableDay(doj, payslipModal.Month, payslipModal.Year);
             //var TotalWorkingDays = GetWorkingDays(payslipModal.dailyAttendances, payslipModal.leaveRequestNotifications);
             var TotalWorkingDays = ActualPayableDays - payslipModal.PayrollMonthlyDetail.LOP;
 
             var LossOfPayDays = payslipModal.PayrollMonthlyDetail.LOP;
-            var doj = _timezoneConverter.ToTimeZoneDateTime(payslipModal.Employee.CreatedOn, _currentSession.TimeZone);
+            string employeeCode = _commonService.GetEmployeeCode(payslipModal.Employee.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength);
 
             html = payslipModal.PdfTemplateHTML.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
                 Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
@@ -1374,7 +1378,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
                 Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
-                Replace("[[EmployeeNo]]", payslipModal.Employee.EmployeeUid.ToString()).
+                Replace("[[EmployeeNo]]", employeeCode).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
                 Replace("[[Department]]", designation).
                 Replace("[[SubDepartment]]", "NA").
@@ -1411,6 +1415,17 @@ namespace ServiceLayer.Code
                 html = await AddCompanyLogo(payslipModal, html);
 
             return html;
+        }
+
+        private async Task<int> GetActualPayableDay(DateTime doj, int month, int year)
+        {
+            int actualDaysPayable = 0;
+            if (doj.Month == month && doj.Year == year)
+                actualDaysPayable =  doj.Day;
+            else
+                actualDaysPayable = DateTime.DaysInMonth(year, month);
+
+            return await Task.FromResult(actualDaysPayable);
         }
 
         private string AddYTDComponent(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount)

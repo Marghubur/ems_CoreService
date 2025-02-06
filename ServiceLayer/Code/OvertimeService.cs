@@ -23,7 +23,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<string> ManageOvertimeConfigService(OvertimeConfiguration overtimeDetail)
+        public async Task<List<OvertimeConfiguration>> ManageOvertimeConfigService(OvertimeConfiguration overtimeDetail)
         {
             await ValidateOvertimeDetail(overtimeDetail);
             var existingOvertime = new OvertimeConfiguration();
@@ -71,7 +71,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Unable to inert/update overtime detail");
 
-            return result.statusMessage;
+            return await GetAllOvertimeConfiguration();
         }
 
         private async Task updateOvertimeDetail(OvertimeConfiguration overtimeDetail, OvertimeConfiguration existingOvertime)
@@ -99,6 +99,12 @@ namespace ServiceLayer.Code
             existingOvertime.OvertimeTypeId = overtimeDetail.OvertimeTypeId;
 
             await Task.CompletedTask;
+        }
+
+        private async Task<List<OvertimeConfiguration>> GetAllOvertimeConfiguration()
+        {
+            var overtimeConfiguration = _db.GetList<OvertimeConfiguration>(Procedures.OVERTIMETABLE_CONFIGURATION_GET_ALL);
+            return await Task.FromResult(overtimeConfiguration);
         }
 
         private async Task<OvertimeConfiguration> GetOvertimeById(int overtimeConfigId)

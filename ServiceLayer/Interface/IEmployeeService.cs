@@ -27,7 +27,7 @@ namespace ServiceLayer.Interface
         Task<dynamic> GetEmployeeResignationByIdService(long employeeId);
         Task<string> SubmitResignationService(EmployeeNoticePeriod employeeNoticePeriod);
         Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod);
-        Task<long> ManageEmployeeBasicInfoService(EmployeeBasicInfo employeeBasicInfo, IFormFileCollection files);
+        Task<(EmployeeBasicInfo employeeBasic, List<FileDetail> fileDetails)> ManageEmployeeBasicInfoService(EmployeeBasicInfo employeeBasicInfo, IFormFileCollection files);
         Task<string> ManageEmpPerosnalDetailService(EmpPersonalDetail empPersonalDetail);
         Task<string> ManageEmpAddressDetailService(EmployeeAddressDetail employeeAddressDetail);
         Task<string> ManageEmpProfessionalDetailService(EmployeeProfessionalDetail employeeProfessionalDetail);
