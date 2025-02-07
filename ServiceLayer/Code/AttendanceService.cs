@@ -1896,7 +1896,7 @@ namespace ServiceLayer.Code
                 DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(x.EmployeeId, x.Month, x.Year, out List<DailyAttendance> attendanceDetails);
                 if (dailyAttendanceBuilder.employee.CreatedOn.Year > x.Year)
                     throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
-                else if (dailyAttendanceBuilder.employee.CreatedOn.Year == x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month < x.Month)
+                else if (dailyAttendanceBuilder.employee.CreatedOn.Year == x.Year && dailyAttendanceBuilder.employee.CreatedOn.Month > x.Month)
                     throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{x.Name}' cannot be uploaded before their joining date ({dailyAttendanceBuilder.employee.CreatedOn.ToString("dd-MM-yyyy")}).");
 
                 if (dailyAttendanceBuilder.LastRunPayrollDate.Year != 1 && dailyAttendanceBuilder.LastRunPayrollDate.Subtract(submitAttendanceFirstDate).TotalDays > 0)
