@@ -190,13 +190,13 @@ namespace ServiceLayer.Code
                 }, true);
 
                 if (string.IsNullOrEmpty(result.statusMessage))
-                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+                    throw HiringBellException.ThrowBadRequest("Fail to register previous employement detail.");
 
                 return ApplicationConstants.Successfull;
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee previous employment detail");
             }
         }
 
@@ -234,7 +234,7 @@ namespace ServiceLayer.Code
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee professional detail");
             }
         }
 
@@ -281,13 +281,13 @@ namespace ServiceLayer.Code
                 }, true);
 
                 if (string.IsNullOrEmpty(result.statusMessage))
-                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+                    throw HiringBellException.ThrowBadRequest("Fail to add employee address detail.");
 
                 return ApplicationConstants.Successfull;
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee address detail");
             }
         }
 
@@ -325,13 +325,13 @@ namespace ServiceLayer.Code
                 }, true);
 
                 if (string.IsNullOrEmpty(result.statusMessage))
-                    throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
+                    throw HiringBellException.ThrowBadRequest("Fail to add employee personal detail.");
 
                 return ApplicationConstants.Successfull;
             }
             catch
             {
-                throw HiringBellException.ThrowBadRequest("Fail to insert employee basic info");
+                throw HiringBellException.ThrowBadRequest("Fail to insert employee personal detail");
             }
         }
 
@@ -395,10 +395,9 @@ namespace ServiceLayer.Code
 
                 EmployeeCalculation eCal = await GetEmployeeDeclarationDetail(employeeBasicInfo);
 
+                await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
                 if (isNewRegistration)
                     await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
-
-                await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
 
                 return (employeeBasicInfo, fileDetails);
             }
@@ -457,6 +456,8 @@ namespace ServiceLayer.Code
         {
             if (employeeBasicInfo.AccessLevelId != (int)RolesName.Admin)
                 employeeBasicInfo.UserTypeId = (int)RolesName.User;
+            else
+                employeeBasicInfo.UserTypeId = (int)RolesName.Admin;
 
             var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_BASICINFO_INS_UPD, new
             {
@@ -2072,7 +2073,7 @@ namespace ServiceLayer.Code
 
                                     switch (TypeName)
                                     {
-                                        case nameof(System.Boolean):
+                                        case nameof(Boolean):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
@@ -2118,7 +2119,7 @@ namespace ServiceLayer.Code
                                             else
                                                 x.SetValue(t, Decimal.Zero);
                                             break;
-                                        case nameof(System.String):
+                                        case nameof(String):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (x.Name.Equals("EmployeeName", StringComparison.OrdinalIgnoreCase))
@@ -2147,7 +2148,9 @@ namespace ServiceLayer.Code
                                         case nameof(DateTime):
                                             if (dr[x.Name] == DBNull.Value || dr[x.Name].ToString() != null)
                                             {
-                                                if (DateTime.TryParseExact(dr[x.Name].ToString(), dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateOfBirth))
+                                                if (string.IsNullOrEmpty(dr[x.Name].ToString()))
+                                                    break;
+                                                else if (DateTime.TryParseExact(dr[x.Name].ToString(), dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateOfBirth))
                                                     date = dateOfBirth;
                                                 else if (DateTime.TryParse(dr[x.Name].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out dateOfBirth))
                                                     date = dateOfBirth;
@@ -2157,10 +2160,10 @@ namespace ServiceLayer.Code
                                                 date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                                                 x.SetValue(t, date);
                                             }
-                                            else
-                                            {
-                                                x.SetValue(t, defaultDate);
-                                            }
+                                            //else
+                                            //{
+                                            //    x.SetValue(t, defaultDate);
+                                            //}
                                             break;
                                         default:
                                             x.SetValue(t, dr[x.Name]);
@@ -2198,6 +2201,11 @@ namespace ServiceLayer.Code
                     if (_validators.ContainsKey(column.ColumnName))
                     {
                         string cellValue = dt.Rows[rowIndex][column.ColumnName]?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrEmpty(cellValue) && (cellValue.Equals("NA", StringComparison.OrdinalIgnoreCase) || cellValue.Equals("N/A", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            cellValue = string.Empty;
+                            dt.Rows[rowIndex][column.ColumnName] = null;
+                        }
                         if (!_validators[column.ColumnName](cellValue, column.ColumnName))
                         {
                             throw HiringBellException.ThrowBadRequest($"Invalid value '{cellValue}' in column '{column.ColumnName}' at row {rowIndex + 2}");
@@ -2367,8 +2375,7 @@ namespace ServiceLayer.Code
                 {"Mobile", IsValidMobileNumber},
                 {"CountryOfOrigin", IsValidNameOrEmpty},
                 {"Designation", IsValidNameOrEmpty},
-                {"Location", IsValidNameOrEmpty},
-                {"Department", IsValidNameOrEmpty}
+                {"Location", IsValidNameOrEmpty}
             };
         }
 

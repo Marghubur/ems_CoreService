@@ -1912,41 +1912,31 @@ namespace ServiceLayer.Code
 
                 foreach (var item in x.DailyData)
                 {
-                    var attendance = new DailyAttendance();
+                    DailyAttendance attendance = null;
                     if (attendanceDetails.Any())
                     {
-                        attendance = attendanceDetails.Find(i => item.Key == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Day);
-                        if (attendance != null)
-                        {
-                            attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
-                            var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
-                            attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate);
-                        }
-                        else
-                        {
-                            attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
-                        }
+                        attendance = attendanceDetails.Find(i => item.Key == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Day
+                                                                 && x.Month == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Month);
+                    }
 
-                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
-                                                                                        && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
-
-                        if (leaveDetail != null)
-                        {
-                            attendance.IsOnLeave = true;
-                            attendance.LeaveId = leaveDetail.LeaveTypeId;
-                        }
+                    if (attendance != null)
+                    {
+                        attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
+                        var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
+                        attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate);
                     }
                     else
                     {
                         attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
-                        var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
-                                                                                        && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
+                    }
 
-                        if (leaveDetail != null)
-                        {
-                            attendance.IsOnLeave = true;
-                            attendance.LeaveId = leaveDetail.LeaveTypeId;
-                        }
+                    var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
+                                                                                    && i.ToDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays >= 0);
+
+                    if (leaveDetail != null)
+                    {
+                        attendance.IsOnLeave = true;
+                        attendance.LeaveId = leaveDetail.LeaveTypeId;
                     }
 
                     dailyAttendances.Add(attendance);
