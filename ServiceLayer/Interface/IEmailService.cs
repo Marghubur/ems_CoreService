@@ -11,10 +11,10 @@ namespace ServiceLayer.Interface
     {
         string SendEmailRequestService(EmailSenderModal mailRequest, IFormFileCollection files);
         List<InboxMailDetail> GetMyMailService();
-        EmailSettingDetail GetEmailSettingByCompIdService(int CompanyId);
-        EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
-        string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection file);
-        List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel);
+        Task<EmailSettingDetail> GetEmailSettingByCompIdService(int CompanyId);
+        Task<EmailSettingDetail> InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail);
+        Task<string> InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection file);
+        Task<List<EmailTemplate>> GetEmailTemplateService(FilterModel filterModel);
         Task<dynamic> GetEmailTemplateByIdService(long EmailTemplateId, int CompanyId);
         Task<EmailSenderModal> SendEmailWithTemplate(int TemplateId, TemplateReplaceModal templateReplaceModal);
         Task<dynamic> EmailTempMappingInsertUpdateService(EmailMappedTemplate emailMappedTemplate);

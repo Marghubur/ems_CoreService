@@ -1,8 +1,8 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ModalLayer;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -37,7 +37,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("HolidayInsertUpdate")]
-        public IResponse<ApiResponse> HolidayInsertUpdate(Calendar calendar)
+        public IResponse<ApiResponse> HolidayInsertUpdate(CompanyCalendarDetail calendar)
         {
             try
             {

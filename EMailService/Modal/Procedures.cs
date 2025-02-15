@@ -257,6 +257,7 @@ namespace EMailService.Modal
         public static string Project_Get_Page_Data = "sp_project_get_page_data";
         public static string Project_Member_Getby_Projectid = "sp_project_member_getby_projectid";
         public static string Team_Member_Upd = "sp_team_member_upd";
+        public static string PROJECT_DETAIL_WITH_MEMBERS_FILTER = "sp_project_detail_with_members_filter";
 
         /*--------------  Salary Component Service procedures ------------*/
         public static string Salary_Components_Get = "sp_salary_components_get";
@@ -297,6 +298,7 @@ namespace EMailService.Modal
         public static string Work_Shifts_Filter = "sp_work_shifts_filter";
         public static string Work_Shifts_Getby_Id = "sp_work_shifts_getby_id";
         public static string Work_Shifts_Insupd = "sp_work_shifts_insupd";
+        public static string WORK_SHIFTS_COMAPNY_CALENDAR_GETBY_EMPID = "sp_work_shifts_comapny_calendar_getby_empid";
 
         /*--------------  Tax Regime Service procedures ------------*/
         public static string Tax_Regime_Desc_GetbyId = "sp_tax_regime_desc_getbyId";

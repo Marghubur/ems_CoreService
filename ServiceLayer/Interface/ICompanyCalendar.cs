@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using ModalLayer;
+﻿using EMailService.Modal;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using System;
 using System.Collections.Generic;
@@ -17,11 +17,11 @@ namespace ServiceLayer.Interface
         Task<bool> IsWeekOff(DateTime date);
         Task<bool> IsWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate);
         Task<List<DateTime>> GetWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate);
-        List<Calendar> GetAllHolidayService(FilterModel filterModel);
-        List<Calendar> HolidayInsertUpdateService(Calendar calendar);
-        List<Calendar> DeleteHolidayService(long CompanyCalendarId);
+        List<CompanyCalendarDetail> GetAllHolidayService(FilterModel filterModel);
+        List<CompanyCalendarDetail> HolidayInsertUpdateService(CompanyCalendarDetail calendar);
+        List<CompanyCalendarDetail> DeleteHolidayService(long CompanyCalendarId);
         Task<int> CountWeekOffBetweenTwoDates(DateTime fromDate, DateTime toDate, ShiftDetail shiftDetail);
         Task<decimal> GetHolidayCountInMonth(int month, int year);
-        Task<List<Calendar>> ReadHolidayDataService(IFormFileCollection files);
+        Task<List<CompanyCalendarDetail>> ReadHolidayDataService(IFormFileCollection files);
     }
 }

@@ -11,18 +11,17 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Calendar = ModalLayer.Calendar;
 
 namespace ServiceLayer
 {
     public class CompanyCalendar : ICompanyCalendar
     {
-        private List<Calendar> _calendars;
+        private List<CompanyCalendarDetail> _calendars;
+        private ShiftDetail _shiftDetail;
         private readonly CurrentSession _currentSession;
         private readonly IDb _db;
         private readonly CurrentSession _session;
         private readonly ITimezoneConverter _timezoneConverter;
-        private ShiftDetail _shiftDetail;
         private readonly IUtilityService _utilityService;
         public CompanyCalendar(IDb db,
             CurrentSession session,
@@ -42,7 +41,7 @@ namespace ServiceLayer
         {
             if (_calendars == null)
             {
-                _calendars = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _session.CurrentUserDetail.CompanyId });
+                _calendars = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { _session.CurrentUserDetail.CompanyId });
             }
         }
 
@@ -54,7 +53,7 @@ namespace ServiceLayer
             //var records = _calendars.FirstOrDefault(x => x.StartDate.Date.Subtract(date.Date).TotalDays <= 0
             //                && x.EndDate.Date.Subtract(date.Date).TotalDays >= 0);
 
-            var records = _calendars.Find(x => x.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
+            var records = _calendars.Find(x => x.CalendarDate.Date.Subtract(date.Date).TotalDays == 0);
             if (records != null)
                 flag = true;
 
@@ -123,7 +122,7 @@ namespace ServiceLayer
             //    holiday = _calendars.Find(i => i.EndDate.Date.Subtract(date.Date).TotalDays == 0);
             //}
 
-            var holiday = _calendars.Find(i => i.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
+            var holiday = _calendars.Find(i => i.CalendarDate.Date.Subtract(date.Date).TotalDays == 0);
             if (holiday != null && !CheckIsWeekend(date))
                 totalDays++;
 
@@ -153,7 +152,7 @@ namespace ServiceLayer
 
             //    holiday = _calendars.Find(i => i.StartDate.Date.Subtract(date.Date).TotalDays == 0);
             //}
-            var holiday = _calendars.Find(i => i.HolidayDate.Date.Subtract(date.Date).TotalDays == 0);
+            var holiday = _calendars.Find(i => i.CalendarDate.Date.Subtract(date.Date).TotalDays == 0);
             if (holiday != null && !CheckIsWeekend(date))
                 totalDays++;
 
@@ -166,7 +165,7 @@ namespace ServiceLayer
 
             LoadHolidayCalendar();
             //var records = _calendars.Where(x => x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= toDate.Date);
-            var records = _calendars.Where(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0);
+            var records = _calendars.Where(x => x.CalendarDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.CalendarDate.Date.Subtract(toDate.Date).TotalDays <= 0);
             if (records.Any())
                 flag = true;
 
@@ -177,7 +176,7 @@ namespace ServiceLayer
         {
             LoadHolidayCalendar();
             //var holidays = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date));
-            var holidays = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0);
+            var holidays = _calendars.Count(x => x.CalendarDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.CalendarDate.Date.Subtract(toDate.Date).TotalDays <= 0);
 
             return await Task.FromResult(holidays);
         }
@@ -192,8 +191,8 @@ namespace ServiceLayer
             //int fullDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && x.IsHalfDay);
             //int halfDayHoliday = _calendars.Count(x => (x.StartDate.Date >= fromDate.Date && x.EndDate.Date <= fromDate.Date) && !x.IsHalfDay);
 
-            int fullDayHoliday = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0 && x.IsHalfDay);
-            int halfDayHoliday = _calendars.Count(x => x.HolidayDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.HolidayDate.Date.Subtract(toDate.Date).TotalDays <= 0 && !x.IsHalfDay);
+            int fullDayHoliday = _calendars.Count(x => x.CalendarDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.CalendarDate.Date.Subtract(toDate.Date).TotalDays <= 0 && x.IsHalfDay);
+            int halfDayHoliday = _calendars.Count(x => x.CalendarDate.Date.Subtract(fromDate.Date).TotalDays >= 0 && x.CalendarDate.Date.Subtract(toDate.Date).TotalDays <= 0 && !x.IsHalfDay);
 
             totalDays = (decimal)(fullDayHoliday + (halfDayHoliday * 0.5));
 
@@ -280,9 +279,10 @@ namespace ServiceLayer
             return await Task.FromResult(count);
         }
 
-        public List<Calendar> GetAllHolidayService(FilterModel filterModel)
+        public List<CompanyCalendarDetail> GetAllHolidayService(FilterModel filterModel)
         {
-            var result = _db.GetList<Calendar>(Procedures.Company_Calender_Getby_Filter, new
+            filterModel.SearchString = filterModel.SearchString + $" and CompanyId = {_currentSession.CurrentUserDetail.CompanyId} and IsHoliday = true and Year = {DateTime.UtcNow.Year}";
+            var result = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calender_Getby_Filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
@@ -292,51 +292,39 @@ namespace ServiceLayer
             return result;
         }
 
-        public List<Calendar> HolidayInsertUpdateService(Calendar calendar)
+        public List<CompanyCalendarDetail> HolidayInsertUpdateService(CompanyCalendarDetail calendar)
         {
-            var existCalendar = new Calendar();
             ValidateCalender(calendar);
-            var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
-            if (result.Count > 0)
-            {
-                existCalendar = result.Find(x => x.CompanyCalendarId == calendar.CompanyCalendarId);
-                if (existCalendar != null)
-                {
-                    existCalendar.CompanyId = calendar.CompanyId;
-                    existCalendar.EventName = calendar.EventName;
-                    existCalendar.IsHoliday = calendar.IsHoliday;
-                    existCalendar.IsHalfDay = calendar.IsHalfDay;
-                    existCalendar.HolidayDate = calendar.HolidayDate;
-                    existCalendar.DescriptionNote = calendar.DescriptionNote;
-                    existCalendar.ApplicableFor = calendar.ApplicableFor;
-                    existCalendar.Year = calendar.Year;
-                    existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
-                    existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;
-                    existCalendar.Country = calendar.Country;
-                }
-                else
-                {
-                    existCalendar = calendar;
-                }
-            }
-            else
-            {
-                existCalendar = calendar;
-            }
-            var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, new
+            var result = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
+            if (!result.Any())
+                throw HiringBellException.ThrowBadRequest("Company calendar not found. Please contact to admin");
+
+            var existCalendar = result.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.Subtract(_timezoneConverter.ToTimeZoneDateTime(calendar.CalendarDate, _currentSession.TimeZone).Date).TotalDays == 0);
+            if (existCalendar == null)
+                throw HiringBellException.ThrowBadRequest("Fail to get holiday detail.");
+
+            existCalendar.HolidayName = calendar.HolidayName;
+            existCalendar.IsHoliday = calendar.IsHoliday;
+            existCalendar.IsHalfDay = calendar.IsHalfDay;
+            existCalendar.DescriptionNote = calendar.DescriptionNote;
+            existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
+            existCalendar.DepartmentId = calendar.DepartmentId;
+
+            var value = _db.Execute<CompanyCalendarDetail>(Procedures.Company_Calendar_Insupd, new
             {
                 existCalendar.CompanyCalendarId,
-                _currentSession.CurrentUserDetail.CompanyId,
-                existCalendar.EventName,
+                existCalendar.CompanyId,
+                existCalendar.CalendarDate,
+                existCalendar.EventId,
                 existCalendar.IsHoliday,
                 existCalendar.IsHalfDay,
-                existCalendar.HolidayDate,
+                existCalendar.HolidayName,
+                existCalendar.DayOfWeekNumber,
+                existCalendar.DayOfWeek,
                 existCalendar.DescriptionNote,
-                existCalendar.ApplicableFor,
+                existCalendar.DepartmentId,
                 existCalendar.Year,
                 existCalendar.IsPublicHoliday,
-                existCalendar.IsCompanyCustomHoliday,
-                existCalendar.Country,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
@@ -350,27 +338,24 @@ namespace ServiceLayer
             return GetAllHolidayService(filterModel);
         }
 
-        private void ValidateCalender(Calendar calendar)
+        private void ValidateCalender(CompanyCalendarDetail calendar)
         {
             if (string.IsNullOrEmpty(calendar.DescriptionNote))
                 throw HiringBellException.ThrowBadRequest("Description note is null or empty");
 
-            if (string.IsNullOrEmpty(calendar.Country))
-                throw HiringBellException.ThrowBadRequest("Country is null or empty");
-
-            if (string.IsNullOrEmpty(calendar.EventName))
+            if (string.IsNullOrEmpty(calendar.HolidayName))
                 throw HiringBellException.ThrowBadRequest("Event name is null or empty");
 
-            if (calendar.CompanyId <= 0)
-                throw HiringBellException.ThrowBadRequest("Invalid company id");
+            if (calendar.CalendarDate == null)
+                throw HiringBellException.ThrowBadRequest("Select a valid holiday date");
         }
 
-        public List<Calendar> DeleteHolidayService(long CompanyCalendarId)
+        public List<CompanyCalendarDetail> DeleteHolidayService(long CompanyCalendarId)
         {
             if (CompanyCalendarId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid holiday selected. Please select a vlid holiday");
 
-            var result = _db.Execute<Calendar>(Procedures.Company_Calender_Delete_By_Calenderid, new { CompanyCalendarId = CompanyCalendarId }, true);
+            var result = _db.Execute<CompanyCalendarDetail>(Procedures.Company_Calender_Delete_By_Calenderid, new { CompanyCalendarId = CompanyCalendarId }, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to delete holiday");
 
@@ -381,11 +366,11 @@ namespace ServiceLayer
             return GetAllHolidayService(filterModel);
         }
 
-        public async Task<List<Calendar>> ReadHolidayDataService(IFormFileCollection files)
+        public async Task<List<CompanyCalendarDetail>> ReadHolidayDataService(IFormFileCollection files)
         {
             try
             {
-                var uploadedHolidayData = await _utilityService.ReadExcelData<Calendar>(files);
+                var uploadedHolidayData = await _utilityService.ReadExcelData<CompanyCalendarDetail>(files);
                 var result = await UpdateHolidayData(uploadedHolidayData);
                 return result;
             }
@@ -395,59 +380,52 @@ namespace ServiceLayer
             }
         }
 
-        private async Task<List<Calendar>> UpdateHolidayData(List<Calendar> uploadedHolidayData)
+        private async Task<List<CompanyCalendarDetail>> UpdateHolidayData(List<CompanyCalendarDetail> uploadedHolidayData)
         {
-            var companyId = _currentSession.CurrentUserDetail.CompanyId;
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            var result = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = companyId });
+            var result = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            if (!result.Any())
+                throw HiringBellException.ThrowBadRequest("Company calendar not found. Please contact to admin");
 
-            foreach (Calendar calendar in uploadedHolidayData)
+            foreach (CompanyCalendarDetail calendar in uploadedHolidayData)
             {
-                var existCalendar = new Calendar();
-
-                calendar.CompanyId = companyId;
-
                 ValidateCalender(calendar);
 
-                calendar.EventName = calendar.EventName.ToUpper();
-                calendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
-                calendar.Country = textInfo.ToTitleCase(calendar.Country);
+                var existingCalendar = result.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.Subtract(_timezoneConverter.ToTimeZoneDateTime(calendar.CalendarDate, _currentSession.TimeZone).Date).TotalDays == 0);
+                if (existingCalendar == null)
+                    throw HiringBellException.ThrowBadRequest("Fail to get holiday detail.");
 
-                if (result.Count > 0)
+                existingCalendar.HolidayName = calendar.HolidayName.ToUpper();
+                existingCalendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
+                existingCalendar.IsHoliday = calendar.IsHoliday;
+                existingCalendar.IsHalfDay = calendar.IsHalfDay;
+                existingCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
+                existingCalendar.DepartmentId = calendar.DepartmentId;
+                existingCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
+
+                var value = _db.Execute<CompanyCalendarDetail>(Procedures.Company_Calendar_Insupd, new
                 {
-                    existCalendar = result.Find(x => _timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, x.StartDate)
-                    .Subtract(_timezoneConverter.ToSpecificTimezoneDateTime(_currentSession.TimeZone, calendar.StartDate)).TotalDays == 0);
-                    if (existCalendar != null)
-                    {
-                        existCalendar.CompanyId = calendar.CompanyId;
-                        existCalendar.HolidayDate = calendar.HolidayDate;
-                        existCalendar.EventName = calendar.EventName;
-                        existCalendar.IsHoliday = calendar.IsHoliday;
-                        existCalendar.IsHalfDay = calendar.IsHalfDay;
-                        existCalendar.DescriptionNote = calendar.DescriptionNote;
-                        existCalendar.ApplicableFor = 1;
-                        existCalendar.Year = calendar.Year;
-                        existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
-                        existCalendar.IsCompanyCustomHoliday = calendar.IsCompanyCustomHoliday;
-                        existCalendar.Country = calendar.Country;
-                    }
-                }
-                else
-                {
-                    existCalendar = calendar;
-                }
-
-                existCalendar.HolidayDate = _timezoneConverter.ToUtcTime(existCalendar.HolidayDate, _currentSession.TimeZone);
-                existCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
-
-                var value = _db.Execute<Calendar>(Procedures.Company_Calendar_Insupd, existCalendar, true);
+                    existingCalendar.CompanyCalendarId,
+                    existingCalendar.CompanyId,
+                    existingCalendar.CalendarDate,
+                    existingCalendar.EventId,
+                    existingCalendar.IsHoliday,
+                    existingCalendar.IsHalfDay,
+                    existingCalendar.HolidayName,
+                    existingCalendar.DayOfWeekNumber,
+                    existingCalendar.DayOfWeek,
+                    existingCalendar.DescriptionNote,
+                    existingCalendar.DepartmentId,
+                    existingCalendar.Year,
+                    existingCalendar.IsPublicHoliday,
+                    AdminId = _currentSession.CurrentUserDetail.UserId
+                }, true);
                 if (string.IsNullOrEmpty(value))
                     throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
             }
 
             FilterModel filterModel = new FilterModel
             {
-                SearchString = $"1=1 and CompanyId={companyId}"
+                SearchString = $"1=1 and CompanyId={_currentSession.CurrentUserDetail.CompanyId}"
             };
             var data = GetAllHolidayService(filterModel);
 

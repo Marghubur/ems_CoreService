@@ -464,7 +464,7 @@ namespace ServiceLayer.Code
 
             await _utilityService.SendNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 
-            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
+            var companyHoliday = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
             var monthlyLeaveData = new Dictionary<string, decimal>();
 
             for (int i = 1; i <= 12; i++)
@@ -526,7 +526,7 @@ namespace ServiceLayer.Code
 
             //if (!string.IsNullOrEmpty(leaveCalculationModal.leaveRequestDetail.LeaveDetail))
             //    this.UpdateLeavePlanDetail(leaveCalculationModal);
-            var companyHoliday = _db.GetList<Calendar>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var companyHoliday = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
             var monthlyLeaveData = new Dictionary<string, decimal>();
             for (int i = 1; i <= 12; i++)
             {

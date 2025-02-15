@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Leave;
+using EMailService.Modal;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace ModalLayer.Modal
         public int SessionType { set; get; } = 1;
         public DateTime firstDate { set; get; }
         public DateTime presentDate { set; get; }
-        public List<Calendar> calendars { set; get; }
+        public List<CompanyCalendarDetail> calendars { set; get; }
         public ShiftDetail shiftDetail { set; get; }
         public LeaveDetail leaveDetail { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
@@ -79,7 +80,7 @@ namespace ModalLayer.Modal
         public int SessionType { set; get; } = 1;
         public DateTime firstDate { set; get; }
         public DateTime presentDate { set; get; }
-        public List<Calendar> calendars { set; get; }
+        public List<CompanyCalendarDetail> calendars { set; get; }
         public ShiftDetail shiftDetail { set; get; }
         public List<LeaveRequestNotification> leaveDetails { set; get; }
         public List<ComplaintOrRequest> compalintOrRequests { set; get; }
