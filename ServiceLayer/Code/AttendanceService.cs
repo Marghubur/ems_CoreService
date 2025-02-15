@@ -332,8 +332,8 @@ namespace ServiceLayer.Code
             {
                 foreach (var item in attendances)
                 {
-                    var holiday = attendanceDetailBuildModal.calendars.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.StartDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays <= 0
-                                                    && _timezoneConverter.ToTimeZoneDateTime(x.EndDate, _currentSession.TimeZone).Date.Subtract(item.AttendanceDay.Date).TotalDays >= 0);
+                    var holiday = attendanceDetailBuildModal.calendars.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date
+                    .Subtract(_timezoneConverter.ToTimeZoneDateTime(item.AttendanceDay, _currentSession.TimeZone).Date).TotalDays == 0);
                     if (holiday != null)
                     {
                         item.IsHoliday = true;
@@ -412,7 +412,7 @@ namespace ServiceLayer.Code
 
             }
 
-            attendanceDetailBuildModal.calendars = Converter.ToList<ModalLayer.Calendar>(Result.Tables[2]);
+            attendanceDetailBuildModal.calendars = Converter.ToList<CompanyCalendarDetail>(Result.Tables[2]);
             return attendanceDetailBuildModal;
         }
 
@@ -1631,11 +1631,12 @@ namespace ServiceLayer.Code
             return dailyAttendances;
         }
 
-        private bool CheckIsHoliday(DateTime date, List<ModalLayer.Calendar> calendars)
+        private bool CheckIsHoliday(DateTime date, List<CompanyCalendarDetail> calendars)
         {
             bool flag = false;
-
-            var records = calendars.FirstOrDefault(x => x.StartDate.Date >= date.Date && x.EndDate.Date <= date.Date);
+            
+            var records = calendars.FirstOrDefault(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.
+                                                        Subtract(_timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone).Date).TotalDays == 0);
             if (records != null)
                 flag = true;
 
@@ -2006,7 +2007,7 @@ namespace ServiceLayer.Code
 
             dailyAttendanceBuilder.employee = Converter.ToType<Employee>(Result.Tables[1]);
             dailyAttendanceBuilder.leaveDetails = Converter.ToList<LeaveRequestNotification>(Result.Tables[4]);
-            dailyAttendanceBuilder.calendars = Converter.ToList<ModalLayer.Calendar>(Result.Tables[2]);
+            dailyAttendanceBuilder.calendars = Converter.ToList<CompanyCalendarDetail>(Result.Tables[2]);
 
             DateTime.TryParse(Result.Tables[5].Rows[0]["LastRunPayrollDate"].ToString(), out DateTime lastRunPayrollDate);
             dailyAttendanceBuilder.LastRunPayrollDate = lastRunPayrollDate;

@@ -103,5 +103,19 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, new { ProjectMemberDetailId = ProjectMemberDetailId, ProjectId = ProjectId });
             }
         }
+
+        [HttpPost("GetAllProjectWithMemberDeatil")]
+        public async Task<ApiResponse> GetAllProjectWithMemberDeatil(FilterModel filterModel)
+        {
+            try
+            {
+                var result = await _projectService.GetAllProjectWithMemberDeatilService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
+            }
+        }
     }
 }

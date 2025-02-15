@@ -3,11 +3,10 @@ using Bot.CoreBottomHalf.Modal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using BottomhalfCore.Services.Interface;
+using Bt.Lib.PipelineConfig.Services;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
@@ -25,7 +24,6 @@ namespace ServiceLayer.Code
 {
     public class EmailService : IEmailService
     {
-        private readonly ILogger<EmailService> _logger;
         private readonly IEMailManager _eMailManager;
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
@@ -34,27 +32,27 @@ namespace ServiceLayer.Code
         private readonly IFileService _fileService;
         private readonly ICompanyService _companyService;
         private readonly ITimezoneConverter _timezoneConverter;
-        private readonly MasterDatabase _masterDatabase;
-
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly GitHubConnector _gitHubConnector;
         public EmailService(IDb db,
-            ILogger<EmailService> logger,
             IEMailManager eMailManager,
             CurrentSession currentSession,
             ICompanyService companyService,
             FileLocationDetail fileLocationDetail,
             IFileService fileService,
             ITimezoneConverter timezoneConverter,
-            IOptions<MasterDatabase> options)
+            MicroserviceRegistry microserviceUrlLogs,
+            GitHubConnector gitHubConnector)
         {
             _db = db;
-            _logger = logger;
             _eMailManager = eMailManager;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
             _fileService = fileService;
             _companyService = companyService;
             _timezoneConverter = timezoneConverter;
-            _masterDatabase = options.Value;
+            _microserviceUrlLogs = microserviceUrlLogs;
+            _gitHubConnector = gitHubConnector;
         }
 
         public List<InboxMailDetail> GetMyMailService()
@@ -234,23 +232,23 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public EmailSettingDetail GetEmailSettingByCompIdService(int CompanyId)
+        public async Task<EmailSettingDetail> GetEmailSettingByCompIdService(int CompanyId)
         {
             if (CompanyId == 0)
                 throw new HiringBellException("Invalid company selected");
 
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            string cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
             _db.SetupConnectionString(cs);
             EmailSettingDetail emailSettingDetail = _db.Get<EmailSettingDetail>(Procedures.Email_Setting_Detail_By_CompanyId, new { CompanyId = CompanyId });
             return emailSettingDetail;
         }
 
-        public EmailSettingDetail InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail)
+        public async Task<EmailSettingDetail> InsertUpdateEmailSettingService(EmailSettingDetail emailSettingDetail)
         {
             EmailSettingDetail emailSetting = null;
             EmailSettingsValidation(emailSettingDetail);
 
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            string cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
             _db.SetupConnectionString(cs);
             emailSetting = _db.Get<EmailSettingDetail>(Procedures.Email_Setting_Detail_By_CompanyId, new { CompanyId = emailSettingDetail.CompanyId });
             if (emailSetting != null)
@@ -278,7 +276,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Fail to insert or update.");
 
-            return GetEmailSettingByCompIdService(emailSettingDetail.CompanyId);
+            return await GetEmailSettingByCompIdService(emailSettingDetail.CompanyId);
         }
 
         private void EmailSettingsValidation(EmailSettingDetail emailSettingDetail)
@@ -308,11 +306,11 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Invalid port number");
         }
 
-        public string InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection fileCollection)
+        public async Task<string> InsertUpdateEmailTemplateService(EmailTemplate emailTemplate, IFormFileCollection fileCollection)
         {
             var filepath = string.Empty;
             ValidateEmailTemplate(emailTemplate);
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            string cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
             _db.SetupConnectionString(cs);
             if (fileCollection.Count > 0)
             {
@@ -380,10 +378,10 @@ namespace ServiceLayer.Code
                 throw new HiringBellException("Signature is mandatory");
         }
 
-        public List<EmailTemplate> GetEmailTemplateService(FilterModel filterModel)
+        public async Task<List<EmailTemplate>> GetEmailTemplateService(FilterModel filterModel)
         {
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-            _db.SetupConnectionString(cs);
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
+            _db.SetupConnectionString(masterDatabse);
             var result = _db.GetList<EmailTemplate>(Procedures.Email_Template_Getby_Filter, new
             {
                 filterModel.SearchString,
@@ -401,7 +399,7 @@ namespace ServiceLayer.Code
 
             var companyFiles = await GetCompanyFiles(CompanyId);
 
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            string cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
             _db.SetupConnectionString(cs);
             var template = _db.Get<EmailTemplate>(Procedures.Email_Template_Get, new { EmailTemplateId });
             return new { EmailTemplate = template, Files = companyFiles };
@@ -409,7 +407,7 @@ namespace ServiceLayer.Code
 
         private async Task<List<Files>> GetCompanyFiles(int companyId)
         {
-            var  companyFiles = await _companyService.GetCompanyFiles(companyId);
+            var companyFiles = await _companyService.GetCompanyFiles(companyId);
             return companyFiles;
         }
 

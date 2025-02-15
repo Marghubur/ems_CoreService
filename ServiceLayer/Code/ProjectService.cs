@@ -1,14 +1,18 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using static ApplicationConstants;
 
@@ -20,12 +24,24 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly IWebHostEnvironment _hostingEnvironment;
-        public ProjectService(IDb db, CurrentSession currentSession, FileLocationDetail fileLocationDetail, IWebHostEnvironment hostingEnvironment)
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly IHttpClientFactory _httpClientFactory;
+        public ProjectService(IDb db,
+            CurrentSession currentSession,
+            FileLocationDetail fileLocationDetail,
+            IWebHostEnvironment hostingEnvironment,
+            MicroserviceRegistry microserviceUrlLogs,
+            RequestMicroservice requestMicroservice,
+            IHttpClientFactory httpClientFactory)
         {
             _db = db;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
             _hostingEnvironment = hostingEnvironment;
+            _microserviceUrlLogs = microserviceUrlLogs;
+            _requestMicroservice = requestMicroservice;
+            _httpClientFactory = httpClientFactory;
         }
         public string AddWikiService(WikiDetail project)
         {
@@ -148,9 +164,57 @@ namespace ServiceLayer.Code
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId
             });
             if (result == null)
-                throw new HiringBellException("Unable to load projext list data.");
+                throw new HiringBellException("Unable to load project list data.");
 
             return result;
+        }
+
+        public async Task<(List<Project>, List<ProjectMemberDetail>)> GetAllProjectWithMemberDeatilService(FilterModel filterModel)
+        {
+            var result = _db.GetList<Project, ProjectMemberDetail>(Procedures.PROJECT_DETAIL_WITH_MEMBERS_FILTER, new
+            {
+                filterModel.SearchString,
+                filterModel.PageIndex,
+                filterModel.PageSize,
+            });
+
+            if (result.Item1.Any())
+            {
+                foreach (var project in result.Item1)
+                {
+                    project.ProjectDescription = await ReadTextFile(project.ProjectDescriptionFilePath);
+                }
+            }
+
+            return await Task.FromResult(result);
+        }
+
+        private async Task<string> ReadTextFile(string filePath)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.GetAsync($"{_microserviceUrlLogs.ResourceBaseUrl}{filePath}");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStringAsync();
+            }
+
+            return null;
+        }
+
+        public async Task<string> GetDocxHtmlService(FileDetail fileDetail)
+        {
+            var filPath = $"{_microserviceUrlLogs.ResourceBaseUrl}{fileDetail.FilePath}";
+            var url = $"{_microserviceUrlLogs.ConvertDocxToHtml}";
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(filPath)
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<string>(microserviceRequest);
         }
 
         private void ProjectDetailValidtion(Project project)

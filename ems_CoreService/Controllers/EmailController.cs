@@ -61,11 +61,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetEmailSettingByCompId/{CompanyId}")]
-        public IResponse<ApiResponse> GetEmailSettingByCompId(int CompanyId)
+        public async Task<ApiResponse> GetEmailSettingByCompId(int CompanyId)
         {
             try
             {
-                var result = _emailService.GetEmailSettingByCompIdService(CompanyId);
+                var result = await _emailService.GetEmailSettingByCompIdService(CompanyId);
                 //Temporary hide the password
                 result.Credentials = "************";
                 return BuildResponse(result);
@@ -91,7 +91,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateEmailTemplate")]
-        public IResponse<ApiResponse> InsertUpdateEmailTemplate()
+        public async Task<ApiResponse> InsertUpdateEmailTemplate()
         {
             try
             {
@@ -100,7 +100,7 @@ namespace OnlineDataBuilder.Controllers
                 {
                     EmailTemplate emailTemplate = JsonConvert.DeserializeObject<EmailTemplate>(templateDetail);
                     IFormFileCollection file = _httpContext.Request.Form.Files;
-                    var result = _emailService.InsertUpdateEmailTemplateService(emailTemplate, file);
+                    var result = await _emailService.InsertUpdateEmailTemplateService(emailTemplate, file);
                     return BuildResponse(result);
                 }
                 else
@@ -115,11 +115,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GetEmailTemplate")]
-        public IResponse<ApiResponse> GetEmailTemplate([FromBody] FilterModel filterModel)
+        public async Task<ApiResponse> GetEmailTemplate([FromBody] FilterModel filterModel)
         {
             try
             {
-                var result = _emailService.GetEmailTemplateService(filterModel);
+                var result = await _emailService.GetEmailTemplateService(filterModel);
                 return BuildResponse(result);
             }
             catch (Exception ex)

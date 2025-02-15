@@ -743,7 +743,7 @@ namespace ServiceLayer.Code
 
         private async Task<EmailTemplate> GetEmailTemplateService()
         {
-            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl); ;
+            var masterDatabse = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_microserviceUrlLogs.DatabaseConfigurationUrl);
             db.SetupConnectionString(masterDatabse);
 
             var result = db.Get<EmailTemplate>(Procedures.Email_Template_Get, new

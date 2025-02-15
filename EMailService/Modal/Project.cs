@@ -8,6 +8,7 @@ namespace ModalLayer.Modal
     {
         public string ProjectName { set; get; }
         public string ProjectDescription { set; get; }
+        public string ProjectDescriptionFilePath { get; set; }
         public DateTime? ProjectStartedOn { set; get; }
         public DateTime? ProjectEndedOn { set; get; }
         public bool IsClientProject { set; get; }
@@ -19,6 +20,8 @@ namespace ModalLayer.Modal
         public int CompanyId { set; get; }
         public long AdminId { get; set; }
         public int Total { get; set; }
+        public int Priority { get; set; }
+        public int Status { get; set; }
         public string DocumentPath { get; set; }
         public List<ProjectMemberDetail> TeamMembers { get; set; }
     }
@@ -38,6 +41,9 @@ namespace ModalLayer.Modal
         public int MemberType { get; set; }
         public DateTime AssignedOn { set; get; }
         public DateTime? LastDateOnProject { set; get; }
+        public string RoleName { get; set; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
     }
 
     public class WikiDetail

@@ -1,17 +1,21 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using BottomhalfCore.Services.Code;
+using BottomhalfCore.Services.Interface;
 using EMailService.Modal;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
     public class OvertimeService(IDb _db,
-                                CurrentSession _currentSession) : IOvertimeService
+                                CurrentSession _currentSession,
+                                ITimezoneConverter _timezoneConverter) : IOvertimeService
     {
         public async Task<DataSet> GetOvertimeTypeAndConfigService()
         {
@@ -49,11 +53,8 @@ namespace ServiceLayer.Code
                 existingOvertime.RateMultiplier,
                 existingOvertime.MinOvertimeMin,
                 existingOvertime.MaxOvertimeMin,
-                existingOvertime.ExcludedShifts,
                 existingOvertime.IsWeekend,
                 existingOvertime.IsHoliday,
-                existingOvertime.IsNightShift,
-                existingOvertime.TaxRate,
                 existingOvertime.LeavePerHour,
                 existingOvertime.PartialHours,
                 existingOvertime.PartialLeave,
@@ -65,6 +66,7 @@ namespace ServiceLayer.Code
                 existingOvertime.ConfigName,
                 existingOvertime.WorkflowId,
                 existingOvertime.OvertimeTypeId,
+                existingOvertime.OTCalculatedOn,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
@@ -81,11 +83,8 @@ namespace ServiceLayer.Code
             existingOvertime.RateMultiplier = overtimeDetail.RateMultiplier;
             existingOvertime.MinOvertimeMin = overtimeDetail.MinOvertimeMin;
             existingOvertime.MaxOvertimeMin = overtimeDetail.MaxOvertimeMin;
-            existingOvertime.ExcludedShifts = overtimeDetail.ExcludedShifts;
             existingOvertime.IsWeekend = overtimeDetail.IsWeekend;
             existingOvertime.IsHoliday = overtimeDetail.IsHoliday;
-            existingOvertime.IsNightShift = overtimeDetail.IsNightShift;
-            existingOvertime.TaxRate = overtimeDetail.TaxRate;
             existingOvertime.LeavePerHour = overtimeDetail.LeavePerHour;
             existingOvertime.PartialHours = overtimeDetail.PartialHours;
             existingOvertime.PartialLeave = overtimeDetail.PartialLeave;
@@ -97,6 +96,7 @@ namespace ServiceLayer.Code
             existingOvertime.ConfigName = overtimeDetail.ConfigName;
             existingOvertime.WorkflowId = overtimeDetail.WorkflowId;
             existingOvertime.OvertimeTypeId = overtimeDetail.OvertimeTypeId;
+            existingOvertime.OTCalculatedOn = overtimeDetail.OTCalculatedOn;
 
             await Task.CompletedTask;
         }
@@ -138,9 +138,6 @@ namespace ServiceLayer.Code
             {
                 if (overtimeDetail.RateMultiplier <= 0)
                     throw HiringBellException.ThrowBadRequest("Invalid rate limiter");
-
-                if (overtimeDetail.ExcludedShifts <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid shift selected");
             }
             else
             {
@@ -191,6 +188,8 @@ namespace ServiceLayer.Code
         {
             ValidateEmployeeOvertime(employeeOvertime);
 
+            var overTimeConfigId = await GetOvertimeConfigurationId(employeeOvertime.OvertimeDate);
+
             var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_OVERTIMETABLE_INSUPD, new
             {
                 employeeOvertime.OvertimeId,
@@ -198,9 +197,8 @@ namespace ServiceLayer.Code
                 employeeOvertime.Comments,
                 AppliedOn = DateTime.UtcNow,
                 employeeOvertime.LoggedMinutes,
-                ShiftId = 1,
                 StatusId = (int)ItemStatus.Pending,
-                employeeOvertime.OvertimeConfigId,
+                OvertimeConfigId = overTimeConfigId,
                 ExecutionRecord = "[]",
                 employeeOvertime.StartOvertime,
                 employeeOvertime.EndOvertime,
@@ -213,7 +211,48 @@ namespace ServiceLayer.Code
             return await GetEmployeeOvertimeByEmpId(_currentSession.CurrentUserDetail.UserId);
         }
 
-        private static void ValidateEmployeeOvertime(EmployeeOvertime employeeOvertime)
+        private async Task<int> GetOvertimeConfigurationId(DateTime overtimeDate)
+        {
+            var dataset = await GetWorkShiftAndCompanyCalenderByEmpId();
+            var shiftDetail = Converter.ToType<ShiftDetail>(dataset.Tables[0]);
+            var companyCalendar = Converter.ToList<CompanyCalendarDetail>(dataset.Tables[1]);
+            var overtimeConfiguration = Converter.ToList<OvertimeConfiguration>(dataset.Tables[2]);
+
+            if (companyCalendar.Any())
+            {
+                var isHoliday = companyCalendar.Any(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date
+                                                            .Subtract(_timezoneConverter.ToTimeZoneDateTime(overtimeDate, _currentSession.TimeZone).Date).TotalDays == 0);
+                if (isHoliday)
+                    return overtimeConfiguration.Find(x => x.IsHoliday).OvertimeConfigId;
+            }
+
+            var isweekend = await IsWeekend(overtimeDate, shiftDetail);
+            if (isweekend)
+                return overtimeConfiguration.Find(x => x.IsWeekend).OvertimeConfigId;
+            
+            return overtimeConfiguration.Find(x => !x.IsHoliday && !x.IsWeekend).OvertimeConfigId;
+        }
+
+        private async Task<bool> IsWeekend(DateTime date, ShiftDetail shiftDetail)
+        {
+            var zoneDate = _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone);
+
+            var flag = zoneDate.DayOfWeek switch
+            {
+                DayOfWeek.Sunday => !shiftDetail.IsSun,
+                DayOfWeek.Monday => !shiftDetail.IsMon,
+                DayOfWeek.Tuesday => !shiftDetail.IsTue,
+                DayOfWeek.Wednesday => !shiftDetail.IsWed,
+                DayOfWeek.Thursday => !shiftDetail.IsThu,
+                DayOfWeek.Friday => !shiftDetail.IsFri,
+                DayOfWeek.Saturday => !shiftDetail.IsSat,
+                _ => false
+            };
+
+            return await Task.FromResult(flag);
+        }
+
+        private void ValidateEmployeeOvertime(EmployeeOvertime employeeOvertime)
         {
             if (employeeOvertime.LoggedMinutes <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid logged minutes");
@@ -224,8 +263,31 @@ namespace ServiceLayer.Code
             if (employeeOvertime.OvertimeDate == null)
                 throw HiringBellException.ThrowBadRequest("Invalid overtime date");
 
-            if (employeeOvertime.OvertimeConfigId <= 0)
-                throw HiringBellException.ThrowBadRequest("Invalid Overtime selected");
+            if (string.IsNullOrEmpty(employeeOvertime.StartOvertime))
+                throw HiringBellException.ThrowBadRequest("Invalid start over time");
+
+            if (string.IsNullOrEmpty(employeeOvertime.EndOvertime))
+                throw HiringBellException.ThrowBadRequest("Invalid end over time");
+        }
+
+        private async Task<DataSet> GetWorkShiftAndCompanyCalenderByEmpId()
+        {
+            var dataset = _db.FetchDataSet(Procedures.WORK_SHIFTS_COMAPNY_CALENDAR_GETBY_EMPID, new
+            {
+                EmployeeId = _currentSession.CurrentUserDetail.UserId,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            });
+
+            if (dataset.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Fail to get shift, calendar and overtime configuration");
+
+            if (dataset.Tables[0].Rows.Count != 1)
+                throw HiringBellException.ThrowBadRequest("Fail to get employee work shift");
+
+            if (dataset.Tables[0].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to get over time configuration");
+
+            return await Task.FromResult(dataset);
         }
     }
 }
