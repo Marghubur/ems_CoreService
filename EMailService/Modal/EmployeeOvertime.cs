@@ -17,6 +17,10 @@ namespace EMailService.Modal
         public string EndOvertime { get; set; }
         public DateTime OvertimeDate { get; set; }
         public ExecutionRecords ExecutionRecords { get; set; }
+        public string FullName { get; set; }
+        public int Total { get; set; }
+        public int RowIndex { get; set; }
+
     }
 
     public class ExecutionRecords

@@ -5,7 +5,6 @@ using Bt.Lib.PipelineConfig.Model;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;

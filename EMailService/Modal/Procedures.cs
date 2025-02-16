@@ -354,6 +354,7 @@ namespace EMailService.Modal
         public static string EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID = "sp_employee_overtimetable_get_by_empid";
         public static string OVERTIME_TYPE_CONFIGURATION_GETALL = "sp_overtime_type_configuration_getall";
         public static string OVERTIMETABLE_CONFIGURATION_GET_ALL = "sp_overtimetable_configuration_get_all";
+        public static string EMPLOYEE_OVERTIMETABLE_CONFIG_CHAIN_GET_BYID = "sp_employee_overtimetable_config_chain_get_byid";
 
         //---------------- Employee Insert Update ------------------------
         public static string EMPLOYEES_BASICINFO_INS_UPD = "sp_employees_basicinfo_ins_upd";
@@ -367,5 +368,8 @@ namespace EMailService.Modal
 
         //--------------- Profile Health Check ----------------------------------
         public static string RECORD_HEALTH_STATUS_GET_INCOMPLETE_PROFILE = "sp_record_health_status_get_incomplete_profile";
+        
+        //--------------- Employee Overtime -------------------------------------
+        public static string EMPLOYEE_OVERTIME_FILTER_BY_MANAGER = "sp_employee_overtime_filter_by_manager";
     }
 }
