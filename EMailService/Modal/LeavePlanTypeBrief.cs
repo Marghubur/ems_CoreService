@@ -8,5 +8,6 @@
         public string PlanName { get; set; }
         public string PlanDescription { get; set; }
         public bool ShowDescription { get; set; }
+        public int MaxLeaveLimit { get; set; }
     }
 }

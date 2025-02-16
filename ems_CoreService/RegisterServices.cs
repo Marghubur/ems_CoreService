@@ -13,6 +13,7 @@ using EMailService.Modal;
 using EMailService.Service;
 using HtmlService;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -49,6 +50,10 @@ namespace ems_CoreService
 
         public void RegisterServiceLayerServices(IServiceCollection services)
         {
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50 MB limit
+            });
             services.AddHttpClient();
             services.AddSingleton<IUtilityService, UtilityService>();
             services.AddScoped<IAutoTriggerService, AutoTriggerService>();

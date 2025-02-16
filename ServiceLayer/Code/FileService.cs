@@ -342,7 +342,7 @@ namespace CoreServiceLayer.Implementation
                         .SetToken(_currentSession.Authorization);
 
                         fileDetail.FilePath = await _requestMicroservice.PostRequest<string>(microserviceRequest);
-                        int lastIndex = fileDetail.FilePath.LastIndexOf('\\');
+                        int lastIndex = fileDetail.FilePath.LastIndexOf(Path.DirectorySeparatorChar);
                         if (lastIndex != -1)
                             fileDetail.ParentFolder = fileDetail.FilePath.Substring(0, lastIndex);
 
