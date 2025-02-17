@@ -1361,6 +1361,9 @@ namespace ServiceLayer.Code
             var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
             var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) : Math.Round(pTaxAmount);
             var netSalary = totalEarning > 0 ? Math.Round(totalEarning - (totalContribution + totalDeduction)) : 0;
+            if (netSalary < 0)
+                throw HiringBellException.ThrowBadRequest($"Your salary is in -ve i.e {netSalary}");
+
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
 
