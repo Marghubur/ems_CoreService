@@ -1422,11 +1422,9 @@ namespace ServiceLayer.Code
 
         private async Task<int> GetActualPayableDay(DateTime doj, int month, int year)
         {
-            int actualDaysPayable = 0;
+            int actualDaysPayable = DateTime.DaysInMonth(year, month);
             if (doj.Month == month && doj.Year == year)
-                actualDaysPayable =  doj.Day;
-            else
-                actualDaysPayable = DateTime.DaysInMonth(year, month);
+                actualDaysPayable = actualDaysPayable - doj.Day + 1;
 
             return await Task.FromResult(actualDaysPayable);
         }
