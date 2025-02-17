@@ -665,7 +665,7 @@ namespace ServiceLayer.Code
             catch
             {
                 if (IsNewRegistration && employeeUid > 0)
-                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { employeeUid }, false);
+                    _db.Execute(Procedures.Employee_Delete_by_EmpId, new { EmployeeId = employeeUid }, false);
 
                 throw;
             }

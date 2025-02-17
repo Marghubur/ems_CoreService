@@ -45,6 +45,7 @@ namespace EMailService.Modal
         public static string LEAVE_PLAN_SET_DEFAULT = "sp_leave_plan_set_default";
         public static string LEAVE_PLAN_TYPE_GET_BY_IDS_JSON = "sp_leave_plan_type_get_by_ids_json";
         public static string LEAVE_REQUEST_NOTIFICATION_DAILY_ATTENDANCE_INSUPDATE = "sp_leave_request_notification_daily_attendance_insupdate";
+        public static string COMPANY_CALENDAR_ALL_COMPANY = "sp_company_calendar_all_company";
 
         /*-------------- Leave Calculation proceudures ------------*/
         public static string Leave_Type_Detail_Get_By_EmployeeId = "sp_leave_type_detail_get_by_employeeId";

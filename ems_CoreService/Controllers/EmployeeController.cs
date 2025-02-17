@@ -1,6 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using EMailService.Modal.EmployeeModal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

@@ -295,7 +295,7 @@ namespace ServiceLayer
         public List<CompanyCalendarDetail> HolidayInsertUpdateService(CompanyCalendarDetail calendar)
         {
             ValidateCalender(calendar);
-            var result = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { _currentSession.CurrentUserDetail.CompanyId });
+            var result = _db.GetList<CompanyCalendarDetail>(Procedures.COMPANY_CALENDAR_ALL_COMPANY, new { _currentSession.CurrentUserDetail.CompanyId });
             if (!result.Any())
                 throw HiringBellException.ThrowBadRequest("Company calendar not found. Please contact to admin");
 
