@@ -1918,17 +1918,21 @@ namespace ServiceLayer.Code
                     {
                         attendance = attendanceDetails.Find(i => item.Key == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Day
                                                                  && x.Month == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Month);
+                        _logger.LogInformation($"Existing attendance date: {attendance.AttendanceDate}");
                     }
 
                     if (attendance != null)
                     {
                         attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
                         var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
+                        _logger.LogInformation($"Existing attendance date is converted into local timezone: {attedanceDate}");
+
                         attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate);
                     }
                     else
                     {
                         attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
+                        _logger.LogInformation($"Finally build attendance date: {attendance.AttendanceDate}");
                     }
 
                     var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
@@ -1950,7 +1954,10 @@ namespace ServiceLayer.Code
         private DailyAttendance BuildNewAttendance(MonthlyAttendanceDetail monthlyAttendance, DailyAttendanceBuilder dailyAttendanceBuilder, KeyValuePair<int, string> item)
         {
             var date = new DateTime(monthlyAttendance.Year, monthlyAttendance.Month, item.Key, 18, 30, 0, DateTimeKind.Unspecified).AddDays(-1);
+            _logger.LogInformation($"Build new UTC date: {date}");
+
             var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone);
+            _logger.LogInformation($"Converted build date into local timezone: {attedanceDate}");
 
             return new DailyAttendance
             {
@@ -2060,6 +2067,8 @@ namespace ServiceLayer.Code
                                n.LeaveId,
                                CreatedBy = _currentSession.CurrentUserDetail.UserId
                            }).ToList();
+
+            _logger.LogInformation($"Upload bulk attendance data: {records}");
 
             var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INS_UPD_WEEKLY, records, true);
 
