@@ -292,13 +292,20 @@ namespace ServiceLayer
             return result;
         }
 
-        public List<CompanyCalendarDetail> HolidayInsertUpdateService(CompanyCalendarDetail calendar)
+        public async Task<List<CompanyCalendarDetail>> HolidayInsertUpdateService(CompanyCalendarDetail calendar)
         {
             ValidateCalender(calendar);
+            var companyCalendars = new List<CompanyCalendarDetail>();
+
             var result = _db.GetList<CompanyCalendarDetail>(Procedures.COMPANY_CALENDAR_ALL_COMPANY, new { _currentSession.CurrentUserDetail.CompanyId });
             if (!result.Any())
                 throw HiringBellException.ThrowBadRequest("Company calendar not found. Please contact to admin");
 
+            if (calendar.CompanyCalendarId > 0)
+            {
+                var oldHoliday = updateOldHoliday(calendar.CompanyCalendarId, result);
+                companyCalendars.Add(oldHoliday);
+            }
             var existCalendar = result.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.Subtract(_timezoneConverter.ToTimeZoneDateTime(calendar.CalendarDate, _currentSession.TimeZone).Date).TotalDays == 0);
             if (existCalendar == null)
                 throw HiringBellException.ThrowBadRequest("Fail to get holiday detail.");
@@ -310,25 +317,11 @@ namespace ServiceLayer
             existCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
             existCalendar.DepartmentId = calendar.DepartmentId;
 
-            var value = _db.Execute<CompanyCalendarDetail>(Procedures.Company_Calendar_Insupd, new
-            {
-                existCalendar.CompanyCalendarId,
-                existCalendar.CompanyId,
-                existCalendar.CalendarDate,
-                existCalendar.EventId,
-                existCalendar.IsHoliday,
-                existCalendar.IsHalfDay,
-                existCalendar.HolidayName,
-                existCalendar.DayOfWeekNumber,
-                existCalendar.DayOfWeek,
-                existCalendar.DescriptionNote,
-                existCalendar.DepartmentId,
-                existCalendar.Year,
-                existCalendar.IsPublicHoliday,
-                AdminId = _currentSession.CurrentUserDetail.UserId
-            }, true);
+            companyCalendars.Add(existCalendar);
 
-            if (string.IsNullOrEmpty(value))
+            var value = await _db.BulkExecuteAsync<CompanyCalendarDetail>(Procedures.Company_Calendar_Insupd, companyCalendars, true);
+
+            if (value != companyCalendars.Count)
                 throw HiringBellException.ThrowBadRequest("Fail to insert/ update holiday");
 
             FilterModel filterModel = new FilterModel
@@ -336,6 +329,22 @@ namespace ServiceLayer
                 SearchString = $"1=1 and CompanyId={calendar.CompanyId}"
             };
             return GetAllHolidayService(filterModel);
+        }
+
+        private CompanyCalendarDetail updateOldHoliday(long companyCalendarId, List<CompanyCalendarDetail> result)
+        {
+            var oldHoliday = result.Find(x => x.CompanyCalendarId == companyCalendarId);
+            if (oldHoliday == null)
+                throw HiringBellException.ThrowBadRequest("Calender detail not found");
+
+            oldHoliday.HolidayName = "";
+            oldHoliday.IsHoliday = false;
+            oldHoliday.IsHalfDay = false;
+            oldHoliday.DescriptionNote = "";
+            oldHoliday.IsPublicHoliday = false;
+            oldHoliday.DepartmentId = 0;
+
+            return oldHoliday;
         }
 
         private void ValidateCalender(CompanyCalendarDetail calendar)
@@ -382,24 +391,26 @@ namespace ServiceLayer
 
         private async Task<List<CompanyCalendarDetail>> UpdateHolidayData(List<CompanyCalendarDetail> uploadedHolidayData)
         {
-            var result = _db.GetList<CompanyCalendarDetail>(Procedures.Company_Calendar_Get_By_Company, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var result = _db.GetList<CompanyCalendarDetail>(Procedures.COMPANY_CALENDAR_ALL_COMPANY, new { _currentSession.CurrentUserDetail.CompanyId });
             if (!result.Any())
                 throw HiringBellException.ThrowBadRequest("Company calendar not found. Please contact to admin");
+
+            var departments = _db.GetList<Department>(Procedures.DEPARTMENT_GETALL);
 
             foreach (CompanyCalendarDetail calendar in uploadedHolidayData)
             {
                 ValidateCalender(calendar);
 
-                var existingCalendar = result.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.Subtract(_timezoneConverter.ToTimeZoneDateTime(calendar.CalendarDate, _currentSession.TimeZone).Date).TotalDays == 0);
+                var existingCalendar = result.Find(x => _timezoneConverter.ToTimeZoneDateTime(x.CalendarDate, _currentSession.TimeZone).Date.Subtract(calendar.CalendarDate.Date).TotalDays == 0);
                 if (existingCalendar == null)
                     throw HiringBellException.ThrowBadRequest("Fail to get holiday detail.");
 
                 existingCalendar.HolidayName = calendar.HolidayName.ToUpper();
                 existingCalendar.DescriptionNote = calendar.DescriptionNote.ToUpper();
-                existingCalendar.IsHoliday = calendar.IsHoliday;
+                existingCalendar.IsHoliday = true;
                 existingCalendar.IsHalfDay = calendar.IsHalfDay;
                 existingCalendar.IsPublicHoliday = calendar.IsPublicHoliday;
-                existingCalendar.DepartmentId = calendar.DepartmentId;
+                existingCalendar.DepartmentId = GetDepartmentId(departments, calendar.Department);
                 existingCalendar.AdminId = _currentSession.CurrentUserDetail.UserId;
 
                 var value = _db.Execute<CompanyCalendarDetail>(Procedures.Company_Calendar_Insupd, new
@@ -430,6 +441,18 @@ namespace ServiceLayer
             var data = GetAllHolidayService(filterModel);
 
             return await Task.FromResult(data);
+        }
+
+        private int GetDepartmentId(List<Department> departments, string departmentName)
+        {
+            if (string.IsNullOrEmpty(departmentName) || departmentName.Equals("All", StringComparison.OrdinalIgnoreCase))
+                return 0;
+
+            var selectedDepartment = departments.Find(x => x.DepartmentName.Equals(departmentName, StringComparison.OrdinalIgnoreCase));
+            if (selectedDepartment == null)
+                return 0;
+
+            return selectedDepartment.DepartmentId;
         }
     }
 }

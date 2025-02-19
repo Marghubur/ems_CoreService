@@ -37,11 +37,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("HolidayInsertUpdate")]
-        public IResponse<ApiResponse> HolidayInsertUpdate(CompanyCalendarDetail calendar)
+        public async Task<ApiResponse> HolidayInsertUpdate(CompanyCalendarDetail calendar)
         {
             try
             {
-                var result = _companyCalendar.HolidayInsertUpdateService(calendar);
+                var result = await _companyCalendar.HolidayInsertUpdateService(calendar);
                 return BuildResponse(result);
             }
             catch (Exception ex)
