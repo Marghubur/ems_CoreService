@@ -9,7 +9,7 @@ namespace ServiceLayer.Interface
     {
         Task<string> AddUpdatePermission(RolesAndMenu rolesAndMenus);
         DataSet GetsRolesandMenu(int accessLevelId);
-        DataSet GetRoles();
-        DataSet AddRole(AddRole addRole);
+        Task<List<AddRole>> GetRoles();
+        Task<List<AddRole>> AddRole(AddRole addRole);
     }
 }

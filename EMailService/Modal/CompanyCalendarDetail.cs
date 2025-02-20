@@ -20,5 +20,6 @@ namespace EMailService.Modal
         public bool IsPublicHoliday { get; set; }
         public int RowIndex { get; set; }
         public int Total { get; set; }
+        public string Department { get; set; }
     }
 }

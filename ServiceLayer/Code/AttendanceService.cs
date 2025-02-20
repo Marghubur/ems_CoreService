@@ -12,7 +12,6 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
 using EMailService.Service;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -40,7 +39,6 @@ namespace ServiceLayer.Code
         private readonly IUtilityService _utilityService;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
-        private readonly ILogger<AttendanceService> _logger;
         public AttendanceService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
@@ -50,8 +48,7 @@ namespace ServiceLayer.Code
             ICommonService commonService,
             IUtilityService utilityService,
             MicroserviceRegistry microserviceUrlLogs,
-            RequestMicroservice requestMicroservice,
-            ILogger<AttendanceService> logger)
+            RequestMicroservice requestMicroservice)
         {
             _db = db;
             _companyService = companyService;
@@ -63,7 +60,6 @@ namespace ServiceLayer.Code
             _utilityService = utilityService;
             _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
-            _logger = logger;
         }
 
         private DateTime GetBarrierDate(int limit)
@@ -1918,21 +1914,18 @@ namespace ServiceLayer.Code
                     {
                         attendance = attendanceDetails.Find(i => item.Key == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Day
                                                                  && x.Month == _timezoneConverter.ToTimeZoneDateTime(i.AttendanceDate, _currentSession.TimeZone).Month);
-                        _logger.LogInformation($"Existing attendance date: {attendance.AttendanceDate}");
                     }
 
                     if (attendance != null)
                     {
                         attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
                         var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, _currentSession.TimeZone);
-                        _logger.LogInformation($"Existing attendance date is converted into local timezone: {attedanceDate}");
 
                         attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attedanceDate);
                     }
                     else
                     {
                         attendance = BuildNewAttendance(x, dailyAttendanceBuilder, item);
-                        _logger.LogInformation($"Finally build attendance date: {attendance.AttendanceDate}");
                     }
 
                     var leaveDetail = dailyAttendanceBuilder.leaveDetails.Find(i => i.FromDate.Date.Subtract(attendance.AttendanceDate.Date).TotalDays <= 0
@@ -1954,10 +1947,8 @@ namespace ServiceLayer.Code
         private DailyAttendance BuildNewAttendance(MonthlyAttendanceDetail monthlyAttendance, DailyAttendanceBuilder dailyAttendanceBuilder, KeyValuePair<int, string> item)
         {
             var date = new DateTime(monthlyAttendance.Year, monthlyAttendance.Month, item.Key, 18, 30, 0, DateTimeKind.Unspecified).AddDays(-1);
-            _logger.LogInformation($"Build new UTC date: {date}");
 
             var attedanceDate = _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone);
-            _logger.LogInformation($"Converted build date into local timezone: {attedanceDate}");
 
             return new DailyAttendance
             {
@@ -2067,8 +2058,6 @@ namespace ServiceLayer.Code
                                n.LeaveId,
                                CreatedBy = _currentSession.CurrentUserDetail.UserId
                            }).ToList();
-
-            _logger.LogInformation($"Upload bulk attendance data: {records}");
 
             var result = await _db.BulkExecuteAsync(Procedures.DAILY_ATTENDANCE_INS_UPD_WEEKLY, records, true);
 
@@ -2230,7 +2219,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
                 throw;
             }
 

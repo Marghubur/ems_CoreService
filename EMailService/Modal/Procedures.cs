@@ -98,6 +98,7 @@ namespace EMailService.Modal
         public static string Company_Calender_Getby_Filter = "SP_company_calender_getby_filter";
         public static string Company_Calendar_Insupd = "sp_company_calendar_insupd";
         public static string Company_Calender_Delete_By_Calenderid = "sp_company_calender_delete_by_calenderid";
+        public static string DEPARTMENT_GETALL = "sp_department_getall";
 
         /*--------------  Company Notification Service procedures ------------*/
         public static string Department_And_Roles_Getall = "sp_department_and_roles_getall";
@@ -372,5 +373,8 @@ namespace EMailService.Modal
         
         //--------------- Employee Overtime -------------------------------------
         public static string EMPLOYEE_OVERTIME_FILTER_BY_MANAGER = "sp_employee_overtime_filter_by_manager";
+
+        //-----------------Roles ------------------------------------------------
+        public static string ACCESSLEVEL_INSUPD = "sp_AccessLevel_InsUpd";
     }
 }

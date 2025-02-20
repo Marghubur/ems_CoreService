@@ -1,8 +1,9 @@
 ﻿using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
+using EMailService.Modal;
 using ModalLayer.Modal;
-using ServiceLayer.Caching;
 using ServiceLayer.Interface;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,13 +48,13 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public DataSet GetRoles()
+        public async Task<List<AddRole>> GetRoles()
         {
-            DataSet result = _db.GetDataSet("sp_AccessLevel_Sel");
-            return result;
+            var result = _db.GetList<AddRole>("sp_AccessLevel_Sel");
+            return await Task.FromResult(result);
         }
 
-        public DataSet AddRole(AddRole addRole)
+        public async Task<List<AddRole>> AddRole(AddRole addRole)
         {
             if (string.IsNullOrEmpty(addRole.RoleName))
                 throw new HiringBellException("Role name is null or empty");
@@ -61,16 +62,17 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(addRole.AccessCodeDefination))
                 throw new HiringBellException("Access code defination is null or empty");
 
-            string accessLevelId = "-1";
-            DbParam[] dbParams = new DbParam[]
+            var result = _db.Execute<AddRole>(Procedures.ACCESSLEVEL_INSUPD, new
             {
-                new DbParam(addRole.RoleName, typeof(string), "_RoleName"),
-                new DbParam(addRole.AccessCodeDefination, typeof(string), "_AccessCodeDefination"),
-                new DbParam(accessLevelId, typeof(string), "_AccessLevelId")
-            };
+                addRole.RoleName,
+                addRole.AccessCodeDefination,
+                AccessLevelId = "-1"
+            }, true);
 
-            var result = _db.FetchDataSet("sp_AccessLevel_InsUpd", dbParams, true);
-            return result;
+            if (string.IsNullOrEmpty(result))
+                throw HiringBellException.ThrowBadRequest("Fail to add new role");
+
+            return await GetRoles();
         }
     }
 }

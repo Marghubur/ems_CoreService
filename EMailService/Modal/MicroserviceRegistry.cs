@@ -18,5 +18,6 @@
         public string ConvertDocxToHtml { get; set; }
         public string GenerateExelWithHeader { get; set; }
         public string ReGenearateToken { get; set; }
+        public string RebuildBreakup { get; set; }
     }
 }

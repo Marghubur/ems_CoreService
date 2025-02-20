@@ -71,7 +71,7 @@ namespace ServiceLayer.Code
                                 });
 
                                 dataTable = result.Tables[0];
-
+                                dataTable.RemoveSpacesFromColumnNames();
                                 components = MappedData<T>(dataTable);
                             }
                         }

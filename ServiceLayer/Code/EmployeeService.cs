@@ -33,6 +33,7 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -373,6 +374,7 @@ namespace ServiceLayer.Code
             try
             {
                 bool isNewRegistration = false;
+                bool isCTCChanged = false;
 
                 ValidateEmployeeBasicInfo(employeeBasicInfo);
 
@@ -388,15 +390,20 @@ namespace ServiceLayer.Code
                         _configuration.GetSection("EncryptSecret").Value
                     );
                 }
+                else
+                {
+                    isCTCChanged = await IsEmployeeCTCChanged(employeeBasicInfo.EmployeeUid, employeeBasicInfo.CTC);
+                }
 
                 await PrepareEmployeeBasicInfoInsertData(employeeBasicInfo);
 
                 var fileDetails = await EmployeeFileInsertUpdate(fileCollection, employeeBasicInfo.EmployeeUid, employeeBasicInfo.OldFileName, employeeBasicInfo.FileId);
-
                 EmployeeCalculation eCal = await GetEmployeeDeclarationDetail(employeeBasicInfo);
-
                 await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
-                if (isNewRegistration)
+
+                if (!isNewRegistration && isCTCChanged)
+                    await ReBuildSalaryBreakup();
+                else
                     await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
 
                 return (employeeBasicInfo, fileDetails);
@@ -405,6 +412,35 @@ namespace ServiceLayer.Code
             {
                 throw;
             }
+        }
+
+        private async Task ReBuildSalaryBreakup()
+        {
+            string url = $"{_microserviceUrlLogs.RebuildBreakup}/false";
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
+            if (response is null)
+                throw HiringBellException.ThrowBadRequest("fail to get response");
+        }
+
+        private async Task<bool> IsEmployeeCTCChanged(long employeeId, decimal ctc)
+        {
+            var employeeSalaryDetail = _db.Get<EmployeeSalaryDetail>(Procedures.EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID, new
+            {
+                FinancialStartYear = _currentSession.FinancialStartYear,
+                EmployeeId = employeeId
+            });
+
+            if (employeeSalaryDetail != null && employeeSalaryDetail.CTC != ctc)
+                return await Task.FromResult(true);
+
+            return await Task.FromResult(false);
         }
 
         private async Task<EmployeeCalculation> GetEmployeeDeclarationDetail(EmployeeBasicInfo employeeBasicInfo)
@@ -2015,6 +2051,8 @@ namespace ServiceLayer.Code
 
                                 dataTable = result.Tables[0];
                                 dataTable.RemoveSpacesFromColumnNames();
+                                if (dataTable.Columns.Contains("CTC(Yearly)"))
+                                    dataTable.Columns["CTC(Yearly)"].ColumnName = "CTC";
 
                                 employeesList = MappedEmployee(dataTable);
                             }
@@ -2073,7 +2111,7 @@ namespace ServiceLayer.Code
 
                                     switch (TypeName)
                                     {
-                                        case nameof(Boolean):
+                                        case nameof(System.Boolean):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (dr[x.Name].ToString().Equals("Yes", StringComparison.OrdinalIgnoreCase))
@@ -2119,7 +2157,7 @@ namespace ServiceLayer.Code
                                             else
                                                 x.SetValue(t, Decimal.Zero);
                                             break;
-                                        case nameof(String):
+                                        case nameof(System.String):
                                             if (dr[x.Name] != DBNull.Value)
                                             {
                                                 if (x.Name.Equals("EmployeeName", StringComparison.OrdinalIgnoreCase))

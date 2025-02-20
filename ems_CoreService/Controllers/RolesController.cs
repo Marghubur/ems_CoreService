@@ -50,11 +50,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetRoles")]
-        public IResponse<ApiResponse> GetRoles()
+        public async Task<ApiResponse> GetRoles()
         {
             try
             {
-                var result = _rolesAndMenuService.GetRoles();
+                var result = await  _rolesAndMenuService.GetRoles();
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             catch (Exception ex)
@@ -64,11 +64,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("AddRole")]
-        public IResponse<ApiResponse> AddRole(AddRole addRole)
+        public async Task<ApiResponse> AddRole(AddRole addRole)
         {
             try
             {
-                var result = _rolesAndMenuService.AddRole(addRole);
+                var result = await _rolesAndMenuService.AddRole(addRole);
                 return BuildResponse(result, HttpStatusCode.OK);
             }
             catch (Exception ex)
