@@ -186,6 +186,8 @@ namespace EMailService.Modal
         public static string ORG_HIERARCHY_DEPARTMENT_GETALL = "sp_org_hierarchy_department_getall";
         public static string EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID = "sp_employee_salary_detail_get_by_empid";
         public static string USERFILES_GETBY_OWNERID_ITEMSTATUS = "sp_userfiles_getby_ownerid_itemstatus";
+        public static string EMPLOYEE_WITH_DEPARTMENT_DESIGNATION_ALL = "sp_employee_with_department_designation_all";
+
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
 

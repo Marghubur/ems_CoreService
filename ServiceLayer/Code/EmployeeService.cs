@@ -33,7 +33,6 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -1896,7 +1895,152 @@ namespace ServiceLayer.Code
 
         private string FormatDate(DateTime date)
         {
+            if (date.Year == 1)
+                return "";
+
             return _timezoneConverter.ToTimeZoneDateTime(date, _currentSession.TimeZone).ToString("dd-MMM-yyyy");
+        }
+
+        private string FormatDate(DateTime? date)
+        {
+            if (date == null)
+                return "";
+
+            return _timezoneConverter.ToTimeZoneDateTime((DateTime)date, _currentSession.TimeZone).ToString("dd-MMM-yyyy");
+        }
+
+        public async Task<byte[]> ExportEmployeeWithDataService()
+        {
+            var dataset = _db.FetchDataSet(Procedures.EMPLOYEE_WITH_DEPARTMENT_DESIGNATION_ALL, new
+            {
+                FinancialYear = _currentSession.FinancialStartYear
+            });
+
+            if (dataset.Tables.Count != 3)
+                throw HiringBellException.ThrowBadRequest("Fail to get excel detail");
+
+            if (dataset.Tables[0].Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Employee record not. Please employee first");
+
+            var employees = Converter.ToList<Employee>(dataset.Tables[0]);
+            var departmnts = Converter.ToList<Department>(dataset.Tables[1]);
+            var designation = Converter.ToList<EmployeeRole>(dataset.Tables[2]);
+
+            ExcelDataWithDropdown excelDataWithDropdown = new ExcelDataWithDropdown
+            {
+                data = new List<dynamic>(),
+                dropdowndata = new Dictionary<string, List<string>>()
+            };
+
+            await CreateEmployeeTableDropdown(departmnts, designation, excelDataWithDropdown);
+            await CreateEmployeeRecord(employees, excelDataWithDropdown);
+
+            var url = $"{_microserviceUrlLogs.GenerateExelWithDropdown}";
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(excelDataWithDropdown)
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
+        }
+
+        private async Task CreateEmployeeRecord(List<Employee> employees, ExcelDataWithDropdown excelDataWithDropdown)
+        {
+            foreach (var emp in employees)
+            {
+                Dictionary<string, object> data = new Dictionary<string, object>
+                    {
+                        { "Employee Code", _commonService.GetEmployeeCode(emp.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength) },
+                        { "Employee Name", emp.FirstName + " " + emp.LastName },
+                        { "Date of Joining", FormatDate(emp.DateOfJoining)},
+                        { "DOB", FormatDate(emp.DOB) },
+                        { "CTC", emp.CTC },
+                        { "Gender", GetGenderValue(emp.Gender) },
+                        { "Experience In Month", emp.ExprienceInYear },
+                        { "Email", emp.Email },
+                        { "Marital Status", GetMaritalStatus(emp.MaritalStatus) },
+                        { "Marriage Date", FormatDate(emp.MarriageDate) },
+                        { "Blood Group", emp.BloodGroup },
+                        { "Father Name", emp.FatherName },
+                        { "Spouse Name", emp.SpouseName },
+                        { "Is Ph Challanged", ConvertBooleanValue(emp.IsPhChallanged) },
+                        { "Is International Employee", ConvertBooleanValue(emp.IsInternationalEmployee) },
+                        { "Verification Status", emp.VerificationStatus },
+                        { "Emergency Contact Name", emp.EmergencyContactName },
+                        { "Emergency Mobile No", emp.EmergencyMobileNo },
+                        { "Account Number", emp.AccountNumber },
+                        { "IFSC Code", emp.IFSCCode },
+                        { "Bank Account Type", emp.BankAccountType },
+                        { "Bank Name", emp.BankName },
+                        { "PAN No", emp.PANNo },
+                        { "Is Employee Eligible For PF", ConvertBooleanValue(emp.IsEmployeeEligibleForPF) },
+                        { "PF Number", emp.PFNumber },
+                        { "PF Account Creation Date", FormatDate(emp.PFAccountCreationDate) },
+                        { "Is Existing Member Of PF", ConvertBooleanValue(emp.IsExistingMemberOfPF) },
+                        { "Is Employee Eligible For ESI", ConvertBooleanValue(emp.IsEmployeeEligibleForESI) },
+                        { "ESI Serial Number", emp.ESISerialNumber },
+                        { "Aadhar No", emp.AadharNo },
+                        { "UAN", emp.UAN },
+                        { "Mobile", emp.Mobile },
+                        { "Country Of Origin", emp.CountryOfOrigin},
+                        { "Department", emp.Department },
+                        { "Location", emp.Location },
+                        { "Designation", emp.Deisgnation },
+                    };
+
+                excelDataWithDropdown.data.Add(data);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task CreateEmployeeTableDropdown(List<Department> departmnts, List<EmployeeRole> designation, ExcelDataWithDropdown excelDataWithDropdown)
+        {
+            excelDataWithDropdown.dropdowndata.Add("Department", departmnts.Select(x => x.DepartmentName).ToList());
+            excelDataWithDropdown.dropdowndata.Add("Designation", designation.Select(x => x.RoleName).ToList());
+            excelDataWithDropdown.dropdowndata.Add("Gender", new List<string> { "Male", "Female", "Any" });
+            excelDataWithDropdown.dropdowndata.Add("Marital Status", new List<string> { "Married", "Single", "Separated", "Widowed" });
+            excelDataWithDropdown.dropdowndata.Add("Verification Status", new List<string> { "Cancelled", "Initiated", "On Hold", "Partially Verified", "Pending", "Rejected", "Verified" });
+            excelDataWithDropdown.dropdowndata.Add("Is Ph Challanged", new List<string> { "Yes", "No" });
+            excelDataWithDropdown.dropdowndata.Add("Is International Employee", new List<string> { "Yes", "No" });
+            excelDataWithDropdown.dropdowndata.Add("Is Employee Eligible For PF", new List<string> { "Yes", "No" });
+            excelDataWithDropdown.dropdowndata.Add("Is Existing Member Of PF", new List<string> { "Yes", "No" });
+            excelDataWithDropdown.dropdowndata.Add("Is Employee Eligible For ESI", new List<string> { "Yes", "No" });
+
+            await Task.CompletedTask;
+        }
+
+        private string ConvertBooleanValue(bool value)
+        {
+            if (value)
+                return "Yes";
+            else
+                return "No";
+        }
+
+        private string GetMaritalStatus(int maritalStatus)
+        {
+            if (maritalStatus == LocalConstants.Married)
+                return nameof(LocalConstants.Married);
+            else if (maritalStatus == LocalConstants.Separated)
+                return nameof(LocalConstants.Separated);
+            else if (maritalStatus == LocalConstants.Widowed)
+                return nameof(LocalConstants.Widowed);
+            else
+                return nameof(LocalConstants.Single);
+        }
+
+        private string GetGenderValue(int gender)
+        {
+            if (gender == 1)
+                return "Male";
+            else if (gender == 2)
+                return "Female";
+            else
+                return "Any";
         }
 
         #endregion
@@ -1985,33 +2129,40 @@ namespace ServiceLayer.Code
             {
                 var emps = employeeData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
 
-                var ids = JsonConvert.SerializeObject(emps.Select(x => x.EmployeeId).ToList());
+                var ids = JsonConvert.SerializeObject(emps.Where(x => !string.IsNullOrEmpty(x.EmployeeCode))
+                                                          .Select(x => _commonService.ExtractEmployeeId(x.EmployeeCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix)).ToList());
                 var employees = _db.GetList<Employee>(Procedures.Active_Employees_By_Ids, new { EmployeeIds = ids });
 
                 foreach (Employee e in emps)
                 {
-                    e.WorkShiftId = LocalConstants.DefaultWorkShiftId;
-                    e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
-                    e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
-                    e.ReportingManagerId = LocalConstants.DefaultReportingMangerId;
-                    e.UserTypeId = (int)UserType.Employee;
-                    e.AccessLevelId = (int)RolesName.User;
-                    e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
-                    e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
-                    e.DesignationId = LocalConstants.DefaultDesignation;
-
-                    var em = employees.Find(x => x.EmployeeUid == e.EmployeeId);
+                    var employeeId = string.IsNullOrEmpty(e.EmployeeCode) ? 0 : _commonService.ExtractEmployeeId(e.EmployeeCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix);
+                    var em = employees.Find(x => x.EmployeeUid == employeeId);
                     if (em != null)
                     {
                         if (e.CTC > 0)
                         {
-                            em.CTC = e.CTC;
+                            e.EmployeeUid = employeeId;
                             em.IsCTCChanged = true;
-                            await UpdateEmployeeService(em, null);
+                            e.ReportingManagerId = em.ReportingManagerId;
+                            e.AccessLevelId = em.AccessLevelId;
+                            e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+                            e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+                            e.WorkShiftId = em.WorkShiftId;
+                            await UpdateEmployeeService(e, null);
                         }
                     }
                     else
                     {
+                        e.WorkShiftId = LocalConstants.DefaultWorkShiftId;
+                        e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+                        e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+                        e.ReportingManagerId = LocalConstants.DefaultReportingMangerId;
+                        e.UserTypeId = (int)UserType.Employee;
+                        e.AccessLevelId = (int)RolesName.User;
+                        e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
+                        e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
+                        e.DesignationId = LocalConstants.DefaultDesignation;
+
                         await RegisterEmployeeService(e, null);
                     }
                 }
@@ -2053,6 +2204,10 @@ namespace ServiceLayer.Code
                                 dataTable.RemoveSpacesFromColumnNames();
                                 if (dataTable.Columns.Contains("CTC(Yearly)"))
                                     dataTable.Columns["CTC(Yearly)"].ColumnName = "CTC";
+                                if (dataTable.Columns.Contains("Designation"))
+                                    dataTable.Columns["Designation"].ColumnName = "Deisgnation";
+                                if (dataTable.Columns.Contains("DateofJoining"))
+                                    dataTable.Columns["DateofJoining"].ColumnName = "DateOfJoining";
 
                                 employeesList = MappedEmployee(dataTable);
                             }
@@ -2171,7 +2326,7 @@ namespace ServiceLayer.Code
                                                 {
                                                     t.DepartmentId = GetDepartmentId(dr[x.Name].ToString());
                                                 }
-                                                else if (x.Name.Equals("Designation", StringComparison.OrdinalIgnoreCase))
+                                                else if (x.Name.Equals("Deisgnation", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     t.DesignationId = GetDesignationId(dr[x.Name].ToString());
                                                 }

@@ -361,6 +361,21 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ExportEmployeeWithData")]
+        public async Task<IActionResult> ExportEmployeeWithData([FromBody] int sheetName)
+        {
+            try
+            {
+                var result = await _employeeService.ExportEmployeeWithDataService();
+                return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "EmployeeWithData.xlsx");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
         #endregion
 
         #region Insert employee record by using excel
