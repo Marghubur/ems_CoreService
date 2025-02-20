@@ -19,5 +19,6 @@
         public string GenerateExelWithHeader { get; set; }
         public string ReGenearateToken { get; set; }
         public string RebuildBreakup { get; set; }
+        public string GenerateExelWithDropdown { get; set; }
     }
 }
