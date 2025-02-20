@@ -402,7 +402,7 @@ namespace ServiceLayer.Code
                 await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
 
                 if (!isNewRegistration && isCTCChanged)
-                    await ReBuildSalaryBreakup();
+                    await ReBuildSalaryBreakup(employeeBasicInfo.EmployeeUid);
                 else
                     await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
 
@@ -414,9 +414,9 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task ReBuildSalaryBreakup()
+        private async Task ReBuildSalaryBreakup(long employeeId)
         {
-            string url = $"{_microserviceUrlLogs.RebuildBreakup}/false";
+            string url = $"{_microserviceUrlLogs.RebuildBreakup}/false/{employeeId}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
             .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
