@@ -878,7 +878,7 @@ namespace ServiceLayer.Code
                 LastName = employee.LastName,
                 Mobile = employee.Mobile,
                 PANNo = employee.PANNo,
-                SecomdaryMobile = employee.SecondaryMobile,
+                SecondaryMobile = employee.SecondaryMobile,
                 Specification = employee.Specification,
             };
 

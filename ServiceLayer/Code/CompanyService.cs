@@ -286,10 +286,9 @@ namespace ServiceLayer.Code
 
         public async Task<OrganizationDetail> InsertUpdateCompanyDetailService(OrganizationDetail companyInfo, IFormFileCollection fileCollection)
         {
-            OrganizationDetail company = new OrganizationDetail();
             ValidateCompany(companyInfo);
 
-            company = _db.Get<OrganizationDetail>(Procedures.Company_GetById, new { companyInfo.CompanyId });
+            OrganizationDetail company = _db.Get<OrganizationDetail>(Procedures.Company_GetById, new { companyInfo.CompanyId });
 
             if (company == null)
                 throw new HiringBellException("Unable to find company. Please contact to admin.");
@@ -361,7 +360,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(companyInfo.City))
                 throw new HiringBellException("City is null or empty");
 
-            if (companyInfo.Pincode <= 0)
+            if (companyInfo.Pincode < 0)
                 throw new HiringBellException("Pincode is invalid. Please enter a valid pincode");
         }
 
@@ -402,7 +401,7 @@ namespace ServiceLayer.Code
                 filterModel.PageSize = 10;
                 filterModel.PageIndex = 1;
                 filterModel.SearchString = $"1=1 And CompanyId = {bankDetail.CompanyId}";
-                bankDetails = this.GetCompanyBankDetail(filterModel);
+                bankDetails = GetCompanyBankDetail(filterModel);
             }
 
             return bankDetails;

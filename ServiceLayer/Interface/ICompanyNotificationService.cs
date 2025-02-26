@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace ServiceLayer.Interface
 {
     public interface ICompanyNotificationService
     {
-        List<CompanyNotification> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection fileDetail);
+        Task<List<CompanyNotification>> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection fileDetail);
         List<CompanyNotification> GetNotificationRecordService(FilterModel filterModel);
         DataSet GetDepartmentsAndRolesService();
     }

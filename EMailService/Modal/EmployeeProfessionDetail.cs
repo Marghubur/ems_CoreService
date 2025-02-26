@@ -10,7 +10,7 @@ namespace ModalLayer.Modal
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Mobile { get; set; }
-        public string SecomdaryMobile { get; set; }
+        public string SecondaryMobile { get; set; }
         public string Email { get; set; }
         public string PANNo { get; set; }
         public string AadharNo { get; set; }

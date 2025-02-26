@@ -26,5 +26,6 @@ namespace ModalLayer.Modal
     {
         public string RoleName { get; set; }
         public string AccessCodeDefination { get; set; }
+        public int AccessLevelId { get; set; }
     }
 }

@@ -9,6 +9,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -26,7 +27,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("ProdcutAddUpdate")]
-        public IResponse<ApiResponse> ProdcutAddUpdate()
+        public async Task<ApiResponse> ProdcutAddUpdate()
         {
             Product product = null;
             try
@@ -39,7 +40,7 @@ namespace OnlineDataBuilder.Controllers
                     product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                    var resetSet = _productService.ProdcutAddUpdateService(product, files, fileDetail);
+                    var resetSet = await _productService.ProdcutAddUpdateService(product, files, fileDetail);
                     return BuildResponse(resetSet);
                 }
                 else

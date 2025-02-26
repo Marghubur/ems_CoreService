@@ -1,5 +1,4 @@
-﻿using Bot.CoreBottomHalf.CommonModal;
-using Bot.CoreBottomHalf.CommonModal.API;
+﻿using Bot.CoreBottomHalf.CommonModal.API;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +8,6 @@ using ModalLayer.Modal.Profile;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 

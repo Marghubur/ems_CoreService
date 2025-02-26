@@ -17,6 +17,7 @@ using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -1383,7 +1384,7 @@ namespace ServiceLayer.Code
                 Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", employeeCode).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
-                Replace("[[Department]]", designation).
+                Replace("[[Department]]", string.IsNullOrEmpty(payslipModal.Employee.Department) ? "--" : payslipModal.Employee.Department).
                 Replace("[[SubDepartment]]", "NA").
                 Replace("[[Designation]]", designation).
                 Replace("[[Payment Mode]]", "Bank Transfer").

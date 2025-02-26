@@ -32,11 +32,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("AnnexureOfferLetterInsertUpdate/{LetterType}")]
-        public IResponse<ApiResponse> AnnexureOfferLetterInsertUpdate(AnnexureOfferLetter annexureOfferLetter, [FromRoute] int LetterType)
+        public async Task<ApiResponse> AnnexureOfferLetterInsertUpdate(AnnexureOfferLetter annexureOfferLetter, [FromRoute] int LetterType)
         {
             try
             {
-                var result = _templateService.AnnexureOfferLetterInsertUpdateService(annexureOfferLetter, LetterType);
+                var result = await _templateService.AnnexureOfferLetterInsertUpdateService(annexureOfferLetter, LetterType);
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -46,11 +46,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpGet("GetOfferLetter/{CompanyId}/{LetterType}")]
-        public IResponse<ApiResponse> GetOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        public async Task<ApiResponse> GetOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
         {
             try
             {
-                var result = _templateService.GetOfferLetterService(CompanyId, LetterType);
+                var result = await _templateService.GetOfferLetterService(CompanyId, LetterType);
                 return BuildResponse(result);
             }
             catch (Exception ex)

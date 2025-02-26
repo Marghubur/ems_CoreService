@@ -193,9 +193,7 @@ namespace ServiceLayer.Code
             var client = _httpClientFactory.CreateClient();
             var response = await client.GetAsync($"{_microserviceUrlLogs.ResourceBaseUrl}{filePath}");
             if (response.IsSuccessStatusCode)
-            {
                 return await response.Content.ReadAsStringAsync();
-            }
 
             return null;
         }
