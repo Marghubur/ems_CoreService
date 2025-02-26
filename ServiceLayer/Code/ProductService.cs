@@ -85,11 +85,10 @@ namespace ServiceLayer.Code
 
             await ExecuteProductDetail(oldproduct, files, fileCollection);
 
-            FilterModel filterModel = new FilterModel
+            return GetAllProductsService(new FilterModel
             {
                 SearchString = $"1=1 and CompanyId={product.CompanyId}"
-            };
-            return this.GetAllProductsService(filterModel);
+            });
         }
 
         private void validateProduct(Product product)
@@ -123,9 +122,7 @@ namespace ServiceLayer.Code
                 List<int> fileIds = new List<int>();
                 if (FileCollection.Count > 0)
                 {
-                    // save file to server filesystem
                     var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
-                    //_fileService.SaveFile(folderPath, files, FileCollection, product.ProductId.ToString());
 
                     string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                     FileFolderDetail fileFolderDetail = new FileFolderDetail

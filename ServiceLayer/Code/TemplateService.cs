@@ -1,13 +1,16 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.DatabaseLayer.Common.Code;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
+using EMailService.Modal;
 using EMailService.Service;
-using Microsoft.AspNetCore.Hosting;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,27 +22,32 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly CurrentSession _currentSession;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly ICompanyService _companyService;
         private readonly IEMailManager _eMailManager;
-
+        private readonly RequestMicroservice _requestMicroservice;
+        private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly IHttpClientFactory _httpClientFactory;
         public TemplateService(
-            IDb db, 
-            CurrentSession currentSession, 
-            FileLocationDetail fileLocationDetail, 
-            IWebHostEnvironment hostingEnvironment, 
-            ICompanyService companyService, 
-            IEMailManager eMailManager)
+            IDb db,
+            CurrentSession currentSession,
+            FileLocationDetail fileLocationDetail,
+            ICompanyService companyService,
+            IEMailManager eMailManager,
+            RequestMicroservice requestMicroservice,
+            MicroserviceRegistry microserviceUrlLogs,
+            IHttpClientFactory httpClientFactory)
         {
             _db = db;
             _currentSession = currentSession;
             _fileLocationDetail = fileLocationDetail;
-            _hostingEnvironment = hostingEnvironment;
             _companyService = companyService;
             _eMailManager = eMailManager;
+            _requestMicroservice = requestMicroservice;
+            _microserviceUrlLogs = microserviceUrlLogs;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public AnnexureOfferLetter AnnexureOfferLetterInsertUpdateService(AnnexureOfferLetter annexureOfferLetter, int LetterType)
+        public async Task<AnnexureOfferLetter> AnnexureOfferLetterInsertUpdateService(AnnexureOfferLetter annexureOfferLetter, int LetterType)
         {
             if (annexureOfferLetter.CompanyId <= 0)
                 throw new HiringBellException("Invalid company selected. Please select a valid company");
@@ -50,52 +58,78 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(annexureOfferLetter.BodyContent))
                 throw new HiringBellException("Body content is null or empty");
 
-            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_id", new { AnnexureOfferLetterId = annexureOfferLetter.AnnexureOfferLetterId });
+            AnnexureOfferLetter letter = _db.Get<AnnexureOfferLetter>(Procedures.ANNEXURE_OFFER_LETTER_GETBY_ID, new
+            {
+                annexureOfferLetter.AnnexureOfferLetterId
+            });
+
             if (letter == null)
+            {
                 letter = annexureOfferLetter;
+            }
             else
             {
                 letter.TemplateName = annexureOfferLetter.TemplateName;
                 letter.FileId = annexureOfferLetter.FileId;
             }
 
-            var folderPath = Path.Combine(_fileLocationDetail.DocumentFolder, _fileLocationDetail.CompanyFiles, "Offer_Letter");
-            if (!Directory.Exists(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath)))
-                Directory.CreateDirectory(Path.Combine(_hostingEnvironment.ContentRootPath, folderPath));
-            string filename = annexureOfferLetter.TemplateName.Replace(" ", "") + ".txt";
-            var filepath = Path.Combine(folderPath, filename);
-            if (File.Exists(filepath))
-                File.Delete(filepath);
-
-            var txt = new StreamWriter(filepath);
-            txt.Write(annexureOfferLetter.BodyContent);
-            txt.Close();
+            string fileName = annexureOfferLetter.TemplateName.Replace(" ", "").Substring(0, 15) + "" + ".txt";
+            string oldFileName = !string.IsNullOrEmpty(letter.FilePath) ? Path.GetFileName(letter.FilePath) : string.Empty;
+            Files file = await SaveDataAsTextFileService(fileName, annexureOfferLetter.BodyContent, oldFileName);
 
             letter.AdminId = _currentSession.CurrentUserDetail.UserId;
             letter.LetterType = LetterType;
-            letter.FilePath = filepath;
-            var result = _db.Execute<AnnexureOfferLetter>("sp_annexure_offer_letter_insupd", letter, true);
+            letter.FilePath = Path.Combine(file.FilePath, file.FileName);
+
+            var result = _db.Execute<AnnexureOfferLetter>(Procedures.ANNEXURE_OFFER_LETTER_INSUPD, letter, true);
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("fail to insert or update");
-            var letterId = Convert.ToInt32(result);
-            annexureOfferLetter.AnnexureOfferLetterId = letterId;
+
+            annexureOfferLetter.AnnexureOfferLetterId = Convert.ToInt32(result);
             return annexureOfferLetter;
         }
 
-        public AnnexureOfferLetter GetOfferLetterService(int CompanyId, int LetterType)
+        private async Task<Files> SaveDataAsTextFileService(string fileName, string data, string oldFileName)
+        {
+            string url = $"{_microserviceUrlLogs.SaveAsTextFile}";
+            TextFileFolderDetail textFileFolderDetail = new TextFileFolderDetail
+            {
+                FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "template"),
+                OldFileName = oldFileName,
+                ServiceName = LocalConstants.EmstumFileService,
+                FileName = fileName,
+                TextDetail = data
+            };
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(textFileFolderDetail)
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<Files>(microserviceRequest);
+        }
+
+        public async Task<AnnexureOfferLetter> GetOfferLetterService(int CompanyId, int LetterType)
         {
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
 
             if (result != null)
-            {
-                if (File.Exists(result.FilePath))
-                {
-                    var txt = File.ReadAllText(result.FilePath);
-                    result.BodyContent = txt;
-                }
-            }
+                result.BodyContent = await ReadTextFile(result.FilePath);
 
-            return result;
+            return await Task.FromResult(result);
+        }
+
+        private async Task<string> ReadTextFile(string filePath)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.GetAsync($"{_microserviceUrlLogs.ResourceBaseUrl}{filePath}");
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadAsStringAsync();
+
+            return null;
         }
 
         public EmailTemplate GetBillingTemplateDetailService()
@@ -217,7 +251,7 @@ namespace ServiceLayer.Code
 
             List<Files> companyFiles = await _companyService.GetCompanyFiles(CompanyId);
             var emaillinkconfig = _db.Get<EmailLinkConfig>("sp_email_link_config_getBy_pagename", new { CompanyId = CompanyId, PageName = PageName });
-            return new { EmailLinkConfig = emaillinkconfig, Files = companyFiles};
+            return new { EmailLinkConfig = emaillinkconfig, Files = companyFiles };
         }
 
         public async Task<string> GenerateUpdatedPageMailService(EmailLinkConfig emailLinkConfig)

@@ -378,5 +378,9 @@ namespace EMailService.Modal
 
         //-----------------Roles ------------------------------------------------
         public static string ACCESSLEVEL_INSUPD = "sp_AccessLevel_InsUpd";
+
+        // ------------------- Annexur and Offer letter ----------------------------------------
+        public static string ANNEXURE_OFFER_LETTER_GETBY_ID = "sp_annexure_offer_letter_getby_id";
+        public static string ANNEXURE_OFFER_LETTER_INSUPD = "sp_annexure_offer_letter_insupd";
     }
 }

@@ -68,7 +68,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public List<CompanyNotification> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
+        public async Task<List<CompanyNotification>> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
         {
             ValidateCompanyNotification(notification);
             var oldNotification = _db.Get<CompanyNotification>(Procedures.Company_Notification_Getby_Id, new { NotificationId = notification.NotificationId });
@@ -90,13 +90,13 @@ namespace ServiceLayer.Code
                 oldNotification.Departments = "[]";
 
             oldNotification.AdminId = _currentSession.CurrentUserDetail.UserId;
-            Task.Run(() => ExecuteCompanyNotification(oldNotification, files, FileCollection));
+            await ExecuteCompanyNotification(oldNotification, files, FileCollection);
 
             FilterModel filterModel = new FilterModel
             {
                 SearchString = $"1=1 and CompanyId={notification.CompanyId}"
             };
-            return this.GetNotificationRecordService(filterModel);
+            return GetNotificationRecordService(filterModel);
         }
 
         private async Task ExecuteCompanyNotification(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
@@ -109,7 +109,6 @@ namespace ServiceLayer.Code
                 {
                     // save file to server filesystem
                     var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "Notification");
-                    //_fileService.SaveFile(folderPath, files, FileCollection, notification.CompanyId.ToString());
 
                     var url = $"{_microserviceUrlLogs.SaveApplicationFile}";
                     FileFolderDetail fileFolderDetail = new FileFolderDetail
@@ -149,27 +148,6 @@ namespace ServiceLayer.Code
 
                         fileIds.Add(Convert.ToInt32(Result));
                     }
-
-                    //foreach (var n in files)
-                    //{
-                    //    Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
-                    //    {
-                    //        CompanyFileId = n.FileUid,
-                    //        CompanyId = notification.CompanyId,
-                    //        FilePath = n.FilePath,
-                    //        FileName = n.FileName,
-                    //        FileExtension = n.FileExtension,
-                    //        FileDescription = n.FileDescription,
-                    //        FileRole = n.FileRole,
-                    //        UserTypeId = (int)UserType.Compnay,
-                    //        AdminId = _currentSession.CurrentUserDetail.UserId
-                    //    }, true);
-
-                    //    if (string.IsNullOrEmpty(Result))
-                    //        throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
-
-                    //    fileIds.Add(Convert.ToInt32(Result));
-                    //}
                 }
                 if (notification.FileIds != null)
                 {
@@ -184,7 +162,7 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(result))
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update company notification");
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 _fileService.DeleteFiles(files);
                 throw;

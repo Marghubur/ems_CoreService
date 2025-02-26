@@ -55,8 +55,6 @@ namespace ServiceLayer.Code
 
         public ProfileDetail UpdateProfile(ProfessionalUser professionalUser, int UserTypeId, int IsProfileImageRequest = 0)
         {
-            long employeeId = 0;
-            ProfileDetail profileDetail = new ProfileDetail();
             professionalUser.ProfessionalDetailJson = JsonConvert.SerializeObject(professionalUser);
             var result = _db.Execute<ProfessionalUser>(Procedures.Professionaldetail_Insupd, new
             {
@@ -70,11 +68,10 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(result))
                 throw new HiringBellException("Unable to insert of update");
 
-            employeeId = Convert.ToInt64(result);
+            long employeeId = Convert.ToInt64(result);
 
 
-            profileDetail = this.GetUserDetail(employeeId);
-            return profileDetail;
+            return GetUserDetail(employeeId);
         }
 
         public async Task<ProfileDetail> UploadUserInfo(string userId, ProfessionalUser professionalUser, IFormFileCollection FileCollection, int UserTypeId)
@@ -212,19 +209,14 @@ namespace ServiceLayer.Code
             if (EmployeeId <= 0)
                 throw new HiringBellException { UserMessage = "Invalid UserTypeId", FieldName = nameof(EmployeeId), FieldValue = EmployeeId.ToString() };
 
-            ProfileDetail profileDetail = new ProfileDetail();
-            ProfessionalUser professionalUser = default(ProfessionalUser);
-
             var result = _db.FetchDataSet(Procedures.Professionaldetail_Get_Byid, new { EmployeeId });
-            //(Employee employee, ProfessionalUser professionalUser, List<FileDetail> fileDetails) = _db.GetMulti<Employee, ProfessionalUser, List<FileDetail>>("sp_professionaldetail_get_byid", new { EmployeeId });
-            if (result.Tables.Count == 3)
-            {
-                profileDetail.employee = Converter.ToType<Employee>(result.Tables[0]);
-                professionalUser = Converter.ToType<ProfessionalUser>(result.Tables[1]);
-                profileDetail.profileDetail = Converter.ToList<FileDetail>(result.Tables[2]);
-            }
-            else
+            if (result.Tables.Count != 3)
                 throw new HiringBellException("unable to get records");
+
+            ProfileDetail profileDetail = new ProfileDetail();
+            profileDetail.employee = Converter.ToType<Employee>(result.Tables[0]);
+            ProfessionalUser professionalUser = Converter.ToType<ProfessionalUser>(result.Tables[1]);
+            profileDetail.profileDetail = Converter.ToList<FileDetail>(result.Tables[2]);
 
             if (profileDetail.employee == null)
                 throw new HiringBellException("Unable to get employee detail.");

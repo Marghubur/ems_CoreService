@@ -287,17 +287,14 @@ namespace CoreServiceLayer.Implementation
         public async Task<DataSet> CreateFolder(Files fileDetail)
         {
             bool isLocationFound = false;
-            //string actualFolderPath = string.Empty;
             DataSet dataSet = null;
             if (fileDetail != null)
             {
-                //fileDetail.FilePath = fileDetail.FilePath;
                 if (string.IsNullOrEmpty(fileDetail.ParentFolder))
                     fileDetail.ParentFolder = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User);
                 else
                     fileDetail.ParentFolder = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, fileDetail.ParentFolder);
 
-                //fileDetail.ParentFolder = fileDetail.ParentFolder;
                 if (!string.IsNullOrEmpty(fileDetail.FilePath))
                 {
                     switch (fileDetail.SystemFileType)
@@ -305,17 +302,6 @@ namespace CoreServiceLayer.Implementation
                         case FileSystemType.User:
                             isLocationFound = true;
                             fileDetail.FilePath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, fileDetail.FilePath);
-
-                            //fileDetail.FilePath = Path.Combine(
-                            //        _fileLocationDetail.UserFolder,
-                            //        fileDetail.FilePath
-                            //    );
-
-                            //fileDetail.FilePath = fileDetail.FilePath;
-                            //actualFolderPath = Path.Combine(
-                            //            _hostingEnvironment.ContentRootPath,
-                            //            fileDetail.FilePath
-                            //        );
                             break;
                         case FileSystemType.Bills:
                             break;
@@ -323,9 +309,6 @@ namespace CoreServiceLayer.Implementation
 
                     if (isLocationFound)
                     {
-                        //if (!Directory.Exists(actualFolderPath))
-                        //    Directory.CreateDirectory(actualFolderPath);
-
                         string url = $"{_microserviceUrlLogs.CreateFolder}";
                         FileFolderDetail fileFolderDetail = new FileFolderDetail
                         {
@@ -383,7 +366,6 @@ namespace CoreServiceLayer.Implementation
                                                             AdminId = 1
                                                         }));
 
-            // DataTable table = Converter.ToDataTable(fileInfo);
             var result = _db.ExecuteAsync(procedure, new { InsertFileJsonData = fileInfo }, false);
             return new Tuple<string, bool>("Total " + result + " inserted/updated.", true);
         }

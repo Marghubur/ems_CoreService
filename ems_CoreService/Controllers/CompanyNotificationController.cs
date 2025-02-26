@@ -9,6 +9,7 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OnlineDataBuilder.Controllers
 {
@@ -26,7 +27,7 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("InsertUpdateNotification")]
-        public IResponse<ApiResponse> InsertUpdateNotification()
+        public async Task<ApiResponse> InsertUpdateNotification()
         {
             try
             {
@@ -38,7 +39,7 @@ namespace OnlineDataBuilder.Controllers
                     var notifications = JsonConvert.DeserializeObject<CompanyNotification>(notification);
                     List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    var result = _companyNotificationService.InsertUpdateNotificationService(notifications, files, fileDetail);
+                    var result = await _companyNotificationService.InsertUpdateNotificationService(notifications, files, fileDetail);
                     return BuildResponse(result);
                 }
                 return BuildResponse("No files found", HttpStatusCode.OK);
