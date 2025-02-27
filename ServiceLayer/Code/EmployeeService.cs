@@ -2590,7 +2590,7 @@ namespace ServiceLayer.Code
 
             var departmentDetail = _departments.Find(x => x.DepartmentName.Equals(department, StringComparison.OrdinalIgnoreCase));
             if (departmentDetail == null)
-                throw HiringBellException.ThrowBadRequest("Please select a valid department");
+                throw HiringBellException.ThrowBadRequest("Please select a valid department from the dropdown menu.");
 
             return departmentDetail.DepartmentId;
         }
@@ -2602,7 +2602,7 @@ namespace ServiceLayer.Code
 
             var designationDetail = _designations.Find(x => x.RoleName.Equals(designation, StringComparison.OrdinalIgnoreCase));
             if (designationDetail == null)
-                throw HiringBellException.ThrowBadRequest("Please select a valid designation");
+                throw HiringBellException.ThrowBadRequest("Please select a valid designation from the dropdown menu.");
 
             return (int)designationDetail.RoleId;
         }

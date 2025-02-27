@@ -23,7 +23,8 @@ namespace OnlineDataBuilder.Controllers
         {
             try
             {
-                return new HiringBellException(ex.Message, JsonConvert.SerializeObject(request), ex);
+                HiringBellException exception = (HiringBellException)ex;
+                return new HiringBellException(exception.UserMessage, JsonConvert.SerializeObject(request), ex);
             }
             catch
             {
