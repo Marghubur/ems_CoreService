@@ -1,4 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
@@ -75,6 +76,20 @@ namespace OnlineDataBuilder.Controllers
             {
                 throw Throw(ex, addRole);
             }
+        }
+
+        [HttpPost("ManageDefaultReportingManager")]
+        public async Task<ApiResponse> ManageDefaultReportingManager([FromBody] DefaultReportingManager defaultReportingManager)
+        {
+            var result = await _rolesAndMenuService.ManageDefaultReportingManagerService(defaultReportingManager);
+            return BuildResponse(result);
+        }
+
+        [HttpGet("GetDefaultReportingManager")]
+        public async Task<ApiResponse> GetDefaultReportingManager()
+        {
+            var result = await _rolesAndMenuService.GetDefaultReportingManagerService();
+            return BuildResponse(result);
         }
     }
 }

@@ -30,9 +30,9 @@ namespace ServiceLayer.Interface
         Task<Dictionary<long, List<DailyAttendance>>> GetAttendancePageService(FilterModel filterModel);
         Task<Dictionary<long, List<DailyAttendance>>> GetRecentWeeklyAttendanceService(FilterModel filterModel);
         Task GenerateMonthlyAttendance();
-        Task UploadMonthlyAttendanceExcelService(IFormFileCollection files);
+        Task<int> UploadMonthlyAttendanceExcelService(IFormFileCollection files);
         Task UploadDailyBiometricAttendanceExcelService(IFormFileCollection files);
         Task<List<DailyAttendance>> GetRecentDailyAttendanceService(FilterModel filterModel);
-        Task<byte[]> DownloadAttendanceExcelWithDataService();
+        Task<byte[]> DownloadAttendanceExcelWithDataService(int month, int year);
     }
 }

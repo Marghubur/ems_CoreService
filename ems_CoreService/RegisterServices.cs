@@ -139,6 +139,7 @@ namespace ems_CoreService
             services.AddScoped<IRegisterEmployeeCalculateDeclaration, RegisterEmployeeCalculateDeclaration>();
             services.AddScoped<RequestMicroservice>();
             services.AddScoped<IOvertimeService, OvertimeService>();
+            services.AddScoped<IServiceJobStatusService, ServiceJobStatusService>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {

@@ -46,6 +46,11 @@ namespace ServiceLayer.Code
             else
             {
                 existingOvertime = overtimeDetail;
+                existingOvertime.CompOffCriterias = overtimeDetail.ConvertInLeave ? JsonConvert.SerializeObject(existingOvertime.CompOffCriteria) : "[]";
+                existingOvertime.RateMultiplier = overtimeDetail.ConvertInCash ? overtimeDetail.RateMultiplier : 0;
+                existingOvertime.IsWeekend = overtimeDetail.ConvertInCash ? overtimeDetail.IsWeekend : false;
+                existingOvertime.IsHoliday = overtimeDetail.ConvertInCash ? overtimeDetail.IsHoliday : false;
+                existingOvertime.ExpiryMonths = overtimeDetail.ConvertInLeave ? overtimeDetail.ExpiryMonths : 0;
             }
 
             var result = await _db.ExecuteAsync(Procedures.OVERTIMETABLE_CONFIGURATION_INSUPD, new
@@ -54,22 +59,19 @@ namespace ServiceLayer.Code
                 existingOvertime.ConvertInCash,
                 existingOvertime.ConvertInLeave,
                 existingOvertime.RateMultiplier,
-                existingOvertime.MinOvertimeMin,
-                existingOvertime.MaxOvertimeMin,
+                existingOvertime.MinOvertimeHrs,
+                existingOvertime.MaxOvertimeHrs,
                 existingOvertime.IsWeekend,
                 existingOvertime.IsHoliday,
-                existingOvertime.LeavePerHour,
-                existingOvertime.PartialHours,
-                existingOvertime.PartialLeave,
-                existingOvertime.MaxLeave,
-                existingOvertime.FullDayHours,
-                existingOvertime.BonusShift,
-                existingOvertime.BonusLeave,
                 existingOvertime.ExpiryMonths,
                 existingOvertime.ConfigName,
                 existingOvertime.WorkflowId,
                 existingOvertime.OvertimeTypeId,
                 existingOvertime.OTCalculatedOn,
+                existingOvertime.IsRoundOffOtHrs,
+                existingOvertime.RoundOffOtHrsType,
+                existingOvertime.IntervalForRoundOff,
+                existingOvertime.CompOffCriterias,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
@@ -83,23 +85,20 @@ namespace ServiceLayer.Code
         {
             existingOvertime.ConvertInCash = overtimeDetail.ConvertInCash;
             existingOvertime.ConvertInLeave = overtimeDetail.ConvertInLeave;
-            existingOvertime.RateMultiplier = overtimeDetail.RateMultiplier;
-            existingOvertime.MinOvertimeMin = overtimeDetail.MinOvertimeMin;
-            existingOvertime.MaxOvertimeMin = overtimeDetail.MaxOvertimeMin;
-            existingOvertime.IsWeekend = overtimeDetail.IsWeekend;
-            existingOvertime.IsHoliday = overtimeDetail.IsHoliday;
-            existingOvertime.LeavePerHour = overtimeDetail.LeavePerHour;
-            existingOvertime.PartialHours = overtimeDetail.PartialHours;
-            existingOvertime.PartialLeave = overtimeDetail.PartialLeave;
-            existingOvertime.MaxLeave = overtimeDetail.MaxLeave;
-            existingOvertime.FullDayHours = overtimeDetail.FullDayHours;
-            existingOvertime.BonusShift = overtimeDetail.BonusShift;
-            existingOvertime.BonusLeave = overtimeDetail.BonusLeave;
-            existingOvertime.ExpiryMonths = overtimeDetail.ExpiryMonths;
+            existingOvertime.RateMultiplier = overtimeDetail.ConvertInCash ? overtimeDetail.RateMultiplier : 0;
+            existingOvertime.MinOvertimeHrs = overtimeDetail.MinOvertimeHrs;
+            existingOvertime.MaxOvertimeHrs = overtimeDetail.MaxOvertimeHrs;
+            existingOvertime.IsWeekend = overtimeDetail.ConvertInCash ? overtimeDetail.IsWeekend : false;
+            existingOvertime.IsHoliday = overtimeDetail.ConvertInCash ? overtimeDetail.IsHoliday : false;
+            existingOvertime.ExpiryMonths = overtimeDetail.ConvertInLeave ? overtimeDetail.ExpiryMonths : 0;
             existingOvertime.ConfigName = overtimeDetail.ConfigName;
             existingOvertime.WorkflowId = overtimeDetail.WorkflowId;
             existingOvertime.OvertimeTypeId = overtimeDetail.OvertimeTypeId;
             existingOvertime.OTCalculatedOn = overtimeDetail.OTCalculatedOn;
+            existingOvertime.CompOffCriterias = overtimeDetail.ConvertInLeave ? JsonConvert.SerializeObject(overtimeDetail.CompOffCriteria) : "[]";
+            existingOvertime.IsRoundOffOtHrs = overtimeDetail.IsRoundOffOtHrs;
+            existingOvertime.RoundOffOtHrsType = overtimeDetail.RoundOffOtHrsType;
+            existingOvertime.IntervalForRoundOff = overtimeDetail.IntervalForRoundOff;
 
             await Task.CompletedTask;
         }
@@ -125,10 +124,10 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(overtimeDetail.ConfigName))
                 throw HiringBellException.ThrowBadRequest("Invalid config name");
 
-            if (overtimeDetail.MinOvertimeMin <= 0)
+            if (overtimeDetail.MinOvertimeHrs == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid minimum overtime");
 
-            if (overtimeDetail.MaxOvertimeMin <= 0)
+            if (overtimeDetail.MaxOvertimeHrs == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid maximum overtime");
 
             if (overtimeDetail.WorkflowId <= 0)
@@ -137,6 +136,9 @@ namespace ServiceLayer.Code
             if (overtimeDetail.OvertimeTypeId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid overtime type selected");
 
+            if (overtimeDetail.MinOvertimeHrs > overtimeDetail.MaxOvertimeHrs)
+                throw HiringBellException.ThrowBadRequest("Please select max overtime hrs more than min overtime hrs");
+
             if (overtimeDetail.ConvertInCash)
             {
                 if (overtimeDetail.RateMultiplier <= 0)
@@ -144,44 +146,37 @@ namespace ServiceLayer.Code
             }
             else
             {
-                if (overtimeDetail.LeavePerHour <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid leave per hour");
-
-                if (overtimeDetail.PartialHours < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid partial hours");
-
-                if (overtimeDetail.PartialLeave < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid partial leave");
-
-                if (overtimeDetail.MaxLeave <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid maximum leave");
-
-                if (overtimeDetail.FullDayHours <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid full day hours");
-
-                if (overtimeDetail.BonusShift < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid bonus shift");
-
-                if (overtimeDetail.BonusLeave < 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid bonus leave");
-
                 if (overtimeDetail.ExpiryMonths < 0)
                     throw HiringBellException.ThrowBadRequest("Invalid expiray month");
+
+                if (!overtimeDetail.CompOffCriteria.Any())
+                    throw HiringBellException.ThrowBadRequest("Please add over time compensation criteria");
+
+                foreach (var criteria in overtimeDetail.CompOffCriteria)
+                {
+                    if (criteria.StartHour <= 0)
+                        throw HiringBellException.ThrowBadRequest("Please enter a valid start hours");
+
+                    if (criteria.EndHour <= 0)
+                        throw HiringBellException.ThrowBadRequest("Please enter a valid end hours");
+
+                    if (criteria.TimeOfDay == 0)
+                        throw HiringBellException.ThrowBadRequest("Please enter a valid time of day");
+                }
             }
 
             await Task.CompletedTask;
         }
 
-        public async Task<(List<EmployeeOvertime> EmployeeOvertimes, List<OvertimeConfiguration> OvertimeConfigurations)> GetEmployeeOvertimeService()
+        public async Task<(List<EmployeeOvertime> EmployeeOvertimes, List<OvertimeConfiguration> OvertimeConfigurations)> GetEmployeeOvertimeService(FilterModel filterModel)
         {
-            return await GetEmployeeOvertimeByEmpId(_currentSession.CurrentUserDetail.UserId);
-        }
-
-        private async Task<(List<EmployeeOvertime> employeeOvertimes, List<OvertimeConfiguration> overtimeConfigurations)> GetEmployeeOvertimeByEmpId(long empId)
-        {
-            (var employeeOvertime, var overtimeConfiguration) = _db.GetList<EmployeeOvertime, OvertimeConfiguration>(Procedures.EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID, new
+            filterModel.SearchString += $" and EmployeeId = {_currentSession.CurrentUserDetail.UserId}";
+            (var employeeOvertime, var overtimeConfiguration) = _db.GetList<EmployeeOvertime, OvertimeConfiguration>(Procedures.EMPLOYEE_OVERTIMETABLE_GET_BY_FILTER, new
             {
-                EmployeeId = empId
+                filterModel.SearchString,
+                filterModel.SortBy,
+                filterModel.PageIndex,
+                filterModel.PageSize
             });
 
             return await Task.FromResult((employeeOvertime, overtimeConfiguration));
@@ -205,13 +200,15 @@ namespace ServiceLayer.Code
                 ExecutionRecord = "[]",
                 employeeOvertime.StartOvertime,
                 employeeOvertime.EndOvertime,
-                employeeOvertime.OvertimeDate
+                employeeOvertime.OvertimeDate,
+                employeeOvertime.OvertimeExpireOn,
+                employeeOvertime.CompOffValue
             }, true);
 
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Unable to inert/update overtime detail");
 
-            return await GetEmployeeOvertimeByEmpId(_currentSession.CurrentUserDetail.UserId);
+            return await GetEmployeeOvertimeService(new FilterModel());
         }
 
         private async Task<int> GetOvertimeConfigurationId(DateTime overtimeDate)
@@ -355,14 +352,7 @@ namespace ServiceLayer.Code
 
         public async Task<List<EmployeeOvertime>> ApproveEmployeeOvertimeService(List<EmployeeOvertime> employeeOvertimes)
         {
-            if (!employeeOvertimes.Any())
-                throw HiringBellException.ThrowBadRequest("Invalid request selected");
-
-            foreach (var employeeOvertime in employeeOvertimes)
-            {
-                if (employeeOvertime.OvertimeId <= 0)
-                    throw HiringBellException.ThrowBadRequest("Invalid overtime selected");
-            }
+            ValidateApproveOvertimeDetail(employeeOvertimes);
 
             var result = GetEmployeeOvertimeWithConnfiguration(employeeOvertimes[0].OvertimeId, out int shiftDuration);
 
@@ -393,6 +383,9 @@ namespace ServiceLayer.Code
             if (!isNextApprovalRequired)
             {
                 result.selectedOvertime.StatusId = (int)ItemStatus.Approved;
+                if (result.overtimeConfiguation.IsRoundOffOtHrs)
+                    await RoundOffOvertimeInterval(result.selectedOvertime, result.overtimeConfiguation);
+
                 if (result.overtimeConfiguation.ConvertInCash)
                 {
                     decimal overtimeAmount = await OvertimeConvertedIntoCashCalculation(result.selectedOvertime, result.overtimeConfiguation, shiftDuration);
@@ -400,13 +393,85 @@ namespace ServiceLayer.Code
                 }
                 else
                 {
-                    // Overtime converted into Leave
+                    result.selectedOvertime.CompOffValue = await OvertimeConvertedIntoCompOff(result.selectedOvertime, result.overtimeConfiguation, shiftDuration);
+                    result.selectedOvertime.OvertimeExpireOn = DateTime.UtcNow.AddMonths(result.overtimeConfiguation.ExpiryMonths);
                 }
             }
 
             // Update overtime record now.
             await updateOvertimeDetail(result.selectedOvertime);
             return await GetEmployeeOTByMangerService(new FilterModel());
+        }
+
+        private void ValidateApproveOvertimeDetail(List<EmployeeOvertime> employeeOvertimes)
+        {
+            if (!employeeOvertimes.Any())
+                throw HiringBellException.ThrowBadRequest("Invalid request selected");
+
+            foreach (var employeeOvertime in employeeOvertimes)
+            {
+                if (employeeOvertime.OvertimeId <= 0)
+                    throw HiringBellException.ThrowBadRequest("Invalid overtime selected");
+            }
+        }
+
+        private async Task RoundOffOvertimeInterval(EmployeeOvertime employeeOvertime, OvertimeConfiguration overtimeConfiguration)
+        {
+            int loggedHours = employeeOvertime.LoggedMinutes / 60;
+            int loggedMinutes = employeeOvertime.LoggedMinutes % 60;
+
+            if (overtimeConfiguration.RoundOffOtHrsType)
+            {
+                if (overtimeConfiguration.IntervalForRoundOff == 30)
+                {
+                    if (loggedMinutes >= 15 && loggedMinutes <= 30)
+                        loggedMinutes = 30;
+                    else if (loggedMinutes >= 45 && loggedMinutes < 60)
+                        loggedMinutes = 60;
+                }
+                else
+                {
+                    if (loggedMinutes >= 30 && loggedMinutes <= 60)
+                        loggedMinutes = 60;
+                }
+            }
+            else
+            {
+                if (overtimeConfiguration.IntervalForRoundOff == 30)
+                {
+                    if (loggedMinutes >= 0 && loggedMinutes <= 15)
+                        loggedMinutes = 0;
+                    else if (loggedMinutes >= 30 && loggedMinutes < 45)
+                        loggedMinutes = 30;
+                }
+                else
+                {
+                    if (loggedMinutes >= 0 && loggedMinutes <= 30)
+                        loggedMinutes = 0;
+                }
+            }
+
+            employeeOvertime.LoggedMinutes = loggedHours * 60 + loggedMinutes;
+            await Task.CompletedTask;
+        }
+
+        private async Task<decimal> OvertimeConvertedIntoCompOff(EmployeeOvertime employeeOvertime, OvertimeConfiguration overtimeConfiguration, int shiftDuration)
+        {
+            if (overtimeConfiguration.MinOvertimeHrs != -1 && employeeOvertime.LoggedMinutes < (overtimeConfiguration.MinOvertimeHrs * 60))
+                return 0;
+
+            if (overtimeConfiguration.MaxOvertimeHrs != -1 && employeeOvertime.LoggedMinutes > (overtimeConfiguration.MaxOvertimeHrs * 60))
+                employeeOvertime.LoggedMinutes = (int)overtimeConfiguration.MaxOvertimeHrs * 60;
+
+            var overtimeCompensationCriteria = JsonConvert.DeserializeObject<List<CompOffCriteria>>(overtimeConfiguration.CompOffCriterias);
+            if (!overtimeCompensationCriteria.Any())
+                throw HiringBellException.ThrowBadRequest("Overtime compensation criteria not found");
+
+            var criteria = overtimeCompensationCriteria.Find(x => employeeOvertime.LoggedMinutes >= (x.StartHour * 60) && employeeOvertime.LoggedMinutes <= (x.EndHour * 60));
+            if (criteria == null)
+                throw HiringBellException.ThrowBadRequest($"The criteria for ${employeeOvertime.LoggedMinutes / 60} hours overtime could not be found. Please contact the admin.");
+
+            return await Task.FromResult((decimal)criteria.TimeOfDay);
         }
 
         private bool IsActionAlreadyTaken(List<EmployeeWithRoles> existingExecutionRecord, int status)
@@ -465,7 +530,9 @@ namespace ServiceLayer.Code
                 employeeOvertime.ExecutionRecord,
                 employeeOvertime.StartOvertime,
                 employeeOvertime.EndOvertime,
-                employeeOvertime.OvertimeDate
+                employeeOvertime.OvertimeDate,
+                employeeOvertime.OvertimeExpireOn,
+                employeeOvertime.CompOffValue
             }, true);
 
             if (string.IsNullOrEmpty(result.statusMessage))
@@ -516,19 +583,18 @@ namespace ServiceLayer.Code
         //Overtime converted into Cash
         private async Task<decimal> OvertimeConvertedIntoCashCalculation(EmployeeOvertime employeeOvertime, OvertimeConfiguration overtimeConfiguration, int shiftDuration)
         {
-            int overtimeWorkedMin = ConvertOTDurationIntoMin(employeeOvertime.EndOvertime) - ConvertOTDurationIntoMin(employeeOvertime.StartOvertime);
-            if (overtimeWorkedMin < overtimeConfiguration.MinOvertimeMin)
+            if (overtimeConfiguration.MinOvertimeHrs != -1 && employeeOvertime.LoggedMinutes < (overtimeConfiguration.MinOvertimeHrs * 60))
                 return 0;
 
-            if (overtimeWorkedMin > overtimeConfiguration.MaxOvertimeMin)
-                overtimeWorkedMin = (int)overtimeConfiguration.MaxOvertimeMin;
+            if (overtimeConfiguration.MaxOvertimeHrs != -1 && employeeOvertime.LoggedMinutes > (overtimeConfiguration.MaxOvertimeHrs * 60))
+                employeeOvertime.LoggedMinutes = (int)overtimeConfiguration.MaxOvertimeHrs;
 
             DateTime overtimeDate = _timezoneConverter.ToTimeZoneDateTime(employeeOvertime.OvertimeDate, _currentSession.TimeZone);
             int daysInOvertimeMonth = DateTime.DaysInMonth(overtimeDate.Year, overtimeDate.Month);
 
             decimal overtimeCalcutedOn = await OvertimeCalculatedOnValue(overtimeConfiguration.OTCalculatedOn, employeeOvertime.EmployeeId, overtimeDate.Month);
             decimal perMinutesAmount = overtimeCalcutedOn / (daysInOvertimeMonth * shiftDuration);
-            decimal overtimeConvrtedAmount = (decimal)(overtimeWorkedMin * perMinutesAmount * overtimeConfiguration.RateMultiplier);
+            decimal overtimeConvrtedAmount = (decimal)(employeeOvertime.LoggedMinutes * perMinutesAmount * overtimeConfiguration.RateMultiplier);
 
             return overtimeConvrtedAmount;
         }

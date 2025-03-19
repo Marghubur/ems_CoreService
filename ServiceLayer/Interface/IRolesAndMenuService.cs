@@ -1,4 +1,5 @@
-﻿using ModalLayer.Modal;
+﻿using EMailService.Modal;
+using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -11,5 +12,7 @@ namespace ServiceLayer.Interface
         DataSet GetsRolesandMenu(int accessLevelId);
         Task<List<AddRole>> GetRoles();
         Task<List<AddRole>> AddRole(AddRole addRole);
+        Task<string> ManageDefaultReportingManagerService(DefaultReportingManager defaultReportingManager);
+        Task<DefaultReportingManager> GetDefaultReportingManagerService();
     }
 }

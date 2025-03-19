@@ -142,6 +142,7 @@ namespace ServiceLayer.Code
 
             List<LeaveTypeBrief> leaveTypeBriefs = await PrepareLeaveType(leaveTypeBrief, leavePlanTypes);
 
+            await UpdateCompOffLeave(leaveTypeBriefs, leaveRequestDetail);
             var shiftDetail = Converter.ToType<ShiftDetail>(result.Tables[2]);
             if (shiftDetail == null)
                 throw HiringBellException.ThrowBadRequest($"Shift detail not found for employee id: {EmployeeId}");
@@ -160,6 +161,38 @@ namespace ServiceLayer.Code
             };
 
             return await Task.FromResult(leaveCalculationModal);
+        }
+
+        private async Task UpdateCompOffLeave(List<LeaveTypeBrief> leaveTypeBriefs, LeaveRequestDetail leaveRequestDetail)
+        {
+            var compOff = leaveTypeBriefs.Find(x => x.LeavePlanTypeName.Equals("COMP OFF", StringComparison.OrdinalIgnoreCase));
+            if (compOff == null)
+                throw HiringBellException.ThrowBadRequest("Comp Off leave type no found. Please contact to admin");
+
+            if (leaveRequestDetail.CompOffValue != compOff.TotalLeaveQuota)
+            {
+                compOff.TotalLeaveQuota = leaveRequestDetail.CompOffValue;
+                compOff.AvailableLeaves = leaveRequestDetail.CompOffValue;
+
+                var result = await _db.ExecuteAsync(Procedures.Employee_Leave_Request_InsUpdate, new
+                {
+                    leaveRequestDetail.LeaveRequestId,
+                    leaveRequestDetail.EmployeeId,
+                    leaveRequestDetail.LeaveDetail,
+                    leaveRequestDetail.Year,
+                    leaveRequestDetail.IsPending,
+                    leaveRequestDetail.AvailableLeaves,
+                    leaveRequestDetail.TotalApprovedLeave,
+                    leaveRequestDetail.TotalLeaveApplied,
+                    leaveRequestDetail.TotalLeaveQuota,
+                    LeaveQuotaDetail = JsonConvert.SerializeObject(leaveTypeBriefs)
+                }, true);
+
+                if (string.IsNullOrEmpty(result.statusMessage))
+                    throw HiringBellException.ThrowBadRequest("Fail update leave quota detail");
+            }
+
+            await Task.CompletedTask;
         }
 
         public async Task StartAccrualCycle(RunAccrualModel runAccrualModel, CompanySetting companySetting)

@@ -45,26 +45,12 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("GetOfferLetter/{CompanyId}/{LetterType}")]
-        public async Task<ApiResponse> GetOfferLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
+        [HttpGet("GetOfficiaLetter/{CompanyId}/{LetterType}")]
+        public async Task<ApiResponse> GetOfficiaLetter([FromRoute] int CompanyId, [FromRoute] int LetterType)
         {
             try
             {
-                var result = await _templateService.GetOfferLetterService(CompanyId, LetterType);
-                return BuildResponse(result);
-            }
-            catch (Exception ex)
-            {
-                throw Throw(ex, new { CompanyId = CompanyId, LetterType = LetterType });
-            }
-        }
-
-        [HttpGet("GetAnnexture/{CompanyId}/{LetterType}")]
-        public IResponse<ApiResponse> GetAnnexture([FromRoute] int CompanyId, [FromRoute] int LetterType)
-        {
-            try
-            {
-                var result = _templateService.GetAnnextureService(CompanyId, LetterType);
+                var result = await _templateService.GetOfficiaLetterService(CompanyId, LetterType);
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -112,6 +98,34 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, emailLinkConfig);
+            }
+        }
+
+        [HttpGet("GenerateOfferLetterPDF")]
+        public async Task<ApiResponse> GenerateOfferLetterPDF()
+        {
+            try
+            {
+                var result = await _templateService.GenerateOfferLetterPDFService(); 
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [HttpPost("GenerateOfferLetterByteArray")]
+        public async Task<IActionResult> GenerateOfferLetterByteArray([FromBody] AnnexureOfferLetter annexureOfferLetter)
+        {
+            try
+            {
+                var result = await _templateService.GenerateOfferLetterByteArrayService();
+                return File(result, "application/pdf", "document.pdf");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
             }
         }
     }

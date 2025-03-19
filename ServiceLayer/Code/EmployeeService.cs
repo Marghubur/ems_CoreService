@@ -16,6 +16,7 @@ using EMailService.Service;
 using ExcelDataReader;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -33,6 +34,7 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Department = EMailService.Modal.Department;
 using File = System.IO.File;
 
 namespace ServiceLayer.Code
@@ -96,7 +98,7 @@ namespace ServiceLayer.Code
         /// <param name="employee"></param>
         /// <param name="fileCollection"></param>
         /// <returns></returns>
-        public async Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection)
+        public async Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection, bool IsNewRegistration = false)
         {
             var result = CheckMobileEmailExistence(employee.EmployeeId, employee.Email, employee.Mobile);
             if (result.EmailCount > 0)
@@ -105,7 +107,7 @@ namespace ServiceLayer.Code
             if (result.MobileCount > 0)
                 throw HiringBellException.ThrowBadRequest($"Mobile no: {employee.Mobile} already exists.");
 
-            await RegisterOrUpdateEmployeeDetail(employee, fileCollection);
+            await RegisterOrUpdateEmployeeDetail(employee, fileCollection, null, IsNewRegistration);
 
             return ApplicationConstants.Successfull;
         }
@@ -623,15 +625,15 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, UploadedPayrollData uploadedPayrollData = null)
+        public async Task<string> RegisterOrUpdateEmployeeDetail(Employee employee, IFormFileCollection fileCollection, UploadedPayrollData uploadedPayrollData = null, bool IsNewRegistration = false)
         {
-            bool IsNewRegistration = false;
+            //bool IsNewRegistration = false;
             long employeeUid = 0;
 
             try
             {
                 string EncryptedPassword = string.Empty;
-                var empId = Convert.ToInt32(employee.EmployeeUid);
+                //var empId = Convert.ToInt32(employee.EmployeeUid);
 
                 // validate employee
                 ValidateEmployee(employee);
@@ -646,7 +648,7 @@ namespace ServiceLayer.Code
                 _currentSession.TimeZoneNow = _timezoneConverter.ToTimeZoneDateTime(DateTime.UtcNow, _currentSession.TimeZone);
 
                 // prepare for new insert of employee
-                IsNewRegistration = await PrepareEmployeeInsertData(employee);
+                await PrepareEmployeeInsertData(employee, IsNewRegistration);
 
                 employeeUid = employee.EmployeeUid;
 
@@ -706,9 +708,8 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task<bool> PrepareEmployeeInsertData(Employee employee)
+        private async Task<bool> PrepareEmployeeInsertData(Employee employee, bool IsNewRegistration)
         {
-            bool IsNewRegistration = false;
             if (employee.AccessLevelId != (int)RolesName.Admin)
                 employee.UserTypeId = (int)RolesName.User;
 
@@ -716,11 +717,10 @@ namespace ServiceLayer.Code
                 employee.NewSalaryDetail = "[]";
 
             employee.EmployeeId = employee.EmployeeUid;
-            if (employee.EmployeeUid == 0)
+            if (IsNewRegistration)
             {
                 // create employee record
                 employee.EmployeeId = await RegisterNewEmployee(employee, employee.DateOfJoining);
-                IsNewRegistration = true;
 
                 employee.EmployeeUid = employee.EmployeeId;
             }
@@ -916,6 +916,7 @@ namespace ServiceLayer.Code
         {
             var result = await _db.ExecuteAsync(Procedures.Employees_Create, new
             {
+                EmployeeUid = employee.EmployeeId,
                 employee.FirstName,
                 employee.LastName,
                 employee.Mobile,
@@ -1238,9 +1239,9 @@ namespace ServiceLayer.Code
             if (filterModel.IsActive != null && filterModel.IsActive == true)
             {
                 if (filterModel.CompanyId > 0)
-                    filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} ";
+                    filterModel.SearchString += $" and l.CompanyId = {filterModel.CompanyId} and IsActive = true";
                 else
-                    filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} ";
+                    filterModel.SearchString += $" and l.CompanyId = {_currentSession.CurrentUserDetail.CompanyId} and IsActive = true";
 
                 var result = FilterActiveEmployees(filterModel);
 
@@ -1580,6 +1581,32 @@ namespace ServiceLayer.Code
                 employees = result.employees;
             }
             return employees;
+        }
+
+        public async Task<(List<Employee> employees, List<RecordHealthStatus> recordHealthStatus)> DeActiveEmployeeService(long employeeId)
+        {
+            if (employeeId == 1)
+                throw HiringBellException.ThrowBadRequest("You can't delete the admin");
+
+            var filterEmployee = FilterActiveEmployees(new FilterModel
+            {
+                SearchString = $"1=1 and emp.EmployeeUid = {employeeId}"
+            });
+
+            var employee = filterEmployee.employees.First();
+            employee.IsActive = false;
+
+            var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_INACTIVE_UPDATE, new
+            {
+                EmployeeUid = employeeId
+            }, true);
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to in-active the employee");
+
+            return GetEmployees(new FilterModel
+            {
+                IsActive = true
+            });
         }
 
         #endregion
@@ -1929,7 +1956,8 @@ namespace ServiceLayer.Code
             ExcelDataWithDropdown excelDataWithDropdown = new ExcelDataWithDropdown
             {
                 data = new List<dynamic>(),
-                dropdowndata = new Dictionary<string, List<string>>()
+                dropdowndata = new Dictionary<string, List<string>>(),
+                mandatoryHeaderColumn = new List<string> { "Mobile", "Employee Code", "Employee Name", "Date Of Joining", "DOB", "Gender", "Email", "Experience In Month", "CTC (Yearly)", "Father Name", " Account Number", "IFSC Code", "Bank Account Type", "Bank Name", "PAN No", "Designation" }
             };
 
             await CreateEmployeeTableDropdown(departmnts, designation, excelDataWithDropdown);
@@ -1957,7 +1985,7 @@ namespace ServiceLayer.Code
                         { "Employee Name", emp.FirstName + " " + emp.LastName },
                         { "Date of Joining", FormatDate(emp.DateOfJoining)},
                         { "DOB", FormatDate(emp.DOB) },
-                        { "CTC", emp.CTC },
+                        { "CTC (Yearly)", emp.CTC },
                         { "Gender", GetGenderValue(emp.Gender) },
                         { "Experience In Month", emp.ExprienceInYear },
                         { "Email", emp.Email },
@@ -2106,13 +2134,12 @@ namespace ServiceLayer.Code
         #endregion
 
         #region Employee registion by using excel
-        public async Task<List<Employee>> ReadEmployeeDataService(IFormFileCollection files)
+        public async Task<List<UploadEmpExcelError>> ReadEmployeeDataService(IFormFileCollection files)
         {
             try
             {
                 var uploadedEmployeeData = await ReadPayrollExcelData(files);
-                await UpdateEmployeeData(uploadedEmployeeData);
-                return uploadedEmployeeData;
+                return await UpdateEmployeeData(uploadedEmployeeData);
             }
             catch
             {
@@ -2120,11 +2147,12 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task UpdateEmployeeData(List<Employee> employeeData)
+        private async Task<List<UploadEmpExcelError>> UpdateEmployeeData(List<Employee> employeeData)
         {
             int i = 0;
             int skipIndex = 0;
             int chunkSize = 50;
+            List<UploadEmpExcelError> uploadEmpExcelErrors = new List<UploadEmpExcelError>();
             while (i < employeeData.Count)
             {
                 var emps = employeeData.Skip(skipIndex++ * chunkSize).Take(chunkSize).ToList();
@@ -2135,41 +2163,82 @@ namespace ServiceLayer.Code
 
                 foreach (Employee e in emps)
                 {
-                    var employeeId = string.IsNullOrEmpty(e.EmployeeCode) ? 0 : _commonService.ExtractEmployeeId(e.EmployeeCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix);
-                    var em = employees.Find(x => x.EmployeeUid == employeeId);
-                    if (em != null)
+                    try
                     {
-                        if (e.CTC > 0)
+                        var employeeId = string.IsNullOrEmpty(e.EmployeeCode) ? 0 : _commonService.ExtractEmployeeId(e.EmployeeCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix);
+                        var em = employees.Find(x => x.EmployeeUid == employeeId);
+                        if (em != null)
+                        {
+                            if (e.CTC > 0)
+                            {
+                                e.EmployeeUid = employeeId;
+                                em.IsCTCChanged = true;
+                                e.ReportingManagerId = em.ReportingManagerId;
+                                e.AccessLevelId = em.AccessLevelId;
+                                e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
+                                e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
+                                e.WorkShiftId = em.WorkShiftId;
+                                await UpdateEmployeeService(e, null);
+                            }
+                        }
+                        else
                         {
                             e.EmployeeUid = employeeId;
-                            em.IsCTCChanged = true;
-                            e.ReportingManagerId = em.ReportingManagerId;
-                            e.AccessLevelId = em.AccessLevelId;
+                            e.WorkShiftId = LocalConstants.DefaultWorkShiftId;
                             e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
                             e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
-                            e.WorkShiftId = em.WorkShiftId;
-                            await UpdateEmployeeService(e, null);
+                            e.ReportingManagerId = LocalConstants.DefaultReportingMangerId;
+                            e.UserTypeId = (int)UserType.Employee;
+                            e.AccessLevelId = (int)RolesName.User;
+                            e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
+                            e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
+                            e.DesignationId = LocalConstants.DefaultDesignation;
+
+                            await RegisterEmployeeService(e, null, true);
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        e.WorkShiftId = LocalConstants.DefaultWorkShiftId;
-                        e.CompanyId = _currentSession.CurrentUserDetail.CompanyId;
-                        e.OrganizationId = _currentSession.CurrentUserDetail.OrganizationId;
-                        e.ReportingManagerId = LocalConstants.DefaultReportingMangerId;
-                        e.UserTypeId = (int)UserType.Employee;
-                        e.AccessLevelId = (int)RolesName.User;
-                        e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
-                        e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
-                        e.DesignationId = LocalConstants.DefaultDesignation;
+                        var uploadError = new UploadEmpExcelError
+                        {
+                            FullName = e.FirstName + " " + e.LastName,
+                            Email = e.Email,
+                            MobileNo = e.Mobile,
+                            EmployeeCode = e.EmployeeCode,
+                            CreatedOn = DateTime.Now
+                        };
 
-                        await RegisterEmployeeService(e, null);
+                        try
+                        {
+                            HiringBellException exception = (HiringBellException)ex;
+                            uploadError.Message = exception.UserMessage;
+                        }
+                        catch (Exception innerEx)
+                        {
+                            uploadError.Message = innerEx.Message;
+                        }
+                        uploadEmpExcelErrors.Add(uploadError);
+
+                        continue;
                     }
                 }
 
                 i++;
             }
-            await Task.CompletedTask;
+
+            if (uploadEmpExcelErrors.Any())
+                await uploadEmployeeRecordError(uploadEmpExcelErrors);
+
+            return await Task.FromResult(uploadEmpExcelErrors);
+        }
+
+        private async Task uploadEmployeeRecordError(List<UploadEmpExcelError> uploadEmpExcelErrors)
+        {
+            await _db.ExecuteAsync(Procedures.UPLOAD_EMPLOYEE_ERROR_DETAIL_DELETE_ALL, new
+            {
+                UploadEmpExcelErrorId = 0
+            });
+            await _db.BulkExecuteAsync(Procedures.UPLOAD_EMPLOYEE_ERROR_DETAIL_INS, uploadEmpExcelErrors);
         }
 
         private async Task<List<Employee>> ReadPayrollExcelData(IFormFileCollection files)
@@ -2579,8 +2648,8 @@ namespace ServiceLayer.Code
             if (dataset == null || dataset.Tables.Count != 2)
                 throw HiringBellException.ThrowBadRequest("Fail to get designation and department");
 
-            _departments = Converter.ToList<Department>(dataset.Tables[1]);
             _designations = Converter.ToList<EmployeeRole>(dataset.Tables[0]);
+            _departments = Converter.ToList<Department>(dataset.Tables[1]);
         }
 
         private int GetDepartmentId(string department)
@@ -2716,6 +2785,85 @@ namespace ServiceLayer.Code
 
 
             return await GetEmployeesRecordHealthStatusService();
+        }
+
+        public async Task<byte[]> ExportEmployeeSkeletonExcelService()
+        {
+            var (designation, departmnts) = _db.GetList<EmployeeRole, Department>(Procedures.ORG_HIERARCHY_DEPARTMENT_GETALL, new
+            {
+                FinancialYear = _currentSession.FinancialStartYear
+            });
+
+            if (!designation.Any())
+                throw HiringBellException.ThrowBadRequest("Designation not found. Please contact to admin");
+
+            if (!departmnts.Any())
+                throw HiringBellException.ThrowBadRequest("Department not found. Please contact to admin");
+
+            ExcelDataWithDropdown excelDataWithDropdown = new ExcelDataWithDropdown
+            {
+                data = new List<dynamic>(),
+                dropdowndata = new Dictionary<string, List<string>>(),
+                mandatoryHeaderColumn = new List<string> { "Mobile", "Employee Name", "Date Of Joining", "DOB", "Gender", "Email", "Experience In Month", "CTC (Yearly)", "Father Name", " Account Number", "IFSC Code", "Bank Account Type", "Bank Name", "PAN No", "Designation" }
+            };
+
+            await CreateEmployeeTableDropdown(departmnts, designation, excelDataWithDropdown);
+            Dictionary<string, object> dumyEmployeeData = new Dictionary<string, object>
+                    {
+                        { "Employee Name", "Adam Smith" },
+                        { "Date of Joining", FormatDate(DateTime.UtcNow)},
+                        { "DOB", FormatDate(DateTime.UtcNow) },
+                        { "CTC (Yearly)", 10000000 },
+                        { "Gender", "Male" },
+                        { "Experience In Month", 24 },
+                        { "Email", "adam@test.com" },
+                        { "Marital Status", "Single" },
+                        { "Marriage Date", FormatDate(DateTime.UtcNow) },
+                        { "Blood Group", "O+" },
+                        { "Father Name", "John Smith" },
+                        { "Spouse Name", "Ema John" },
+                        { "Is Ph Challanged", "No" },
+                        { "Is International Employee", "No" },
+                        { "Verification Status", "Pending" },
+                        { "Emergency Contact Name", "Rishi Kumar" },
+                        { "Emergency Mobile No", "1234567899" },
+                        { "Account Number", "12341587455" },
+                        { "IFSC Code", "SBIN0014544" },
+                        { "Bank Account Type", "Saving" },
+                        { "Bank Name", "State Bank of India" },
+                        { "PAN No", "ABCDE0000A" },
+                        { "Is Employee Eligible For PF", "No" },
+                        { "PF Number", "12345678912" },
+                        { "PF Account Creation Date", FormatDate(DateTime.UtcNow) },
+                        { "Is Existing Member Of PF", "No" },
+                        { "Is Employee Eligible For ESI", "No" },
+                        { "ESI Serial Number", "123456789" },
+                        { "Aadhar No", "123412341234" },
+                        { "UAN", "123456124457" },
+                        { "Mobile", "9000000000" },
+                        { "Country Of Origin", "India"},
+                        { "Department", "IT DEPERTMENT" },
+                        { "Location", "Hyderabad" },
+                        { "Designation", "SOFTWARE DEVELOPER" },
+                    };
+            excelDataWithDropdown.data.Add(dumyEmployeeData);
+
+            var url = $"{_microserviceUrlLogs.GenerateExelWithDropdown}";
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(excelDataWithDropdown)
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.PostRequest<byte[]>(microserviceRequest);
+        }
+
+        public async Task<List<UploadEmpExcelError>> GetEmployeeUploadErrorLogsService()
+        {
+            var result = _db.GetList<UploadEmpExcelError>(Procedures.UPLOAD_EMPLOYEE_ERROR_DETAIL_GETALL);
+            return await Task.FromResult(result);
         }
 
         #endregion

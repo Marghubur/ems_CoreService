@@ -1,5 +1,4 @@
 ﻿using Bot.CoreBottomHalf.CommonModal.API;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using EMailService.Modal;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
@@ -28,10 +27,10 @@ namespace ems_CoreService.Controllers
             return BuildResponse(result);
         }
 
-        [HttpGet("GetEmployeeOvertime")]
-        public async Task<ApiResponse> GetEmployeeOvertime()
+        [HttpPost("GetEmployeeOvertime")]
+        public async Task<ApiResponse> GetEmployeeOvertime([FromBody]FilterModel filterModel)
         {
-            var result = await _overtimeService.GetEmployeeOvertimeService();
+            var result = await _overtimeService.GetEmployeeOvertimeService(filterModel);
             return BuildResponse(result);
         }
 
