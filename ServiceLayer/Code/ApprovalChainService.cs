@@ -51,57 +51,100 @@ namespace ServiceLayer.Code
             int approvalWorkFlowId = approvalWorkFlowModal.ApprovalWorkFlowId;
             ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
 
-            var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>(ConfigurationDetail.sp_approval_chain_detail_filter, new
-            {
-                SearchString = GetSelectQuery(approvalWorkFlowModal),
-            });
+            var resultData = await GetApprovalChainData(approvalWorkFlowModal.ApprovalWorkFlowId);
 
-            if (approvalWorkFlowModalExisting.Count > 0)
-            {
-                var firstRecord = approvalWorkFlowModalExisting.First();
-                approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
+            //var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>(ConfigurationDetail.sp_approval_chain_detail_filter, new
+            //{
+            //    SearchString = GetSelectQuery(approvalWorkFlowModal),
+            //});
 
-                ApprovalChainDetail chainDetail = null;
-                approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
+            var existingApprovalWorkflow = resultData.approvalWorkFlowChain;
+            if (existingApprovalWorkflow == null)
+            {
+                existingApprovalWorkflow = approvalWorkFlowModal;
+                existingApprovalWorkflow.ApprovalChainDetails = new List<ApprovalChainDetail>();
+            }
+            else
+            {
+                existingApprovalWorkflow.Title = approvalWorkFlowModal.Title;
+                existingApprovalWorkflow.TitleDescription = approvalWorkFlowModal.TitleDescription;
+                existingApprovalWorkflow.IsAutoExpiredEnabled = approvalWorkFlowModal.IsAutoExpiredEnabled;
+                existingApprovalWorkflow.AutoExpireAfterDays = approvalWorkFlowModal.AutoExpireAfterDays;
+                existingApprovalWorkflow.NoOfApprovalLevel = approvalWorkFlowModal.NoOfApprovalLevel;
+                existingApprovalWorkflow.ApprovalChainDetails ??= new List<ApprovalChainDetail>();
+            }
+
+            if (approvalWorkFlowModal.ApprovalChainDetails.Any())
+            {
+                approvalWorkFlowModal.ApprovalChainDetails.ForEach(x =>
                 {
-                    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.ApprovalChainDetailId == item.ApprovalChainDetailId);
-
+                    var chainDetail = existingApprovalWorkflow.ApprovalChainDetails.Find(i => i.ApprovalChainDetailId == x.ApprovalChainDetailId);
                     if (chainDetail != null)
                     {
-                        chainDetail.AssignieId = item.AssignieId;
-                        chainDetail.IsRequired = item.IsRequired;
+                        chainDetail.AssignieId = x.AssignieId;
+                        chainDetail.IsRequired = x.IsRequired;
                     }
                     else
                     {
-                        approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
+                        existingApprovalWorkflow.ApprovalChainDetails.Add(new ApprovalWorkFlowChainFilter
                         {
                             ApprovalChainDetailId = 0,
                             ApprovalWorkFlowId = 0,
-                            AssignieId = item.AssignieId,
-                            IsRequired = item.IsRequired,
-                            LastUpdatedOn = item.LastUpdatedOn,
+                            AssignieId = x.AssignieId,
+                            IsRequired = x.IsRequired,
+                            LastUpdatedOn = DateTime.UtcNow,
                             ApprovalStatus = (int)ItemStatus.Pending
                         });
                     }
                 });
             }
-            else
-            {
-                foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
-                {
-                    approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
-                    {
-                        ApprovalChainDetailId = 0,
-                        ApprovalWorkFlowId = 0,
-                        AssignieId = item.AssignieId,
-                        IsRequired = item.IsRequired,
-                        LastUpdatedOn = item.LastUpdatedOn,
-                        ApprovalStatus = (int)ItemStatus.Pending
-                    });
-                }
-            }
 
-            var data = (from n in approvalWorkFlowModalExisting
+            //if (existingApprovalWorkflow != null)
+            //{
+            //    //var firstRecord = approvalWorkFlowModalExisting.First();
+            //    //approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
+
+            //    //ApprovalChainDetail chainDetail = null;
+            //    //approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
+            //    //{
+            //    //    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.ApprovalChainDetailId == item.ApprovalChainDetailId);
+
+            //    //    if (chainDetail != null)
+            //    //    {
+            //    //        chainDetail.AssignieId = item.AssignieId;
+            //    //        chainDetail.IsRequired = item.IsRequired;
+            //    //    }
+            //    //    else
+            //    //    {
+            //    //        approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
+            //    //        {
+            //    //            ApprovalChainDetailId = 0,
+            //    //            ApprovalWorkFlowId = 0,
+            //    //            AssignieId = item.AssignieId,
+            //    //            IsRequired = item.IsRequired,
+            //    //            LastUpdatedOn = item.LastUpdatedOn,
+            //    //            ApprovalStatus = (int)ItemStatus.Pending
+            //    //        });
+            //    //    }
+            //    //});
+            //}
+            //else
+            //{
+            //    //foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
+            //    //{
+            //    //    approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
+            //    //    {
+            //    //        ApprovalChainDetailId = 0,
+            //    //        ApprovalWorkFlowId = 0,
+            //    //        AssignieId = item.AssignieId,
+            //    //        IsRequired = item.IsRequired,
+            //    //        LastUpdatedOn = DateTime.UtcNow,
+            //    //        ApprovalStatus = (int)ItemStatus.Pending
+            //    //    });
+            //    //}
+            //}
+
+            var data = (from n in existingApprovalWorkflow.ApprovalChainDetails
                         select new
                         {
                             ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId : 0,
@@ -149,7 +192,7 @@ namespace ServiceLayer.Code
                     throw HiringBellException.ThrowBadRequest("Please add auto expire after days");
             }
 
-            if (approvalWorkFlowModal.ApprovalChainDetails.Count > 0)
+            if (approvalWorkFlowModal.ApprovalChainDetails.Any())
             {
                 foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
                 {
@@ -158,7 +201,8 @@ namespace ServiceLayer.Code
 
                 }
             }
-            int approvalRequiredCount =  approvalWorkFlowModal.ApprovalChainDetails.Count(x => x.IsRequired);
+
+            int approvalRequiredCount = approvalWorkFlowModal.ApprovalChainDetails.Count(x => x.IsRequired);
             if (approvalRequiredCount > 0 && approvalWorkFlowModal.NoOfApprovalLevel == 0)
                 throw HiringBellException.ThrowBadRequest("No of Approval level is less than equal to required level");
 
@@ -182,7 +226,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<dynamic> GetApprovalChainData(int ApprovalWorkFlowId)
+        public async Task<(ApprovalWorkFlowChain approvalWorkFlowChain, List<EmployeeRole> employeeRole)> GetApprovalChainData(int ApprovalWorkFlowId)
         {
             string searchString = string.Empty;
             ApprovalWorkFlowChain approvalWorkFlowChain = null;
@@ -230,7 +274,7 @@ namespace ServiceLayer.Code
 
             employeeRole = employeeRole.FindAll(x => !x.IsDepartment && x.IsActive);
 
-            return await Task.FromResult(new { approvalWorkFlowChain, employeeRole });
+            return await Task.FromResult((approvalWorkFlowChain, employeeRole));
         }
 
         public Task<string> DeleteApprovalChainService(int approvalChainDetailId)

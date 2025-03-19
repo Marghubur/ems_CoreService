@@ -362,8 +362,8 @@ namespace OnlineDataBuilder.Controllers
             try
             {
                 IFormFileCollection file = _httpContext.Request.Form.Files;
-                await _attendanceService.UploadMonthlyAttendanceExcelService(file);
-                return BuildResponse("file uploaded");
+                var result = await _attendanceService.UploadMonthlyAttendanceExcelService(file);
+                return BuildResponse(result, HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
@@ -388,12 +388,12 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPost("DownloadAttendanceExcelWithData")]
-        public async Task<IActionResult> DownloadAttendanceExcelWithData([FromBody] int year)
+        [HttpPost("DownloadAttendanceExcelWithData/{month}")]
+        public async Task<IActionResult> DownloadAttendanceExcelWithData([FromRoute]int month,[FromBody] int year)
         {
             try
             {
-                var result = await _attendanceService.DownloadAttendanceExcelWithDataService();
+                var result = await _attendanceService.DownloadAttendanceExcelWithDataService(month, year);
                 return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AttendanceExcelWIthData.xlsx");
             }
             catch (Exception ex)

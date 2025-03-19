@@ -17,13 +17,13 @@ namespace ServiceLayer.Interface
         DataSet UpdateEmployeeMappedClientDetailService(EmployeeMappedClient employeeMappedClient, bool IsUpdating);
         Employee GetEmployeeByIdService(int EmployeeId, int IsActive);
         List<Employee> ActivateOrDeActiveEmployeeService(int EmployeeId, bool IsActive);
-        Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection);
+        Task<string> RegisterEmployeeService(Employee employee, IFormFileCollection fileCollection, bool IsNewRegistration = false);
         Task RegisterEmployeeByExcelService(Employee employee, UploadedPayrollData emp);
         Task<string> UpdateEmployeeService(Employee employee, IFormFileCollection fileCollection);
         dynamic GetBillDetailForEmployeeService(FilterModel filterModel);
         Task<string> GenerateOfferLetterService(EmployeeOfferLetter employeeOfferLetter);
         Task<byte[]> ExportEmployeeService(int CompanyId, int FileType);
-        Task<List<Employee>> ReadEmployeeDataService(IFormFileCollection files);
+        Task<List<UploadEmpExcelError>> ReadEmployeeDataService(IFormFileCollection files);
         Task<dynamic> GetEmployeeResignationByIdService(long employeeId);
         Task<string> SubmitResignationService(EmployeeNoticePeriod employeeNoticePeriod);
         Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod);
@@ -37,6 +37,9 @@ namespace ServiceLayer.Interface
         Task<List<RecordHealthStatus>> GetEmployeesRecordHealthStatusService();
         Task<List<RecordHealthStatus>> FixEmployeesRecordHealthStatusService(List<long> employeeIds);
         Task<byte[]> ExportEmployeeWithDataService();
+        Task<byte[]> ExportEmployeeSkeletonExcelService();
+        Task<List<UploadEmpExcelError>> GetEmployeeUploadErrorLogsService();
+        Task<(List<Employee> employees, List<RecordHealthStatus> recordHealthStatus)> DeActiveEmployeeService(long employeeId);
         #region Un-used method
 
         //EmployeeEmailMobileCheck GetEmployeeDetail(EmployeeCalculation employeeCalculation);

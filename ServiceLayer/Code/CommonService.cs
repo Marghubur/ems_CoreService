@@ -97,15 +97,13 @@ namespace ServiceLayer.Code
 
         public string GetEmployeeCode(long id, string employeeCodePrefix, int size = 5)
         {
-            if (string.IsNullOrEmpty(employeeCodePrefix))
-                throw HiringBellException.ThrowBadRequest("Invalid employee code prefix");
-
             StringBuilder empCode = new StringBuilder();
-            empCode.Append(employeeCodePrefix);
+            if (!string.IsNullOrEmpty(employeeCodePrefix))
+                empCode.Append(employeeCodePrefix);
 
             string empId = id.ToString();
 
-            var zeroCount = size - +empId.Length;
+            var zeroCount = size - empId.Length;
             var i = 0;
             while (i < zeroCount)
             {
@@ -123,10 +121,8 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(empCode))
                 throw HiringBellException.ThrowBadRequest("Invalid employee code");
 
-            if (string.IsNullOrEmpty(employeeCodePrefix))
-                throw HiringBellException.ThrowBadRequest("Invalid employee code prefix");
-
-            empCode = empCode.Replace(employeeCodePrefix, "");
+            if (!string.IsNullOrEmpty(employeeCodePrefix))
+                empCode = empCode.Replace(employeeCodePrefix, "");
 
             return int.Parse(empCode);
         }

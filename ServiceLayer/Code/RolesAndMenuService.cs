@@ -10,13 +10,8 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Code
 {
-    public class RolesAndMenuService : IRolesAndMenuService
+    public class RolesAndMenuService(IDb _db) : IRolesAndMenuService
     {
-        private readonly IDb _db;
-        public RolesAndMenuService(IDb db)
-        {
-            _db = db;
-        }
         public async Task<string> AddUpdatePermission(RolesAndMenu rolesAndMenus)
         {
             var permissionMenu = (from n in rolesAndMenus.Menu
@@ -73,6 +68,30 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Fail to add new role");
 
             return await GetRoles();
+        }
+
+        public async Task<string> ManageDefaultReportingManagerService(DefaultReportingManager defaultReportingManager)
+        {
+            if (defaultReportingManager.EmployeeId == 0)
+                throw HiringBellException.ThrowBadRequest("Please select a valid default reporting manager");
+
+            var result = await _db.ExecuteAsync(Procedures.DEFAULT_REPORTING_MANAGER_INS_UPD, new
+            {
+                DefaultReportingManagerId = 1,
+                defaultReportingManager.EmployeeId,
+                defaultReportingManager.DepartmentId
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Failed to add/update default reporting manager");
+
+            return result.statusMessage;
+        }
+
+        public async Task<DefaultReportingManager> GetDefaultReportingManagerService()
+        {
+            var result = _db.Get<DefaultReportingManager>(Procedures.DEFAULT_REPORTING_MANAGER_GET);
+            return await Task.FromResult(result);
         }
     }
 }

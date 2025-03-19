@@ -187,6 +187,7 @@ namespace EMailService.Modal
         public static string EMPLOYEE_SALARY_DETAIL_GET_BY_EMPID = "sp_employee_salary_detail_get_by_empid";
         public static string USERFILES_GETBY_OWNERID_ITEMSTATUS = "sp_userfiles_getby_ownerid_itemstatus";
         public static string EMPLOYEE_WITH_DEPARTMENT_DESIGNATION_ALL = "sp_employee_with_department_designation_all";
+        public static string EMPLOYEE_INACTIVE_UPDATE = "sp_employee_inactive_update";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
@@ -355,7 +356,7 @@ namespace EMailService.Modal
         public static string OVERTIMETABLE_CONFIGURATION_INSUPD = "sp_overtimetable_configuration_insupd";
         public static string EMPLOYEE_OVERTIMETABLE_INSUPD = "sp_employee_overtimetable_insupd";
         public static string EMPLOYEE_OVERTIMETABLE_GET_BYID = "sp_employee_overtimetable_get_byid";
-        public static string EMPLOYEE_OVERTIMETABLE_GET_BY_EMPID = "sp_employee_overtimetable_get_by_empid";
+        public static string EMPLOYEE_OVERTIMETABLE_GET_BY_FILTER = "sp_employee_overtimetable_get_by_filter";
         public static string OVERTIME_TYPE_CONFIGURATION_GETALL = "sp_overtime_type_configuration_getall";
         public static string OVERTIMETABLE_CONFIGURATION_GET_ALL = "sp_overtimetable_configuration_get_all";
         public static string EMPLOYEE_OVERTIMETABLE_CONFIG_CHAIN_GET_BYID = "sp_employee_overtimetable_config_chain_get_byid";
@@ -382,5 +383,16 @@ namespace EMailService.Modal
         // ------------------- Annexur and Offer letter ----------------------------------------
         public static string ANNEXURE_OFFER_LETTER_GETBY_ID = "sp_annexure_offer_letter_getby_id";
         public static string ANNEXURE_OFFER_LETTER_INSUPD = "sp_annexure_offer_letter_insupd";
+
+        // ------------------- Service Job Status -------------------------------------------
+        public static string SERVICE_JOB_STATUS_GET_BY_ID = "sp_service_job_status_get_by_id";
+        public static string SERVICE_JOB_STATUS_INS_UPD = "sp_service_job_status_ins_upd";
+
+        //-------------------- Default Reporting Manager -------------------------------------------
+        public static string DEFAULT_REPORTING_MANAGER_INS_UPD = "sp_default_reporting_manager_ins_upd";
+        public static string DEFAULT_REPORTING_MANAGER_GET = "sp_default_reporting_manager_get";
+        public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_INS = "sp_upload_employee_error_detail_ins";
+        public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_GETALL = "sp_upload_employee_error_detail_getall";
+        public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_DELETE_ALL = "sp_upload_employee_error_detail_delete_all";
     }
 }

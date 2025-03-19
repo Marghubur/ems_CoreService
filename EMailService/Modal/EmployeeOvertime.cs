@@ -20,7 +20,8 @@ namespace EMailService.Modal
         public string FullName { get; set; }
         public int Total { get; set; }
         public int RowIndex { get; set; }
-
+        public DateTime OvertimeExpireOn { get; set; }
+        public decimal CompOffValue { get; set; }
     }
 
     public class ExecutionRecords

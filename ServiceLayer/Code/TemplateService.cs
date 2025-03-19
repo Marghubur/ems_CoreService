@@ -2,18 +2,27 @@
 using BottomhalfCore.DatabaseLayer.Common.Code;
 using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
 using Bt.Lib.PipelineConfig.Model;
+using DocumentFormat.OpenXml.Office2013.Drawing.ChartStyle;
 using EMailService.Modal;
 using EMailService.Service;
+using HtmlAgilityPack;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Html;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace ServiceLayer.Code
 {
@@ -73,7 +82,8 @@ namespace ServiceLayer.Code
                 letter.FileId = annexureOfferLetter.FileId;
             }
 
-            string fileName = annexureOfferLetter.TemplateName.Replace(" ", "").Substring(0, 15) + "" + ".txt";
+            string fileName = annexureOfferLetter.TemplateName.Replace(" ", "");
+            fileName = fileName.Length > 15 ? fileName.Substring(0, 15) + ".txt" : fileName + "" + ".txt";
             string oldFileName = !string.IsNullOrEmpty(letter.FilePath) ? Path.GetFileName(letter.FilePath) : string.Empty;
             Files file = await SaveDataAsTextFileService(fileName, annexureOfferLetter.BodyContent, oldFileName);
 
@@ -94,7 +104,7 @@ namespace ServiceLayer.Code
             string url = $"{_microserviceUrlLogs.SaveAsTextFile}";
             TextFileFolderDetail textFileFolderDetail = new TextFileFolderDetail
             {
-                FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "template"),
+                FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "annexure_offerletter"),
                 OldFileName = oldFileName,
                 ServiceName = LocalConstants.EmstumFileService,
                 FileName = fileName,
@@ -110,16 +120,6 @@ namespace ServiceLayer.Code
             .SetToken(_currentSession.Authorization);
 
             return await _requestMicroservice.PostRequest<Files>(microserviceRequest);
-        }
-
-        public async Task<AnnexureOfferLetter> GetOfferLetterService(int CompanyId, int LetterType)
-        {
-            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
-
-            if (result != null)
-                result.BodyContent = await ReadTextFile(result.FilePath);
-
-            return await Task.FromResult(result);
         }
 
         private async Task<string> ReadTextFile(string filePath)
@@ -141,24 +141,15 @@ namespace ServiceLayer.Code
             return detail;
         }
 
-        public List<AnnexureOfferLetter> GetAnnextureService(int CompanyId, int LetterType)
+        public async Task<AnnexureOfferLetter> GetOfficiaLetterService(int CompanyId, int LetterType)
         {
-            var result = _db.GetList<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
-            if (result.Count > 0)
+            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new { CompanyId, LetterType });
+            if (result != null && !string.IsNullOrEmpty(result.FilePath))
             {
-                foreach (var item in result)
-                {
-                    if (item != null)
-                    {
-                        if (File.Exists(item.FilePath))
-                        {
-                            var txt = File.ReadAllText(item.FilePath);
-                            item.BodyContent = txt;
-                        }
-                    }
-                }
+                result.BodyContent = await ReadTextFile(result.FilePath);
             }
-            return result;
+
+            return await Task.FromResult(result);
         }
 
         public string EmailLinkConfigInsUpdateService(EmailLinkConfig emailLinkConfig)
@@ -288,5 +279,288 @@ namespace ServiceLayer.Code
             await _eMailManager.SendMailAsync(emailSenderModal);
             return await Task.FromResult("Email send successfuly");
         }
+
+        public async Task<string> GenerateOfferLetterPDFService()
+        {
+            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new
+            {
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
+                LetterType = 3
+            });
+            if (result == null)
+                throw HiringBellException.ThrowBadRequest("Official letter not found");
+
+            //if (result != null && !string.IsNullOrEmpty(result.FilePath))
+            //    result.BodyContent = await ReadTextFile(result.FilePath);
+
+            HtmlToPdfConvertorModal htmlToPdfConvertorModal = new HtmlToPdfConvertorModal
+            {
+                HTML = await GetHTMLFile(result.FilePath),
+                ServiceName = LocalConstants.EmstumFileService,
+                FileName = "Salary_Increment" + $".{ApplicationConstants.Pdf}",
+                FolderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.User, "official_letter")
+            };
+
+            string url = $"{_microserviceUrlLogs.ConvertHtmlToPdf}";
+
+            MicroserviceRequest microserviceRequest = new MicroserviceRequest
+            {
+                Url = url,
+                CompanyCode = _currentSession.CompanyCode,
+                Token = _currentSession.Authorization,
+                Database = _requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString),
+                Payload = JsonConvert.SerializeObject(htmlToPdfConvertorModal)
+            };
+
+            return await _requestMicroservice.PostRequest<string>(microserviceRequest);
+        }
+
+        private async Task<string> GetHTMLFile(string filePath)
+        {
+            var bodyContent = await ReadTextFile(filePath);
+
+            return $@"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    word-wrap: break-word;
+                    table-layout: auto;
+                }}
+                table, th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                }}
+                img {{
+                    max-width: 100%;
+                    height: auto;
+                }}
+                @media print {{
+                    @page {{
+                        size: A4;
+                        margin: 20mm;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            {bodyContent}
+        </body>
+        </html>";
+        }
+
+        public async Task<byte[]> GenerateOfferLetterByteArrayService()
+        {
+            var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new
+            {
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId,
+                LetterType = 3
+            });
+            if (result == null)
+                throw HiringBellException.ThrowBadRequest("Official letter not found");
+
+            var html = await GetHTMLFile(result.FilePath);
+
+            return await ConvertHtmlToPdf(html);
+        }
+
+        private async Task<byte[]> ConvertHtmlToPdf(string html)
+        {
+            // Download Chromium browser if not already installed
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+
+            // Launch browser in headless mode
+            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+            });
+
+            html = PreprocessTableHTML(html);
+
+            // Open a new page and set viewport size
+            using var page = await browser.NewPageAsync();
+            await page.SetViewportAsync(new ViewPortOptions
+            {
+                Width = 794,
+                Height = 1123
+            });
+
+            // Set content on the page
+            await page.SetContentAsync(html);
+
+
+            // Wait for a moment to ensure all rendering is complete
+            await Task.Delay(1000);
+
+            // Generate PDF with optimal settings
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions
+            {
+                Width = "210mm",
+                Height = "297mm",
+                //Format = PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new MarginOptions
+                {
+                    Top = "10mm",
+                    Bottom = "10mm",
+                    Left = "10mm",
+                    Right = "10mm"
+                },
+                PreferCSSPageSize = true,
+                Scale = 1M
+            });
+
+            return pdfBytes;
+        }
+
+        private string PreprocessTableHTML(string originalHtml)
+        {
+            var document = new HtmlAgilityPack.HtmlDocument();
+            document.LoadHtml(originalHtml);
+
+            // Process tables to preserve structure
+            var tables = document.DocumentNode.SelectNodes("//table");
+            if (tables != null)
+            {
+                foreach (var table in tables)
+                {
+                    // Preserve column proportions
+                    ProcessTableColumns(table);
+
+                    // Remove problematic attributes
+                    RemoveProblematicAttributes(table);
+                }
+            }
+
+            return document.DocumentNode.OuterHtml;
+        }
+
+        private void ProcessTableColumns(HtmlNode table)
+        {
+            var rows = table.SelectNodes(".//tr");
+            if (rows == null) return;
+
+            // Analyze column widths across rows
+            var columnWidths = new List<double>();
+            foreach (var row in rows)
+            {
+                var cells = row.SelectNodes(".//td|.//th");
+                if (cells == null) continue;
+
+                for (int i = 0; i < cells.Count; i++)
+                {
+                    var cell = cells[i];
+                    var widthAttr = cell.GetAttributeValue("width", "");
+                    var styleWidth = GetWidthFromStyle(cell.GetAttributeValue("style", ""));
+
+                    double width = 0;
+                    if (!string.IsNullOrEmpty(widthAttr) && double.TryParse(widthAttr.Replace("%", "").Replace("px", ""), out width))
+                    {
+                        // Ensure list has enough elements
+                        while (columnWidths.Count <= i)
+                        {
+                            columnWidths.Add(0);
+                        }
+                        columnWidths[i] = Math.Max(columnWidths[i], width);
+                    }
+                    else if (styleWidth > 0)
+                    {
+                        while (columnWidths.Count <= i)
+                        {
+                            columnWidths.Add(0);
+                        }
+                        columnWidths[i] = Math.Max(columnWidths[i], styleWidth);
+                    }
+                }
+            }
+
+            // Reapply proportional widths
+            foreach (var row in rows)
+            {
+                var cells = row.SelectNodes(".//td|.//th");
+                if (cells == null) continue;
+
+                for (int i = 0; i < cells.Count; i++)
+                {
+                    if (i < columnWidths.Count && columnWidths[i] > 0)
+                    {
+                        // Calculate percentage width
+                        double totalWidth = columnWidths.Sum();
+                        double percentWidth = (columnWidths[i] / totalWidth) * 100;
+
+                        // Set percentage width
+                        cells[i].SetAttributeValue("width", $"{Math.Round(percentWidth, 2)}%");
+                        cells[i].SetAttributeValue("style",
+                            $"width:{Math.Round(percentWidth, 2)}%; {cells[i].GetAttributeValue("style", "")}");
+                    }
+                }
+            }
+        }
+
+        private void RemoveProblematicAttributes(HtmlNode table)
+        {
+            // Remove absolute positioning and fixed width attributes
+            var elementsToClean = table.SelectNodes(".//*");
+            if (elementsToClean != null)
+            {
+                foreach (var element in elementsToClean)
+                {
+                    // Remove absolute positioning styles
+                    element.SetAttributeValue("style",
+                        RemoveStyleProperties(
+                            element.GetAttributeValue("style", ""),
+                            new[] { "position", "left", "top", "right", "bottom", "absolute" }
+                        )
+                    );
+                }
+            }
+        }
+
+        private double GetWidthFromStyle(string style)
+        {
+            if (string.IsNullOrEmpty(style)) return 0;
+
+            var widthMatch = System.Text.RegularExpressions.Regex.Match(
+                style,
+                @"width\s*:\s*(\d+)(%|px)?"
+            );
+
+            if (widthMatch.Success)
+            {
+                return double.Parse(widthMatch.Groups[1].Value);
+            }
+
+            return 0;
+        }
+
+        private string RemoveStyleProperties(string style, string[] propertiesToRemove)
+        {
+            if (string.IsNullOrEmpty(style)) return "";
+
+            var styleProperties = style.Split(';')
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList();
+
+            styleProperties.RemoveAll(prop =>
+                propertiesToRemove.Any(removeKey =>
+                    prop.Trim().StartsWith(removeKey, StringComparison.OrdinalIgnoreCase)
+                )
+            );
+
+            return string.Join("; ", styleProperties);
+        }
+
     }
 }

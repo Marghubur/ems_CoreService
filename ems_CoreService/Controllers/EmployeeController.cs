@@ -376,6 +376,21 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("ExportEmployeeSkeletonExcel")]
+        public async Task<IActionResult> ExportEmployeeSkeletonExcel([FromBody] int sheetName)
+        {
+            try
+            {
+                var result = await _employeeService.ExportEmployeeSkeletonExcelService();
+                return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "EmployeeWithData.xlsx");
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
         #endregion
 
         #region Insert employee record by using excel
@@ -387,8 +402,8 @@ namespace OnlineDataBuilder.Controllers
             try
             {
                 IFormFileCollection file = _httpContext.Request.Form.Files;
-                await _employeeService.ReadEmployeeDataService(file);
-                return BuildResponse("file found");
+                var result = await _employeeService.ReadEmployeeDataService(file);
+                return BuildResponse(result);
             }
             catch (Exception ex)
             {
@@ -443,6 +458,36 @@ namespace OnlineDataBuilder.Controllers
         }
 
         #endregion
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("GetEmployeeUploadErrorLogs")]
+        public async Task<ApiResponse> GetEmployeeUploadErrorLogs()
+        {
+            try
+            {
+                var result = await _employeeService.GetEmployeeUploadErrorLogsService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
+        [HttpGet]
+        [Route("DeActiveEmployee/{employeeId}")]
+        public async Task<ApiResponse> DeActiveEmployee([FromRoute] long employeeId)
+        {
+            try
+            {
+                var Result = await _employeeService.DeActiveEmployeeService(employeeId);
+                return BuildResponse(Result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, employeeId);
+            }
+        }
 
         #region Un-used code
 

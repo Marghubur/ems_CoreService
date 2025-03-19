@@ -32,5 +32,6 @@ namespace ModalLayer.Modal.Leaves
         public List<EmployeeLeaveQuota> EmployeeLeaveQuotaDetail { set; get; }
         public bool IsPending { set; get; }
         public int NoOfApprovalsRequired { get; set; }
+        public decimal CompOffValue { get; set; }
     }
 }
