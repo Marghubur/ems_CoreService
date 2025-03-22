@@ -4,8 +4,11 @@
     {
         public int AttendanceSettingId { get; set; }
         public int CompanyId { get; set; }
+        public bool IsWeeklyAttendanceEnabled { get; set; }
         public int BackDateLimitToApply { get; set; }
-        public bool IsAutoApproved { get; set; }
-        public int LastDateOfAttendanceCheck { get; set; }
+        public int BackWeekLimitToApply { get; set; }
+        public bool IsAutoApprovalEnable { get; set; }
+        public int AutoApproveAfterDays { get; set; }
+        public int MinWorkDaysRequired { get; set; }
     }
 }

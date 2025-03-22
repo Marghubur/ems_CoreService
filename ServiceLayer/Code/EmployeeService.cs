@@ -16,7 +16,6 @@ using EMailService.Service;
 using ExcelDataReader;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
@@ -207,6 +206,7 @@ namespace ServiceLayer.Code
             try
             {
                 ValidateEmployeeProfessionalDetail(employeeProfessionalDetail);
+                var isEpforEsiChanged = await IsEpforEsiChanged(employeeProfessionalDetail.EmployeeUid, employeeProfessionalDetail.IsEmployeeEligibleForPF, employeeProfessionalDetail.IsEmployeeEligibleForESI);
 
                 var result = await _db.ExecuteAsync(Procedures.EMPLOYEES_PROFESSIONALDETAIL_UPD, new
                 {
@@ -232,12 +232,30 @@ namespace ServiceLayer.Code
                 if (string.IsNullOrEmpty(result.statusMessage))
                     throw HiringBellException.ThrowBadRequest("Fail to register new employee.");
 
+                if (isEpforEsiChanged)
+                    await ReBuildSalaryBreakup(employeeProfessionalDetail.EmployeeUid, false);
+
                 return ApplicationConstants.Successfull;
             }
             catch
             {
                 throw HiringBellException.ThrowBadRequest("Fail to insert employee professional detail");
             }
+        }
+
+        private async Task<bool> IsEpforEsiChanged(long employeeId, bool isEmployeeEligibleForPF, bool isEmployeeEligibleForESI)
+        {
+            bool isEpforEsiChange = false;
+            var (pfEsiSetting, employeePfDetail) = _db.GetMulti<PfEsiSetting, EmployeePfDetail>(Procedures.PF_ESI_SETTING_EMPLOYEE_PF_DETAIL_GET, new
+            {
+                _currentSession.CurrentUserDetail.CompanyId,
+                EmployeeId = employeeId
+            });
+
+            if (employeePfDetail.IsEmployeeEligibleForPF != isEmployeeEligibleForPF || employeePfDetail.IsEmployeeEligibleForESI != isEmployeeEligibleForESI)
+                isEpforEsiChange = true;
+
+            return await Task.FromResult(isEpforEsiChange);
         }
 
         private void ValidateEmployeeProfessionalDetail(EmployeeProfessionalDetail employeeProfessionalDetail)
@@ -403,7 +421,7 @@ namespace ServiceLayer.Code
                 await AddEmployeeSalaryLeaveAndDeclarationDetail(employeeBasicInfo.EmployeeUid, eCal);
 
                 if (!isNewRegistration && isCTCChanged)
-                    await ReBuildSalaryBreakup(employeeBasicInfo.EmployeeUid);
+                    await ReBuildSalaryBreakup(employeeBasicInfo.EmployeeUid, false);
                 else
                     await CheckRunLeaveAccrualCycle(employeeBasicInfo.EmployeeUid);
 
@@ -415,9 +433,9 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task ReBuildSalaryBreakup(long employeeId)
+        private async Task ReBuildSalaryBreakup(long employeeId, bool isRecalculateFromCurrentMonth)
         {
-            string url = $"{_microserviceUrlLogs.RebuildBreakup}/false/{employeeId}";
+            string url = $"{_microserviceUrlLogs.RebuildBreakup}/{isRecalculateFromCurrentMonth}/{employeeId}";
             var microserviceRequest = MicroserviceRequest.Builder(url);
             microserviceRequest
             .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
@@ -661,6 +679,10 @@ namespace ServiceLayer.Code
                                             ? ApplicationConstants.NewRegim : ApplicationConstants.OldRegim;
                 }
 
+                var isEpforEsiChanged = false;
+                if (!IsNewRegistration)
+                    isEpforEsiChanged = await IsEpforEsiChanged(employeeUid, employee.IsEmployeeEligibleForPF, employee.IsEmployeeEligibleForESI);
+
                 var eCal = new EmployeeCalculation();
 
                 if (IsNewRegistration)
@@ -697,6 +719,9 @@ namespace ServiceLayer.Code
                 //if (!isEmpByExcel)
                 await CheckRunLeaveAccrualCycle(eCal.EmployeeId);
 
+                if (isEpforEsiChanged)
+                    await ReBuildSalaryBreakup(employeeUid, false);
+
                 return employeeId;
             }
             catch
@@ -708,7 +733,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task<bool> PrepareEmployeeInsertData(Employee employee, bool IsNewRegistration)
+        private async Task PrepareEmployeeInsertData(Employee employee, bool IsNewRegistration)
         {
             if (employee.AccessLevelId != (int)RolesName.Admin)
                 employee.UserTypeId = (int)RolesName.User;
@@ -725,7 +750,7 @@ namespace ServiceLayer.Code
                 employee.EmployeeUid = employee.EmployeeId;
             }
 
-            return await Task.FromResult(IsNewRegistration);
+            await Task.CompletedTask;
         }
 
         private async Task<EmployeeCalculation> GetDeclarationDetail(long employeeId, decimal CTC, int currentRegimeId)
@@ -931,6 +956,13 @@ namespace ServiceLayer.Code
                 employee.NoticePeriodId,
                 employee.WorkShiftId,
                 employee.UserTypeId,
+                employee.IsEmployeeEligibleForPF,
+                employee.IsExistingMemberOfPF,
+                employee.PFNumber,
+                UniversalAccountNumber = employee.UAN,
+                employee.ESISerialNumber,
+                employee.IsEmployeeEligibleForESI,
+                PFJoinDate = employee.PFAccountCreationDate,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
@@ -1768,6 +1800,7 @@ namespace ServiceLayer.Code
         {
             validateManageInitiateExistDetail(employeeNoticePeriod);
             EmployeeNoticePeriod existNoticePeriodDetail = null;
+
             if (employeeNoticePeriod.EmployeeNoticePeriodId > 0)
             {
                 existNoticePeriodDetail = _db.Get<EmployeeNoticePeriod>(Procedures.EMPLOYEE_NOTICE_PERIOD_GETBY_ID, new { employeeNoticePeriod.EmployeeNoticePeriodId });
@@ -1787,7 +1820,7 @@ namespace ServiceLayer.Code
                 existNoticePeriodDetail = employeeNoticePeriod;
             }
 
-            var result = _db.Execute<EmployeeNoticePeriod>(Procedures.EMPLOYEE_NOTICE_PERIOD_INSUPD, new
+            var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_NOTICE_PERIOD_INSUPD, new
             {
                 EmployeeNoticePeriodId = existNoticePeriodDetail.EmployeeNoticePeriodId,
                 EmployeeId = existNoticePeriodDetail.EmployeeId,
@@ -1817,10 +1850,10 @@ namespace ServiceLayer.Code
                 ManagerComment = existNoticePeriodDetail.ManagerComment,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
-            if (string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Fail to submit resignation detail");
 
-            return await Task.FromResult(result);
+            return result.statusMessage;
         }
 
         private void validateManageInitiateExistDetail(EmployeeNoticePeriod employeeNoticePeriod)
@@ -1834,11 +1867,8 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(employeeNoticePeriod.Summary))
                 throw HiringBellException.ThrowBadRequest("Invalid summary");
 
-            if (employeeNoticePeriod.IsRecommendLastDay)
-            {
-                if (employeeNoticePeriod.OfficialLastWorkingDay == null)
-                    throw HiringBellException.ThrowBadRequest("Invalid last working day selected");
-            }
+            if (employeeNoticePeriod.IsRecommendLastDay && employeeNoticePeriod.OfficialLastWorkingDay == null)
+                throw HiringBellException.ThrowBadRequest("Invalid last working day selected");
         }
 
         private void validateResignationDetail(EmployeeNoticePeriod employeeNoticePeriod)
@@ -2213,9 +2243,9 @@ namespace ServiceLayer.Code
                             HiringBellException exception = (HiringBellException)ex;
                             uploadError.Message = exception.UserMessage;
                         }
-                        catch (Exception innerEx)
+                        catch (Exception)
                         {
-                            uploadError.Message = innerEx.Message;
+                            uploadError.Message = ex.Message;
                         }
                         uploadEmpExcelErrors.Add(uploadError);
 
@@ -2810,6 +2840,7 @@ namespace ServiceLayer.Code
             await CreateEmployeeTableDropdown(departmnts, designation, excelDataWithDropdown);
             Dictionary<string, object> dumyEmployeeData = new Dictionary<string, object>
                     {
+                        { "Employee Code", "" },
                         { "Employee Name", "Adam Smith" },
                         { "Date of Joining", FormatDate(DateTime.UtcNow)},
                         { "DOB", FormatDate(DateTime.UtcNow) },

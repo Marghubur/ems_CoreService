@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Drawing;
-
-namespace EMailService.Modal
+﻿namespace EMailService.Modal
 {
     public class Procedures
     {
@@ -120,6 +118,7 @@ namespace EMailService.Modal
         public static string Company_Setting_Get_Byid = "sp_company_setting_get_byid";
         public static string Company_Setting_Insupd = "sp_company_setting_insupd";
         public static string Company_Files_Get_Byid = "sp_company_files_get_byid";
+        public static string ATTENDANCE_SETTING_INS_UPD = "sp_attendance_setting_ins_upd";
 
         /*--------------  Dashboard Service procedures ------------*/
         public static string Dashboard_Get = "sp_dashboard_get";
@@ -188,6 +187,7 @@ namespace EMailService.Modal
         public static string USERFILES_GETBY_OWNERID_ITEMSTATUS = "sp_userfiles_getby_ownerid_itemstatus";
         public static string EMPLOYEE_WITH_DEPARTMENT_DESIGNATION_ALL = "sp_employee_with_department_designation_all";
         public static string EMPLOYEE_INACTIVE_UPDATE = "sp_employee_inactive_update";
+        public static string PF_ESI_SETTING_EMPLOYEE_PF_DETAIL_GET = "sp_pf_esi_setting_employee_pf_detail_get";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
