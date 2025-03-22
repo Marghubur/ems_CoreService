@@ -504,6 +504,21 @@ namespace ServiceLayer.Code
                     nameof(companySettingDetail.CompanyId),
                     " Value: " + companyId, System.Net.HttpStatusCode.BadRequest);
 
+            status = await _db.ExecuteAsync(Procedures.ATTENDANCE_SETTING_INS_UPD, new
+            {
+                AttendanceSettingId = 0,
+                companySettingDetail.CompanyId,
+                IsWeeklyAttendanceEnabled =companySettingDetail.AttendanceType,
+                BackDateLimitToApply = companySettingDetail.AttendanceType ? 0 : companySettingDetail.AttendanceViewLimit,
+                BackWeekLimitToApply = companySettingDetail.AttendanceType ? companySettingDetail.AttendanceViewLimit : 0,
+                IsAutoApprovalEnable = false,
+                AutoApproveAfterDays = 0,
+                companySetting.MinWorkDaysRequired
+            }, true);
+
+            if (!ApplicationConstants.IsExecuted(status.statusMessage))
+                throw new HiringBellException("Fail to update company setting detail.");
+
             return companySettingDetail;
         }
 
@@ -511,6 +526,7 @@ namespace ServiceLayer.Code
         {
             if (companyId <= 0)
                 throw new HiringBellException("Invalid company id supplied.");
+
             var result = _db.FetchDataSet(Procedures.Company_Setting_Get_Byid, new { CompanyId = companyId });
             if (result == null || result.Tables.Count != 2)
                 throw new HiringBellException("Fail to get company setting details. Please contact to admin");
