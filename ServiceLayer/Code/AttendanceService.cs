@@ -2299,7 +2299,9 @@ namespace ServiceLayer.Code
 
             try
             {
-                var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL);
+                var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL, new {
+                    FinancialYear = 0
+                });
 
                 List<dynamic> employeeRecord = new List<dynamic>();
                 int daysInMonth = DateTime.DaysInMonth(year, month);

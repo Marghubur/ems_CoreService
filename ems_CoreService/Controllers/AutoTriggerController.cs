@@ -64,6 +64,20 @@ namespace ems_CoreService.Controllers
             }
         }
 
+        [HttpGet("RunAndBuilEmployeeSalaryAndDeclaration")]
+        [AllowAnonymous]
+        public async Task RunAndBuilEmployeeSalaryAndDeclaration()
+        {
+            try
+            {
+                await _autoTriggerService.RunAndBuilEmployeeSalaryAndDeclaration();
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
         //[Authorize(Roles = Role.Admin)]
         //[HttpGet("MonthlyAttendanceTrigger")]
         //public async Task MonthlyAttendanceTrigger()

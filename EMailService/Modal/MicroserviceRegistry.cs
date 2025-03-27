@@ -21,5 +21,6 @@
         public string RebuildBreakup { get; set; }
         public string GenerateExelWithDropdown { get; set; }
         public string SaveAsTextFile { get; set; }
+        public string NewFinancialYearCalculateSalaryAndDeclaration { get; set; }
     }
 }

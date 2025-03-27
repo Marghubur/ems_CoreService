@@ -188,6 +188,7 @@
         public static string EMPLOYEE_WITH_DEPARTMENT_DESIGNATION_ALL = "sp_employee_with_department_designation_all";
         public static string EMPLOYEE_INACTIVE_UPDATE = "sp_employee_inactive_update";
         public static string PF_ESI_SETTING_EMPLOYEE_PF_DETAIL_GET = "sp_pf_esi_setting_employee_pf_detail_get";
+        public static string EMPLOYEE_ONLY_BY_ID = "sp_employee_only_by_id";
 
         /*--------------  File Service procedures ------------*/
         public static string Document_Filedetail_Get = "sp_document_filedetail_get";
@@ -394,5 +395,14 @@
         public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_INS = "sp_upload_employee_error_detail_ins";
         public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_GETALL = "sp_upload_employee_error_detail_getall";
         public static string UPLOAD_EMPLOYEE_ERROR_DETAIL_DELETE_ALL = "sp_upload_employee_error_detail_delete_all";
+
+        //-------------------- Employee Resignation -------------------------------------------
+        public static string EMPLOYEE_RESIGNATION_FILTER = "sp_employee_resignation_filter";
+        public static string EMPLOYEE_ASSETS_ALLOCATION_GET_BY_EMPID = "sp_employee_assets_allocation_get_by_empid";
+        public static string EMPLOYEE_ASSETS_ALLOCATION_INS_UPD = "sp_employee_assets_allocation_ins_upd";
+        public static string EMPLOYEE_EXIT_CLEARANCE_GET_BY_EMPID = "sp_employee_exit_clearance_get_by_empid";
+        public static string EMPLOYEE_EXIT_CLEARANCE_INS_UPD = "sp_employee_exit_clearance_ins_upd";
+        public static string EMPLOYEE_AND_EMPLOYEE_EXIT_CONFIGURATION = "sp_employee_and_employee_exit_configuration";
+        public static string EMPLOYEE_EXIT_ASSIGN_BYID = "sp_employee_exit_assign_byid";
     }
 }
