@@ -17,6 +17,7 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
@@ -38,6 +39,7 @@ namespace ServiceLayer.Code
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly CurrentSession _currentSession;
 
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             ITimezoneConverter timezoneConverter,
@@ -47,7 +49,8 @@ namespace ServiceLayer.Code
             YearEndCalculation yearEndCalculation,
             MicroserviceRegistry microserviceUrlLogs,
             RequestMicroservice requestMicroservice,
-            IKafkaConsumerService kafkaConsumerService)
+            IKafkaConsumerService kafkaConsumerService,
+            CurrentSession currentSession)
         {
             _logger = logger;
             _timezoneConverter = timezoneConverter;
@@ -58,6 +61,7 @@ namespace ServiceLayer.Code
             _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
             _kafkaConsumerService = kafkaConsumerService;
+            _currentSession = currentSession;
         }
 
         public async Task ScheduledJobManager()
@@ -99,6 +103,9 @@ namespace ServiceLayer.Code
                             break;
                         case KafkaServiceName.NewRegistration:
                             await ExecuteYearlyLeaveRequestAccrualJobAsync(companySettings);
+                            break;
+                        case KafkaServiceName.HolidayNotification:
+                            await RunAndBuilEmployeeSalaryAndDeclaration(companySettings, x);
                             break;
                     }
                 }
@@ -213,6 +220,89 @@ namespace ServiceLayer.Code
             };
 
             await _yearEndCalculation.RunLeaveYearEndCycle(leaveYearEnd);
+        }
+
+        public async Task RunAndBuilEmployeeSalaryAndDeclaration(CompanySetting companySetting, DbConfig x)
+        {
+            var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
+
+            string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetDbConfig(x)
+            .SetConnectionString(localConnectionString)
+            .SetCompanyCode(x.OrganizationCode + x.Code)
+            .SetToken("");
+
+            var response = await _requestMicroservice.GetRequest<EmployeeCalculation>(microserviceRequest);
+            if (response is null)
+                throw HiringBellException.ThrowBadRequest("fail to get response");
+
+        }
+
+        public async Task RunAndBuilEmployeeSalaryAndDeclaration()
+        {
+            List<DbConfig> dbConfig = await LoadDatabaseConfiguration();
+            foreach (var x in dbConfig)
+            {
+                if (x.Code != "00121")
+                    continue;
+
+                CompanySetting companySetting = await LoadCompanySettings(x);
+                var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
+
+                string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetDbConfig(_requestMicroservice.DiscretConnectionString(localConnectionString))
+                .SetConnectionString(localConnectionString)
+                .SetCompanyCode(x.OrganizationCode + x.Code)
+                //.SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken("Bearer");
+
+                var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
+                if (response is null)
+                    throw HiringBellException.ThrowBadRequest("fail to get response");
+            }
+        }
+
+        private async Task<string> UpdateCompanySettingFincialYear(CompanySetting companySetting, DbConfig x)
+        {
+            string localConnectionString = $"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};";
+            if (companySetting.FinancialYear != DateTime.UtcNow.Year)
+            {
+                companySetting.FinancialYear = DateTime.UtcNow.Year;
+                //_db.SetupConnectionString(_currentSession.LocalConnectionString);
+                var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
+                {
+                    companySetting.CompanyId,
+                    companySetting.SettingId,
+                    companySetting.ProbationPeriodInDays,
+                    companySetting.NoticePeriodInDays,
+                    companySetting.DeclarationStartMonth,
+                    companySetting.DeclarationEndMonth,
+                    companySetting.IsPrimary,
+                    companySetting.FinancialYear,
+                    companySetting.AttendanceSubmissionLimit,
+                    companySetting.LeaveAccrualRunCronDayOfMonth,
+                    companySetting.EveryMonthLastDayOfDeclaration,
+                    companySetting.TimezoneName,
+                    companySetting.IsJoiningBarrierDayPassed,
+                    companySetting.NoticePeriodInProbation,
+                    companySetting.ExcludePayrollFromJoinDate,
+                    companySetting.TimeDifferences,
+                    companySetting.AttendanceType,
+                    companySetting.AttendanceViewLimit,
+                    companySetting.EmployeeCodePrefix,
+                    companySetting.EmployeeCodeLength,
+                    AdminId = 1,
+                }, true);
+
+                if (!ApplicationConstants.IsExecuted(status.statusMessage))
+                    throw new HiringBellException("Fail to update company setting detail");
+            }
+
+            return await Task.FromResult(localConnectionString);
         }
     }
 }

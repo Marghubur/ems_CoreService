@@ -22,36 +22,34 @@ namespace ServiceLayer.Code
     {
         private readonly IDb _db;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly IFileService _fileService;
         private readonly CurrentSession _currentSession;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         public ProductService(
-            IDb db, 
-            FileLocationDetail fileLocationDetail, 
-            IFileService fileService, 
+            IDb db,
+            FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
             MicroserviceRegistry microserviceUrlLogs)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
-            _fileService = fileService;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
             _microserviceUrlLogs = microserviceUrlLogs;
         }
 
-        public dynamic GetAllProductsService(FilterModel filterModel)
+        public async Task<List<Product>> GetAllProductsService(FilterModel filterModel)
         {
-            (List<Product> product, List<ProductCatagory> productCatagory) = _db.GetList<Product, ProductCatagory>(Procedures.Product_Getby_Filter, new
+            var product = _db.GetList<Product>(Procedures.Product_Getby_Filter, new
             {
                 filterModel.SearchString,
                 filterModel.PageIndex,
                 filterModel.PageSize,
                 filterModel.SortBy
             });
-            return new { product, productCatagory };
+
+            return await Task.FromResult(product);
         }
 
         public DataSet GetProductImagesService(string FileIds)
@@ -60,129 +58,167 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<dynamic> ProdcutAddUpdateService(Product product, List<Files> files, IFormFileCollection fileCollection)
+        public async Task<dynamic> ProdcutAddUpdateService(Product product, IFormFileCollection productImg, IFormFileCollection fileCollection)
         {
             validateProduct(product);
-            var oldproduct = _db.Get<Product>(Procedures.Prdoduct_Getby_Id, new { ProductId = product.ProductId });
+
+            var (oldproduct, productCatagory) = await GetProductCategoryByIdService(product.ProductId);
             if (oldproduct == null)
                 oldproduct = product;
             else
             {
-                oldproduct.MRP = product.MRP;
-                oldproduct.Brand = product.Brand;
-                oldproduct.ModalNum = product.ModalNum;
-                oldproduct.StockStatus = product.StockStatus;
-                oldproduct.Quantity = product.Quantity;
-                oldproduct.SiteUrl = product.SiteUrl;
-                oldproduct.CompanyId = product.CompanyId;
                 oldproduct.CatagoryName = product.CatagoryName;
-                oldproduct.TitleName = product.TitleName;
+                oldproduct.Status = product.Status;
+                oldproduct.Description = product.Description;
+                oldproduct.Brand = product.Brand;
+                oldproduct.Model = product.Model;
                 oldproduct.SerialNo = product.SerialNo;
-                oldproduct.ProductCode = product.ProductCode;
-                oldproduct.PurchasePrice = product.PurchasePrice;
+                oldproduct.PurchaseDate = product.PurchaseDate;
+                oldproduct.InvoiceNo = product.InvoiceNo;
+                oldproduct.OrignalValue = product.OrignalValue;
+                oldproduct.CurrentValue = product.CurrentValue;
+                oldproduct.IsWarranty = product.IsWarranty;
+                oldproduct.WarrantyDate = product.WarrantyDate;
+                oldproduct.Remarks = product.Remarks;
             }
+
             oldproduct.AdminId = _currentSession.CurrentUserDetail.UserId;
 
-            await ExecuteProductDetail(oldproduct, files, fileCollection);
+            await ExecuteProductDetail(oldproduct, productImg, fileCollection);
 
             return GetAllProductsService(new FilterModel
             {
-                SearchString = $"1=1 and CompanyId={product.CompanyId}"
+                SearchString = $"1=1 and CompanyId={_currentSession.CurrentUserDetail.CompanyId}"
             });
         }
 
         private void validateProduct(Product product)
         {
-            if (product.Quantity < 0)
-                throw HiringBellException.ThrowBadRequest("Qauntity is less than 0");
-
-            if (product.StockStatus <= 0)
-                throw HiringBellException.ThrowBadRequest("Stock status is invalid");
-
             if (string.IsNullOrEmpty(product.Brand))
                 throw HiringBellException.ThrowBadRequest("Brand is null or empty");
 
             if (string.IsNullOrEmpty(product.CatagoryName))
                 throw HiringBellException.ThrowBadRequest("Catagory name is null or empty");
 
-
-            if (string.IsNullOrEmpty(product.TitleName))
-                throw HiringBellException.ThrowBadRequest("Title name is null or empty");
-
             if (product.CompanyId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid company selected");
 
         }
 
-        private async Task ExecuteProductDetail(Product product, List<Files> files, IFormFileCollection FileCollection)
+        private async Task ExecuteProductDetail(Product product, IFormFileCollection productImg, IFormFileCollection FileCollection)
         {
             try
             {
-                string Result = null;
                 List<int> fileIds = new List<int>();
+                var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
+
+                if (productImg.Any())
+                {
+                    var files = await SaveProductFiles(productImg, folderPath);
+                    var productimg = files.First();
+
+                    product.ProfileImgPath = Path.Combine(productimg.FilePath, productimg.FileName);
+                }
+
                 if (FileCollection.Count > 0)
                 {
-                    var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
+                    var files = await SaveProductFiles(FileCollection, folderPath);
 
-                    string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
-                    FileFolderDetail fileFolderDetail = new FileFolderDetail
+                    foreach (var file in files)
                     {
-                        FolderPath = folderPath,
-                        OldFileName = null,
-                        ServiceName = LocalConstants.EmstumFileService
-                    };
+                        var fileId = await ProductFileInsertUpdate(product, file);
 
-                    var microserviceRequest = MicroserviceRequest.Builder(url);
-                    microserviceRequest
-                    .SetFiles(FileCollection)
-                    .SetPayload(fileFolderDetail)
-                    .SetConnectionString(_currentSession.LocalConnectionString)
-                    .SetCompanyCode(_currentSession.CompanyCode)
-                    .SetToken(_currentSession.Authorization);
-
-                    files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
-
-                    foreach (var n in files)
-                    {
-                        Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
-                        {
-                            CompanyFileId = n.FileUid,
-                            CompanyId = product.CompanyId,
-                            FilePath = n.FilePath,
-                            FileName = n.FileName,
-                            FileExtension = n.FileExtension,
-                            FileDescription = n.FileDescription,
-                            FileRole = n.FileRole,
-                            UserTypeId = (int)UserType.Compnay,
-                            AdminId = _currentSession.CurrentUserDetail.UserId
-                        }, true);
-
-                        if (string.IsNullOrEmpty(Result))
-                            throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
-
-                        fileIds.Add(Convert.ToInt32(Result));
+                        fileIds.Add(Convert.ToInt32(fileId));
                     }
                 }
-                var oldfileid = new List<int>();
-                if (!string.IsNullOrEmpty(product.FileIds))
-                    oldfileid = JsonConvert.DeserializeObject<List<int>>(product.FileIds);
 
-                if (oldfileid.Count > 0)
+                var oldfileid = new List<int>();
+                if (!string.IsNullOrEmpty(product.FileIds) && product.FileIds != "[]")
+                {
+                    oldfileid = JsonConvert.DeserializeObject<List<int>>(product.FileIds);
                     fileIds = oldfileid.Concat(fileIds).ToList();
+                }
 
                 product.FileIds = JsonConvert.SerializeObject(fileIds);
-                var result = _db.Execute<CompanyNotification>(Procedures.Product_Insupd, product, true);
-                if (string.IsNullOrEmpty(result))
-                    throw HiringBellException.ThrowBadRequest("Fail to insert or update product details");
+                await SaveProductDetail(product);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
-                _fileService.DeleteFiles(files);
+                //_fileService.DeleteFiles(files);
                 throw;
             }
         }
 
-        public List<ProductCatagory> AddUpdateProductCatagoryService(ProductCatagory productCatagory)
+        private async Task SaveProductDetail(Product product)
+        {
+            var result = await _db.ExecuteAsync(Procedures.Product_Insupd, new
+            {
+                product.ProductId,
+                _currentSession.CurrentUserDetail.CompanyId,
+                product.CatagoryName,
+                product.Status,
+                product.Description,
+                product.Brand,
+                product.Model,
+                product.SerialNo,
+                product.PurchaseDate,
+                product.InvoiceNo,
+                product.OrignalValue,
+                product.CurrentValue,
+                product.IsWarranty,
+                product.WarrantyDate,
+                product.Remarks,
+                product.ProfileImgPath,
+                product.FileIds,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+
+            if (string.IsNullOrEmpty(result.statusMessage))
+                throw HiringBellException.ThrowBadRequest("Fail to insert or update product details");
+        }
+
+        private async Task<string> ProductFileInsertUpdate(Product product, Files n)
+        {
+            string Result = _db.Execute<string>(Procedures.Company_Files_Insupd, new
+            {
+                CompanyFileId = n.FileUid,
+                product.CompanyId,
+                n.FilePath,
+                n.FileName,
+                n.FileExtension,
+                n.FileDescription,
+                n.FileRole,
+                UserTypeId = (int)UserType.Compnay,
+                AdminId = _currentSession.CurrentUserDetail.UserId
+            }, true);
+            if (string.IsNullOrEmpty(Result))
+                throw new HiringBellException("Fail to update housing property document detail. Please contact to admin.");
+
+            return await Task.FromResult(Result);
+        }
+
+        private async Task<List<Files>> SaveProductFiles(IFormFileCollection formFiles, string folderPath)
+        {
+            string url = $"{_microserviceUrlLogs.SaveApplicationFile}";
+            FileFolderDetail fileFolderDetail = new FileFolderDetail
+            {
+                FolderPath = folderPath,
+                OldFileName = null,
+                ServiceName = LocalConstants.EmstumFileService
+            };
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetFiles(formFiles)
+            .SetPayload(fileFolderDetail)
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            return await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
+        }
+
+        public async Task<List<ProductCatagory>> AddUpdateProductCatagoryService(ProductCatagory productCatagory)
         {
             if (string.IsNullOrEmpty(productCatagory.CatagoryCode))
                 throw HiringBellException.ThrowBadRequest("prodcut catagory is null or empty");
@@ -190,7 +226,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(productCatagory.CatagoryDescription))
                 throw HiringBellException.ThrowBadRequest("Prodcut catagory description is null");
 
-            var catagory = _db.Get<ProductCatagory>(Procedures.Catagory_Getby_Id, new { CatagoryId = productCatagory.CatagoryId });
+            var catagory = _db.Get<ProductCatagory>(Procedures.Catagory_Getby_Id, new { productCatagory.CatagoryId });
             if (catagory == null)
                 catagory = productCatagory;
             else
@@ -199,14 +235,15 @@ namespace ServiceLayer.Code
                 catagory.CatagoryDescription = productCatagory.CatagoryDescription;
                 catagory.GroupId = productCatagory.GroupId;
             }
+
             var result = _db.Execute<string>(Procedures.Catagory_Insupd, catagory, true);
             if (string.IsNullOrEmpty(result))
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update catagory");
-            FilterModel filterModel = new FilterModel();
-            return this.GetProductCatagoryService(filterModel);
+
+            return await GetProductCatagoryService(new FilterModel());
         }
 
-        public List<ProductCatagory> GetProductCatagoryService(FilterModel filterModel)
+        public async Task<List<ProductCatagory>> GetProductCatagoryService(FilterModel filterModel)
         {
             var result = _db.GetList<ProductCatagory>(Procedures.Catagory_Getby_Filter, new
             {
@@ -215,7 +252,14 @@ namespace ServiceLayer.Code
                 filterModel.PageSize,
                 filterModel.SortBy
             });
-            return result;
+
+            return await Task.FromResult(result);
+        }
+
+        public async Task<(Product, List<ProductCatagory>)> GetProductCategoryByIdService(long productId)
+        {
+            var (product, catagory) = _db.GetList<Product, ProductCatagory>(Procedures.Prdoduct_Getby_Id, new { productId });
+            return await Task.FromResult((product.FirstOrDefault(), catagory));
         }
     }
 }

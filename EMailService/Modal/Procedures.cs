@@ -119,6 +119,8 @@
         public static string Company_Setting_Insupd = "sp_company_setting_insupd";
         public static string Company_Files_Get_Byid = "sp_company_files_get_byid";
         public static string ATTENDANCE_SETTING_INS_UPD = "sp_attendance_setting_ins_upd";
+        public static string TDS_SETTING_GETBY_FINACIALYEAR = "sp_tds_setting_getby_finacialyear";
+        public static string TDS_SETTING_INTUPD = "sp_tds_setting_intupd";
 
         /*--------------  Dashboard Service procedures ------------*/
         public static string Dashboard_Get = "sp_dashboard_get";
