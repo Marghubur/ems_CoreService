@@ -12,5 +12,6 @@ namespace ServiceLayer.Interface
         Task RunPayrollJobAsync(DateTime? runDate);
         Task ScheduledJobManager();
         Task ExecuteYearlyLeaveRequestAccrualJobAsync(CompanySetting companySetting);
+        Task RunAndBuilEmployeeSalaryAndDeclaration();
     }
 }
