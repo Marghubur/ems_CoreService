@@ -436,5 +436,55 @@ namespace ServiceLayer.Code
 
             return salaryComponents;
         }
+
+        public async Task<string> SaveTDSSettingService(TDSSetting tDSSetting)
+        {
+            ValidateTDSSetting(tDSSetting);
+            var existingTDSSetting = await GetTDSSettingService();
+            if (existingTDSSetting == null)
+            {
+                existingTDSSetting = tDSSetting;
+                existingTDSSetting.FinancialYear = _currentSession.FinancialStartYear;
+            }
+            else
+            {
+                existingTDSSetting.EnableTDSCalculation = tDSSetting.EnableTDSCalculation;
+                existingTDSSetting.AutoDeductTDSPending = tDSSetting.AutoDeductTDSPending;
+                existingTDSSetting.DeductFromMonth = tDSSetting.DeductFromMonth;
+            }
+
+            var status = await _db.ExecuteAsync(Procedures.TDS_SETTING_INTUPD, new
+            {
+                existingTDSSetting.TDSSettingId,
+                existingTDSSetting.FinancialYear,
+                existingTDSSetting.EnableTDSCalculation,
+                existingTDSSetting.AutoDeductTDSPending,
+                existingTDSSetting.DeductFromMonth
+            }, true);
+
+            if (string.IsNullOrEmpty(status.statusMessage))
+                throw new HiringBellException("Fail to update tds setting.");
+
+            return status.statusMessage;
+        }
+
+        private void ValidateTDSSetting(TDSSetting tDSSetting)
+        {
+            if (tDSSetting.AutoDeductTDSPending && tDSSetting.DeductFromMonth <= 0)
+                throw HiringBellException.ThrowBadRequest("Please select tds auto deduction from month");
+
+            if (!tDSSetting.AutoDeductTDSPending)
+                tDSSetting.DeductFromMonth = 0;
+        }
+
+        public async Task<TDSSetting> GetTDSSettingService()
+        {
+            var result = _db.Get<TDSSetting>(Procedures.TDS_SETTING_GETBY_FINACIALYEAR, new
+            {
+                FinancialYear = _currentSession.FinancialStartYear
+            });
+
+            return await Task.FromResult(result);
+        }
     }
 }
