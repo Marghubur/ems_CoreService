@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=<device-width>, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; width: 70vw; margin: auto;">
+    <div>
+        <div style="position: relative;">
+            <h2 style="margin: 0; color: #333; text-align: center;">[[CompanyName]]</h2>
+            <p style="margin: 5px 0; color: #666; text-align: center;">[[CompanyFirstAddress]] [[CompanySecondAddress]] [[CompanyThirdAddress]] [[CompanyFourthAddress]]</p>
+            <div style="position: absolute; right: 0; top: 0;">
+                <div style="text-align: right;">
+                    <img style="width: 120px;" src="[[COMPANYLOGO_PATH]]" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin: 20px 0 10px; color: #333;">Payslip for the month of [[Month]], [[Year]]</h2>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="width: 60%;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 40%; padding: 5px 0;">Employee Name</td>
+                    <td style="width: 60%; padding: 5px 0;">: [[EmployeeName]], [[EmployeeNo]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">Designation</td>
+                    <td style="padding: 5px 0;">: [[Designation]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">Date of Joining</td>
+                    <td style="padding: 5px 0;">: [[JoiningDate]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">Pay Period</td>
+                    <td style="padding: 5px 0;">: [[Month]]- [[Year]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">Pay Date</td>
+                    <td style="padding: 5px 0;">: [[PayDate]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">PF A/C Number</td>
+                    <td style="padding: 5px 0;">: [[PFNumber]]</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">UAN Number</td>
+                    <td style="padding: 5px 0;">: [[UAN]]</td>
+                </tr>
+            </table>
+        </div>
+        <div style="width: 35%;">
+            <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; text-align: center;">
+                <p style="margin: 0; font-weight: bold; font-size: 14px;">Employee Net Pay</p>
+                <p style="margin: 5px 0; font-size: 12px;">Paid Days : [[TotalWorkingDays]] | LOP Days : [[LossOfPayDays]]</p>
+                <h2 style="margin: 10px 0; color: #009688; font-size: 28px;">₹[[NetSalaryPayable]]</h2>
+                <p style="margin: 5px 0; font-style: italic; font-size: 12px;">([[NetSalaryInWords]])</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <div style="background-color: #4CAF50; color: white; padding: 8px; text-align: center; font-weight: bold;">Employee Pay Summary</div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">EARNINGS</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">AMOUNT</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">YTD</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">DEDUCTIONS</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">AMOUNT</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">YTD</th>
+            </tr>
+            [[CompleteSalaryDetails]]
+        </table>
+    </div>
+
+    <div style="margin-top: 20px; background-color: #f2f2f2; padding: 15px; border-radius: 5px; display: flex; justify-content:space-between; align-items: center; width: 100%">
+        <div style="margin: 0; font-size: 14px; width: 70%;">
+            Total Net Payable = ((Gross Earnings - Total Deductions)
+        </div>
+        <div style="text-align: right; width: 30%;">
+            <p style="margin: 0; font-size: 14px;">Total Net Payable</p>
+            <h3 style="margin: 5px 0; color: #009688;">₹[[NetSalaryPayable]]</h3>
+        </div>
+    </div>
+
+    <div style="margin-top: 10px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 10px;">
+        <p>-This is system generated payslip-</p>
+    </div>
+</body>
+
+</html>

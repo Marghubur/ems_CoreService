@@ -1,4 +1,5 @@
-﻿using Bot.CoreBottomHalf.CommonModal.API;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.API;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -33,10 +34,11 @@ namespace OnlineDataBuilder.Controllers
                 if (ProductInfoData.Count > 0)
                 {
                     var product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
+                    var productImg = Request.Form.Files.GetFile("productimage");
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    IFormFileCollection productImg = _httpContext.Request.Form.Files;
-
-                    var resetSet = await _productService.ProdcutAddUpdateService(product, productImg, fileDetail);
+                    var fileCollection = new FormFileCollection();
+                    fileCollection.Add(productImg);
+                    var resetSet = await _productService.ProdcutAddUpdateService(product, fileCollection, fileDetail);
                     return BuildResponse(resetSet);
                 }
                 else
@@ -117,6 +119,20 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, productId);
+            }
+        }
+
+        [HttpPut("DeleteProductAttachment/{productId}")]
+        public async Task<ApiResponse> DeleteProductAttachment([FromRoute] long productId, [FromBody] Files files)
+        {
+            try
+            {
+                var result = await _productService.DeleteProductAttachmentService(productId, files);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { productId, files});
             }
         }
     }
