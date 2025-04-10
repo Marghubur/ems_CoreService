@@ -2299,9 +2299,8 @@ namespace ServiceLayer.Code
 
             try
             {
-                var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL, new
-                {
-                    FinancialYear = _currentSession.FinancialStartYear
+                var employees = _db.GetList<Employee>(Procedures.EMPLOYEES_ACTIVE_ALL, new {
+                    FinancialYear = 0
                 });
 
                 List<dynamic> employeeRecord = new List<dynamic>();

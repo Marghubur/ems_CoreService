@@ -140,6 +140,7 @@ namespace ems_CoreService
             services.AddScoped<RequestMicroservice>();
             services.AddScoped<IOvertimeService, OvertimeService>();
             services.AddScoped<IServiceJobStatusService, ServiceJobStatusService>();
+            services.AddScoped<IResignationService, ResignationService>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {

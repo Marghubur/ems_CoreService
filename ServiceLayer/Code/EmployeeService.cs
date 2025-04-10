@@ -1516,20 +1516,20 @@ namespace ServiceLayer.Code
                 Year = employeeCompleteDetailModal.LeaveRequestDetail.Year,
                 EmployeeNoticePeriodId = employeeCompleteDetailModal.NoticePeriod.EmployeeNoticePeriodId,
                 ApprovedOn = employeeCompleteDetailModal.NoticePeriod.ApprovedOn,
-                ApplicableFrom = employeeCompleteDetailModal.NoticePeriod.ApplicableFrom,
-                ApproverManagerId = employeeCompleteDetailModal.NoticePeriod.ApproverManagerId,
-                ManagerDescription = employeeCompleteDetailModal.NoticePeriod.ManagerDescription,
+                //ApplicableFrom = employeeCompleteDetailModal.NoticePeriod.ApplicableFrom,
+                //ApproverManagerId = employeeCompleteDetailModal.NoticePeriod.ApproverManagerId,
+                //ManagerDescription = employeeCompleteDetailModal.NoticePeriod.ManagerDescription,
                 AttachmentPath = employeeCompleteDetailModal.NoticePeriod.AttachmentPath,
-                EmailTitle = employeeCompleteDetailModal.NoticePeriod.EmailTitle,
-                OtherApproverManagerIds = string.IsNullOrEmpty(employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds) ? "[]" : employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds,
-                ITClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ITClearanceStatus,
-                ReportingManagerClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ReportingManagerClearanceStatus,
-                CanteenClearanceStatus = employeeCompleteDetailModal.NoticePeriod.CanteenClearanceStatus,
-                ClientClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ClientClearanceStatus,
-                HRClearanceStatus = employeeCompleteDetailModal.NoticePeriod.HRClearanceStatus,
+                //EmailTitle = employeeCompleteDetailModal.NoticePeriod.EmailTitle,
+                //OtherApproverManagerIds = string.IsNullOrEmpty(employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds) ? "[]" : employeeCompleteDetailModal.NoticePeriod.OtherApproverManagerIds,
+                //ITClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ITClearanceStatus,
+                //ReportingManagerClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ReportingManagerClearanceStatus,
+                //CanteenClearanceStatus = employeeCompleteDetailModal.NoticePeriod.CanteenClearanceStatus,
+                //ClientClearanceStatus = employeeCompleteDetailModal.NoticePeriod.ClientClearanceStatus,
+                //HRClearanceStatus = employeeCompleteDetailModal.NoticePeriod.HRClearanceStatus,
                 OfficialLastWorkingDay = employeeCompleteDetailModal.NoticePeriod.OfficialLastWorkingDay,
-                PeriodDuration = employeeCompleteDetailModal.NoticePeriod.PeriodDuration,
-                EarlyLeaveStatus = employeeCompleteDetailModal.NoticePeriod.EarlyLeaveStatus,
+                //PeriodDuration = employeeCompleteDetailModal.NoticePeriod.PeriodDuration,
+                //EarlyLeaveStatus = employeeCompleteDetailModal.NoticePeriod.EarlyLeaveStatus,
                 EmployeeComment = employeeCompleteDetailModal.NoticePeriod.EmployeeComment,
                 CTC = employeeCompleteDetailModal.SalaryDetail.CTC,
                 GrossIncome = employeeCompleteDetailModal.SalaryDetail.GrossIncome,
@@ -1620,13 +1620,13 @@ namespace ServiceLayer.Code
             if (employeeId == 1)
                 throw HiringBellException.ThrowBadRequest("You can't delete the admin");
 
-            var filterEmployee = FilterActiveEmployees(new FilterModel
-            {
-                SearchString = $"1=1 and emp.EmployeeUid = {employeeId}"
-            });
+            //var filterEmployee = FilterActiveEmployees(new FilterModel
+            //{
+            //    SearchString = $"1=1 and emp.EmployeeUid = {employeeId}"
+            //});
 
-            var employee = filterEmployee.employees.First();
-            employee.IsActive = false;
+            //var employee = filterEmployee.employees.First();
+            //employee.IsActive = false;
 
             var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_INACTIVE_UPDATE, new
             {
@@ -1760,95 +1760,17 @@ namespace ServiceLayer.Code
         public async Task<string> SubmitResignationService(EmployeeNoticePeriod employeeNoticePeriod)
         {
             validateResignationDetail(employeeNoticePeriod);
-            var result = _db.Execute<EmployeeNoticePeriod>(Procedures.EMPLOYEE_NOTICE_PERIOD_INSUPD, new
-            {
-                EmployeeNoticePeriodId = employeeNoticePeriod.EmployeeNoticePeriodId,
-                EmployeeId = employeeNoticePeriod.EmployeeId,
-                IsDiscussWithManager = employeeNoticePeriod.IsDiscussWithManager,
-                ApprovedOn = employeeNoticePeriod.ApprovedOn,
-                ApplicableFrom = DateTime.UtcNow,
-                ApproverManagerId = _currentSession.CurrentUserDetail.ReportingManagerId,
-                ManagerDescription = "",
-                AttachmentPath = "",
-                EmailTitle = "",
-                OtherApproverManagerIds = "[]",
-                ITClearanceStatus = (int)ItemStatus.Pending,
-                ReportingManagerClearanceStatus = (int)ItemStatus.Pending,
-                CanteenClearanceStatus = (int)ItemStatus.Pending,
-                ClientClearanceStatus = (int)ItemStatus.Pending,
-                HRClearanceStatus = (int)ItemStatus.Pending,
-                OfficialLastWorkingDay = DateTime.UtcNow.AddDays(employeeNoticePeriod.CompanyNoticePeriodInDays),
-                PeriodDuration = employeeNoticePeriod.CompanyNoticePeriodInDays,
-                EarlyLeaveStatus = (int)ItemStatus.Pending,
-                EmployeeComment = employeeNoticePeriod.EmployeeComment,
-                EmployeeReason = employeeNoticePeriod.EmployeeReason,
-                IsDiscussWithEmployee = false,
-                IsEmpResign = true,
-                IsRecommendLastDay = true,
-                IsRehire = false,
-                Summary = "",
-                ManagerComment = "",
-                AdminId = _currentSession.CurrentUserDetail.AdminId
-            }, true);
-            if (string.IsNullOrEmpty(result))
-                throw HiringBellException.ThrowBadRequest("Fail to submit resignation detail");
-
-            return await Task.FromResult(result);
-        }
-
-        public async Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod)
-        {
-            validateManageInitiateExistDetail(employeeNoticePeriod);
-            EmployeeNoticePeriod existNoticePeriodDetail = null;
-
-            if (employeeNoticePeriod.EmployeeNoticePeriodId > 0)
-            {
-                existNoticePeriodDetail = _db.Get<EmployeeNoticePeriod>(Procedures.EMPLOYEE_NOTICE_PERIOD_GETBY_ID, new { employeeNoticePeriod.EmployeeNoticePeriodId });
-                if (existNoticePeriodDetail == null)
-                    throw HiringBellException.ThrowBadRequest("Notice period detail not fount");
-
-                existNoticePeriodDetail.IsEmpResign = employeeNoticePeriod.IsEmpResign;
-                existNoticePeriodDetail.IsDiscussWithEmployee = employeeNoticePeriod.IsDiscussWithEmployee;
-                existNoticePeriodDetail.Summary = employeeNoticePeriod.Summary;
-                existNoticePeriodDetail.IsRecommendLastDay = employeeNoticePeriod.IsRecommendLastDay;
-                existNoticePeriodDetail.OfficialLastWorkingDay = employeeNoticePeriod.OfficialLastWorkingDay;
-                existNoticePeriodDetail.IsRehire = employeeNoticePeriod.IsRehire;
-                existNoticePeriodDetail.ManagerComment = employeeNoticePeriod.ManagerComment;
-            }
-            else
-            {
-                existNoticePeriodDetail = employeeNoticePeriod;
-            }
-
             var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_NOTICE_PERIOD_INSUPD, new
             {
-                EmployeeNoticePeriodId = existNoticePeriodDetail.EmployeeNoticePeriodId,
-                EmployeeId = existNoticePeriodDetail.EmployeeId,
-                IsDiscussWithManager = existNoticePeriodDetail.IsDiscussWithManager,
-                ApprovedOn = existNoticePeriodDetail.ApprovedOn,
-                ApplicableFrom = existNoticePeriodDetail.ApplicableFrom,
-                ApproverManagerId = _currentSession.CurrentUserDetail.UserId,
-                ManagerDescription = existNoticePeriodDetail.ManagerDescription,
-                AttachmentPath = "",
-                EmailTitle = "",
-                OtherApproverManagerIds = "[]",
-                ITClearanceStatus = (int)ItemStatus.Pending,
-                ReportingManagerClearanceStatus = (int)ItemStatus.Approved,
-                CanteenClearanceStatus = (int)ItemStatus.Pending,
-                ClientClearanceStatus = (int)ItemStatus.Pending,
-                HRClearanceStatus = (int)ItemStatus.Pending,
-                OfficialLastWorkingDay = existNoticePeriodDetail.OfficialLastWorkingDay,
-                PeriodDuration = existNoticePeriodDetail.CompanyNoticePeriodInDays,
-                EarlyLeaveStatus = (int)ItemStatus.Pending,
-                EmployeeComment = existNoticePeriodDetail.EmployeeComment,
-                EmployeeReason = existNoticePeriodDetail.EmployeeReason,
-                IsDiscussWithEmployee = existNoticePeriodDetail.IsDiscussWithEmployee,
-                IsEmpResign = existNoticePeriodDetail.IsEmpResign,
-                IsRecommendLastDay = existNoticePeriodDetail.IsRecommendLastDay,
-                IsRehire = existNoticePeriodDetail.IsRehire,
-                Summary = existNoticePeriodDetail.Summary,
-                ManagerComment = existNoticePeriodDetail.ManagerComment,
-                AdminId = _currentSession.CurrentUserDetail.UserId
+                employeeNoticePeriod.EmployeeNoticePeriodId,
+                employeeNoticePeriod.EmployeeId,
+                employeeNoticePeriod.ResignType,
+                ResignationStatus = (int)ItemStatus.Pending,
+                employeeNoticePeriod.EmployeeComment,
+                OfficialLastWorkingDay = DateTime.UtcNow.AddDays(employeeNoticePeriod.CompanyNoticePeriodInDays),
+                AttachmentPath = "[]",
+                employeeNoticePeriod.ApprovedOn,
+                _currentSession.CurrentUserDetail.AdminId
             }, true);
             if (string.IsNullOrEmpty(result.statusMessage))
                 throw HiringBellException.ThrowBadRequest("Fail to submit resignation detail");
@@ -1856,18 +1778,72 @@ namespace ServiceLayer.Code
             return result.statusMessage;
         }
 
+        public async Task<string> ManageInitiateExistService(EmployeeNoticePeriod employeeNoticePeriod)
+        {
+            validateManageInitiateExistDetail(employeeNoticePeriod);
+            EmployeeNoticePeriod existNoticePeriodDetail = null;
+
+            //if (employeeNoticePeriod.EmployeeNoticePeriodId > 0)
+            //{
+            //    existNoticePeriodDetail = _db.Get<EmployeeNoticePeriod>(Procedures.EMPLOYEE_NOTICE_PERIOD_GETBY_ID, new { employeeNoticePeriod.EmployeeNoticePeriodId });
+            //    if (existNoticePeriodDetail == null)
+            //        throw HiringBellException.ThrowBadRequest("Notice period detail not fount");
+
+            //    existNoticePeriodDetail.IsEmpResign = employeeNoticePeriod.IsEmpResign;
+            //    existNoticePeriodDetail.IsDiscussWithEmployee = employeeNoticePeriod.IsDiscussWithEmployee;
+            //    existNoticePeriodDetail.Summary = employeeNoticePeriod.Summary;
+            //    existNoticePeriodDetail.IsRecommendLastDay = employeeNoticePeriod.IsRecommendLastDay;
+            //    existNoticePeriodDetail.OfficialLastWorkingDay = employeeNoticePeriod.OfficialLastWorkingDay;
+            //    existNoticePeriodDetail.IsRehire = employeeNoticePeriod.IsRehire;
+            //    existNoticePeriodDetail.ManagerComment = employeeNoticePeriod.ManagerComment;
+            //}
+            //else
+            //{
+            //    existNoticePeriodDetail = employeeNoticePeriod;
+            //}
+
+            //var result = await _db.ExecuteAsync(Procedures.EMPLOYEE_NOTICE_PERIOD_INSUPD, new
+            //{
+            //    EmployeeNoticePeriodId = existNoticePeriodDetail.EmployeeNoticePeriodId,
+            //    EmployeeId = existNoticePeriodDetail.EmployeeId,
+            //    IsDiscussWithManager = existNoticePeriodDetail.IsDiscussWithManager,
+            //    ApprovedOn = existNoticePeriodDetail.ApprovedOn,
+            //    ApplicableFrom = existNoticePeriodDetail.ApplicableFrom,
+            //    ApproverManagerId = _currentSession.CurrentUserDetail.UserId,
+            //    ManagerDescription = existNoticePeriodDetail.ManagerDescription,
+            //    AttachmentPath = "",
+            //    EmailTitle = "",
+            //    OtherApproverManagerIds = "[]",
+            //    ITClearanceStatus = (int)ItemStatus.Pending,
+            //    ReportingManagerClearanceStatus = (int)ItemStatus.Approved,
+            //    CanteenClearanceStatus = (int)ItemStatus.Pending,
+            //    ClientClearanceStatus = (int)ItemStatus.Pending,
+            //    HRClearanceStatus = (int)ItemStatus.Pending,
+            //    OfficialLastWorkingDay = existNoticePeriodDetail.OfficialLastWorkingDay,
+            //    PeriodDuration = existNoticePeriodDetail.CompanyNoticePeriodInDays,
+            //    EarlyLeaveStatus = (int)ItemStatus.Pending,
+            //    EmployeeComment = existNoticePeriodDetail.EmployeeComment,
+            //    EmployeeReason = existNoticePeriodDetail.EmployeeReason,
+            //    IsDiscussWithEmployee = existNoticePeriodDetail.IsDiscussWithEmployee,
+            //    IsEmpResign = existNoticePeriodDetail.IsEmpResign,
+            //    IsRecommendLastDay = existNoticePeriodDetail.IsRecommendLastDay,
+            //    IsRehire = existNoticePeriodDetail.IsRehire,
+            //    Summary = existNoticePeriodDetail.Summary,
+            //    ManagerComment = existNoticePeriodDetail.ManagerComment,
+            //    AdminId = _currentSession.CurrentUserDetail.UserId
+            //}, true);
+            //if (string.IsNullOrEmpty(result.statusMessage))
+            //    throw HiringBellException.ThrowBadRequest("Fail to submit resignation detail");
+
+            return "";
+        }
+
         private void validateManageInitiateExistDetail(EmployeeNoticePeriod employeeNoticePeriod)
         {
             if (employeeNoticePeriod.EmployeeId == 0)
                 throw HiringBellException.ThrowBadRequest("Invalid employee");
 
-            if (string.IsNullOrEmpty(employeeNoticePeriod.ManagerComment))
-                throw HiringBellException.ThrowBadRequest("Invalid manager comment");
-
-            if (string.IsNullOrEmpty(employeeNoticePeriod.Summary))
-                throw HiringBellException.ThrowBadRequest("Invalid summary");
-
-            if (employeeNoticePeriod.IsRecommendLastDay && employeeNoticePeriod.OfficialLastWorkingDay == null)
+            if (employeeNoticePeriod.OfficialLastWorkingDay == null)
                 throw HiringBellException.ThrowBadRequest("Invalid last working day selected");
         }
 
@@ -1879,7 +1855,7 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(employeeNoticePeriod.EmployeeComment))
                 throw HiringBellException.ThrowBadRequest("Invalid employee comment");
 
-            if (string.IsNullOrEmpty(employeeNoticePeriod.EmployeeReason))
+            if (string.IsNullOrEmpty(employeeNoticePeriod.ResignType))
                 throw HiringBellException.ThrowBadRequest("Invalid reason selected");
         }
 
