@@ -15,9 +15,9 @@ using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -53,8 +53,9 @@ namespace ServiceLayer.Code
         private readonly RequestMicroservice _requestMicroservice;
         private readonly GitHubConnector _gitHubConnector;
         private readonly ICommonService _commonService;
-        public BillService(IDb db, 
-            IFileService fileService, 
+        private readonly IWebHostEnvironment _env;
+        public BillService(IDb db,
+            IFileService fileService,
             IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
             ILogger<BillService> logger,
@@ -68,7 +69,8 @@ namespace ServiceLayer.Code
             MicroserviceRegistry microserviceUrlLogs,
             IUtilityService utilityService,
             GitHubConnector gitHubConnector,
-            ICommonService commonService)
+            ICommonService commonService,
+            IWebHostEnvironment env)
         {
             this.db = db;
             _logger = logger;
@@ -86,6 +88,7 @@ namespace ServiceLayer.Code
             _utilityService = utilityService;
             _gitHubConnector = gitHubConnector;
             _commonService = commonService;
+            _env = env;
         }
 
         public FileDetail CreateFiles(BillGenerationModal billModal)
@@ -1328,33 +1331,60 @@ namespace ServiceLayer.Code
             );
 
             // EmployeeDeclaration employeeDeclaration = await _declarationService.GetEmployeeDeclarationDetail(payslipModal.EmployeeId);
-            string url = $"{_microserviceUrlLogs.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
-            MicroserviceRequest microserviceRequest = new MicroserviceRequest
-            {
-                Url = url,
-                CompanyCode = _currentSession.CompanyCode,
-                Token = _currentSession.Authorization,
-                Database = _requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString)
-            };
+            //string url = $"{_microserviceUrlLogs.GetEmployeeDeclarationDetailById}/{payslipModal.EmployeeId}";
+            //MicroserviceRequest microserviceRequest = new MicroserviceRequest
+            //{
+            //    Url = url,
+            //    CompanyCode = _currentSession.CompanyCode,
+            //    Token = _currentSession.Authorization,
+            //    Database = _requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString)
+            //};
 
-            EmployeeDeclaration employeeDeclaration = await _requestMicroservice.GetRequest<EmployeeDeclaration>(microserviceRequest);
+            //EmployeeDeclaration employeeDeclaration = await _requestMicroservice.GetRequest<EmployeeDeclaration>(microserviceRequest);
 
             // here add condition that it detail will shown or not
             string declarationHTML = String.Empty;
             //declarationHTML = GetDeclarationDetailHTML(employeeDeclaration);
 
-            var grossIncome = Math.Round(employeeDeclaration.SalaryDetail.GrossIncome);
+            var grosComponent = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId);
+            var grossIncome = Math.Round(grosComponent.FinalAmount);
             decimal totalYTDAmount = 0;
-
-            salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
-            salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
-            salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
-
             string employeeContribution = string.Empty;
             decimal totalContribution = 0;
+            int templateId = 1;
+            string htmlFilePath = "";
+            switch (templateId)
+            {
+                case 2:
+                    // For testing purpose only
+                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate1.html");
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
 
-            employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
-            employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
+                    salaryDetailsHTML = BuildSlaryStructureForFirstTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
+                    break;
+                case 3:
+                    // For testing purpose only
+                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate2.html");
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+
+                    salaryDetailsHTML = BuildEmployeeEarningForSecondTemplate(payslipModal, salaryDetail);
+                    employeeContribution = BuildEmployeeDeductionForSecondTemplate(payslipModal, ref totalContribution);
+                    break;
+                case 4:
+                    // For testing purpose only
+                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate3.html");
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+
+                    salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
+                    break;
+                default:
+                    salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
+                    salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
+                    salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
+                    employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
+                    employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
+                    break;
+            }
 
             // var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var pTaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
@@ -1381,9 +1411,11 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
                 Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
-                Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
+                //Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
+                Replace("[[EmployeeName]]", "Adam" + " " + "Smith").
                 Replace("[[EmployeeNo]]", employeeCode).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
+                Replace("[[PayDate]]", payslipModal.PayrollMonthlyDetail.PaymentRunDate.ToString("dd MMM, yyyy")).
                 Replace("[[Department]]", string.IsNullOrEmpty(payslipModal.Employee.Department) ? "--" : payslipModal.Employee.Department).
                 Replace("[[SubDepartment]]", "NA").
                 Replace("[[Designation]]", designation).
@@ -1419,6 +1451,308 @@ namespace ServiceLayer.Code
                 html = await AddCompanyLogo(payslipModal, html);
 
             return html;
+        }
+
+        private string BuildSlaryStructureForThirdTemplate(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount, ref decimal totalContribution)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string salaryDetailsHTML = "";
+
+            var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth
+                                                                                && payslipModal.SalaryDetail.PresentMonthDate.Subtract(x.PresentMonthDate).Days >= 0);
+            var deductions = new List<CalculatedSalaryBreakupDetail>();
+
+            var employeeESI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeESI != null && employeeESI.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeeESI.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee ESI",
+                    FinalAmount = Math.Round(employeeESI.FinalAmount)
+                });
+            }
+
+            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePF != null && employeePF.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeePF.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee PF",
+                    ComponentId = LocalConstants.EPF,
+                    FinalAmount = Math.Round(employeePF.FinalAmount)
+                });
+            }
+
+            var ptaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Professional Tax",
+                ComponentId = ComponentNames.ProfessionalTax,
+                FinalAmount = Math.Round(ptaxAmount)
+            });
+
+            var tds = payslipModal.TaxDetail.TaxDeducted >= ptaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(ptaxAmount) : 0;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Income Tax",
+                FinalAmount = tds
+            });
+
+            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Arrear Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.ArrearAmount)
+                });
+            }
+
+            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Bonus Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.BonusAmount)
+                });
+            }
+
+            for (int i = 0; i < GetComponentMaxLength(salaryDetail, deductions); i++)
+            {
+                decimal YTDAmount = 0;
+                decimal deductionYTDAmount = 0;
+
+                if (i < salaryDetail.Count)
+                {
+                    var ytdComponent = YTDSalaryBreakup.SelectMany(x => x.SalaryBreakupDetails).ToList().FindAll(x => x.ComponentId == salaryDetail[i].ComponentId);
+                    if (ytdComponent != null)
+                        YTDAmount = Math.Round(ytdComponent.Sum(x => x.FinalAmount));
+                }
+
+                if (i < deductions.Count)
+                {
+                    var YTDdeduction = YTDSalaryBreakup.SelectMany(x => x.SalaryBreakupDetails).ToList().FindAll(x => x.ComponentId == deductions[i].ComponentId);
+                    if (YTDdeduction != null)
+                        deductionYTDAmount = Math.Round(YTDdeduction.Sum(x => x.FinalAmount));
+
+                    if (deductions[i].ComponentName == "Income Tax")
+                        deductionYTDAmount = Math.Round(payslipModal.TaxDetails.Sum(x => x.TaxDeducted));
+                }
+
+
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px;\">{(i < salaryDetail.Count ? textinfo.ToTitleCase(salaryDetail[i].ComponentName.ToLower()) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text - align: right;\">{(i < salaryDetail.Count ? "₹ " + Math.Round(salaryDetail[i].FinalAmount) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text-align: right; border-right: 1px solid #ddd;\" >{(i < salaryDetail.Count ? "₹ " + YTDAmount : "")} </ td > ";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; border-left: 1px solid #ddd;\">{(i < deductions.Count ? textinfo.ToTitleCase(deductions[i].ComponentName.ToLower()) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text - align: right;\">{(i < deductions.Count ? "₹ " + Math.Round(deductions[i].FinalAmount) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text-align: right;\" >{(i < deductions.Count ? "₹ " + deductionYTDAmount : "")} </ td > ";
+                salaryDetailsHTML += "</tr>";
+                totalYTDAmount += YTDAmount;
+            }
+
+            decimal arrearAmount = Math.Round(YTDSalaryBreakup.Sum(x => x.ArrearAmount));
+            totalYTDAmount += arrearAmount;
+
+            return salaryDetailsHTML;
+        }
+
+        private string BuildEmployeeEarningForSecondTemplate(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string salaryDetailsHTML = "";
+
+            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Arrear Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.ArrearAmount)
+                });
+            }
+
+            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Bonus Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.BonusAmount)
+                });
+            }
+
+            for (int i = 0; i < salaryDetail.Count; i++)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += $"<td style=\"padding: 8px;\">{textinfo.ToTitleCase(salaryDetail[i].ComponentName.ToLower())}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 8px;\">₹{Math.Round(salaryDetail[i].FinalAmount)}</td>";
+                salaryDetailsHTML += "</tr>";
+            }
+
+            return salaryDetailsHTML;
+        }
+
+        private string BuildEmployeeDeductionForSecondTemplate(PayslipGenerationModal payslipModal, ref decimal totalContribution)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string deductionDetailHtml = "";
+            var deductions = new List<CalculatedSalaryBreakupDetail>();
+
+            var employeeESI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeESI != null && employeeESI.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeeESI.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee ESI",
+                    FinalAmount = Math.Round(employeeESI.FinalAmount)
+                });
+            }
+
+            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePF != null && employeePF.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeePF.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee PF",
+                    FinalAmount = Math.Round(employeePF.FinalAmount)
+                });
+            }
+
+            var ptaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Professional Tax",
+                FinalAmount = Math.Round(ptaxAmount)
+            });
+
+            var tds = payslipModal.TaxDetail.TaxDeducted >= ptaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(ptaxAmount) : 0;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Income Tax",
+                FinalAmount = tds
+            });
+
+            for (int i = 0; i < deductions.Count; i++)
+            {
+                deductionDetailHtml += "<tr>";
+                deductionDetailHtml += $"<td style=\"padding: 8px;\">{textinfo.ToTitleCase(deductions[i].ComponentName.ToLower())}</td>";
+                deductionDetailHtml += $"<td style=\"padding: 8px;\">₹{Math.Round(deductions[i].FinalAmount)}</td>";
+
+                deductionDetailHtml += "</tr>";
+            }
+
+            return deductionDetailHtml;
+        }
+
+        private string BuildSlaryStructureForFirstTemplate(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount, ref decimal totalContribution)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string salaryDetailsHTML = "";
+
+            var YTDSalaryBreakup = payslipModal.AnnualSalaryBreakup.FindAll(x => x.IsActive && !x.IsPreviouEmployer && x.IsPayrollExecutedForThisMonth
+                                                                                && payslipModal.SalaryDetail.PresentMonthDate.Subtract(x.PresentMonthDate).Days >= 0);
+            var deductions = new List<CalculatedSalaryBreakupDetail>();
+
+            var employeeESI = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.ESI);
+            if (employeeESI != null && employeeESI.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeeESI.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee ESI",
+                    FinalAmount = Math.Round(employeeESI.FinalAmount)
+                });
+            }
+
+            var employeePF = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == LocalConstants.EPF);
+            if (employeePF != null && employeePF.IsIncludeInPayslip)
+            {
+                totalContribution += Math.Round(employeePF.FinalAmount);
+                deductions.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Employee PF",
+                    ComponentId = LocalConstants.EPF,
+                    FinalAmount = Math.Round(employeePF.FinalAmount)
+                });
+            }
+
+            var ptaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Professional Tax",
+                ComponentId = ComponentNames.ProfessionalTax,
+                FinalAmount = Math.Round(ptaxAmount)
+            });
+
+            var tds = payslipModal.TaxDetail.TaxDeducted >= ptaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(ptaxAmount) : 0;
+            deductions.Add(new CalculatedSalaryBreakupDetail
+            {
+                ComponentName = "Income Tax",
+                FinalAmount = tds
+            });
+
+            if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Arrear Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.ArrearAmount)
+                });
+            }
+
+            if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
+            {
+                salaryDetail.Add(new CalculatedSalaryBreakupDetail
+                {
+                    ComponentName = "Bonus Amount",
+                    FinalAmount = Math.Round(payslipModal.SalaryDetail.BonusAmount)
+                });
+            }
+
+            for (int i = 0; i < GetComponentMaxLength(salaryDetail, deductions); i++)
+            {
+                decimal YTDAmount = 0;
+                decimal deductionYTDAmount = 0;
+
+                if (i < salaryDetail.Count)
+                {
+                    var ytdComponent = YTDSalaryBreakup.SelectMany(x => x.SalaryBreakupDetails).ToList().FindAll(x => x.ComponentId == salaryDetail[i].ComponentId);
+                    if (ytdComponent != null)
+                        YTDAmount = Math.Round(ytdComponent.Sum(x => x.FinalAmount));
+                }
+
+                if (i < deductions.Count)
+                {
+                    var YTDdeduction = YTDSalaryBreakup.SelectMany(x => x.SalaryBreakupDetails).ToList().FindAll(x => x.ComponentId == deductions[i].ComponentId);
+                    if (YTDdeduction != null)
+                        deductionYTDAmount = Math.Round(YTDdeduction.Sum(x => x.FinalAmount));
+
+                    if (deductions[i].ComponentName == "Income Tax")
+                        deductionYTDAmount = Math.Round(payslipModal.TaxDetails.Sum(x => x.TaxDeducted));
+                }
+
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; border: 1px solid #ddd;\">{(i < salaryDetail.Count ? textinfo.ToTitleCase(salaryDetail[i].ComponentName.ToLower()) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text - align: right; border: 1px solid #ddd;\">{(i < salaryDetail.Count ? "₹ " + Math.Round(salaryDetail[i].FinalAmount) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text-align: right; border: 1px solid #ddd;\" >{(i < salaryDetail.Count ? "₹ " + YTDAmount : "")} </ td > ";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; border: 1px solid #ddd;\">{(i < deductions.Count ? textinfo.ToTitleCase(deductions[i].ComponentName.ToLower()) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text - align: right; border: 1px solid #ddd;\">{(i < deductions.Count ? "₹ " + Math.Round(deductions[i].FinalAmount) : "")}</td>";
+                salaryDetailsHTML += $"<td style=\"padding: 10px; text-align: right; border: 1px solid #ddd;\" >{(i < deductions.Count ? "₹ " + deductionYTDAmount : "")} </ td > ";
+                salaryDetailsHTML += "</tr>";
+                totalYTDAmount += YTDAmount;
+            }
+
+            decimal arrearAmount = Math.Round(YTDSalaryBreakup.Sum(x => x.ArrearAmount));
+            totalYTDAmount += arrearAmount;
+
+            return salaryDetailsHTML;
+        }
+
+        private int GetComponentMaxLength(List<CalculatedSalaryBreakupDetail> earnings, List<CalculatedSalaryBreakupDetail> deduction)
+        {
+            return Math.Max(earnings.Count, deduction.Count);
         }
 
         private async Task<int> GetActualPayableDay(DateTime doj, int month, int year)
@@ -1641,8 +1975,8 @@ namespace ServiceLayer.Code
             if (SalaryDetail.TaxDetail == null)
                 throw new HiringBellException("Tax details not found. Please contact to admin");
 
-            var taxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(SalaryDetail.TaxDetail);
-            payslipGenerationModal.TaxDetail = taxDetails.Find(x => x.Year == payslipGenerationModal.Year && x.Month == payslipGenerationModal.Month);
+            payslipGenerationModal.TaxDetails = JsonConvert.DeserializeObject<List<TaxDetails>>(SalaryDetail.TaxDetail);
+            payslipGenerationModal.TaxDetail = payslipGenerationModal.TaxDetails.Find(x => x.Year == payslipGenerationModal.Year && x.Month == payslipGenerationModal.Month);
             if (payslipGenerationModal.TaxDetail == null)
                 throw new HiringBellException("Tax details of your selected month is not found");
 

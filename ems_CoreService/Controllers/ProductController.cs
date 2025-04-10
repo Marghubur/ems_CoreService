@@ -7,7 +7,6 @@ using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -29,18 +28,17 @@ namespace OnlineDataBuilder.Controllers
         [HttpPost("ProdcutAddUpdate")]
         public async Task<ApiResponse> ProdcutAddUpdate()
         {
-            Product product = null;
             try
             {
-                StringValues ProductInfoData = default(string);
-                _httpContext.Request.Form.TryGetValue("productdetail", out ProductInfoData);
-                _httpContext.Request.Form.TryGetValue("fileDetail", out StringValues FileData);
+                _httpContext.Request.Form.TryGetValue("productdetail", out StringValues ProductInfoData);
                 if (ProductInfoData.Count > 0)
                 {
-                    product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
+                    var product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
+                    var productImg = Request.Form.Files.GetFile("productimage");
                     IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    List<Files> files = JsonConvert.DeserializeObject<List<Files>>(FileData);
-                    var resetSet = await _productService.ProdcutAddUpdateService(product, files, fileDetail);
+                    var fileCollection = new FormFileCollection();
+                    fileCollection.Add(productImg);
+                    var resetSet = await _productService.ProdcutAddUpdateService(product, fileCollection, fileDetail);
                     return BuildResponse(resetSet);
                 }
                 else
@@ -50,16 +48,16 @@ namespace OnlineDataBuilder.Controllers
             }
             catch (Exception ex)
             {
-                throw Throw(ex, product);
+                throw Throw(ex);
             }
         }
 
         [HttpPost("GetAllProducts")]
-        public IResponse<ApiResponse> GetAllProducts(FilterModel filterModel)
+        public async Task<ApiResponse> GetAllProducts(FilterModel filterModel)
         {
             try
             {
-                var result = _productService.GetAllProductsService(filterModel);
+                var result = await _productService.GetAllProductsService(filterModel);
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -83,11 +81,11 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("AddUpdateProductCatagory")]
-        public IResponse<ApiResponse> AddUpdateProductCatagory(ProductCatagory productCatagory)
+        public async Task<ApiResponse> AddUpdateProductCatagory(ProductCatagory productCatagory)
         {
             try
             {
-                var result = _productService.AddUpdateProductCatagoryService(productCatagory);
+                var result = await _productService.AddUpdateProductCatagoryService(productCatagory);
                 return BuildResponse(result);
             }
             catch (Exception ex)
@@ -97,16 +95,44 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [HttpPost("GetAllCatagory")]
-        public IResponse<ApiResponse> GetAllCatagory(FilterModel filterModel)
+        public async Task<ApiResponse> GetAllCatagory(FilterModel filterModel)
         {
             try
             {
-                var result = _productService.GetProductCatagoryService(filterModel);
+                var result = await _productService.GetProductCatagoryService(filterModel);
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
                 throw Throw(ex, filterModel);
+            }
+        }
+
+        [HttpGet("GetProductCategoryById/{productId}")]
+        public async Task<ApiResponse> GetProductCategoryById([FromRoute] long productId)
+        {
+            try
+            {
+                var result = await _productService.GetProductCategoryByIdService(productId);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, productId);
+            }
+        }
+
+        [HttpPut("DeleteProductAttachment/{productId}")]
+        public async Task<ApiResponse> DeleteProductAttachment([FromRoute] long productId, [FromBody] Files files)
+        {
+            try
+            {
+                var result = await _productService.DeleteProductAttachmentService(productId, files);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, new { productId, files});
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal;
 using ems_CoreService.Model;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
@@ -22,5 +23,7 @@ namespace ServiceLayer.Interface
         List<SalaryComponents> FetchComponentDetailByIdService(int componentTypeId);
         List<SalaryComponents> FetchActiveComponentService();
         Task<UserLayoutConfigurationJSON> LayoutConfigurationSettingService(UserLayoutConfigurationJSON userLayoutConfiguration);
+        Task<string> SaveTDSSettingService(TDSSetting tDSSetting);
+        Task<TDSSetting> GetTDSSettingService();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.API;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModalLayer.Modal;
@@ -199,6 +200,36 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex, userLayoutConfiguration);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("SaveTDSSetting")]
+        public async Task<ApiResponse> SaveTDSSetting([FromBody] TDSSetting tDSSetting)
+        {
+            try
+            {
+                var result = await _settingService.SaveTDSSettingService(tDSSetting);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, tDSSetting);
+            }
+        }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpGet("GetTDSSetting")]
+        public async Task<ApiResponse> GetTDSSetting()
+        {
+            try
+            {
+                var result = await _settingService.GetTDSSettingService();
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
             }
         }
     }

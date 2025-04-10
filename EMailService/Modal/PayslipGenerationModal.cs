@@ -30,5 +30,6 @@ namespace ModalLayer.Modal
         public PayrollMonthlyDetail PayrollMonthlyDetail { get; set; }
         public string PdfTemplateHTML { set; get; }
         public List<int> EmployeeIds { get; set; }
+        public List<TaxDetails> TaxDetails { get; set; }
     }
 }

@@ -6,20 +6,22 @@ namespace ModalLayer.Modal
     {
         public int Total { get; set; }
         public int RowIndex { get; set; }
-        public DateTime OrderDate { get; set; }
-        public int StockStatus { get; set; }
-        public int Quantity { get; set; }
-        public string ModalNum { get; set; }
-        public string SiteUrl { get; set; }
-        public decimal MRP { get; set; }
-        public string FileIds { get; set; }
         public long ProductId { get; set; }
         public int CompanyId { get; set; }
         public string CatagoryName { get; set; }
+        public int Status { get; set; }
+        public string Description { get; set; }
         public string Brand { get; set; }
-        public string TitleName { get; set; }
+        public string Model { get; set; }
         public string SerialNo { get; set; }
-        public string ProductCode { get; set; }
-        public decimal PurchasePrice { get; set; }
+        public DateTime? PurchaseDate { get; set; }
+        public string InvoiceNo { get; set; }
+        public decimal OrignalValue { get; set; }
+        public decimal CurrentValue { get; set; }
+        public bool IsWarranty { get; set; }
+        public DateTime? WarrantyDate { get; set; }
+        public string Remarks { get; set; }
+        public string FileIds { get; set; }
+        public string ProfileImgPath { get; set; }
     }
 }
