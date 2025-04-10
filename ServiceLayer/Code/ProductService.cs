@@ -261,5 +261,60 @@ namespace ServiceLayer.Code
             var (product, catagory) = _db.GetList<Product, ProductCatagory>(Procedures.Prdoduct_Getby_Id, new { productId });
             return await Task.FromResult((product.FirstOrDefault(), catagory));
         }
+
+        public async Task<DataSet> DeleteProductAttachmentService(long productId, Files files)
+        {
+            if (productId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid product selected");
+
+            ValidateProductFile(files);
+
+            var (oldproduct, productCatagory) = await GetProductCategoryByIdService(productId);
+            if (oldproduct == null)
+                throw HiringBellException.ThrowBadRequest("Product detail not found");
+
+            var fileIds = JsonConvert.DeserializeObject<List<long>>(oldproduct.FileIds);
+            fileIds.Remove(files.FileId);
+
+            oldproduct.FileIds = fileIds.Any() ? JsonConvert.SerializeObject(fileIds) : "[]";
+
+            await SaveProductDetail(oldproduct);
+
+            string url = $"{_microserviceUrlLogs.DeleteFiles}";
+            FileFolderDetail fileFolderDetail = new FileFolderDetail
+            {
+                FolderPath = files.FilePath,
+                ServiceName = LocalConstants.EmstumFileService,
+                DeletableFiles = new List<string> { files.FileName }
+            };
+
+            var microserviceRequest = MicroserviceRequest.Builder(url);
+            microserviceRequest
+            .SetPayload(fileFolderDetail)
+            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
+            .SetConnectionString(_currentSession.LocalConnectionString)
+            .SetCompanyCode(_currentSession.CompanyCode)
+            .SetToken(_currentSession.Authorization);
+
+            await _requestMicroservice.PostRequest<string>(microserviceRequest);
+
+            var result = await _db.ExecuteAsync("sp_company_files_delete_by_id", new { CompanyFileId = files.FileId });
+            if (result.rowsEffected == 0)
+                throw HiringBellException.ThrowBadRequest("Fail to delete record from db");
+
+            return GetProductImagesService(oldproduct.FileIds);
+        }
+
+        private void ValidateProductFile(Files files)
+        {
+            if (files.FileId == 0)
+                throw HiringBellException.ThrowBadRequest("Invalid company file id");
+
+            if (string.IsNullOrEmpty(files.FileName))
+                throw HiringBellException.ThrowBadRequest("INvalid file name");
+
+            if (string.IsNullOrEmpty(files.FilePath))
+                throw HiringBellException.ThrowBadRequest("Invalid file path");
+        }
     }
 }

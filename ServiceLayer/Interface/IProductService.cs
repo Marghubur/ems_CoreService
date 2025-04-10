@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Bot.CoreBottomHalf.CommonModal;
+using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using System.Collections.Generic;
 using System.Data;
@@ -14,5 +15,6 @@ namespace ServiceLayer.Interface
         Task<List<ProductCatagory>> AddUpdateProductCatagoryService(ProductCatagory productCatagory);
         Task<List<ProductCatagory>> GetProductCatagoryService(FilterModel filterModel);
         Task<(Product, List<ProductCatagory>)> GetProductCategoryByIdService(long productId);
+        Task<DataSet> DeleteProductAttachmentService(long productId, Files files);
     }
 }

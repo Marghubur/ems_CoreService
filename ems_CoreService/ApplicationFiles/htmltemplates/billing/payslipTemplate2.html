@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=<device-width>, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+
+<body style="width: 70vw; margin: auto; font-family: Arial, sans-serif;">
+    <div>
+        <div style="position: relative;">
+            <h2 style="text-align: center;">[[CompanyName]]</h2>
+            <p style="text-align: center;">[[CompanyFirstAddress]] [[CompanySecondAddress]] [[CompanyThirdAddress]] [[CompanyFourthAddress]]</p>
+            <div style="position: absolute; right: 0; top: 0;">
+                <div style="text-align: right;">
+                    <img style="width: 120px;" src="[[COMPANYLOGO_PATH]]" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <h3 style="text-align: center; text-decoration: underline;">Payslip for the month of [[Month]], [[Year]]</h3>
+
+    <table style="width: 100%; margin-top: 20px;">
+        <tr>
+            <td><strong>Employee Name:</strong> [[EmployeeName]]</td>
+            <td><strong>Employee No.:</strong> [[EmployeeNo]]</td>
+        </tr>
+        <tr>
+            <td><strong>Designation:</strong> [[Designation]]</td>
+            <td><strong>Date of Joining:</strong> [[JoiningDate]]</td>
+        </tr>
+        <tr>
+            <td><strong>Pay Date:</strong> [[PayDate]]</td>
+            <td><strong>Pay Period:</strong> [[Month]]- [[Year]]</td>
+        </tr>
+        <tr>
+            <td><strong>PF A/C Number:</strong> [[PFNumber]]</td>
+            <td><strong>UAN Number:</strong> [[UAN]]</td>
+        </tr>
+    </table>
+
+    <hr style="margin-top: 10px; margin-bottom: 0; margin-left: 0; margin-right: 0;">
+    <div style="display: flex; align-items: center;">
+        <p style="width: 50%; margin-bottom: 0;"><strong>Paid Days:</strong> [[TotalWorkingDays]] &nbsp;&nbsp; | &nbsp;&nbsp; <strong>LOP Days:</strong> [[LossOfPayDays]]</p>
+        <h2 style="text-align: right; width: 50%; margin-bottom: 0;">Net Pay: ₹[[NetSalaryPayable]]</h2>
+    </div>
+
+    <h3>Earnings</h3>
+    <table style="width: 100%; border-collapse: collapse;" border="1">
+        <tr>
+            <th style="padding: 8px; width: 80%">EARNINGS</th>
+            <th style="padding: 8px;">AMOUNT</th>
+        </tr>
+        [[CompleteSalaryDetails]]
+    </table>
+
+    <h3 style="margin-top: 15px;">Deductions</h3>
+    <table style="width: 100%; border-collapse: collapse;" border="1">
+        <tr>
+            <th style="padding: 8px; width:80%">DEDUCTIONS</th>
+            <th style="padding: 8px;">AMOUNT</th>
+        </tr>
+
+        [[CompleteContributions]]
+    </table>
+
+    <p style="margin-top: 15px;"><strong>Total Net Payable:</strong> ₹[[NetSalaryPayable]] <em>([[NetSalaryInWords]])</em></p>
+
+    <p style="text-align: center;">- This is a system generated payslip -</p>
+</body>
+
+</html>

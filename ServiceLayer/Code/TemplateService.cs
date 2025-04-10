@@ -285,7 +285,7 @@ namespace ServiceLayer.Code
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new
             {
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
-                LetterType = 3
+                LetterType = 1
             });
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Official letter not found");
@@ -364,7 +364,7 @@ namespace ServiceLayer.Code
             var result = _db.Get<AnnexureOfferLetter>("sp_annexure_offer_letter_getby_lettertype", new
             {
                 CompanyId = _currentSession.CurrentUserDetail.CompanyId,
-                LetterType = 3
+                LetterType = 1
             });
             if (result == null)
                 throw HiringBellException.ThrowBadRequest("Official letter not found");
