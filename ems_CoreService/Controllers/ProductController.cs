@@ -7,6 +7,7 @@ using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -34,11 +35,9 @@ namespace OnlineDataBuilder.Controllers
                 if (ProductInfoData.Count > 0)
                 {
                     var product = JsonConvert.DeserializeObject<Product>(ProductInfoData);
-                    var productImg = Request.Form.Files.GetFile("productimage");
-                    IFormFileCollection fileDetail = _httpContext.Request.Form.Files;
-                    var fileCollection = new FormFileCollection();
-                    fileCollection.Add(productImg);
-                    var resetSet = await _productService.ProdcutAddUpdateService(product, fileCollection, fileDetail);
+                    var productImg = _httpContext.Request.Form.Files.FirstOrDefault(x => x.Name == "productimage");
+                    var fileCollection= _httpContext.Request.Form.Files.Where(x => x.Name == "productFiles").ToList();
+                    var resetSet = await _productService.ProdcutAddUpdateService(product, productImg, fileCollection);
                     return BuildResponse(resetSet);
                 }
                 else

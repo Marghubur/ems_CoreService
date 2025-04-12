@@ -1960,7 +1960,7 @@ namespace ServiceLayer.Code
 
             payslipGenerationModal.Employee = Converter.ToType<Employee>(ds.Tables[1]);
             if (ds.Tables[2].Rows.Count != 1)
-                throw new HiringBellException("Fail to get employee detail. Please contact to admin.");
+                throw new HiringBellException("Fail to get employee salary detail. Please contact to admin.");
 
             var SalaryDetail = Converter.ToType<EmployeeSalaryDetail>(ds.Tables[2]);
             if (SalaryDetail.CompleteSalaryDetail == null)

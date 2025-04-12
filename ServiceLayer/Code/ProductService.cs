@@ -58,7 +58,7 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<dynamic> ProdcutAddUpdateService(Product product, IFormFileCollection productImg, IFormFileCollection fileCollection)
+        public async Task<dynamic> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection)
         {
             validateProduct(product);
 
@@ -105,24 +105,32 @@ namespace ServiceLayer.Code
 
         }
 
-        private async Task ExecuteProductDetail(Product product, IFormFileCollection productImg, IFormFileCollection FileCollection)
+        private async Task ExecuteProductDetail(Product product, IFormFile productImg, List<IFormFile> FileCollection)
         {
             try
             {
                 List<int> fileIds = new List<int>();
+                bool isFilePresent = false;
+
                 var folderPath = Path.Combine(_currentSession.CompanyCode, _fileLocationDetail.CompanyFiles, "products");
 
-                if (productImg.Any())
+                if (productImg != null)
                 {
-                    var files = await SaveProductFiles(productImg, folderPath);
+                    var fileCollection = new FormFileCollection();
+                    fileCollection.Add(productImg);
+                    var files = await SaveProductFiles(fileCollection, folderPath);
                     var productimg = files.First();
 
                     product.ProfileImgPath = Path.Combine(productimg.FilePath, productimg.FileName);
+                    isFilePresent = true;
                 }
 
-                if (FileCollection.Count > 0)
+                if (FileCollection.Any())
                 {
-                    var files = await SaveProductFiles(FileCollection, folderPath);
+                    var fileCollection = new FormFileCollection();
+                    fileCollection.AddRange(FileCollection);
+
+                    var files = await SaveProductFiles(fileCollection, folderPath);
 
                     foreach (var file in files)
                     {
@@ -130,16 +138,22 @@ namespace ServiceLayer.Code
 
                         fileIds.Add(Convert.ToInt32(fileId));
                     }
+
+                    isFilePresent = true;
                 }
 
-                var oldfileid = new List<int>();
-                if (!string.IsNullOrEmpty(product.FileIds) && product.FileIds != "[]")
+                if (isFilePresent)
                 {
-                    oldfileid = JsonConvert.DeserializeObject<List<int>>(product.FileIds);
-                    fileIds = oldfileid.Concat(fileIds).ToList();
+                    var oldfileid = new List<int>();
+                    if (!string.IsNullOrEmpty(product.FileIds) && product.FileIds != "[]")
+                    {
+                        oldfileid = JsonConvert.DeserializeObject<List<int>>(product.FileIds);
+                        fileIds = oldfileid.Concat(fileIds).ToList();
+                    }
+
+                    product.FileIds = JsonConvert.SerializeObject(fileIds);
                 }
 
-                product.FileIds = JsonConvert.SerializeObject(fileIds);
                 await SaveProductDetail(product);
             }
             catch (Exception)

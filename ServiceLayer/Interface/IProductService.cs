@@ -9,7 +9,7 @@ namespace ServiceLayer.Interface
 {
     public interface IProductService
     {
-        Task<dynamic> ProdcutAddUpdateService(Product product, IFormFileCollection productImg, IFormFileCollection fileCollection);
+        Task<dynamic> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection);
         Task<List<Product>> GetAllProductsService(FilterModel filterModel);
         DataSet GetProductImagesService(string FileIds);
         Task<List<ProductCatagory>> AddUpdateProductCatagoryService(ProductCatagory productCatagory);
