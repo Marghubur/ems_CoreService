@@ -65,7 +65,7 @@ namespace ServiceLayer.Code
 
         public async Task ScheduledJobManager()
         {
-            _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER).ToLower());
+            _kafkaConsumerService.SubscribeTopic(RunJobAsync, nameof(KafkaTopicNames.DAILY_JOBS_CORE_SERVICE).ToLower());
             await Task.CompletedTask;
         }
 
@@ -103,7 +103,7 @@ namespace ServiceLayer.Code
                         case KafkaServiceName.NewRegistration:
                             await ExecuteYearlyLeaveRequestAccrualJobAsync(companySettings);
                             break;
-                        case KafkaServiceName.HolidayNotification:
+                        case KafkaServiceName.FinancialYearRoutineUpgrade:
                             await RunAndBuilEmployeeSalaryAndDeclaration(companySettings, x);
                             break;
                     }
