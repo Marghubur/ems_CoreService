@@ -236,36 +236,42 @@ namespace ServiceLayer.Code
             var response = await _requestMicroservice.GetRequest<EmployeeCalculation>(microserviceRequest);
             if (response is null)
                 throw HiringBellException.ThrowBadRequest("fail to get response");
-
         }
 
         public async Task RunAndBuilEmployeeSalaryAndDeclaration()
         {
-            CompanySetting companySetting = _db.Get<CompanySetting>(Procedures.Company_Setting_Get_All);
-            var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, null);
+            List<DbConfig> dbConfig = await LoadDatabaseConfiguration();
+            foreach (var x in dbConfig)
+            {
+                if (x.Code != "00132")
+                    continue;
 
-            string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
-            var microserviceRequest = MicroserviceRequest.Builder(url);
-            microserviceRequest
-            .SetDbConfig(_requestMicroservice.DiscretConnectionString(_currentSession.LocalConnectionString))
-            .SetConnectionString(_currentSession.LocalConnectionString)
-            //.SetCompanyCode(x.OrganizationCode + x.Code)
-            .SetCompanyCode(_currentSession.CompanyCode)
-            .SetToken(_currentSession.Authorization);
+                CompanySetting companySetting = await LoadCompanySettings(x);
+                var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
 
-            var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
-            if (response is null)
-                throw HiringBellException.ThrowBadRequest("fail to get response");
+                string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
+                var microserviceRequest = MicroserviceRequest.Builder(url);
+                microserviceRequest
+                .SetDbConfig(_requestMicroservice.DiscretConnectionString(localConnectionString))
+                .SetConnectionString(localConnectionString)
+                .SetCompanyCode(x.OrganizationCode + x.Code)
+                //.SetCompanyCode(_currentSession.CompanyCode)
+                .SetToken("Bearer");
+
+                var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
+                if (response is null)
+                    throw HiringBellException.ThrowBadRequest("fail to get response");
+            }
 
         }
 
         private async Task<string> UpdateCompanySettingFincialYear(CompanySetting companySetting, DbConfig x)
         {
-            //string localConnectionString = $"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};";
+            string localConnectionString = $"server={x.Server};port={x.Port};database={x.Database};User Id={x.UserId};password={x.Password};Connection Timeout={x.ConnectionTimeout};Connection Lifetime={x.ConnectionLifetime};Min Pool Size={x.MinPoolSize};Max Pool Size={x.MaxPoolSize};Pooling={x.Pooling};";
             if (companySetting.FinancialYear != DateTime.UtcNow.Year)
             {
                 companySetting.FinancialYear = DateTime.UtcNow.Year;
-                _db.SetupConnectionString(_currentSession.LocalConnectionString);
+                //_db.SetupConnectionString(_currentSession.LocalConnectionString);
                 var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
                 {
                     companySetting.CompanyId,
@@ -295,7 +301,7 @@ namespace ServiceLayer.Code
                     throw new HiringBellException("Fail to update company setting detail");
             }
 
-            return await Task.FromResult("");
+            return await Task.FromResult(localConnectionString);
         }
     }
 }

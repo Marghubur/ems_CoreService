@@ -2198,7 +2198,7 @@ namespace ServiceLayer.Code
                             e.AccessLevelId = (int)RolesName.User;
                             e.LeavePlanId = LocalConstants.DefaultLeavePlanId;
                             e.SalaryGroupId = LocalConstants.DefaultSalaryGroupId;
-                            e.DesignationId = LocalConstants.DefaultDesignation;
+                            //e.DesignationId = LocalConstants.DefaultDesignation;
 
                             await RegisterEmployeeService(e, null, true);
                         }
@@ -2806,11 +2806,13 @@ namespace ServiceLayer.Code
             if (!departmnts.Any())
                 throw HiringBellException.ThrowBadRequest("Department not found. Please contact to admin");
 
+            designation = designation.FindAll(x => !x.IsDepartment);
+
             ExcelDataWithDropdown excelDataWithDropdown = new ExcelDataWithDropdown
             {
                 data = new List<dynamic>(),
                 dropdowndata = new Dictionary<string, List<string>>(),
-                mandatoryHeaderColumn = new List<string> { "Mobile", "Employee Name", "Date Of Joining", "DOB", "Gender", "Email", "Experience In Month", "CTC (Yearly)", "Father Name", " Account Number", "IFSC Code", "Bank Account Type", "Bank Name", "PAN No", "Designation" }
+                mandatoryHeaderColumn = new List<string> { "Mobile", "Employee Name", "Date Of Joining", "DOB", "Gender", "Email", "Experience In Month", "CTC (Yearly)", "Father Name", " Account Number", "IFSC Code", "Bank Account Type", "Bank Name", "PAN No", "Designation", "Account Number" }
             };
 
             await CreateEmployeeTableDropdown(departmnts, designation, excelDataWithDropdown);
@@ -2849,7 +2851,7 @@ namespace ServiceLayer.Code
                         { "UAN", "123456124457" },
                         { "Mobile", "9000000000" },
                         { "Country Of Origin", "India"},
-                        { "Department", "IT DEPERTMENT" },
+                        { "Department", "IT AND SUPPORT" },
                         { "Location", "Hyderabad" },
                         { "Designation", "SOFTWARE DEVELOPER" },
                     };
