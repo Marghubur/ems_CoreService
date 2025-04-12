@@ -1411,8 +1411,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
                 Replace("[[CompanyFourthAddress]]", payslipModal.Company.ForthAddress).
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
-                //Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
-                Replace("[[EmployeeName]]", "Adam" + " " + "Smith").
+                Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", employeeCode).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
                 Replace("[[PayDate]]", payslipModal.PayrollMonthlyDetail.PaymentRunDate.ToString("dd MMM, yyyy")).
