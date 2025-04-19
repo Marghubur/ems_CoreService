@@ -107,12 +107,12 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("GetProductCategoryById/{productId}")]
-        public async Task<ApiResponse> GetProductCategoryById([FromRoute] long productId)
+        [HttpGet("GetProductAndCategoryById/{productId}")]
+        public async Task<ApiResponse> GetProductAndCategoryById([FromRoute] long productId)
         {
             try
             {
-                var result = await _productService.GetProductCategoryByIdService(productId);
+                var result = await _productService.GetProductAndCategoryByIdService(productId);
                 return BuildResponse(result);
             }
             catch (Exception ex)

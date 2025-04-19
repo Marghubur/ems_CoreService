@@ -17,7 +17,6 @@ using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Code.Leaves;
 using ServiceLayer.Interface;
 using System;
@@ -39,7 +38,6 @@ namespace ServiceLayer.Code
         private readonly YearEndCalculation _yearEndCalculation;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
-        private readonly CurrentSession _currentSession;
         public AutoTriggerService(ILogger<AutoTriggerService> logger,
             ITimezoneConverter timezoneConverter,
             IWeeklyTimesheetCreationJob weeklyTimesheetCreationJob,
@@ -48,8 +46,7 @@ namespace ServiceLayer.Code
             YearEndCalculation yearEndCalculation,
             MicroserviceRegistry microserviceUrlLogs,
             RequestMicroservice requestMicroservice,
-            IKafkaConsumerService kafkaConsumerService,
-            CurrentSession currentSession)
+            IKafkaConsumerService kafkaConsumerService)
         {
             _logger = logger;
             _timezoneConverter = timezoneConverter;
@@ -60,7 +57,6 @@ namespace ServiceLayer.Code
             _microserviceUrlLogs = microserviceUrlLogs;
             _requestMicroservice = requestMicroservice;
             _kafkaConsumerService = kafkaConsumerService;
-            _currentSession = currentSession;
         }
 
         public async Task ScheduledJobManager()
@@ -223,6 +219,9 @@ namespace ServiceLayer.Code
 
         public async Task RunAndBuilEmployeeSalaryAndDeclaration(CompanySetting companySetting, DbConfig x)
         {
+            if (x.Code != "00134")
+                return;
+
             var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
 
             string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
@@ -231,7 +230,7 @@ namespace ServiceLayer.Code
             .SetDbConfig(x)
             .SetConnectionString(localConnectionString)
             .SetCompanyCode(x.OrganizationCode + x.Code)
-            .SetToken("");
+            .SetToken("Bearer");
 
             var response = await _requestMicroservice.GetRequest<EmployeeCalculation>(microserviceRequest);
             if (response is null)
@@ -243,7 +242,7 @@ namespace ServiceLayer.Code
             List<DbConfig> dbConfig = await LoadDatabaseConfiguration();
             foreach (var x in dbConfig)
             {
-                if (x.Code != "00132")
+                if (x.Code != "00134")
                     continue;
 
                 CompanySetting companySetting = await LoadCompanySettings(x);
@@ -271,7 +270,6 @@ namespace ServiceLayer.Code
             if (companySetting.FinancialYear != DateTime.UtcNow.Year)
             {
                 companySetting.FinancialYear = DateTime.UtcNow.Year;
-                //_db.SetupConnectionString(_currentSession.LocalConnectionString);
                 var status = await _db.ExecuteAsync(Procedures.Company_Setting_Insupd, new
                 {
                     companySetting.CompanyId,

@@ -1985,7 +1985,7 @@ namespace ServiceLayer.Code
         {
             DailyAttendanceBuilder dailyAttendanceBuilder = GetDailyAttendanceDetail(attendanceDetail.EmployeeId, attendanceDetail.Month, attendanceDetail.Year, out List<DailyAttendance> attendanceDetails);
 
-            await ValidateAttendanceSubmission(attendanceDetail, dailyAttendanceBuilder, submitAttendanceFirstDate);
+            ValidateAttendanceSubmission(attendanceDetail, dailyAttendanceBuilder, submitAttendanceFirstDate);
             await RemovePreJoiningAttendance(attendanceDetail, dailyAttendanceBuilder);
 
             foreach (var item in attendanceDetail.DailyData)
@@ -1996,16 +1996,11 @@ namespace ServiceLayer.Code
             }
         }
 
-        private async Task ValidateAttendanceSubmission(MonthlyAttendanceDetail attendanceDetail, DailyAttendanceBuilder dailyAttendanceBuilder, DateTime submitAttendanceFirstDate)
+        private void ValidateAttendanceSubmission(MonthlyAttendanceDetail attendanceDetail, DailyAttendanceBuilder dailyAttendanceBuilder, DateTime submitAttendanceFirstDate)
         {
             var employee = dailyAttendanceBuilder.employee;
-            if (employee.CreatedOn > new DateTime(attendanceDetail.Year, attendanceDetail.Month, 1))
+            if (employee.CreatedOn.Year == attendanceDetail.Year && employee.CreatedOn.Month > attendanceDetail.Month)
                 throw HiringBellException.ThrowBadRequest($"Attendance for Employee '{attendanceDetail.Name}' cannot be uploaded before their joining date ({employee.CreatedOn:dd-MM-yyyy}).");
-
-            //if (dailyAttendanceBuilder.LastRunPayrollDate.Year != 1 && dailyAttendanceBuilder.LastRunPayrollDate > submitAttendanceFirstDate)
-            //  throw HiringBellException.ThrowBadRequest($"You can't upload {submitAttendanceFirstDate:MMMM} {attendanceDetail.Year} attendance, as payroll already processed.");
-
-            await Task.CompletedTask;
         }
 
         private async Task RemovePreJoiningAttendance(MonthlyAttendanceDetail attendanceDetail, DailyAttendanceBuilder dailyAttendanceBuilder)
