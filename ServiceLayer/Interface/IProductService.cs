@@ -9,12 +9,12 @@ namespace ServiceLayer.Interface
 {
     public interface IProductService
     {
-        Task<dynamic> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection);
+        Task<string> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection);
         Task<List<Product>> GetAllProductsService(FilterModel filterModel);
         DataSet GetProductImagesService(string FileIds);
         Task<List<ProductCatagory>> AddUpdateProductCatagoryService(ProductCatagory productCatagory);
         Task<List<ProductCatagory>> GetProductCatagoryService(FilterModel filterModel);
-        Task<(Product, List<ProductCatagory>)> GetProductCategoryByIdService(long productId);
+        Task<(Product, List<ProductCatagory>)> GetProductAndCategoryByIdService(long productId);
         Task<DataSet> DeleteProductAttachmentService(long productId, Files files);
     }
 }

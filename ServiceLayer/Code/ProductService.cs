@@ -58,11 +58,11 @@ namespace ServiceLayer.Code
             return result;
         }
 
-        public async Task<dynamic> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection)
+        public async Task<string> ProdcutAddUpdateService(Product product, IFormFile productImg, List<IFormFile> fileCollection)
         {
             validateProduct(product);
 
-            var (oldproduct, productCatagory) = await GetProductCategoryByIdService(product.ProductId);
+            var (oldproduct, productCatagory) = await GetProductAndCategoryByIdService(product.ProductId);
             if (oldproduct == null)
                 oldproduct = product;
             else
@@ -82,14 +82,12 @@ namespace ServiceLayer.Code
                 oldproduct.Remarks = product.Remarks;
             }
 
+            oldproduct.ProductDetail = (product.ProductDetails != null && product.ProductDetails.Any()) ? JsonConvert.SerializeObject(product.ProductDetails) : "[]";
             oldproduct.AdminId = _currentSession.CurrentUserDetail.UserId;
 
             await ExecuteProductDetail(oldproduct, productImg, fileCollection);
 
-            return GetAllProductsService(new FilterModel
-            {
-                SearchString = $"1=1 and CompanyId={_currentSession.CurrentUserDetail.CompanyId}"
-            });
+            return ApplicationConstants.Successfull;
         }
 
         private void validateProduct(Product product)
@@ -103,6 +101,12 @@ namespace ServiceLayer.Code
             if (product.CompanyId <= 0)
                 throw HiringBellException.ThrowBadRequest("Invalid company selected");
 
+            if (product.ProductDetails != null && product.ProductDetails.Any())
+            {
+                bool hasEmptyValue = product.ProductDetails.Exists(x => x.Value == null);
+                if (hasEmptyValue)
+                    throw HiringBellException.ThrowBadRequest("Product detail contain some empty value");
+            }
         }
 
         private async Task ExecuteProductDetail(Product product, IFormFile productImg, List<IFormFile> FileCollection)
@@ -184,6 +188,7 @@ namespace ServiceLayer.Code
                 product.Remarks,
                 product.ProfileImgPath,
                 product.FileIds,
+                product.ProductDetail,
                 AdminId = _currentSession.CurrentUserDetail.UserId
             }, true);
 
@@ -270,7 +275,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(result);
         }
 
-        public async Task<(Product, List<ProductCatagory>)> GetProductCategoryByIdService(long productId)
+        public async Task<(Product, List<ProductCatagory>)> GetProductAndCategoryByIdService(long productId)
         {
             var (product, catagory) = _db.GetList<Product, ProductCatagory>(Procedures.Prdoduct_Getby_Id, new { productId });
             return await Task.FromResult((product.FirstOrDefault(), catagory));
@@ -283,7 +288,7 @@ namespace ServiceLayer.Code
 
             ValidateProductFile(files);
 
-            var (oldproduct, productCatagory) = await GetProductCategoryByIdService(productId);
+            var (oldproduct, productCatagory) = await GetProductAndCategoryByIdService(productId);
             if (oldproduct == null)
                 throw HiringBellException.ThrowBadRequest("Product detail not found");
 

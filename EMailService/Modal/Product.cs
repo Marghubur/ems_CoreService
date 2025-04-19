@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModalLayer.Modal
 {
@@ -23,5 +24,13 @@ namespace ModalLayer.Modal
         public string Remarks { get; set; }
         public string FileIds { get; set; }
         public string ProfileImgPath { get; set; }
+        public List<PairData>? ProductDetails { get; set; }
+        public string ProductDetail { get; set; }
+    }
+
+    public class PairData
+    {
+        public string Key { get; set; }
+        public object Value { get; set; }
     }
 }
