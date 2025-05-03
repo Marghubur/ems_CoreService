@@ -1,6 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Interface;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal.Leaves;
 using System;
 using System.Linq;
@@ -16,16 +15,13 @@ namespace ServiceLayer.Code.Leaves
         private LeavePlanConfiguration _leavePlanConfiguration = default;
         private LeaveCalculationModal _leaveCalculationModal;
         private DateTime now;
-        private readonly ILogger<Accrual> _logger;
         public DateTime workingDate { set; get; }
 
         public Accrual(ITimezoneConverter timezoneConverter,
-            CurrentSession currentSession,
-            ILogger<Accrual> logger)
+            CurrentSession currentSession)
         {
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _logger = logger;
         }
 
         // applicable while appling leave, include steps 6, 7, 8
@@ -48,7 +44,6 @@ namespace ServiceLayer.Code.Leaves
         // projected leave if applied for future date.
         public decimal ProjectedFutureLeaveAccrualedBalance(DateTime leaveFromDate, decimal leavePerMonth, LeavePlanConfiguration leavePlanConfiguration)
         {
-            _logger.LogInformation("Method: ProjectedFutureLeaveAccrualedBalance start");
             decimal leaves = 0;
             int futureProjectedMonths = 0;
             if (leavePlanConfiguration.leaveAccrual.LeaveDistributionAppliedFrom >= DateTime.UtcNow.Day)
@@ -62,7 +57,7 @@ namespace ServiceLayer.Code.Leaves
                 leaves += MonthlyAccrual(leavePerMonth);
                 i++;
             }
-            _logger.LogInformation("Method: ProjectedFutureLeaveAccrualedBalance end");
+
             return leaves;
         }
 
@@ -104,8 +99,6 @@ namespace ServiceLayer.Code.Leaves
 
         public async Task<decimal> CalculateLeaveAccrual(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
-            _logger.LogInformation("Method: CalculateLeaveAccrual started");
-
             decimal availableLeaves = 0;
             _leaveCalculationModal = leaveCalculationModal;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
@@ -128,7 +121,6 @@ namespace ServiceLayer.Code.Leaves
                 else
                     availableLeaves = leavePlanType.AvailableLeave;
             }
-            _logger.LogInformation("Method: CalculateLeaveAccrual end");
 
             return await Task.FromResult(availableLeaves);
         }
@@ -143,7 +135,6 @@ namespace ServiceLayer.Code.Leaves
 
         public async Task<decimal> CalculateLeaveAccrualTillMonth(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
-            _logger.LogInformation("Method: CalculateLeaveAccrualTillMonth started");
             decimal availableLeaves = 0;
             _leaveCalculationModal = leaveCalculationModal;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
@@ -152,7 +143,6 @@ namespace ServiceLayer.Code.Leaves
             if (!await CanApplyEntireLeave(leaveCalculationModal, leavePlanType))
             {
                 var leaveLimit = _leavePlanConfiguration.leaveDetail.LeaveLimit;
-                _logger.LogInformation($"LeaveLimit: {leaveLimit}");
 
                 if (leaveLimit > 0)
                 {
@@ -185,7 +175,6 @@ namespace ServiceLayer.Code.Leaves
             {
                 availableLeaves = _leavePlanConfiguration.leaveDetail.LeaveLimit;
             }
-            _logger.LogInformation("Method: CalculateLeaveAccrualTillMonth end");
 
             return await Task.FromResult(availableLeaves);
         }
@@ -193,7 +182,6 @@ namespace ServiceLayer.Code.Leaves
         // step - 1
         private async Task<bool> CanApplyEntireLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leaveType)
         {
-            _logger.LogInformation("Method: CanApplyEntireLeave started");
             bool flag = false;
             if (_leavePlanConfiguration.leaveAccrual.CanApplyEntireLeave)
             {
@@ -205,15 +193,12 @@ namespace ServiceLayer.Code.Leaves
             {
                 leaveCalculationModal.IsAllLeaveAvailable = false;
             }
-            _logger.LogInformation("Method: CanApplyEntireLeave End");
 
             return await Task.FromResult(flag);
         }
 
         private async Task<decimal> ExecuteLeaveAccrualDetail()
         {
-            _logger.LogInformation("Method: ExecuteLeaveAccrualDetail started");
-
             decimal availableLeaveLimit = 0;
             decimal leaveFrequencyForDefinedPeriod = 0;
             var leaveDistributedSeq = _leavePlanConfiguration.leaveAccrual.LeaveDistributionSequence;
@@ -235,7 +220,6 @@ namespace ServiceLayer.Code.Leaves
                     availableLeaveLimit = HalfYearlyAccrualCalculation(leaveFrequencyForDefinedPeriod);
                     break;
             }
-            _logger.LogInformation("Method: ExecuteLeaveAccrualDetail end");
 
             return await Task.FromResult(availableLeaveLimit);
         }
@@ -316,8 +300,6 @@ namespace ServiceLayer.Code.Leaves
         #region MONTHLY ACCRUAL CALCULATION
         private async Task<decimal> MonthlyAccrualCalculation(decimal perMonthLeaves)
         {
-            _logger.LogInformation("Method: MonthlyAccrualCalculation started");
-
             decimal availableLeaves = 0;
             switch (_leaveCalculationModal.employeeType)
             {
@@ -343,7 +325,6 @@ namespace ServiceLayer.Code.Leaves
                     availableLeaves = MonthlyAccrual(perMonthLeaves);
                     break;
             }
-            _logger.LogInformation("Method: MonthlyAccrualCalculation End");
 
             return await Task.FromResult(availableLeaves);
         }
@@ -352,8 +333,6 @@ namespace ServiceLayer.Code.Leaves
         // Prorate distribution of leave if employee is serving notice period
         public decimal MonthlyAccrualInNotice(decimal perMonthLeaves)
         {
-            _logger.LogInformation("Method: MonthlyAccrualInNotice started");
-
             int leavingDay = 31;
             decimal accruledLeave = 0;
             // if present month is last month of his/her notice period.
@@ -382,7 +361,6 @@ namespace ServiceLayer.Code.Leaves
                     }
                 }
             }
-            _logger.LogInformation("Method: MonthlyAccrualInNotice end");
 
             return accruledLeave;
         }
@@ -394,8 +372,6 @@ namespace ServiceLayer.Code.Leaves
 
         private decimal MonthlyAccrualInProbation()
         {
-            _logger.LogInformation("Method: MonthlyAccrualInProbation started");
-
             decimal accrualedLeaves = 0;
             var joiningDate = _leaveCalculationModal.employee.CreatedOn;
             // use define leavedistribution and calcualte leave accrued
@@ -423,7 +399,6 @@ namespace ServiceLayer.Code.Leaves
                     i++;
                 }
             }
-            _logger.LogInformation("Method: MonthlyAccrualInProbation End");
 
             return accrualedLeaves;
         }

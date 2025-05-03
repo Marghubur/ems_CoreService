@@ -1,6 +1,5 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Interface;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using ServiceLayer.Interface;
@@ -16,25 +15,20 @@ namespace ServiceLayer.Code.Leaves
         private LeavePlanConfiguration _leavePlanConfiguration;
         private readonly ICompanyCalendar _companyCalendar;
         private readonly Accrual _accrual;
-        private readonly ILogger<HolidaysAndWeekoffs> _logger;
         public HolidaysAndWeekoffs(
             ITimezoneConverter timezoneConverter,
             ICompanyCalendar companyCalendar,
             CurrentSession currentSession,
-            Accrual accrual,
-            ILogger<HolidaysAndWeekoffs> logger)
+            Accrual accrual)
         {
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
             _companyCalendar = companyCalendar;
             _accrual = accrual;
-            _logger = logger;
         }
 
         public async Task CheckHolidayWeekOffRules(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckHolidayWeekOffRules start");
-
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
             await CheckAdjoiningHolidyOnLeave(leaveCalculationModal);
@@ -49,7 +43,6 @@ namespace ServiceLayer.Code.Leaves
                 throw HiringBellException.ThrowBadRequest($"You don't have enough leave in your bucket to apply this leave. " +
                     $"{leaveCalculationModal.numberOfLeaveApplyring - planType.AvailableLeaves} days extra required due to weekoff policy.");
 
-            _logger.LogInformation("Method: CheckHolidayWeekOffRules end");
             await Task.CompletedTask;
         }
 
@@ -57,7 +50,6 @@ namespace ServiceLayer.Code.Leaves
         private async Task CheckAdjoiningHolidyOnLeave(LeaveCalculationModal leaveCalculationModal)
         {
             int holidays = 0;
-            _logger.LogInformation("Method: CheckAdjoiningHolidyOnLeave start");
 
             if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdJoiningHolidayIsConsiderAsLeave)
             {
@@ -110,7 +102,6 @@ namespace ServiceLayer.Code.Leaves
             {
                 leaveCalculationModal.numberOfLeaveApplyring += (decimal)holidays;
             }
-            _logger.LogInformation("Method: CheckAdjoiningHolidyOnLeave end");
 
             await Task.CompletedTask;
         }
@@ -118,8 +109,6 @@ namespace ServiceLayer.Code.Leaves
         // step - 2 -- adjoining weekoff
         private async Task CheckAdjoiningWeekOffOnLeave(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckAdjoiningWeekOffOnLeave start");
-
             int totalWeekends = 0;
             if (_leavePlanConfiguration.leaveHolidaysAndWeekoff.AdjoiningWeekOffIsConsiderAsLeave)
             {
@@ -161,7 +150,6 @@ namespace ServiceLayer.Code.Leaves
             {
                 leaveCalculationModal.numberOfLeaveApplyring += totalWeekends;
             }
-            _logger.LogInformation("Method: CheckAdjoiningWeekOffOnLeave end");
 
             await Task.CompletedTask;
         }

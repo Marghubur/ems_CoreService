@@ -12,7 +12,6 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using EMailService.Modal;
 using FileManagerService.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -35,14 +34,12 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly IBillService _billService;
         private readonly FileLocationDetail _fileLocationDetail;
-        private readonly ILogger<OnlineDocumentService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
         private readonly RequestMicroservice _requestMicroservice;
 
         public OnlineDocumentService(IDb db,
             IFileService fileService,
-            ILogger<OnlineDocumentService> logger,
             CommonFilterService commonFilterService,
             CurrentSession currentSession,
             FileLocationDetail fileLocationDetail,
@@ -52,7 +49,6 @@ namespace ServiceLayer.Code
             RequestMicroservice requestMicroservice)
         {
             this.db = db;
-            _logger = logger;
             _currentSession = currentSession;
             _fileService = fileService;
             _commonFilterService = commonFilterService;
@@ -386,7 +382,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
                 throw;
             }
         }
@@ -668,7 +663,6 @@ namespace ServiceLayer.Code
 
                         List<Files> files = await _requestMicroservice.UploadFile<List<Files>>(microserviceRequest);
 
-                        _logger.LogInformation("File server successfully");
                         if (files != null && files.Count > 0)
                         {
                             Result = InsertFileDetails(files, file.UserId);
@@ -682,7 +676,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, ex);
                 throw;
             }
 

@@ -25,18 +25,21 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceUrlLogs;
+        private readonly IUtilityService _utilityService;
         public ProductService(
             IDb db,
             FileLocationDetail fileLocationDetail,
             CurrentSession currentSession,
             RequestMicroservice requestMicroservice,
-            MicroserviceRegistry microserviceUrlLogs)
+            MicroserviceRegistry microserviceUrlLogs,
+            IUtilityService utilityService)
         {
             _db = db;
             _fileLocationDetail = fileLocationDetail;
             _currentSession = currentSession;
             _requestMicroservice = requestMicroservice;
             _microserviceUrlLogs = microserviceUrlLogs;
+            _utilityService = utilityService;
         }
 
         public async Task<List<Product>> GetAllProductsService(FilterModel filterModel)
@@ -239,19 +242,15 @@ namespace ServiceLayer.Code
 
         public async Task<List<ProductCatagory>> AddUpdateProductCatagoryService(ProductCatagory productCatagory)
         {
-            if (string.IsNullOrEmpty(productCatagory.CatagoryCode))
-                throw HiringBellException.ThrowBadRequest("prodcut catagory is null or empty");
+            ValidateProductCategory(productCatagory);
 
-            if (string.IsNullOrEmpty(productCatagory.CatagoryDescription))
-                throw HiringBellException.ThrowBadRequest("Prodcut catagory description is null");
-
-            var catagory = _db.Get<ProductCatagory>(Procedures.Catagory_Getby_Id, new { productCatagory.CatagoryId });
+            var catagory = _db.Get<ProductCatagory>(Procedures.Catagory_Getby_Id, new { productCatagory.CategoryId });
             if (catagory == null)
                 catagory = productCatagory;
             else
             {
-                catagory.CatagoryCode = productCatagory.CatagoryCode;
-                catagory.CatagoryDescription = productCatagory.CatagoryDescription;
+                catagory.CategoryCode = productCatagory.CategoryCode;
+                catagory.CategoryDescription = productCatagory.CategoryDescription;
                 catagory.GroupId = productCatagory.GroupId;
             }
 
@@ -260,6 +259,15 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest("Fail to insert/update catagory");
 
             return await GetProductCatagoryService(new FilterModel());
+        }
+
+        private void ValidateProductCategory(ProductCatagory productCatagory)
+        {
+            if (string.IsNullOrEmpty(productCatagory.CategoryCode))
+                throw HiringBellException.ThrowBadRequest("prodcut catagory is null or empty");
+
+            if (string.IsNullOrEmpty(productCatagory.CategoryDescription))
+                throw HiringBellException.ThrowBadRequest("Prodcut catagory description is null");
         }
 
         public async Task<List<ProductCatagory>> GetProductCatagoryService(FilterModel filterModel)
@@ -334,6 +342,78 @@ namespace ServiceLayer.Code
 
             if (string.IsNullOrEmpty(files.FilePath))
                 throw HiringBellException.ThrowBadRequest("Invalid file path");
+        }
+
+        public async Task<List<ProductCatagory>> UploadProductCategoryExcelService(IFormFile file)
+        {
+            var renameColumns = new List<RenameColumns>
+            {
+                new RenameColumns {NewName = "CategoryCode", OldName ="CategoryName"}
+            };
+
+            var productCategory = await _utilityService.ReadExcelData<ProductCatagory>(file, renameColumns);
+            var existingRecord =await ManageProductCategory(productCategory);
+
+            int chunkSize = 50;
+            foreach (var batch in existingRecord.Chunk(chunkSize))
+            {
+                await UploadBulkProductCategoryDetail(batch.ToList());
+            }
+
+            return await GetProductCatagoryService(new FilterModel());
+        }
+
+        private async Task<List<ProductCatagory>> ManageProductCategory(List<ProductCatagory> productCategory)
+        {
+            if (productCategory == null || !productCategory.Any())
+                throw HiringBellException.ThrowBadRequest("Product category not found");
+
+            var existingRecord = new List<ProductCatagory>();
+
+            foreach (var item in productCategory)
+            {
+                try
+                {
+                    ValidateProductCategory(item);
+                    if (item.CategoryId == 0)
+                    {
+                        existingRecord.Add(item);
+                    }
+                    else
+                    {
+                        var category = _db.Get<ProductCatagory>(Procedures.Catagory_Getby_Id, new { item.CategoryId }); ;
+                        if (category == null)
+                            throw HiringBellException.ThrowBadRequest("Invalid category code passed");
+
+                        category.CategoryDescription = item.CategoryDescription;
+                        category.CategoryCode = item.CategoryCode;
+                        existingRecord.Add(category);
+                    }
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            return await Task.FromResult(existingRecord);
+        }
+
+        private async Task UploadBulkProductCategoryDetail(List<ProductCatagory> productCatagories)
+        {
+            var records = (from n in productCatagories
+                           select new
+                           {
+                               n.CategoryId,
+                               n.GroupId,
+                               n.CategoryCode,
+                               n.CategoryDescription
+                           }).ToList();
+
+            var result = await _db.BulkExecuteAsync(Procedures.Catagory_Insupd, records, true);
+
+            if (result != records.Count)
+                throw HiringBellException.ThrowBadRequest("Fail to insert the record");
         }
     }
 }

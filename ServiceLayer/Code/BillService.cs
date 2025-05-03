@@ -17,7 +17,6 @@ using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -43,7 +42,6 @@ namespace ServiceLayer.Code
         private readonly FileLocationDetail _fileLocationDetail;
         private readonly CurrentSession _currentSession;
         private readonly IFileMaker _fileMaker;
-        private readonly ILogger<BillService> _logger;
         private readonly ExcelWriter _excelWriter;
         private readonly HtmlToPdfConverter _htmlToPdfConverter;
         private readonly ITemplateService _templateService;
@@ -58,7 +56,6 @@ namespace ServiceLayer.Code
             IFileService fileService,
             IHTMLConverter iHTMLConverter,
             FileLocationDetail fileLocationDetail,
-            ILogger<BillService> logger,
             CurrentSession currentSession,
             ExcelWriter excelWriter,
             HtmlToPdfConverter htmlToPdfConverter,
@@ -73,7 +70,6 @@ namespace ServiceLayer.Code
             IWebHostEnvironment env)
         {
             this.db = db;
-            _logger = logger;
             _htmlToPdfConverter = htmlToPdfConverter;
             this.fileService = fileService;
             this.iHTMLConverter = iHTMLConverter;
@@ -692,12 +688,10 @@ namespace ServiceLayer.Code
             }
             catch (HiringBellException e)
             {
-                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
                 throw new HiringBellException(ex.Message, ex);
             }
         }
@@ -984,12 +978,10 @@ namespace ServiceLayer.Code
             }
             catch (HiringBellException e)
             {
-                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
                 throw new HiringBellException(ex.Message, ex);
             }
 
@@ -1215,12 +1207,10 @@ namespace ServiceLayer.Code
             }
             catch (HiringBellException e)
             {
-                _logger.LogError($"{e.UserMessage} Field: {e.FieldName} Value: {e.FieldValue}");
                 throw e.BuildBadRequest(e.UserMessage, e.FieldName, e.FieldValue);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
                 throw new HiringBellException(ex.Message, ex);
             }
         }
@@ -2503,7 +2493,7 @@ namespace ServiceLayer.Code
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error generating payslip for employee {EmployeeId}", employeeId);
+                    throw;
                 }
             }
 
