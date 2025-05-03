@@ -11,8 +11,6 @@ using EMailService.Modal;
 using EMailService.Modal.Leaves;
 using ems_CoreService.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using ModalLayer;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -32,7 +30,6 @@ namespace ServiceLayer.Code
         private readonly CurrentSession _currentSession;
         private readonly ICommonService _commonService;
         private readonly ILeaveCalculation _leaveCalculation;
-        private readonly ILogger<LeaveService> _logger;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly IUtilityService _utilityService;
 
@@ -40,7 +37,6 @@ namespace ServiceLayer.Code
             CurrentSession currentSession,
             ICommonService commonService,
             ILeaveCalculation leaveCalculation,
-            ILogger<LeaveService> logger,
             ITimezoneConverter timezoneConverter,
             IUtilityService utilityService)
         {
@@ -48,7 +44,6 @@ namespace ServiceLayer.Code
             _currentSession = currentSession;
             _commonService = commonService;
             _leaveCalculation = leaveCalculation;
-            _logger = logger;
             _timezoneConverter = timezoneConverter;
             _utilityService = utilityService;
         }
@@ -460,7 +455,6 @@ namespace ServiceLayer.Code
                 leaveTemplateModel.ToAddress.Add(x);
             });
 
-            _logger.LogInformation($"Call to kafka: {leaveCalculationModal.ReporterEmail.ToString()}");
 
             await _utilityService.SendNotification(leaveTemplateModel, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
 

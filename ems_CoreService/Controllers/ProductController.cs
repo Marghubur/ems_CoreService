@@ -134,5 +134,12 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex, new { productId, files});
             }
         }
+
+        [HttpPost("UploadProductCategoryExcel")]
+        public async Task<ApiResponse> UploadProductCategoryExcel(IFormFile assetCategory)
+        {
+            var result = await _productService.UploadProductCategoryExcelService(assetCategory);
+            return BuildResponse(result);
+        }
     }
 }

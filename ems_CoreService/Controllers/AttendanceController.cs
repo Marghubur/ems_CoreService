@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ServiceLayer.Interface;
 using System;
@@ -20,15 +19,12 @@ namespace OnlineDataBuilder.Controllers
     public class AttendanceController : BaseController
     {
         private readonly IAttendanceService _attendanceService;
-        private readonly ILogger<AttendanceController> _logger;
         private readonly HttpContext _httpContext;
 
         public AttendanceController(IAttendanceService attendanceService,
-            ILogger<AttendanceController> logger,
             IHttpContextAccessor httpContext)
         {
             _attendanceService = attendanceService;
-            _logger = logger;
             _httpContext = httpContext.HttpContext;
         }
 

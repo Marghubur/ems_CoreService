@@ -1,7 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Leave;
 using BottomhalfCore.Services.Interface;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Leaves;
 using System;
@@ -17,18 +16,14 @@ namespace ServiceLayer.Code.Leaves
         private readonly CurrentSession _currentSession;
         private LeavePlanConfiguration _leavePlanConfiguration;
         private LeavePlanType _leavePlanType;
-        private readonly ILogger<Restriction> _logger;
-        public Restriction(ITimezoneConverter timezoneConverter, CurrentSession currentSession, ILogger<Restriction> logger)
+        public Restriction(ITimezoneConverter timezoneConverter, CurrentSession currentSession)
         {
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _logger = logger;
         }
 
         public void CheckRestrictionForLeave(LeaveCalculationModal leaveCalculationModal, LeavePlanType leavePlanType)
         {
-            _logger.LogInformation("Method: CheckRestrictionForLeave start");
-
             _leavePlanType = leavePlanType;
             _leavePlanConfiguration = leaveCalculationModal.leavePlanConfiguration;
 
@@ -45,8 +40,6 @@ namespace ServiceLayer.Code.Leaves
 
             // step - 4
             LeaveGapRestriction(leaveCalculationModal);
-            _logger.LogInformation("Method: CheckRestrictionForLeave end");
-
         }
 
         public async Task<bool> ManagerOverrideAndApplyLeave(LeaveCalculationModal leaveCalculationModal)
@@ -59,8 +52,6 @@ namespace ServiceLayer.Code.Leaves
 
         private void CheckAvailAllBalanceLeaveInAMonth(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: CheckAvailAllBalanceLeaveInAMonth start");
-
             if (!_leavePlanConfiguration.leavePlanRestriction.IsLeaveInNoticeExtendsNoticePeriod)
             {
                 if (leaveCalculationModal.numberOfLeaveApplyring == _leavePlanType.AvailableLeave)
@@ -74,7 +65,6 @@ namespace ServiceLayer.Code.Leaves
                         .AddDays((double)_leavePlanConfiguration.leavePlanRestriction.NoOfTimesNoticePeriodExtended);
                 }
             }
-            _logger.LogInformation("Method: CheckAvailAllBalanceLeaveInAMonth end");
         }
 
         private void CheckForExistingLeave(LeaveCalculationModal leaveCalculationModal, DateTime fromDate, DateTime toDate)
@@ -91,8 +81,6 @@ namespace ServiceLayer.Code.Leaves
 
         private void LeaveGapRestriction(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: LeaveGapRestriction start");
-
             var currentPlanType = leaveCalculationModal.leaveTypeBriefs.Find(x => x.LeavePlanTypeId == _leavePlanType.LeavePlanTypeId);
             if (currentPlanType == null)
                 throw HiringBellException.ThrowBadRequest("Leave plan type not found");
@@ -147,14 +135,10 @@ namespace ServiceLayer.Code.Leaves
             // restrict leave date every month
             if (leaveCalculationModal.timeZoneFromDate.Day <= _leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth)
                 throw new HiringBellException($"Apply this leave after {_leavePlanConfiguration.leavePlanRestriction.RestrictFromDayOfEveryMonth} day of any month.");
-
-            _logger.LogInformation("Method: LeaveGapRestriction end");
         }
 
         private void NewEmployeeWhenCanAvailThisLeave(LeaveCalculationModal leaveCalculationModal)
         {
-            _logger.LogInformation("Method: NewEmployeeWhenCanAvailThisLeave start");
-
             if (_leavePlanConfiguration.leavePlanRestriction.CanApplyAfterProbation)
             {
                 var dateFromApplyLeave = leaveCalculationModal.employee.CreatedOn.AddDays(
@@ -183,7 +167,6 @@ namespace ServiceLayer.Code.Leaves
                             $"{_leavePlanConfiguration.leavePlanRestriction.LeaveLimitInProbation} no. of days only.");
                 }
             }
-            _logger.LogInformation("Method: NewEmployeeWhenCanAvailThisLeave start");
         }
     }
 }

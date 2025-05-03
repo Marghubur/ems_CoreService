@@ -3,7 +3,6 @@ using BottomhalfCore.DatabaseLayer.Common.Code;
 using BottomhalfCore.Services.Code;
 using EMailService.Modal;
 using EMailService.Modal.CronJobs;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using ModalLayer.Modal.Leaves;
@@ -17,11 +16,9 @@ namespace ServiceLayer.Code.Leaves
 {
     public class YearEndCalculation
     {
-        private readonly ILogger<YearEndCalculation> _logger;
         private readonly IDb _db;
-        public YearEndCalculation(ILogger<YearEndCalculation> logger, IDb db)
+        public YearEndCalculation(IDb db)
         {
-            _logger = logger;
             _db = db;
         }
 
@@ -38,7 +35,6 @@ namespace ServiceLayer.Code.Leaves
             {
                 try
                 {
-                    _logger.LogInformation("Calling: sp_leave_accrual_cycle_data_by_employee");
                     List<EmployeeAccrualData> employeeAccrualData = _db.GetList<EmployeeAccrualData>(Procedures.Leave_Accrual_Cycle_Data_By_Employee, new
                     {
                         EmployeeId = 0,
@@ -49,7 +45,6 @@ namespace ServiceLayer.Code.Leaves
 
                     if (employeeAccrualData == null || employeeAccrualData.Count == 0)
                     {
-                        _logger.LogInformation("EmployeeAccrualData is null or count is 0");
                         break;
                     }
 
@@ -417,11 +412,9 @@ namespace ServiceLayer.Code.Leaves
 
         private async Task<List<LeaveEndYearModal>> LoadLeaveYearEndProcessingData()
         {
-            _logger.LogInformation("Calling : SP_LEAVE_YEAREND_PROCESSING_ALL");
             var leaveEndYearProcessing = _db.GetList<LeaveEndYearModal>(Procedures.SP_LEAVE_YEAREND_PROCESSING_ALL);
             if (leaveEndYearProcessing == null || leaveEndYearProcessing.Count == 0)
             {
-                _logger.LogError("Employee does not exist. Please contact to admin.");
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
             }
 
@@ -481,7 +474,7 @@ namespace ServiceLayer.Code.Leaves
             int result = await _db.BulkExecuteAsync(Procedures.HIKE_BONUS_SALARY_ADHOC_INS_UPDATE, hikeBonusSalaryAdhocs, true);
             if (result == 0)
             {
-                _logger.LogError("Fail to insert leave paid amount");
+                //_logger.LogError("Fail to insert leave paid amount");
             }
         }
 
@@ -505,7 +498,7 @@ namespace ServiceLayer.Code.Leaves
             int rowsAffected = await _db.BulkExecuteAsync(Procedures.Employee_Leave_Request_InsUpdate, records, true);
             if (rowsAffected == 0)
             {
-                _logger.LogError($"[YearEndProcessing] No leave record processed.");
+                throw HiringBellException.ThrowBadRequest("No leave record processed.");
             }
 
             await Task.CompletedTask;

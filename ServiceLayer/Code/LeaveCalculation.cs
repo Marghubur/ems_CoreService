@@ -439,7 +439,6 @@ namespace ServiceLayer.Code
             {
                 if (ds.Tables[0].Rows.Count == 0 || ds.Tables[1].Rows.Count == 0)
                 {
-                    _logger.LogError("Fail to get employee related details. Please contact to admin.");
                     throw new HiringBellException("Fail to get employee related details. Please contact to admin.");
                 }
 
@@ -457,7 +456,6 @@ namespace ServiceLayer.Code
             }
             else
             {
-                _logger.LogError("Employee does not exist. Please contact to admin.");
                 throw new HiringBellException("Employee does not exist. Please contact to admin.");
             }
 
@@ -730,7 +728,6 @@ namespace ServiceLayer.Code
             _leavePlanConfiguration = JsonConvert.DeserializeObject<LeavePlanConfiguration>(leavePlanType.PlanConfigurationDetail);
             if (_leavePlanConfiguration == null)
             {
-                _logger.LogError("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
                 throw new HiringBellException("Leave setup/configuration is not defined. Please complete the setup/configuration first.");
             }
         }

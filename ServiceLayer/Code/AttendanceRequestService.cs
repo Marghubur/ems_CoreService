@@ -6,7 +6,6 @@ using BottomhalfCore.Services.Interface;
 using Bt.Lib.PipelineConfig.Model;
 using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using EMailService.Modal;
-using Microsoft.Extensions.Logging;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -26,19 +25,16 @@ namespace ServiceLayer.Code
         private readonly IDb _db;
         private readonly ITimezoneConverter _timezoneConverter;
         private readonly CurrentSession _currentSession;
-        private readonly ILogger<AttendanceRequestService> _logger;
         private readonly IUtilityService _utilityService;
 
         public AttendanceRequestService(IDb db,
             ITimezoneConverter timezoneConverter,
             CurrentSession currentSession,
-            ILogger<AttendanceRequestService> logger,
             IUtilityService utilityService)
         {
             _db = db;
             _timezoneConverter = timezoneConverter;
             _currentSession = currentSession;
-            _logger = logger;
             _utilityService = utilityService;
         }
 
@@ -209,7 +205,6 @@ namespace ServiceLayer.Code
             }
             catch (Exception e)
             {
-                _logger.LogError($"Server error: {e.Message}");
                 throw HiringBellException.ThrowBadRequest($"Server error: Please contact to admin.");
             }
         }

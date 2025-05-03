@@ -16,5 +16,6 @@ namespace ServiceLayer.Interface
         Task<List<ProductCatagory>> GetProductCatagoryService(FilterModel filterModel);
         Task<(Product, List<ProductCatagory>)> GetProductAndCategoryByIdService(long productId);
         Task<DataSet> DeleteProductAttachmentService(long productId, Files files);
+        Task<List<ProductCatagory>> UploadProductCategoryExcelService(IFormFile file);
     }
 }
