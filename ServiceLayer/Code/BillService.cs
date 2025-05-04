@@ -13,6 +13,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using DocumentFormat.OpenXml.Bibliography;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -29,6 +31,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -1368,6 +1371,8 @@ namespace ServiceLayer.Code
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 default:
+                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate.html");
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
                     salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
@@ -1396,6 +1401,8 @@ namespace ServiceLayer.Code
             var LossOfPayDays = payslipModal.PayrollMonthlyDetail.LOP;
             string employeeCode = _commonService.GetEmployeeCode(payslipModal.Employee.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength);
 
+            string advanceSalary = AddAdvanceSalary(0);
+
             html = payslipModal.PdfTemplateHTML.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
                 Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
@@ -1403,6 +1410,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
                 Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", employeeCode).
+                Replace("[[Adance_Salary]]", advanceSalary).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
                 Replace("[[PayDate]]", payslipModal.PayrollMonthlyDetail.PaymentRunDate.ToString("dd MMM, yyyy")).
                 Replace("[[Department]]", string.IsNullOrEmpty(payslipModal.Employee.Department) ? "--" : payslipModal.Employee.Department).
@@ -1937,7 +1945,7 @@ namespace ServiceLayer.Code
                 FileRole = ApplicationConstants.CompanyPrimaryLogo
             });
 
-            if (ds == null || ds.Tables.Count != 8)
+            if (ds == null || ds.Tables.Count != 10)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
             if (ds.Tables[0].Rows.Count != 1)
@@ -2532,6 +2540,21 @@ namespace ServiceLayer.Code
             .SetToken(_currentSession.Authorization);
 
             return await _requestMicroservice.PostRequest<string>(microserviceRequest);
+        }
+
+        private string AddAdvanceSalary(decimal advanceAmount)
+        {
+            if (advanceAmount <= 0)
+                return "";
+
+            var result = "<div class=\"advance-disbursed-section\">";
+            result += "<div style=\"display: flex; justify-content: space-between; align-items: center;\" >";
+            result += "<div class=\"dt\">Salary Advance Disbursed(This Period) :</div>";
+            result += $"<div class=\"dt\">{advanceAmount.ToString("0.00")}</div>";
+            result += "</div>";
+            result += "<p style=\"font-size: 10px; margin: 5px 0 0 0; color: #555;\" > Note: This amount is paid out in addition to Net Pay or included in the total bank transfer.</p>";
+            result += "</div>";
+            return result;
         }
     }
 }
