@@ -1371,7 +1371,6 @@ namespace ServiceLayer.Code
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 default:
-                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
                     salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
