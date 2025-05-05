@@ -1,6 +1,7 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.EmployeeDetail;
 using Bot.CoreBottomHalf.CommonModal.Leave;
+using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using ModalLayer.Modal.Accounts;
 using System.Collections.Generic;
@@ -31,5 +32,7 @@ namespace ModalLayer.Modal
         public string PdfTemplateHTML { set; get; }
         public List<int> EmployeeIds { get; set; }
         public List<TaxDetails> TaxDetails { get; set; }
+        public List<SalaryAdanceRepayment> SalaryAdanceRepayments{ get; set; }
+        public SalaryAdvanceRequest SalaryAdvanceRequest{ get; set; }
     }
 }

@@ -13,6 +13,7 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
+using DocumentFormat.OpenXml.Bibliography;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -29,6 +31,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -1368,6 +1371,7 @@ namespace ServiceLayer.Code
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 default:
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
                     salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
@@ -1380,7 +1384,19 @@ namespace ServiceLayer.Code
             var pTaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
             var totalEarning = Math.Round(salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount);
             var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
-            var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) : Math.Round(pTaxAmount);
+            var totalIncomeTax = payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(pTaxAmount) : 0;
+            Dictionary<string, decimal> dedcutionsComponent = new Dictionary<string, decimal>
+            {
+                {"Professional Tax", pTaxAmount },
+                {"Total Income Tax",  totalIncomeTax}
+            };
+
+            if (payslipModal.SalaryAdanceRepayments.Any())
+                dedcutionsComponent.Add("Advance Repayment", Math.Round(payslipModal.SalaryAdanceRepayments.Sum(x => x.ActualAmount), 2));
+
+            var deductionComponent = GetTaxAndDeductions(dedcutionsComponent);
+            var totalDeduction = Math.Round(dedcutionsComponent.Sum(x => x.Value), 2);
+            //var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) : Math.Round(pTaxAmount);
             var netSalary = totalEarning > 0 ? Math.Round(totalEarning - (totalContribution + totalDeduction)) : 0;
             if (netSalary < 0)
                 throw HiringBellException.ThrowBadRequest($"Your salary is in -ve i.e {netSalary}");
@@ -1396,6 +1412,7 @@ namespace ServiceLayer.Code
             var LossOfPayDays = payslipModal.PayrollMonthlyDetail.LOP;
             string employeeCode = _commonService.GetEmployeeCode(payslipModal.Employee.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength);
 
+            string advanceSalary = AddAdvanceSalary(payslipModal.SalaryAdvanceRequest.ApprovedAmount);
             html = payslipModal.PdfTemplateHTML.Replace("[[CompanyFirstAddress]]", payslipModal.Company.FirstAddress).
                 Replace("[[CompanySecondAddress]]", payslipModal.Company.SecondAddress).
                 Replace("[[CompanyThirdAddress]]", payslipModal.Company.ThirdAddress).
@@ -1403,6 +1420,7 @@ namespace ServiceLayer.Code
                 Replace("[[CompanyName]]", payslipModal.Company.CompanyName).
                 Replace("[[EmployeeName]]", payslipModal.Employee.FirstName + " " + payslipModal.Employee.LastName).
                 Replace("[[EmployeeNo]]", employeeCode).
+                Replace("[[Adance_Salary]]", advanceSalary).
                 Replace("[[JoiningDate]]", doj.ToString("dd MMM, yyyy")).
                 Replace("[[PayDate]]", payslipModal.PayrollMonthlyDetail.PaymentRunDate.ToString("dd MMM, yyyy")).
                 Replace("[[Department]]", string.IsNullOrEmpty(payslipModal.Employee.Department) ? "--" : payslipModal.Employee.Department).
@@ -1434,7 +1452,8 @@ namespace ServiceLayer.Code
                 Replace("[[TotalActualEarnings]]", totalActualEarning.ToString()).
                 Replace("[[TotalYTD]]", totalYTDAmount.ToString()).
                 Replace("[[EmployeeDeclaration]]", declarationHTML)
-                .Replace("[[CompanyLegalName]]", payslipModal.Company.CompanyName);
+               .Replace("[[TaxAndDeduction]]", deductionComponent)
+               .Replace("[[CompanyLegalName]]", payslipModal.Company.CompanyName);
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
                 html = await AddCompanyLogo(payslipModal, html);
@@ -1937,7 +1956,7 @@ namespace ServiceLayer.Code
                 FileRole = ApplicationConstants.CompanyPrimaryLogo
             });
 
-            if (ds == null || ds.Tables.Count != 8)
+            if (ds == null || ds.Tables.Count != 10)
                 throw new HiringBellException("Fail to get payslip detail. Please contact to admin.");
 
             if (ds.Tables[0].Rows.Count != 1)
@@ -1988,19 +2007,13 @@ namespace ServiceLayer.Code
 
             var file = Converter.ToType<Files>(ds.Tables[6]);
             if (file != null)
-            {
-                payslipGenerationModal.HeaderLogoPath = Path.Combine(
-                    _fileLocationDetail.RootPath,
-                    file.FilePath,
-                    file.FileName
-                );
-            }
+                payslipGenerationModal.HeaderLogoPath = Path.Combine(_fileLocationDetail.RootPath,file.FilePath,file.FileName);
             else
-            {
                 payslipGenerationModal.HeaderLogoPath = "https://www.emstum.com/assets/images/logo.png";
-            }
 
             payslipGenerationModal.leaveRequestNotifications = Converter.ToList<LeaveRequestNotification>(ds.Tables[7]);
+            payslipGenerationModal.SalaryAdanceRepayments = Converter.ToList<SalaryAdanceRepayment>(ds.Tables[8]);
+            payslipGenerationModal.SalaryAdvanceRequest = Converter.ToType<SalaryAdvanceRequest>(ds.Tables[9]);
 
             await Task.CompletedTask;
         }
@@ -2532,6 +2545,35 @@ namespace ServiceLayer.Code
             .SetToken(_currentSession.Authorization);
 
             return await _requestMicroservice.PostRequest<string>(microserviceRequest);
+        }
+
+        private string AddAdvanceSalary(decimal advanceAmount)
+        {
+            if (advanceAmount <= 0)
+                return "";
+
+            var result = "<div class=\"advance-disbursed-section\">";
+            result += "<div style=\"display: flex; justify-content: space-between; align-items: center;\" >";
+            result += "<div class=\"dt\">Salary Advance Disbursed(This Period) :</div>";
+            result += $"<div class=\"dt\">{advanceAmount.ToString("0.00")}</div>";
+            result += "</div>";
+            result += "<p style=\"font-size: 10px; margin: 5px 0 0 0; color: #555;\" > Note: This amount is paid out in addition to Net Pay or included in the total bank transfer.</p>";
+            result += "</div>";
+            return result;
+        }
+
+        private string GetTaxAndDeductions(Dictionary<string, decimal> components)
+        {
+            var tableRows = "";
+            foreach (var component in components)
+            {
+                tableRows += "<tr>";
+                tableRows += $"<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">{component.Key}</td>";
+                tableRows += $"<td class=\"box-cell\" style=\"border: 0; text-align: right; font-size: 12px;\">{component.Value}</td>";
+                tableRows += "</tr>";
+            }
+
+            return tableRows;
         }
     }
 }

@@ -43,6 +43,23 @@
         .border-bottom {
             border-bottom: 1px solid #222;
         }
+        .advance-disbursed-section {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #eaf7ff; /* Light blue background */
+            border: 1px solid #b3d7ff; /* Blue border */
+            border-radius: 4px;
+        }
+        .advance-disbursed-section .dt {
+            font-weight: bold;
+            color: #0056b3; /* Darker blue text */
+        }
+        .advance-disbursed-section .dd {
+            font-weight: bold;
+            color: #0056b3;
+            text-align: right;
+            width: 20vw;
+        }
     </style>
 </head>
 
@@ -50,7 +67,7 @@
     <div>
         <div style="position: relative;">
             <div style="font-size: 25px; color: rgb(27, 104, 134); text-align: center; font-weight: bold;">
-                BOTTOMHALF PVT. LTD.
+                [[CompanyName]]
             </div>
             <div style="font-size: 13px; color: rgb(27, 104, 134); text-align: center;">
                 [[CompanyFirstAddress]] [[CompanySecondAddress]] [[CompanyThirdAddress]] [[CompanyFourthAddress]]
@@ -230,22 +247,7 @@
             </div>
             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tbody>
-                    <tr>
-                        <td class="box-cell" style="border: 0; font-size: 12px;">
-                            Professional Tax
-                        </td>
-                        <td class="box-cell" style="border: 0; text-align: right; font-size: 12px;">
-                            [[PTax]]
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="box-cell" style="border: 0; font-size: 12px;">
-                            Total Income Tax
-                        </td>
-                        <td class="box-cell" style="border: 0; text-align: right; font-size: 12px;">
-                            [[TotalIncomeTax]]
-                        </td>
-                    </tr>
+                    [[TaxAndDeduction]]
                     <tr>
                         <td class="box-cell" style="border: 0; font-weight: bold; font-size: 12px;">
                             Total Deductions (C)
@@ -253,12 +255,12 @@
                         <td class="box-cell" style="border: 0; text-align: right; font-size: 12px;">
                             [[TotalDeduction]]
                         </td>
-                    </tr>
+                    </tr> 
                 </tbody>
             </table>
         </div>
     </div>
-
+    [[Adance_Salary]]
     <table class="gap" width="100%" border="0" cellspacing="0" cellpadding="0">
         <tbody>
             <tr>
@@ -282,6 +284,11 @@
                     <span style="color: #222; font-size: 12px; font-weight: bold;">** Note :</span>
                     <span style="color: #222; font-size: 12px; font-style: italic;"> All amounts displayed in this payslip are in </span>
                     <span style="color: #222; font-size: 12px; font-weight: bold; font-style: italic;">INR</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center; padding-top: 20px">
+                    <span style="color: #222; font-size: 12px; font-weight: bold;">*** This is a computer-generated statement and does not require a signature ***</span>
                 </td>
             </tr>
         </tbody>
