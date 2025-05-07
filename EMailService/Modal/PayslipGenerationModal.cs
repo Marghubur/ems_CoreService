@@ -34,5 +34,6 @@ namespace ModalLayer.Modal
         public List<TaxDetails> TaxDetails { get; set; }
         public List<SalaryAdanceRepayment> SalaryAdanceRepayments{ get; set; }
         public SalaryAdvanceRequest SalaryAdvanceRequest{ get; set; }
+        public List<OtherDeductionAndReimbursementRepayment> OtherDeductionAndReimbursementRepayments { get; set; }
     }
 }
