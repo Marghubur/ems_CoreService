@@ -18,6 +18,12 @@
         public const string DailyPayFrequency = "daily";
         public const string HourlyPayFrequency = "hourly";
 
+        public const string FullDay = "f";
+        public const string Present = "p";
+        public const string HalfDay = "h";
+        public const string Absent = "a";
+        public const string ZeroTime = "00:00:00";
+
 
         public static int DefaultReportingMangerId = 1;
         public static int DefaultWorkShiftId = 1;

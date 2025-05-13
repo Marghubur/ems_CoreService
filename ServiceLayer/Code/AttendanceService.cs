@@ -1378,12 +1378,20 @@ namespace ServiceLayer.Code
                 foreach (var item in dailyAttendances)
                 {
                     var leaveDetail = LeaveRequestDetail
-                                        .Find(
-                                                x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone).Date
-                                                        .Subtract(item.AttendanceDate.Kind == DateTimeKind.Utc ? _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone).Date : item.AttendanceDate.Date).TotalDays <= 0
-                                                    && _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone).Date
-                                                        .Subtract(item.AttendanceDate.Kind == DateTimeKind.Utc ? _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone).Date : item.AttendanceDate.Date).TotalDays >= 0
-                                             );
+                                        .Find(x => _timezoneConverter.ToTimeZoneDateTime(x.FromDate, _currentSession.TimeZone)
+                                            .Date.Subtract(
+                                                item.AttendanceDate.Kind == DateTimeKind.Utc
+                                                    ? _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone).Date
+                                                    : item.AttendanceDate.Date
+                                             ).TotalDays <= 0
+                                             &&
+                                             _timezoneConverter.ToTimeZoneDateTime(x.ToDate, _currentSession.TimeZone)
+                                             .Date.Subtract(
+                                                 item.AttendanceDate.Kind == DateTimeKind.Utc
+                                                    ? _timezoneConverter.ToTimeZoneDateTime(item.AttendanceDate, _currentSession.TimeZone).Date
+                                                    : item.AttendanceDate.Date
+                                             ).TotalDays >= 0
+                                         );
 
                     if (leaveDetail != null && leaveDetail.RequestStatusId == (int)ItemStatus.Approved)
                     {
@@ -1804,8 +1812,8 @@ namespace ServiceLayer.Code
                     if (dataTable.Columns.Contains(dayColumnName))
                     {
                         var dayValue = row[dayColumnName].ToString();
-                        if (string.IsNullOrEmpty(dayValue) || dayValue.Equals("p", StringComparison.OrdinalIgnoreCase)
-                            || dayValue.Equals("a", StringComparison.OrdinalIgnoreCase) || dayValue.Equals("h", StringComparison.OrdinalIgnoreCase))
+                        if (string.IsNullOrEmpty(dayValue) || new[] { LocalConstants.Present, LocalConstants.HalfDay, LocalConstants.Absent }
+                            .Contains(dayValue.ToLower()))
                         {
                             attendance.DailyData.Add(day, dayValue);
                         }
@@ -2030,7 +2038,7 @@ namespace ServiceLayer.Code
                 attendance.WorkTypeId = WorkType.WORKFROMOFFICE;
                 var attendanceDate = _timezoneConverter.ToTimeZoneDateTime(attendance.AttendanceDate, timezone);
                 attendance.AttendanceStatus = GetAttendanceDayStatus(item.Value, dailyAttendanceBuilder, attendanceDate);
-                if (item.Value.Equals("h", StringComparison.OrdinalIgnoreCase))
+                if (item.Value.Equals(LocalConstants.HalfDay, StringComparison.OrdinalIgnoreCase))
                     attendance.TotalMinutes = dailyAttendanceBuilder.shiftDetail.Duration / 2;
             }
             else
@@ -2073,10 +2081,10 @@ namespace ServiceLayer.Code
                 ProjectId = 0,
                 TaskId = 0,
                 TaskType = 0,
-                LogOn = "00:00:00",
-                LogOff = "00:00:00",
-                TotalMinutes = item.Value.Equals("h", StringComparison.OrdinalIgnoreCase) ? dailyAttendanceBuilder.shiftDetail.Duration / 2 : dailyAttendanceBuilder.shiftDetail.Duration,
-                Comments = "[]",
+                LogOn = LocalConstants.ZeroTime,
+                LogOff = LocalConstants.ZeroTime,
+                TotalMinutes = item.Value.Equals(LocalConstants.HalfDay, StringComparison.OrdinalIgnoreCase) ? dailyAttendanceBuilder.shiftDetail.Duration / 2 : dailyAttendanceBuilder.shiftDetail.Duration,
+                Comments = ApplicationConstants.EmptyJsonArray,
                 WorkTypeId = WorkType.WORKFROMOFFICE,
                 IsOnLeave = false,
                 LeaveId = 0,
@@ -2136,7 +2144,7 @@ namespace ServiceLayer.Code
                 status = (int)AttendanceEnum.WeekOff;
             else if (isHoliday)
                 status = (int)AttendanceEnum.Holiday;
-            else if (value.Equals("p", StringComparison.OrdinalIgnoreCase) || value.Equals("h", StringComparison.OrdinalIgnoreCase))
+            else if (value.Equals(LocalConstants.Present, StringComparison.OrdinalIgnoreCase) || value.Equals(LocalConstants.HalfDay, StringComparison.OrdinalIgnoreCase))
                 status = (int)AttendanceEnum.Approved;
             else
                 status = (int)AttendanceEnum.NotSubmitted;
