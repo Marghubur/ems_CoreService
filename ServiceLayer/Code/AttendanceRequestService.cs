@@ -114,7 +114,7 @@ namespace ServiceLayer.Code
                 TotalDays = attr.TotalDays
             };
 
-            return await this.GetAttendanceRequestDataService(attendance);
+            return await GetAttendanceRequestDataService(attendance);
         }
 
         public async Task<dynamic> RejectAttendanceService(List<DailyAttendance> dailyAttendances, int filterId = ApplicationConstants.Only)
@@ -175,38 +175,77 @@ namespace ServiceLayer.Code
                 }
 
                 dailyAttendances = dailyAttendances.OrderBy(x => x.AttendanceDate).ToList();
-                var attendanceRequestModal = new AttendanceRequestModal
-                {
-                    ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
-                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
-                    DayCount = 1,
-                    DeveloperName = dailyAttendances.First().EmployeeName,
-                    FromDate = dailyAttendances.First().AttendanceDate,
-                    ToDate = dailyAttendances.Last().AttendanceDate,
-                    ManagerName = dailyAttendances.First().ManagerName,
-                    Message = dailyAttendances.First().UserComment,
-                    RequestType = dailyAttendances.First().WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
-                    ToAddress = new List<string> { dailyAttendances.First().EmployeeEmail },
-                    kafkaServiceName = KafkaServiceName.Attendance,
-                    LocalConnectionString = _currentSession.LocalConnectionString,
-                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
-                };
-
-                if (companySetting.AttendanceType) // true for weekly
-                {
-                    var i = dailyAttendances.Select(x => x.WorkTypeId).Distinct().Count();
-                    if (i > 1)
-                    {
-                        attendanceRequestModal.RequestType = "Hybrid mode";
-                    }
-                }
-
-                await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+                if (companySetting.AttendanceType)
+                    await SendWeeklyAttendanceEmailNotification(dailyAttendances, status);
+                else
+                    await SendDailyAttendanceEmailNotification(dailyAttendances, status);
             }
             catch (Exception e)
             {
                 throw HiringBellException.ThrowBadRequest($"Server error: Please contact to admin.");
             }
+        }
+
+        private async Task SendWeeklyAttendanceEmailNotification(List<DailyAttendance> dailyAttendances, ItemStatus status)
+        {
+            var firstAttendance = dailyAttendances.First();
+            var attendanceRequestModal = new AttendanceRequestModal
+            {
+                ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                DayCount = 1,
+                DeveloperName = firstAttendance.EmployeeName,
+                FromDate = firstAttendance.AttendanceDate,
+                ToDate = dailyAttendances.Last().AttendanceDate,
+                ManagerName = firstAttendance.ManagerName,
+                Message = firstAttendance.UserComment,
+                RequestType = firstAttendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                ToAddress = new List<string> { firstAttendance.EmployeeEmail },
+                kafkaServiceName = KafkaServiceName.Attendance,
+                LocalConnectionString = _currentSession.LocalConnectionString,
+                CompanyId = _currentSession.CurrentUserDetail.CompanyId
+            };
+
+            var i = dailyAttendances.Select(x => x.WorkTypeId).Distinct().Count();
+            if (i > 1)
+                attendanceRequestModal.RequestType = "Hybrid mode";
+
+            _ = Task.Run(async () =>
+            {
+                await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+            });
+
+            await Task.CompletedTask;
+        }
+
+        private async Task SendDailyAttendanceEmailNotification(List<DailyAttendance> dailyAttendances, ItemStatus status)
+        {
+            foreach (var attendance in dailyAttendances)
+            {
+                var attendanceRequestModal = new AttendanceRequestModal
+                {
+                    ActionType = status == ItemStatus.Approved ? ApplicationConstants.Approved : ApplicationConstants.Rejected,
+                    CompanyName = _currentSession.CurrentUserDetail.CompanyName,
+                    DayCount = 1,
+                    DeveloperName = attendance.EmployeeName,
+                    FromDate = attendance.AttendanceDate,
+                    ToDate = attendance.AttendanceDate,
+                    ManagerName = attendance.ManagerName,
+                    Message = attendance.UserComment,
+                    RequestType = attendance.WorkTypeId == WorkType.WORKFROMHOME ? ApplicationConstants.WorkFromHome : ApplicationConstants.WorkFromOffice,
+                    ToAddress = new List<string> { attendance.EmployeeEmail },
+                    kafkaServiceName = KafkaServiceName.Attendance,
+                    LocalConnectionString = _currentSession.LocalConnectionString,
+                    CompanyId = _currentSession.CurrentUserDetail.CompanyId
+                };
+
+                _ = Task.Run(async () =>
+                {
+                    await _utilityService.SendNotification(attendanceRequestModal, KafkaTopicNames.ATTENDANCE_REQUEST_ACTION);
+                });
+            }
+
+            await Task.CompletedTask;
         }
 
         private async Task updateDailyAttendanceData(ItemStatus status, DailyAttendance attendance, string comment)
