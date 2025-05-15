@@ -39,7 +39,7 @@ namespace ServiceLayer.Code
                 Period = 30
             });
 
-            if (Result == null || Result.Tables.Count != 7)
+            if (Result == null || Result.Tables.Count != 8)
                 throw HiringBellException.ThrowBadRequest("Unable to get the Dashboard data. Please try again or contact support if the problem persists.");
 
             dashboard = await GetProfitAndLossDetail(Result);
@@ -48,6 +48,7 @@ namespace ServiceLayer.Code
             dashboard.clients = Result.Tables[4];
             dashboard.newJoinees = Result.Tables[5];
             dashboard.leaves = Result.Tables[6];
+            dashboard.companyNotifications = Result.Tables[7];
 
             return dashboard;
         }
