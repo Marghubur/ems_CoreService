@@ -2299,7 +2299,7 @@ namespace ServiceLayer.Code
             return dailyBiometricAttendances;
         }
 
-        public async Task<byte[]> DownloadAttendanceExcelWithDataService(int month, int year)
+        public async Task<byte[]> DownloadAttendanceExcelWithDataService(int month, int year, bool isSingleMonth)
         {
 
             try
@@ -2322,8 +2322,11 @@ namespace ServiceLayer.Code
 
                     data.Add("EmployeeCode", _commonService.GetEmployeeCode(employee.EmployeeUid, _currentSession.CurrentUserDetail.EmployeeCodePrefix, _currentSession.CurrentUserDetail.EmployeeCodeLength));
                     data.Add("Name", employee.FirstName + " " + employee.LastName);
-                    data.Add("Month", month);
-                    data.Add("Year", year);
+                    if (!isSingleMonth)
+                    {
+                        data.Add("Month", month);
+                        data.Add("Year", year);
+                    }
                     for (int i = 1; i <= daysInMonth; i++)
                     {
                         data.Add($"{i}", "p");
@@ -2349,6 +2352,92 @@ namespace ServiceLayer.Code
                 throw HiringBellException.ThrowBadRequest(ex.Message);
             }
         }
+
+        public async Task<int> UploadSingleMonthAttendanceExcelService(IFormFileCollection files, int month, int year)
+        {
+            var attendanceData = await _commonService.ReadExcelData(files);
+            var monthlyRecord = GetSingleMonthlyAttendanceRecord(attendanceData, month, year);
+            List<DailyAttendance> dailyAttendances = new List<DailyAttendance>();
+
+            await ProcessMonthlyAttendance(monthlyRecord, dailyAttendances);
+
+            var serviceJobStatusId = await _serviceJobStatusService.AddServiceJobStatusService("Insert bulk attendance record");
+
+            int chunkSize = 500;
+            _ = Task.Run(async () =>
+            {
+                foreach (var batch in dailyAttendances.Chunk(chunkSize))
+                {
+                    await UploadBulkDailyAttendanceDetail(batch.ToList());
+                }
+                await _serviceJobStatusService.UpdateServiceJobStatusService(serviceJobStatusId);
+            });
+
+            return serviceJobStatusId;
+        }
+
+        private List<MonthlyAttendanceDetail> GetSingleMonthlyAttendanceRecord(DataTable dataTable, int month, int year)
+        {
+            if (dataTable.Rows.Count == 0)
+                throw HiringBellException.ThrowBadRequest("Attendance record not found. Please upload a valid excel");
+
+            List<MonthlyAttendanceDetail> monthlyAttendanceDetail = new List<MonthlyAttendanceDetail>();
+            foreach (DataRow row in dataTable.Rows)
+            {
+                MonthlyAttendanceDetail attendance = ValidateSingleMonthAttendanceBasicDetail(row, month, year);
+
+                int daysInMonth = DateTime.DaysInMonth(attendance.Year, attendance.Month);
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    string dayColumnName = day.ToString();
+                    if (dataTable.Columns.Contains(dayColumnName))
+                    {
+                        var dayValue = row[dayColumnName].ToString();
+                        if (string.IsNullOrEmpty(dayValue) || new[] { LocalConstants.Present, LocalConstants.HalfDay, LocalConstants.Absent }
+                            .Contains(dayValue.ToLower()))
+                        {
+                            attendance.DailyData.Add(day, dayValue);
+                        }
+                        else
+                        {
+                            throw HiringBellException.ThrowBadRequest($"Invalid day value {dayValue} for employee {attendance.Name}");
+                        }
+                    }
+                }
+
+                if (attendance.DailyData.Count == 0)
+                    throw HiringBellException.ThrowBadRequest("Attendance record not found in excel");
+
+                monthlyAttendanceDetail.Add(attendance);
+            }
+
+            return monthlyAttendanceDetail;
+        }
+
+        private MonthlyAttendanceDetail ValidateSingleMonthAttendanceBasicDetail(DataRow row, int month, int year)
+        {
+            if (row["Name"] == null || string.IsNullOrEmpty(row["Name"].ToString()))
+                throw HiringBellException.ThrowBadRequest("Employee Name is null. Please provide a valid Employee Name.");
+
+            string employeeName = row["Name"].ToString();
+
+            if (row["EmployeeCode"] == null || string.IsNullOrEmpty(row["EmployeeCode"].ToString()))
+                throw HiringBellException.ThrowBadRequest($"Employee Code is null for employee name '{employeeName}'. Please provide a valid Employee Id.");
+
+            var empCode = row["EmployeeCode"].ToString();
+            if (string.IsNullOrEmpty(empCode))
+                throw HiringBellException.ThrowBadRequest($"Employee code is invalid for employee name '{employeeName}'");
+
+            return new MonthlyAttendanceDetail
+            {
+                EmployeeId = _commonService.ExtractEmployeeId(empCode, _currentSession.CurrentUserDetail.EmployeeCodePrefix),
+                Name = employeeName,
+                Month = month,
+                Year = year
+            };
+        }
+
+
         #endregion
 
         #region Un-used Code

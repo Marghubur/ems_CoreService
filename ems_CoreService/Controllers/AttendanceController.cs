@@ -384,12 +384,12 @@ namespace OnlineDataBuilder.Controllers
         }
 
         [Authorize(Roles = Role.Admin)]
-        [HttpPost("DownloadAttendanceExcelWithData/{month}")]
-        public async Task<IActionResult> DownloadAttendanceExcelWithData([FromRoute]int month,[FromBody] int year)
+        [HttpPost("DownloadAttendanceExcelWithData/{month}/{isSingleMonth}")]
+        public async Task<IActionResult> DownloadAttendanceExcelWithData([FromRoute]int month,[FromBody] int year, [FromRoute] bool isSingleMonth)
         {
             try
             {
-                var result = await _attendanceService.DownloadAttendanceExcelWithDataService(month, year);
+                var result = await _attendanceService.DownloadAttendanceExcelWithDataService(month, year, isSingleMonth);
                 return File(result, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AttendanceExcelWIthData.xlsx");
             }
             catch (Exception ex)
@@ -397,6 +397,23 @@ namespace OnlineDataBuilder.Controllers
                 throw Throw(ex);
             }
         }
+
+        [Authorize(Roles = Role.Admin)]
+        [HttpPost("UploadSingleMonthAttendanceExcel/{month}/{year}")]
+        public async Task<ApiResponse> UploadSingleMonthAttendanceExcelService([FromRoute] int month, [FromRoute] int year)
+        {
+            try
+            {
+                IFormFileCollection file = _httpContext.Request.Form.Files;
+                var result = await _attendanceService.UploadSingleMonthAttendanceExcelService(file, month, year);
+                return BuildResponse(result, HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex);
+            }
+        }
+
 
         #endregion
     }
