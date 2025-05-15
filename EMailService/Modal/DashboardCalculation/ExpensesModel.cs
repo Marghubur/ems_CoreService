@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EMailService.Modal.Notification;
+using System;
 using System.Collections.Generic;
 using System.Data;
 
@@ -35,5 +36,6 @@ namespace EMailService.Modal.DashboardCalculation
         public DataTable clients { set; get; }
         public DataTable newJoinees { set; get; }
         public DataTable leaves { set; get; }
+        public DataTable companyNotifications { set; get; }
     }
 }

@@ -8,7 +8,7 @@ namespace ModalLayer.Modal.Leaves
         public int CompanyId { set; get; }
         public string PlanName { set; get; }
         public string PlanDescription { set; get; }
-        public DateTime PlanStartCalendarDate { set; get; }
+        public DateTime? PlanStartCalendarDate { set; get; }
         public string AssociatedPlanTypes { set; get; }
         public bool IsShowLeavePolicy { set; get; }
         public bool IsUploadedCustomLeavePolicy { set; get; }
