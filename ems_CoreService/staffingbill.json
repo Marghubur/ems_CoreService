@@ -7,6 +7,6 @@
     "BillsPath": "Bills",
     "StaffingBillTemplate": "staffingBill.html",
     "StaffingBillPdfTemplate": "staffingBillPdfFormat.html",
-    "PaysliplTemplate": "payslipTemplate.html"
+    "PaysliplTemplate": "payslipTemplate4.html"
   }
 }

@@ -13,7 +13,6 @@ using CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using DocMaker.ExcelMaker;
 using DocMaker.HtmlToDocx;
 using DocMaker.PdfService;
-using DocumentFormat.OpenXml.Bibliography;
 using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
@@ -21,7 +20,6 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
-using OpenXmlPowerTools;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -31,7 +29,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using TimeZoneConverter;
 
@@ -1311,6 +1308,7 @@ namespace ServiceLayer.Code
         private async Task<string> GetPayslipHtmlString(string templatePath, PayslipGenerationModal payslipModal, bool isHeaderLogoRequired = false)
         {
             string html = string.Empty;
+            bool isYTDRequired = false;
             var salaryDetailsHTML = string.Empty;
             var salaryDetail = payslipModal.SalaryDetail.SalaryBreakupDetails.FindAll(x =>
                 x.ComponentId != ComponentNames.GrossId &&
@@ -1371,10 +1369,14 @@ namespace ServiceLayer.Code
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 default:
-                    //htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate.html");
-                    //payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
+                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
 
-                    salaryDetailsHTML = AddYTDComponent(payslipModal, salaryDetail, ref totalYTDAmount);
+                    if (isYTDRequired)
+                        salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
+                    else
+                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(payslipModal, salaryDetail);
+
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
                     employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
@@ -1383,7 +1385,7 @@ namespace ServiceLayer.Code
             }
 
             // var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
-            var pTaxAmount = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount;
+            var pTaxAmount = Math.Round(payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount);
             var totalEarning = Math.Round(salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount);
             var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
             var totalIncomeTax = payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(pTaxAmount) : 0;
@@ -1406,7 +1408,7 @@ namespace ServiceLayer.Code
             }
 
             var deductionComponent = GetTaxAndDeductions(dedcutionsComponent);
-            var totalDeduction = Math.Round(dedcutionsComponent.Sum(x => x.Value), 2);
+            var totalDeduction = Math.Round(dedcutionsComponent.Sum(x => x.Value));
             //var totalDeduction = payslipModal.TaxDetail.TaxDeducted > pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) : Math.Round(pTaxAmount);
             var netSalary = totalEarning > 0 ? Math.Round(totalEarning - (totalContribution + totalDeduction)) : 0;
             if (netSalary < 0)
@@ -1476,7 +1478,9 @@ namespace ServiceLayer.Code
                .Replace("[[TaxAndDeduction]]", deductionComponent)
                .Replace("[[CompanyLegalName]]", payslipModal.Company.CompanyName)
                .Replace("[[TotalSalary]]", totalSalaryRow)
-               .Replace("[[AdvanceSalaryDetail]]", advaceSalaryDetailTable);
+               .Replace("[[AdvanceSalaryDetail]]", advaceSalaryDetailTable)
+               .Replace("[[ESINumber]]", payslipModal.Employee.ESISerialNumber)
+               .Replace("[[Location]]", payslipModal.Company.City);
 
             if (!string.IsNullOrEmpty(payslipModal.HeaderLogoPath) && isHeaderLogoRequired)
                 html = await AddCompanyLogo(payslipModal, html);
@@ -1795,7 +1799,7 @@ namespace ServiceLayer.Code
             return await Task.FromResult(actualDaysPayable);
         }
 
-        private string AddYTDComponent(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount)
+        private string AddEarningComponentsWithYTD(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail, ref decimal totalYTDAmount)
         {
             var textinfo = CultureInfo.CurrentCulture.TextInfo;
             string salaryDetailsHTML = "";
@@ -1820,6 +1824,23 @@ namespace ServiceLayer.Code
 
             decimal arrearAmount = Math.Round(YTDSalaryBreakup.Sum(x => x.ArrearAmount));
             totalYTDAmount += arrearAmount;
+
+            return salaryDetailsHTML;
+        }
+
+        private string AddEarningComponentsWithoutYTD(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail)
+        {
+            var textinfo = CultureInfo.CurrentCulture.TextInfo;
+            string salaryDetailsHTML = "";
+
+            foreach (var item in salaryDetail)
+            {
+                salaryDetailsHTML += "<tr>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\" width=\"60%\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\" width=\"19%\">" + Math.Round(item.ActualAmount) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\" width=\"19%\">" + Math.Round(item.FinalAmount) + "</td>";
+                salaryDetailsHTML += "</tr>";
+            }
 
             return salaryDetailsHTML;
         }

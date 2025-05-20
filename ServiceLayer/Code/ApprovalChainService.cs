@@ -61,8 +61,16 @@ namespace ServiceLayer.Code
             var existingApprovalWorkflow = resultData.approvalWorkFlowChain;
             if (existingApprovalWorkflow == null)
             {
-                existingApprovalWorkflow = approvalWorkFlowModal;
-                existingApprovalWorkflow.ApprovalChainDetails = new List<ApprovalChainDetail>();
+                existingApprovalWorkflow = new ApprovalWorkFlowChain
+                {
+                    Title = approvalWorkFlowModal.Title,
+                    TitleDescription = approvalWorkFlowModal.TitleDescription,
+                    IsAutoExpiredEnabled = approvalWorkFlowModal.IsAutoExpiredEnabled,
+                    AutoExpireAfterDays = approvalWorkFlowModal.AutoExpireAfterDays,
+                    NoOfApprovalLevel = approvalWorkFlowModal.NoOfApprovalLevel,
+                    ListnerDetail = ApplicationConstants.EmptyJsonArray,
+                    ApprovalChainDetails = new List<ApprovalChainDetail>()
+                };
             }
             else
             {
@@ -78,7 +86,7 @@ namespace ServiceLayer.Code
             {
                 approvalWorkFlowModal.ApprovalChainDetails.ForEach(x =>
                 {
-                    var chainDetail = existingApprovalWorkflow.ApprovalChainDetails.Find(i => i.ApprovalChainDetailId == x.ApprovalChainDetailId);
+                    var chainDetail = existingApprovalWorkflow.ApprovalChainDetails.Find(i => i.ApprovalChainDetailId == x.ApprovalChainDetailId && i.ApprovalChainDetailId > 0);
                     if (chainDetail != null)
                     {
                         chainDetail.AssignieId = x.AssignieId;
@@ -260,6 +268,7 @@ namespace ServiceLayer.Code
 
                 approvalWorkFlowChain.ApprovalChainDetails = (
                     from n in approvalWorkFlow
+                    where n.ApprovalChainDetailId > 0
                     select new ApprovalChainDetail
                     {
                         ApprovalChainDetailId = n.ApprovalChainDetailId,

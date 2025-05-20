@@ -240,26 +240,35 @@ namespace ServiceLayer.Code
         public async Task RunAndBuilEmployeeSalaryAndDeclaration()
         {
             List<DbConfig> dbConfig = await LoadDatabaseConfiguration();
+            List<string> companyCode = new List<string> { "00105", "00106", "00107", "00109", "00110", "00111", "00112", "00114", "00119", "00120" };
             foreach (var x in dbConfig)
             {
+                var isCompanyFound = false;
                 if (x.Code != "00134")
                     continue;
+                else
+                    isCompanyFound = true;
 
-                CompanySetting companySetting = await LoadCompanySettings(x);
-                var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
+                //var isCompanyFound = companyCode.Contains(x.Code);
+                if (isCompanyFound)
+                {
+                    CompanySetting companySetting = await LoadCompanySettings(x);
+                    var localConnectionString = await UpdateCompanySettingFincialYear(companySetting, x);
 
-                string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
-                var microserviceRequest = MicroserviceRequest.Builder(url);
-                microserviceRequest
-                .SetDbConfig(_requestMicroservice.DiscretConnectionString(localConnectionString))
-                .SetConnectionString(localConnectionString)
-                .SetCompanyCode(x.OrganizationCode + x.Code)
-                //.SetCompanyCode(_currentSession.CompanyCode)
-                .SetToken("Bearer");
+                    string url = $"{_microserviceUrlLogs.NewFinancialYearCalculateSalaryAndDeclaration}";
+                    var microserviceRequest = MicroserviceRequest.Builder(url);
+                    microserviceRequest
+                    .SetDbConfig(_requestMicroservice.DiscretConnectionString(localConnectionString))
+                    .SetConnectionString(localConnectionString)
+                    .SetCompanyCode(x.OrganizationCode + x.Code)
+                    //.SetCompanyCode(_currentSession.CompanyCode)
+                    .SetToken("Bearer");
 
-                var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
-                if (response is null)
-                    throw HiringBellException.ThrowBadRequest("fail to get response");
+                    var response = await _requestMicroservice.GetRequest<string>(microserviceRequest);
+                    if (response is null)
+                        throw HiringBellException.ThrowBadRequest("fail to get response");
+                }
+
             }
 
         }

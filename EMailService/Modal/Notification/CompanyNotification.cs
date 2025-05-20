@@ -11,8 +11,11 @@ namespace EMailService.Modal.Notification
         public string NotificationMessage { set; get; }
         public string ParsedContentMessage { set; get; }
         public int NotificationTypeId { set; get; }
+        public string ImageAttachments { get; set; }
         public string FileIds { set; get; }
         public bool AutoDeleteEnabled { set; get; }
         public int LifeSpanInMinutes { set; get; }
+        public int Total { get; set; }
+        public int RowIndex { get; set; }
     }
 }

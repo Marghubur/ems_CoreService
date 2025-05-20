@@ -63,9 +63,6 @@ namespace ServiceLayer.Code
             txt.Write(project.SectionDescription);
             txt.Close();
 
-            projectDetail.PageIndexDetail = "[]";
-            projectDetail.KeywordDetail = "[]";
-            projectDetail.DocumentPath = filepath;
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
 
             var result = _db.Execute<Project>(Procedures.Wiki_Detail_Upd, projectDetail, true);
@@ -83,9 +80,6 @@ namespace ServiceLayer.Code
             if (project == null)
             {
                 project = projectDetail;
-                project.PageIndexDetail = "[]";
-                project.KeywordDetail = "[]";
-                project.DocumentationDetail = "[]";
             }
             else
             {
@@ -96,8 +90,6 @@ namespace ServiceLayer.Code
                 project.HomePageUrl = projectDetail.HomePageUrl;
                 project.ProjectStartedOn = projectDetail.ProjectStartedOn;
                 project.ProjectEndedOn = projectDetail.ProjectEndedOn;
-                project.CompanyId = projectDetail.CompanyId;
-                project.DocumentPath = projectDetail.DocumentPath;
             }
 
             projectDetail.AdminId = _currentSession.CurrentUserDetail.UserId;
@@ -114,7 +106,7 @@ namespace ServiceLayer.Code
                                 Email = n.Email,
                                 IsActive = n.IsActive,
                                 Grade = n.Grade,
-                                MemberType = n.MemberType,
+                                //DesignationId = n.DesignationId,
                                 AssignedOn = DateTime.UtcNow,
                                 LastDateOnProject = null
                             }).ToList<object>();
@@ -143,11 +135,11 @@ namespace ServiceLayer.Code
         public Project GetAllWikiService(long ProjectId)
         {
             var result = _db.Get<Project>(Procedures.Project_Detail_Getby_Id, new { ProjectId });
-            if (File.Exists(result.DocumentPath))
-            {
-                var txt = File.ReadAllText(result.DocumentPath);
-                result.DocumentationDetail = txt;
-            }
+            //if (File.Exists(result.DocumentPath))
+            //{
+            //    var txt = File.ReadAllText(result.DocumentPath);
+            //    result.DocumentationDetail = txt;
+            //}
             return result;
         }
 
@@ -218,10 +210,6 @@ namespace ServiceLayer.Code
         {
             if (string.IsNullOrEmpty(project.ProjectName))
                 throw new HiringBellException("Project name is null or empty");
-
-            if (project.CompanyId <= 0)
-                throw new HiringBellException("Compnay is not selected. Please selete your company.");
-
         }
 
         public DataSet GetProjectPageDetailService(long ProjectId)
