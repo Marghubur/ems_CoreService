@@ -1369,8 +1369,8 @@ namespace ServiceLayer.Code
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 default:
-                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
-                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    //htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
+                    //payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
 
                     if (isYTDRequired)
                         salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
