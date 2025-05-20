@@ -14,15 +14,10 @@ namespace ModalLayer.Modal
         public bool IsClientProject { set; get; }
         public long ClientId { set; get; }
         public string HomePageUrl { set; get; }
-        public string PageIndexDetail { set; get; }
-        public string KeywordDetail { set; get; }
-        public string DocumentationDetail { set; get; }
-        public int CompanyId { set; get; }
         public long AdminId { get; set; }
         public int Total { get; set; }
         public int Priority { get; set; }
         public int Status { get; set; }
-        public string DocumentPath { get; set; }
         public List<ProjectMemberDetail> TeamMembers { get; set; }
     }
 
@@ -32,13 +27,14 @@ namespace ModalLayer.Modal
         [Primary("ProjectMemberDetailId")]
         public int ProjectMemberDetailId { set; get; }
         public int ProjectId { set; get; }
+        public long SubProjectId { get; set; }
         public long EmployeeId { set; get; }
+        public long AssignedBy { get; set; }
         public int DesignationId { set; get; }
         public string FullName { set; get; }
         public string Email { set; get; }
         public bool IsActive { set; get; }
         public string Grade { get; set; }
-        public int MemberType { get; set; }
         public DateTime AssignedOn { set; get; }
         public DateTime? LastDateOnProject { set; get; }
         public string RoleName { get; set; }

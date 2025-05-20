@@ -1,5 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.API;
+using EMailService.Modal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -75,6 +76,20 @@ namespace OnlineDataBuilder.Controllers
             catch (Exception ex)
             {
                 throw Throw(ex);
+            }
+        }
+
+        [HttpPost("GetCompanyNotification")]
+        public async Task<ApiResponse> GetCompanyNotification([FromBody] FilterModel filterModel)
+        {
+            try
+            {
+                var result = await _companyNotificationService.GetCompanyNotificationFilterService(filterModel);
+                return BuildResponse(result);
+            }
+            catch (Exception ex)
+            {
+                throw Throw(ex, filterModel);
             }
         }
     }

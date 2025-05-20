@@ -100,7 +100,7 @@
 
         /*--------------  Company Notification Service procedures ------------*/
         public static string Department_And_Roles_Getall = "sp_department_and_roles_getall";
-        public static string Company_Notification_Getby_Filter = "SP_company_notification_getby_filter";
+        public static string Company_Notification_Getby_Filter = "sp_company_notification_getby_filter";
         public static string Company_Notification_Getby_Id = "SP_company_notification_getby_id";
         public static string Company_Files_Insupd = "sp_company_files_insupd";
         public static string Company_Notification_Insupd = "sp_company_notification_insupd";
