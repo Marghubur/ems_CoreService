@@ -17,6 +17,7 @@ using EMailService.Modal;
 using EMailService.Modal.Payroll;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using ModalLayer.Modal;
 using ModalLayer.Modal.Accounts;
 using Newtonsoft.Json;
@@ -1347,30 +1348,56 @@ namespace ServiceLayer.Code
             switch (templateId)
             {
                 case 2:
-                    // For testing purpose only
-                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate1.html");
-                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    if (_env.IsDevelopment())
+                    {
+                        htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate1.html");
+                        payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    }
 
                     salaryDetailsHTML = BuildSlaryStructureForFirstTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
                 case 3:
-                    // For testing purpose only
-                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate2.html");
-                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    if (_env.IsDevelopment())
+                    {
+                        htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate2.html");
+                        payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    }
 
                     salaryDetailsHTML = BuildEmployeeEarningForSecondTemplate(payslipModal, salaryDetail);
                     employeeContribution = BuildEmployeeDeductionForSecondTemplate(payslipModal, ref totalContribution);
                     break;
                 case 4:
-                    // For testing purpose only
-                    htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate3.html");
-                    payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    if (_env.IsDevelopment())
+                    {
+                        htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate3.html");
+                        payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    }
 
                     salaryDetailsHTML = BuildSlaryStructureForThirdTemplate(payslipModal, salaryDetail, ref totalYTDAmount, ref totalContribution);
                     break;
+                case 5:
+                    if (_env.IsDevelopment())
+                    {
+                        htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
+                        payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    }
+
+                    if (isYTDRequired)
+                        salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
+                    else
+                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(payslipModal, salaryDetail);
+
+                    salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
+                    salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
+                    employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
+                    employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
+                    break;
                 default:
-                    //htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
-                    //payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    if (_env.IsDevelopment())
+                    {
+                        htmlFilePath = Path.Combine(_env.ContentRootPath, "ApplicationFiles", "htmltemplates", "billing", "payslipTemplate4.html");
+                        payslipModal.PdfTemplateHTML = await File.ReadAllTextAsync(htmlFilePath);
+                    }
 
                     if (isYTDRequired)
                         salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
