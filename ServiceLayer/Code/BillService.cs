@@ -1404,8 +1404,8 @@ namespace ServiceLayer.Code
                     else
                         salaryDetailsHTML = AddEarningComponentsWithoutYTD(payslipModal, salaryDetail);
 
-                    salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
-                    salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
+                    salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML, isYTDRequired);
+                    salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML, isYTDRequired);
                     employeeContribution = AddEmployeePfComponent(payslipModal, employeeContribution, ref totalContribution);
                     employeeContribution = AddEmployeeESI(payslipModal, employeeContribution, ref totalContribution);
                     break;
@@ -1425,13 +1425,13 @@ namespace ServiceLayer.Code
             var advaceSalaryDetailTable = "";
             if (payslipModal.SalaryAdanceRepayments?.Any() == true)
             {
-                dedcutionsComponent.Add("Advance Repayment", Math.Round(payslipModal.SalaryAdanceRepayments.Sum(x => x.ActualAmount), 2));
+                dedcutionsComponent.Add("Advance", Math.Round(payslipModal.SalaryAdanceRepayments.Sum(x => x.ActualAmount)));
                 advaceSalaryDetailTable = GenerateAdvanceSalaryDetail(payslipModal.SalaryAdanceRepayments);
             }
 
             if (payslipModal.OtherDeductionAndReimbursementRepayments?.Any() == true)
             {
-                dedcutionsComponent.Add("Other Deduction", Math.Round(payslipModal.OtherDeductionAndReimbursementRepayments.Sum(x => x.ActualDeductionAmount), 2));
+                dedcutionsComponent.Add("Other Deduction", Math.Round(payslipModal.OtherDeductionAndReimbursementRepayments.Sum(x => x.ActualDeductionAmount)));
             }
 
             var deductionComponent = GetTaxAndDeductions(dedcutionsComponent);
@@ -1493,7 +1493,8 @@ namespace ServiceLayer.Code
                 Replace("[[CompleteContributions]]", employeeContribution).
                 Replace("[[TotalEarnings]]", totalEarning.ToString()).
                 Replace("[[TotalIncomeTax]]", (payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(pTaxAmount) : 0).ToString()).
-                Replace("[[TotalDeduction]]", totalDeduction.ToString()).
+                //Replace("[[TotalDeduction]]", totalDeduction.ToString()). //=> This is general template
+                Replace("[[TotalDeduction]]", (totalDeduction + totalContribution).ToString()). // => This is only for Template4
                 Replace("[[TotalContribution]]", totalContribution.ToString()).
                 Replace("[[NetSalaryInWords]]", netSalaryInWord).
                 Replace("[[PTax]]", pTaxAmount.ToString()).
@@ -1902,7 +1903,7 @@ namespace ServiceLayer.Code
             return employeeContribution;
         }
 
-        private string AddBonusComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML)
+        private string AddBonusComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML, bool isYTDRequired = true)
         {
             if (payslipModal.SalaryDetail.BonusAmount != decimal.Zero)
             {
@@ -1910,14 +1911,16 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Bonus Amount" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(payslipModal.SalaryDetail.BonusAmount) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                if (isYTDRequired)
+                    salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+
                 salaryDetailsHTML += "</tr>";
             }
 
             return salaryDetailsHTML;
         }
 
-        private string AddArrearComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML)
+        private string AddArrearComponent(PayslipGenerationModal payslipModal, string salaryDetailsHTML, bool isYTDRequired = true)
         {
             if (payslipModal.SalaryDetail.ArrearAmount != decimal.Zero)
             {
@@ -1925,7 +1928,9 @@ namespace ServiceLayer.Code
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\">" + "Arrear Amount" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + Math.Round(payslipModal.SalaryDetail.ArrearAmount) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+                if (isYTDRequired)
+                    salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\">" + "--" + "</td>";
+
                 salaryDetailsHTML += "</tr>";
             }
 
@@ -2660,10 +2665,10 @@ namespace ServiceLayer.Code
             table += "</tr>";
             foreach (var item in salaryAdanceRepayments)
             {
-                var deductedAmount = Math.Round(item.InstallmentNumber * item.ActualAmount, 2);
+                var deductedAmount = Math.Round(item.InstallmentNumber * item.ActualAmount);
                 var closingAmount = Math.Round(item.ApprovedAmount - deductedAmount);
                 table += "<tr>";
-                table += $"<td style = \"padding: 5px; font-size: 12px; text-align: center; border: 1px solid #ddd;\"> {Math.Round(item.ApprovedAmount, 2)} </td>";
+                table += $"<td style = \"padding: 5px; font-size: 12px; text-align: center; border: 1px solid #ddd;\"> {Math.Round(item.ApprovedAmount)} </td>";
                 table += $"<td style = \"padding: 5px; font-size: 12px; text-align: center; border: 1px solid #ddd;\"> {item.ApprovedDate.ToString("dd MMM, yyyy")} </td>";
                 table += $"<td style = \"padding: 5px; font-size: 12px; text-align: center; border: 1px solid #ddd;\"> {item.InstallmentCount} </td>";
                 table += $"<td style = \"padding: 5px; font-size: 12px; text-align: center; border: 1px solid #ddd;\"> {item.InstallmentNumber} </td>";
