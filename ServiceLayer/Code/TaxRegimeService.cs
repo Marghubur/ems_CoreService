@@ -5,6 +5,7 @@ using EMailService.Modal;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
+using ModalLayer.Modal.Accounts;
 using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
@@ -187,7 +188,7 @@ namespace ServiceLayer.Code
             }
         }
 
-        public async Task<List<PTaxSlab>> AddUpdatePTaxSlabService(List<PTaxSlab> pTaxSlabs)
+        public async Task<(List<PTaxSlab> ptaxSlab, Payroll payroll)> AddUpdatePTaxSlabService(List<PTaxSlab> pTaxSlabs)
         {
             try
             {
@@ -228,7 +229,7 @@ namespace ServiceLayer.Code
                 if (status != pTaxSlabs.Count)
                     throw HiringBellException.ThrowBadRequest("Fail to insert or update professiobnal tax detail");
 
-                return GetPTaxSlabByCompIdService(_currentSession.CurrentUserDetail.CompanyId);
+                return GetPTaxSlabByCompIdService();
             }
             catch (Exception)
             {
@@ -248,13 +249,15 @@ namespace ServiceLayer.Code
             return status;
         }
 
-        public List<PTaxSlab> GetPTaxSlabByCompIdService(int CompanyId)
+        public (List<PTaxSlab> ptaxSlab, Payroll payroll) GetPTaxSlabByCompIdService()
         {
-            if (CompanyId <= 0)
-                throw new HiringBellException("Invalid company selected. Please select a valid compny");
+            var dataSet = _db.FetchDataSet(Procedures.PTAX_SLAB_PAYROLL_CYCLE_SETTING_GET);
+            if (dataSet == null || dataSet.Tables.Count != 2)
+                throw HiringBellException.ThrowBadRequest("PTax salab not found. Please contact to admin");
 
-            var result = _db.GetList<PTaxSlab>(Procedures.Ptax_Slab_Getby_CompId, new { CompanyId });
-            return result;
+            var ptaxSalab = Converter.ToList<PTaxSlab>(dataSet.Tables[0]);
+            var payroll = Converter.ToType<Payroll>(dataSet.Tables[1]);
+            return (ptaxSalab, payroll);
         }
 
         private void ValidatePTaxSlab(List<PTaxSlab> pTaxSlabs)

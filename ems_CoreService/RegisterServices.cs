@@ -141,6 +141,7 @@ namespace ems_CoreService
             services.AddScoped<IOvertimeService, OvertimeService>();
             services.AddScoped<IServiceJobStatusService, ServiceJobStatusService>();
             services.AddScoped<IResignationService, ResignationService>();
+            services.AddScoped<IGeneratePayslipService, GeneratePayslipService>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {

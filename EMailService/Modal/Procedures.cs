@@ -323,6 +323,7 @@
         public static string Surcharge_Slab_Getall = "sp_surcharge_slab_getall";
         public static string Surcharge_Slab_Insupd = "sp_surcharge_slab_insupd";
         public static string Surcharge_Slab_Delete_Byid = "sp_surcharge_slab_delete_byid";
+        public static string PTAX_SLAB_PAYROLL_CYCLE_SETTING_GET = "sp_ptax_slab_payroll_cycle_setting_get";
 
         /*--------------  Timesheet Request Service procedures ------------*/
         public static string Employee_Timesheet_Getby_Timesheetid = "sp_employee_timesheet_getby_timesheetid";

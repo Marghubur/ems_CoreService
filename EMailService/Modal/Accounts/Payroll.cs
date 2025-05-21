@@ -16,5 +16,6 @@
         public int FinancialYear { set; get; }
         public int DeclarationStartMonth { get; set; }
         public int DeclarationEndMonth { get; set; }
+        public string PtaxCalculatedOn { get; set; } = "Gross Earning";
     }
 }

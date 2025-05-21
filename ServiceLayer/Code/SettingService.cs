@@ -227,6 +227,7 @@ namespace ServiceLayer.Code
                     payroll.PayCalculationId,
                     payroll.IsExcludeWeeklyOffs,
                     payroll.IsExcludeHolidays,
+                    payroll.PtaxCalculatedOn,
                     AdminId = _currentSession.CurrentUserDetail.UserId,
                     DeclarationEndMonth = payroll.PayCycleMonth == 1 ? 12 : payroll.PayCycleMonth - 1
                 },
@@ -257,6 +258,9 @@ namespace ServiceLayer.Code
 
             if (payroll.PayCalculationId < 0)
                 throw HiringBellException.ThrowBadRequest("Please select payment type first");
+
+            if (string.IsNullOrEmpty(payroll.PtaxCalculatedOn))
+                payroll.PtaxCalculatedOn = "Gross Earning";
         }
 
         public string InsertUpdateSalaryStructure(List<SalaryStructure> salaryStructure)
