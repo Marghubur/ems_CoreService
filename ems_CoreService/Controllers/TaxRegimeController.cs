@@ -120,17 +120,17 @@ namespace OnlineDataBuilder.Controllers
             }
         }
 
-        [HttpGet("GetPTaxSlabByCompId/{CompanyId}")]
-        public IResponse<ApiResponse> GetPTaxSlabByCompId([FromRoute] int CompanyId)
+        [HttpGet("GetPTaxSlabByCompId")]
+        public IResponse<ApiResponse> GetPTaxSlabByCompId()
         {
             try
             {
-                var result = _taxRegimeService.GetPTaxSlabByCompIdService(CompanyId);
+                var result = _taxRegimeService.GetPTaxSlabByCompIdService();
                 return BuildResponse(result);
             }
             catch (Exception ex)
             {
-                throw Throw(ex, CompanyId);
+                throw Throw(ex);
             }
         }
 
