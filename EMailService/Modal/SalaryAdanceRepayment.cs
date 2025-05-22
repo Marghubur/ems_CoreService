@@ -14,5 +14,8 @@ namespace EMailService.Modal
         public DateTime ActualDate { get; set; }
         public int Status { get; set; }
         public string AdjustmentReason { get; set; }
+        public decimal ApprovedAmount { get; set; }
+        public DateTime ApprovedDate { get; set; }
+        public int InstallmentCount { get; set; }
     }
 }

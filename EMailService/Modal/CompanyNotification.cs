@@ -1,7 +1,8 @@
-﻿using System;
+﻿using ModalLayer;
+using System;
 using System.Collections.Generic;
 
-namespace ModalLayer.Modal
+namespace EMailService.Modal
 {
     public class CompanyNotification:CreationInfo
     {

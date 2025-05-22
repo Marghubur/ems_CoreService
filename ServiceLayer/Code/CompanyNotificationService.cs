@@ -212,7 +212,19 @@ namespace ServiceLayer.Code
                     }
                 }
             }
+        }
 
+        public async Task<List<EMailService.Modal.Notification.CompanyNotification>> GetCompanyNotificationFilterService(FilterModel filterModel)
+        {
+            var result = _db.GetList<EMailService.Modal.Notification.CompanyNotification>(Procedures.Company_Notification_Getby_Filter, new
+            {
+                filterModel.SearchString,
+                filterModel.PageIndex,
+                filterModel.PageSize,
+                filterModel.SortBy
+            });
+
+            return await Task.FromResult(result);
         }
     }
 }

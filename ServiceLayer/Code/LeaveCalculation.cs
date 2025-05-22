@@ -1019,8 +1019,6 @@ namespace ServiceLayer.Code
             ApprovalChainDetail ApprovalChain = approvalChainDetail.First();
             LeaveRequestNotification notification = new LeaveRequestNotification
             {
-                NoOfApprovalsRequired = ApprovalChain.NoOfApprovalLevel,
-                AutoActionAfterDays = ApprovalChain.AutoExpireAfterDays,
                 IsAutoApprovedEnabled = ApprovalChain.IsRequired,
                 ReporterDetail = JsonConvert.SerializeObject(employeeWithRoles)
             };

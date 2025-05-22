@@ -100,7 +100,7 @@
 
         /*--------------  Company Notification Service procedures ------------*/
         public static string Department_And_Roles_Getall = "sp_department_and_roles_getall";
-        public static string Company_Notification_Getby_Filter = "SP_company_notification_getby_filter";
+        public static string Company_Notification_Getby_Filter = "sp_company_notification_getby_filter";
         public static string Company_Notification_Getby_Id = "SP_company_notification_getby_id";
         public static string Company_Files_Insupd = "sp_company_files_insupd";
         public static string Company_Notification_Insupd = "sp_company_notification_insupd";
@@ -323,6 +323,7 @@
         public static string Surcharge_Slab_Getall = "sp_surcharge_slab_getall";
         public static string Surcharge_Slab_Insupd = "sp_surcharge_slab_insupd";
         public static string Surcharge_Slab_Delete_Byid = "sp_surcharge_slab_delete_byid";
+        public static string PTAX_SLAB_PAYROLL_CYCLE_SETTING_GET = "sp_ptax_slab_payroll_cycle_setting_get";
 
         /*--------------  Timesheet Request Service procedures ------------*/
         public static string Employee_Timesheet_Getby_Timesheetid = "sp_employee_timesheet_getby_timesheetid";
