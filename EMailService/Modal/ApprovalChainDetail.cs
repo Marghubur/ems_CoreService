@@ -11,8 +11,7 @@ namespace ModalLayer.Modal
         public bool IsRequired { set; get; }
         public DateTime LastUpdatedOn { set; get; }
         public int ApprovalStatus { set; get; } = 2;
-        public int AutoExpireAfterDays { set; get; }
-        public int NoOfApprovalLevel { get; set; }
-        public bool IsAutoExpiredEnabled { get; set; }
+        public int AutoActionType { set; get; } = 0;
+        public int AutoActionDays { get; set; } = 0;
     }
 }
