@@ -1340,11 +1340,15 @@ namespace ServiceLayer.Code
 
             var grosComponent = payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.GrossId);
             var grossIncome = Math.Round(grosComponent.FinalAmount);
+            var doj = _timezoneConverter.ToTimeZoneDateTime(payslipModal.Employee.CreatedOn, _currentSession.TimeZone);
+            var ActualPayableDays = await GetActualPayableDay(doj, payslipModal.Month, payslipModal.Year);
+
             decimal totalYTDAmount = 0;
             string employeeContribution = string.Empty;
             decimal totalContribution = 0;
             string htmlFilePath = "";
             int templateId = 1;
+            decimal totalActualEarning = 0;
             switch (templateId)
             {
                 case 2:
@@ -1385,7 +1389,10 @@ namespace ServiceLayer.Code
                     if (isYTDRequired)
                         salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
                     else
-                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(payslipModal, salaryDetail);
+                    {
+                        int daysInMonth = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
+                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(salaryDetail, daysInMonth, ActualPayableDays, out totalActualEarning);
+                    }
 
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML);
@@ -1402,7 +1409,10 @@ namespace ServiceLayer.Code
                     if (isYTDRequired)
                         salaryDetailsHTML = AddEarningComponentsWithYTD(payslipModal, salaryDetail, ref totalYTDAmount);
                     else
-                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(payslipModal, salaryDetail);
+                    {
+                        int daysInMonth = DateTime.DaysInMonth(payslipModal.Year, payslipModal.Month);
+                        salaryDetailsHTML = AddEarningComponentsWithoutYTD(salaryDetail, daysInMonth, ActualPayableDays, out totalActualEarning);
+                    }
 
                     salaryDetailsHTML = AddArrearComponent(payslipModal, salaryDetailsHTML, isYTDRequired);
                     salaryDetailsHTML = AddBonusComponent(payslipModal, salaryDetailsHTML, isYTDRequired);
@@ -1414,7 +1424,7 @@ namespace ServiceLayer.Code
             // var pTaxAmount = PTaxCalculation(payslipModal.Gross, payslipModal.PTaxSlabs);
             var pTaxAmount = Math.Round(payslipModal.SalaryDetail.SalaryBreakupDetails.Find(x => x.ComponentId == ComponentNames.ProfessionalTax).FinalAmount);
             var totalEarning = Math.Round(salaryDetail.Sum(x => x.FinalAmount) + payslipModal.SalaryDetail.ArrearAmount + payslipModal.SalaryDetail.BonusAmount);
-            var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
+            //var totalActualEarning = Math.Round(salaryDetail.Sum(x => x.ActualAmount));
             var totalIncomeTax = payslipModal.TaxDetail.TaxDeducted >= pTaxAmount ? Math.Round(payslipModal.TaxDetail.TaxDeducted) - Math.Round(pTaxAmount) : 0;
             Dictionary<string, decimal> dedcutionsComponent = new Dictionary<string, decimal>
             {
@@ -1444,8 +1454,6 @@ namespace ServiceLayer.Code
             var netSalaryInWord = NumberToWords(netSalary);
             var designation = payslipModal.EmployeeRoles.Find(x => x.RoleId == payslipModal.Employee.DesignationId).RoleName;
 
-            var doj = _timezoneConverter.ToTimeZoneDateTime(payslipModal.Employee.CreatedOn, _currentSession.TimeZone);
-            var ActualPayableDays = await GetActualPayableDay(doj, payslipModal.Month, payslipModal.Year);
             //var TotalWorkingDays = GetWorkingDays(payslipModal.dailyAttendances, payslipModal.leaveRequestNotifications);
             var TotalWorkingDays = ActualPayableDays - payslipModal.PayrollMonthlyDetail.LOP;
 
@@ -1856,20 +1864,29 @@ namespace ServiceLayer.Code
             return salaryDetailsHTML;
         }
 
-        private string AddEarningComponentsWithoutYTD(PayslipGenerationModal payslipModal, List<CalculatedSalaryBreakupDetail> salaryDetail)
+        private string AddEarningComponentsWithoutYTD(List<CalculatedSalaryBreakupDetail> salaryDetail, int daysInMonth, int actualPayableDays, out decimal totalActualEarning)
         {
             var textinfo = CultureInfo.CurrentCulture.TextInfo;
             string salaryDetailsHTML = "";
+            decimal actualEraning = 0;
 
             foreach (var item in salaryDetail)
             {
+                decimal finalAmount = item.ActualAmount;
+                if (daysInMonth != actualPayableDays)
+                {
+                    finalAmount = (finalAmount / actualPayableDays) * daysInMonth;
+                }
+
                 salaryDetailsHTML += "<tr>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px;\" width=\"60%\">" + textinfo.ToTitleCase(item.ComponentName.ToLower()) + "</td>";
-                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\" width=\"19%\">" + Math.Round(item.ActualAmount) + "</td>";
+                salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\" width=\"19%\">" + Math.Round(finalAmount) + "</td>";
                 salaryDetailsHTML += "<td class=\"box-cell\" style=\"border: 0; font-size: 12px; text-align: right;\" width=\"19%\">" + Math.Round(item.FinalAmount) + "</td>";
                 salaryDetailsHTML += "</tr>";
+                actualEraning += finalAmount;
             }
 
+            totalActualEarning = Math.Round(actualEraning);
             return salaryDetailsHTML;
         }
 
