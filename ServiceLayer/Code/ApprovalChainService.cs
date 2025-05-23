@@ -7,43 +7,18 @@ using ServiceLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using static ApplicationConstants;
 
 namespace ServiceLayer.Code
 {
-    public class ApprovalChainService : IApprovalChainService
+    public class ApprovalChainService(IDb _db,
+                                      CurrentSession _currentSession) : IApprovalChainService
     {
-        private readonly IDb _db;
-        private readonly CurrentSession _currentSession;
-        public ApprovalChainService(IDb db, CurrentSession currentSession)
-        {
-            _db = db;
-            _currentSession = currentSession;
-        }
-
         public async Task<ApprovalWorkFlowModal> GetApprovalChainService(FilterModel filterModel)
         {
             ApprovalWorkFlowModal approvalWorkFlowModal = null;
             return await Task.FromResult(approvalWorkFlowModal);
-        }
-
-        private string GetSelectQuery(ApprovalWorkFlowChain approvalWorkFlowModal)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("1=1 ");
-
-            if (approvalWorkFlowModal.ApprovalWorkFlowId > 0)
-                sb.Append($"and w.ApprovalWorkFlowId = {approvalWorkFlowModal.ApprovalWorkFlowId} ");
-
-            if (approvalWorkFlowModal.ApprovalChainDetailId > 0)
-                sb.Append($"and w.ApprovalChainDetailId = {approvalWorkFlowModal.ApprovalChainDetailId} ");
-
-            if (!string.IsNullOrEmpty(approvalWorkFlowModal.Title))
-                sb.Append($"and f.Title = '{approvalWorkFlowModal.Title}' ");
-
-            return sb.ToString();
         }
 
         public async Task<string> InsertApprovalChainService(ApprovalWorkFlowChain approvalWorkFlowModal)
@@ -52,12 +27,6 @@ namespace ServiceLayer.Code
             ValidateApprovalWorkFlowDetail(approvalWorkFlowModal);
 
             var resultData = await GetApprovalChainData(approvalWorkFlowModal.ApprovalWorkFlowId);
-
-            //var approvalWorkFlowModalExisting = _db.GetList<ApprovalWorkFlowChainFilter>(ConfigurationDetail.sp_approval_chain_detail_filter, new
-            //{
-            //    SearchString = GetSelectQuery(approvalWorkFlowModal),
-            //});
-
             var existingApprovalWorkflow = resultData.approvalWorkFlowChain;
             if (existingApprovalWorkflow == null)
             {
@@ -65,10 +34,6 @@ namespace ServiceLayer.Code
                 {
                     Title = approvalWorkFlowModal.Title,
                     TitleDescription = approvalWorkFlowModal.TitleDescription,
-                    IsAutoExpiredEnabled = approvalWorkFlowModal.IsAutoExpiredEnabled,
-                    AutoExpireAfterDays = approvalWorkFlowModal.AutoExpireAfterDays,
-                    NoOfApprovalLevel = approvalWorkFlowModal.NoOfApprovalLevel,
-                    ListnerDetail = ApplicationConstants.EmptyJsonArray,
                     ApprovalChainDetails = new List<ApprovalChainDetail>()
                 };
             }
@@ -76,9 +41,6 @@ namespace ServiceLayer.Code
             {
                 existingApprovalWorkflow.Title = approvalWorkFlowModal.Title;
                 existingApprovalWorkflow.TitleDescription = approvalWorkFlowModal.TitleDescription;
-                existingApprovalWorkflow.IsAutoExpiredEnabled = approvalWorkFlowModal.IsAutoExpiredEnabled;
-                existingApprovalWorkflow.AutoExpireAfterDays = approvalWorkFlowModal.AutoExpireAfterDays;
-                existingApprovalWorkflow.NoOfApprovalLevel = approvalWorkFlowModal.NoOfApprovalLevel;
                 existingApprovalWorkflow.ApprovalChainDetails ??= new List<ApprovalChainDetail>();
             }
 
@@ -91,6 +53,8 @@ namespace ServiceLayer.Code
                     {
                         chainDetail.AssignieId = x.AssignieId;
                         chainDetail.IsRequired = x.IsRequired;
+                        chainDetail.AutoActionType = x.AutoActionType;
+                        chainDetail.AutoActionDays = x.AutoActionDays;
                     }
                     else
                     {
@@ -101,66 +65,25 @@ namespace ServiceLayer.Code
                             AssignieId = x.AssignieId,
                             IsRequired = x.IsRequired,
                             LastUpdatedOn = DateTime.UtcNow,
-                            ApprovalStatus = (int)ItemStatus.Pending
+                            ApprovalStatus = (int)ItemStatus.Pending,
+                            AutoActionDays = x.AutoActionDays,
+                            AutoActionType = x.AutoActionType,
                         });
                     }
                 });
             }
-
-            //if (existingApprovalWorkflow != null)
-            //{
-            //    //var firstRecord = approvalWorkFlowModalExisting.First();
-            //    //approvalWorkFlowModal.ApprovalWorkFlowId = firstRecord.ApprovalWorkFlowId;
-
-            //    //ApprovalChainDetail chainDetail = null;
-            //    //approvalWorkFlowModal.ApprovalChainDetails.ForEach(item =>
-            //    //{
-            //    //    chainDetail = approvalWorkFlowModalExisting.FirstOrDefault(x => x.ApprovalChainDetailId == item.ApprovalChainDetailId);
-
-            //    //    if (chainDetail != null)
-            //    //    {
-            //    //        chainDetail.AssignieId = item.AssignieId;
-            //    //        chainDetail.IsRequired = item.IsRequired;
-            //    //    }
-            //    //    else
-            //    //    {
-            //    //        approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
-            //    //        {
-            //    //            ApprovalChainDetailId = 0,
-            //    //            ApprovalWorkFlowId = 0,
-            //    //            AssignieId = item.AssignieId,
-            //    //            IsRequired = item.IsRequired,
-            //    //            LastUpdatedOn = item.LastUpdatedOn,
-            //    //            ApprovalStatus = (int)ItemStatus.Pending
-            //    //        });
-            //    //    }
-            //    //});
-            //}
-            //else
-            //{
-            //    //foreach (var item in approvalWorkFlowModal.ApprovalChainDetails)
-            //    //{
-            //    //    approvalWorkFlowModalExisting.Add(new ApprovalWorkFlowChainFilter
-            //    //    {
-            //    //        ApprovalChainDetailId = 0,
-            //    //        ApprovalWorkFlowId = 0,
-            //    //        AssignieId = item.AssignieId,
-            //    //        IsRequired = item.IsRequired,
-            //    //        LastUpdatedOn = DateTime.UtcNow,
-            //    //        ApprovalStatus = (int)ItemStatus.Pending
-            //    //    });
-            //    //}
-            //}
 
             var data = (from n in existingApprovalWorkflow.ApprovalChainDetails
                         select new
                         {
                             ApprovalChainDetailId = n.ApprovalChainDetailId > 0 ? n.ApprovalChainDetailId : 0,
                             ApprovalWorkFlowId = DbProcedure.getParentKey(n.ApprovalWorkFlowId),
-                            AssignieId = n.AssignieId,
-                            IsRequired = n.IsRequired,
+                            n.AssignieId,
+                            n.IsRequired,
+                            n.AutoActionDays,
+                            n.AutoActionType,
                             LastUpdatedOn = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                            ApprovalStatus = n.ApprovalStatus
+                            n.ApprovalStatus
                         }
                     ).ToList<object>();
 
@@ -171,11 +94,6 @@ namespace ServiceLayer.Code
                     approvalWorkFlowModal.Title,
                     approvalWorkFlowModal.TitleDescription,
                     approvalWorkFlowModal.Status,
-                    approvalWorkFlowModal.IsAutoExpiredEnabled,
-                    approvalWorkFlowModal.AutoExpireAfterDays,
-                    approvalWorkFlowModal.IsSilentListner,
-                    approvalWorkFlowModal.ListnerDetail,
-                    approvalWorkFlowModal.NoOfApprovalLevel,
                     AdminId = _currentSession.CurrentUserDetail.UserId
                 },
                 DbProcedure.ApprovalChainDetail,
@@ -194,11 +112,6 @@ namespace ServiceLayer.Code
             if (string.IsNullOrEmpty(approvalWorkFlowModal.TitleDescription))
                 throw HiringBellException.ThrowBadRequest("Title description is null or empty");
 
-            if (approvalWorkFlowModal.IsAutoExpiredEnabled)
-            {
-                if (approvalWorkFlowModal.AutoExpireAfterDays <= 0)
-                    throw HiringBellException.ThrowBadRequest("Please add auto expire after days");
-            }
 
             if (approvalWorkFlowModal.ApprovalChainDetails.Any())
             {
@@ -209,13 +122,6 @@ namespace ServiceLayer.Code
 
                 }
             }
-
-            int approvalRequiredCount = approvalWorkFlowModal.ApprovalChainDetails.Count(x => x.IsRequired);
-            if (approvalRequiredCount > 0 && approvalWorkFlowModal.NoOfApprovalLevel == 0)
-                throw HiringBellException.ThrowBadRequest("No of Approval level is less than equal to required level");
-
-            if (approvalRequiredCount > 0 && approvalWorkFlowModal.NoOfApprovalLevel > approvalRequiredCount)
-                throw HiringBellException.ThrowBadRequest("No of Approval level is greater than required level");
         }
 
         public async Task<List<ApprovalWorkFlowModal>> GetPageDateService(FilterModel filterModel)
@@ -258,11 +164,6 @@ namespace ServiceLayer.Code
                     Title = firstRecord.Title,
                     TitleDescription = firstRecord.TitleDescription,
                     Status = firstRecord.Status,
-                    IsAutoExpiredEnabled = firstRecord.IsAutoExpiredEnabled,
-                    AutoExpireAfterDays = firstRecord.AutoExpireAfterDays,
-                    IsSilentListner = firstRecord.IsSilentListner,
-                    ListnerDetail = firstRecord.ListnerDetail,
-                    NoOfApprovalLevel = firstRecord.NoOfApprovalLevel,
                     ApprovalChainDetails = new List<ApprovalChainDetail>()
                 };
 
@@ -276,7 +177,9 @@ namespace ServiceLayer.Code
                         AssignieId = n.AssignieId,
                         IsRequired = n.IsRequired,
                         LastUpdatedOn = n.LastUpdatedOn,
-                        ApprovalStatus = n.ApprovalStatus
+                        ApprovalStatus = n.ApprovalStatus,
+                        AutoActionDays = n.AutoActionDays,
+                        AutoActionType = n.AutoActionType
                     }
                  ).ToList<ApprovalChainDetail>();
             }

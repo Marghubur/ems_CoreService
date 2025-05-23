@@ -22,10 +22,12 @@ using ServiceLayer.Code;
 using ServiceLayer.Code.ApprovalChain;
 using ServiceLayer.Code.HostedServiceJobs;
 using ServiceLayer.Code.Leaves;
+using ServiceLayer.Code.Notification;
 using ServiceLayer.Code.PayrollCycle.Code;
 using ServiceLayer.Code.PayrollCycle.Interface;
 using ServiceLayer.Code.SendEmail;
 using ServiceLayer.Interface;
+using ServiceLayer.Interface.Notification;
 using System.IO;
 
 namespace ems_CoreService
@@ -141,7 +143,7 @@ namespace ems_CoreService
             services.AddScoped<IOvertimeService, OvertimeService>();
             services.AddScoped<IServiceJobStatusService, ServiceJobStatusService>();
             services.AddScoped<IResignationService, ResignationService>();
-            services.AddScoped<IGeneratePayslipService, GeneratePayslipService>();
+            services.AddScoped<IUserNotificationService, UserNotificationService>();
         }
         public void RegisterFolderPaths(IConfiguration configuration, IWebHostEnvironment env, IServiceCollection services)
         {
