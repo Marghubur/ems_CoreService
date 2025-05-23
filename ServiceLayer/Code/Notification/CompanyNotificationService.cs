@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using ServiceLayer.Interface;
+using ServiceLayer.Interface.Notification;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,7 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Code
+namespace ServiceLayer.Code.Notification
 {
     public class CompanyNotificationService : ICompanyNotificationService
     {
@@ -46,7 +47,7 @@ namespace ServiceLayer.Code
 
         public DataSet GetDepartmentsAndRolesService()
         {
-            var result = _db.FetchDataSet(Procedures.Department_And_Roles_Getall, new { CompanyId = _currentSession.CurrentUserDetail.CompanyId });
+            var result = _db.FetchDataSet(Procedures.Department_And_Roles_Getall, new { _currentSession.CurrentUserDetail.CompanyId });
             return result;
         }
 
@@ -71,7 +72,7 @@ namespace ServiceLayer.Code
         public async Task<List<CompanyNotification>> InsertUpdateNotificationService(CompanyNotification notification, List<Files> files, IFormFileCollection FileCollection)
         {
             ValidateCompanyNotification(notification);
-            var oldNotification = _db.Get<CompanyNotification>(Procedures.Company_Notification_Getby_Id, new { NotificationId = notification.NotificationId });
+            var oldNotification = _db.Get<CompanyNotification>(Procedures.Company_Notification_Getby_Id, new { notification.NotificationId });
             if (oldNotification == null)
                 oldNotification = notification;
             else
@@ -212,6 +213,18 @@ namespace ServiceLayer.Code
                     }
                 }
             }
+        }
+
+        private void ValidateEmployeeNotificationModel(EmployeeNotification notification)
+        {
+            if (string.IsNullOrEmpty(notification.Title))
+                throw HiringBellException.ThrowBadRequest("Title is a required field");
+
+            if (notification.NotificationId == 0)
+                throw HiringBellException.ThrowBadRequest("Please add atleast one notifier");
+
+            if (string.IsNullOrEmpty(notification.PlainMessage) && string.IsNullOrEmpty(notification.ParsedContentLink))
+                throw HiringBellException.ThrowBadRequest("Body is required for the notification");
         }
 
         public async Task<List<EMailService.Modal.Notification.CompanyNotification>> GetCompanyNotificationFilterService(FilterModel filterModel)

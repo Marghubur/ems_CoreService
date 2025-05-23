@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using ServiceLayer.Interface;
+using ServiceLayer.Interface.Notification;
 using System;
 using System.Collections.Generic;
 using System.Net;
