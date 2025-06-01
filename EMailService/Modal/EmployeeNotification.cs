@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModalLayer.Modal
 {
-    public class EmployeeNotification
+    public class EmployeeNotification : CreationInfo
     {
-        public long Notification { get; set; }
-        public string Message { get; set; }
-        public long UserId { get; set; }
-        public string UserName { get; set; }
-        public string Email { get; set; }
-        public string Mobile { get; set; }
-        public int UserTypeId { get; set; }
-        public DateTime RequestedOn { get; set; }
-        public long AssigneeId { get; set; }
-        public int Status { get; set; }
-        public DateTime ActionTakenOn { get; set; }
-        public ItemStatus RequestTypeId { set; get; }
+        public int NotificationId { set; get; }
+        public string Title { set; get; }
+        public string SubTitle { set; get; }
+        public string PlainMessage { set; get; }
+        public string ParsedContentLink { set; get; }
+        public string Attachment { set; get; }
+        public string FileIds { set; get; }
+        public long NotifierId { set; get; }
+        public bool AutoDeleteEnabled { set; get; }
+        public int LifeSpanInMinutes { set; get; }
+        public int NotificationTypeId { set; get; }
+        public bool IsViewed { set; get; }
     }
 }
